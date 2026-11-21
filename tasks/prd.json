@@ -894,7 +894,8 @@
             "It fails when code constructs another OkHttpClient, uses HttpURLConnection, or builds an ExoPlayer without Octave's media source factory",
             "It fails when TypeScript passes headers, a token or an Authorization value to an image, video or fetch call outside the transport adapter",
             "Each rule has a test with a failing and a passing sample, and the message names the allowed alternative",
-            "The check runs in pnpm check and in CI"
+            "The check runs in pnpm check and in CI",
+            "The check says, with a test per path, how it treats the HTTP paths Expo links into the APK: expo/fetch, expo-file-system's own OkHttpClient, expo-asset, @expo/log-box, @expo/dom-webview with the \"use dom\" directive, and expo-modules-core's network-inspector interceptors; each is refused or sits on a named allowlist with its reason, and the spec says whether the OkHttpClient rule scans Octave's source only or the built dex"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
@@ -922,7 +923,8 @@
             "A canary token used in the test appears in no logcat line, React Native event, prop or error message",
             "Transport failures reach the UI as the core's typed errors, never as a native exception message",
             "pnpm tv:wire exists from this task: it runs tagged wire tests on the emulator against the pinned Jellyscale and Jellyfin servers and records every request the app makes; each test carries the id of the task it proves",
-            "Jellyscale wire test: the capture above runs against the pinned Jellyscale and passes"
+            "Jellyscale wire test: the capture above runs against the pinned Jellyscale and passes",
+            "Each checkout gets its own Compose project name for the fixture servers, so two worktrees' runs neither collide nor orphan each other's servers"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
           "status": "todo",
@@ -949,6 +951,28 @@
             "docs/security.md marks each of these tests as tested in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-17",
+          "title": "Shield check: first focus from the launcher and the core under Hermes",
+          "domain": "App Shell & Presentation",
+          "model": "haiku",
+          "skill": "verify",
+          "human": true,
+          "depends_on": [
+            "T3-01",
+            "T3-02"
+          ],
+          "acceptance": [
+            "Shield check (owner): launched from the TV launcher with the remote, the first screen takes focus with no priming press, and the first Right press moves focus one tile",
+            "Shield check (owner): pnpm tv:e2e passes on the Shield, so the core's conformance suites run under Hermes on Android 11",
+            "The result of each run, and any failure, is recorded in the task's evidence with the commit it ran on"
+          ],
+          "verify": "pnpm tv:smoke && pnpm tv:e2e",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -1166,6 +1190,32 @@
             "Holding Down on the Shield is within the T3-12 budget with the animated focus lift kept (decision 0004 F1)"
           ],
           "verify": "mise exec -- pnpm check"
+        },
+        {
+          "id": "T3-18",
+          "title": "Measure the F4 browse rows' look trade-offs on the Shield for the owner to choose",
+          "domain": "App Shell & Presentation",
+          "model": "opus",
+          "skill": "verify",
+          "human": true,
+          "depends_on": [
+            "T3-08",
+            "T3-11",
+            "T3-12",
+            "T3-14"
+          ],
+          "acceptance": [
+            "The browse rows use F4 with a row draw distance of about 150, as decision 0004's addendum of 2026-11-21 says, and that build is the baseline of every measurement",
+            "Each of the four trade-offs is changed on its own and measured with T3-12's script: the lift that does not animate, 16-bit artwork, the 1280 px backdrop, and no in-memory image cache",
+            "Shield check (owner): each variant's memory and frame numbers are measured on the Shield and stored with the commit they measured, beside the baseline and T3-12's budget",
+            "Owner decision: the owner chooses which changes stay, from the numbers and the look on the Shield; no variant that misses the memory or frame target is kept",
+            "The chosen look is recorded in a decision file, and DESIGN.md takes it in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
@@ -1225,6 +1275,29 @@
             "Remembered servers are listed first on a later visit"
           ],
           "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T4-09",
+          "title": "Persist the TV's install id and pass it to the gateway",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-05",
+            "T2-03"
+          ],
+          "acceptance": [
+            "The app creates an install id once, from the Crypto port, and stores it on the device; it holds no secret",
+            "Every gateway the app constructs takes the stored install id, so the DeviceId for a server and user is the same after a relaunch, in an emulator test",
+            "Clearing the app's data gives a new install id; Android backup and device-to-device transfer do not carry it to another device",
+            "The spec records the maintenance check, from primary sources, for the storage dependency it adopts, or uses a platform API"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -1941,6 +2014,33 @@
           "evidence": ""
         },
         {
+          "id": "T8-22",
+          "title": "Harden the core's launch request before the first engine uses it",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "T2-05",
+            "T2-06"
+          ],
+          "acceptance": [
+            "The launch request forwards the parsed URL's href, never the raw input string",
+            "A launch URL with a fragment, a bracketed credential parameter name, or a MediaBrowser or Token= substring anywhere in it is refused before it reaches the engine, and the refusal carries no part of the URL",
+            "Only two URL shapes reach the engine: an original file with Static=true, and master.m3u8 under the server's base path; any other shape is refused",
+            "The original-file URL, the HLS URL and every server-supplied subtitle URL pass host rules R1 and R2 as written, not only an origin comparison",
+            "A start position that is not a finite number is refused or sent as no start position, never as NaN",
+            "When the coordinator refuses to launch a negotiated plan, it stops that play session: the server receives the stop for the session PlaybackInfo opened",
+            "Each rule has a test in the core that fails without it",
+            "docs/security.md section 2's master-URL row states the host rule and names the T2-06 tests, and the new refusals are listed as tested, in the same PR"
+          ],
+          "verify": "pnpm --filter @octave/core test && pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T8-02",
           "title": "Direct-play the original file with Media3",
           "domain": "Player Engine",
@@ -2087,9 +2187,59 @@
             "The DeviceProfile sent to the server is the same on every device",
             "A capability probe failure is treated as cannot tell and never as can play",
             "The emulator test plays one sample each way and asserts the requests sent",
-            "Jellyscale wire test: the second request to the pinned Jellyscale carries the header and both flags in body and query, and the app shows the result T2-09 expects for that server"
+            "Jellyscale wire test: the second request to the pinned Jellyscale carries the header and both flags in body and query, and the app shows the result T2-09 expects for that server",
+            "The probe lists every profile a decoder supports as its own entry, or leaves the profile out when the decoder plays any; an 8-bit HEVC Main source and an H.264 Main source direct play on a device that decodes them, and the spec says what happens to a source that states no profile",
+            "The app's composition fails when no device capability source is passed to the gateway; the full-capability default is never used in the app"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T8-23",
+          "title": "Judge every conversion answer and the whole source against the device",
+          "domain": "Playback Negotiation",
+          "model": "fable",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "T8-07",
+            "T2-07"
+          ],
+          "acceptance": [
+            "A conversion the server offers on the first answer, and a disc's forced fallback, are judged against the device: when the answer copies a codec the device cannot decode, the core asks once for the forced conversion or ends in the typed refusal, and never hands that stream to the engine",
+            "The answer to a forced conversion is checked: a stream the device still cannot decode, or one the server did not re-encode, ends in the typed refusal with the client-side reason",
+            "The spec records, from recorded answers on Jellyfin 10.11, Jellyfin 12.4 and Jellyscale, which codec each server encodes into when the source is HEVC or AV1; what is not recorded is marked unverified",
+            "The source decision reads the channel count, level and frame rate the device reports beside codec and profile, and the spec says which audio tracks beside the chosen one it judges and why",
+            "The DeviceProfile sent to the server stays the same on every device, and no rule adds a request beyond the one forced conversion",
+            "Each rule has a core test from a recorded fixture, and the tripwire expectations in tests/integration take any changed result"
+          ],
+          "verify": "pnpm --filter @octave/core test && pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T8-24",
+          "title": "Share the forced-conversion master URLs as HLS vectors",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "T2-07",
+            "T2-09"
+          ],
+          "acceptance": [
+            "The forced-conversion answers T2-07 recorded for the H.264 and HEVC samples, and the AV1 sample's answer recorded on both Jellyfin servers, are shared master-URL vectors in a file beside packages/core/tests/fixtures/hls-master-urls.json",
+            "packages/core/tests/fixtures/hls-master-urls.json stays byte-identical: it is frozen by T2-06 and does not contradict its acceptance",
+            "The core's master-URL check gives the expected verdict for every new vector, and the fixtures README records the new file's SHA-256",
+            "The new vectors hold only synthetic media names and no token, host or address of a real server"
+          ],
+          "verify": "pnpm --filter @octave/core test && pnpm check",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -2105,10 +2255,11 @@
           "depends_on": [
             "T8-03",
             "T2-09",
-            "T1-01"
+            "T1-01",
+            "T8-24"
           ],
           "acceptance": [
-            "An HLS launch is accepted only for a master URL that passes every vector in packages/core/tests/fixtures/hls-master-urls.json's rules, checked again in Kotlin",
+            "An HLS launch is accepted only for a master URL that passes every vector in packages/core/tests/fixtures/hls-master-urls.json's rules and in the forced-conversion vectors T8-24 adds beside it, checked again in Kotlin",
             "Media3 reads playlists only through Octave's parser hook, which refuses the whole playlist unless every URI line and URI attribute is HTTP or HTTPS on the server's origin with no user info, fragment or credential parameter",
             "The Kotlin validator gives the expected verdict for every vector in packages/core/tests/fixtures/hls-playlists.json, in a JVM test that CI requires",
             "A playlist that names a credential parameter or contains the token value fails the launch closed, and the token appears in no error, event or log",
