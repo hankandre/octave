@@ -1,0 +1,21 @@
+// The TV app's Expo config. The application ID and name come from the core, the one place that defines them.
+import "tsx/cjs";
+import type { ExpoConfig } from "expo/config";
+import { ANDROID_APPLICATION_ID, APP_NAME } from "../../packages/core/src/domain/app-identity";
+
+const config: ExpoConfig = {
+  name: APP_NAME,
+  slug: "octave-tv",
+  version: "0.1.0",
+  orientation: "landscape",
+  userInterfaceStyle: "dark",
+  android: {
+    package: ANDROID_APPLICATION_ID,
+  },
+  plugins: [
+    ["@react-native-tvos/config-tv", { isTV: true }],
+    ["expo-build-properties", { android: { buildArchs: ["arm64-v8a", "x86_64"] } }],
+  ],
+};
+
+export default config;
