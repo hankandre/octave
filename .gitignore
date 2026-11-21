@@ -11,3 +11,7 @@ tests/samples/**/*
 !tests/samples/**/
 !tests/samples/**/.gitkeep
 tests/integration/.jellyscale.env
+apps/tv/android/
+apps/tv/ios/
+apps/tv/.expo/
+apps/tv/dist/

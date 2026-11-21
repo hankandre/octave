@@ -1,9 +1,19 @@
 packages:
   - packages/*
+  - apps/*
 
 allowBuilds:
   esbuild: true
 
-# typescript-estree 8.72.2 asks for minimatch ^10.2.2, which has an open advisory (GHSA-g3hv-75wg-m249, patched in 11.0.1).
 overrides:
+  # typescript-estree 8.72.2 asks for minimatch ^10.2.2, which has an open advisory (GHSA-g3hv-75wg-m249, patched in 11.0.1).
   'minimatch@^10.2.2': 11.0.8
+  # @react-native-tvos/config-tv 0.1.7 asks for glob ^11.0.0, which has an open advisory (GHSA-3g3m-2fjr-6pw4, patched in 14.0.2); it calls only globSync.
+  'glob@^11.0.0': 14.0.6
+  # Every workspace and every transitive react-native resolves to the TV fork (Expo's TV guide: alias all apps).
+  react-native: npm:react-native-tvos@0.88.1-0
+
+peerDependencyRules:
+  allowedVersions:
+    # The fork's own virtualized-lists asks for react-native 0.88.1; the fork is the prerelease 0.88.1-0 of that version.
+    '@react-native-tvos/virtualized-lists>react-native': 0.88.1-0
