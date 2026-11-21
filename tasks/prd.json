@@ -801,10 +801,10 @@
             "The spec records the maintenance check, from primary sources, for every dependency the scaffold adopts (Expo, react-native-tvos, the list, animation, image and router libraries), and a dependency that fails it is not adopted"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit 02a63815 (review fixes; milestones from commit 6e64db8f). Local: pnpm check exit 0; check-red T3-01 --expect green: green [1,3,4,5,6]; earlier: tv:native:test 4 tests 0 failed, fresh-clone release build and tv:apk:check pass, tv:smoke 3/3 on API 36 Android TV emulator. Item 7: expo native modules recorded, T3-04 fence question in backlog; react-refresh row logged in plan 002, not added. Pending: item 2, tv job green on the PR head with octave-tv-release-apk. Untested: Shield, other API levels, CI KVM."
+          "passes": true,
+          "evidence": "PR #249, run https://github.com/hankandre/octave/actions/runs/44932384997 at head 462e65ba: tv job green (18m21s) with tv:apk:check, android-emulator-runner running tv:smoke, artifact octave-tv-release-apk uploaded. pnpm check exit 0; check-red green 1,3,4,5,6. Untested: Shield, other API levels."
         },
         {
           "id": "T3-02",
