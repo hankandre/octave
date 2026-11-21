@@ -6,7 +6,12 @@ import okhttp3.Request
 // wins; null means the request may be sent with the session's header. Every refusal happens before anything is
 // resolved, connected or sent.
 internal object RequestPolicy {
-    private val CREDENTIAL_HEADERS = listOf("Authorization", "Proxy-Authorization", "Cookie")
+    // Caller headers that carry a credential or name a host. Host, :authority, Forwarded and X-Forwarded-* would let a
+    // virtual-host proxy route the session's header to another backend (OkHttp keeps a caller's Host and builds HTTP/2's
+    // :authority from it); X-Emby-* and X-MediaBrowser-* carry Jellyfin credentials that would replace the session's.
+    // Names are compared lower-cased.
+    private val REFUSED_HEADERS = setOf("authorization", "proxy-authorization", "cookie", "cookie2", "host", "forwarded")
+    private val REFUSED_HEADER_PREFIXES = listOf(":", "proxy-", "x-forwarded-", "x-emby-", "x-mediabrowser-")
 
     // How many rounds of percent-decoding the token search looks through (decision 0005, no_url_carries_the_token).
     private const val DECODING_ROUNDS = 4
@@ -14,8 +19,8 @@ internal object RequestPolicy {
     fun check(entry: SessionEntry?, request: Request): HttpRefusal? {
         // 1. No session for the call.
         if (entry == null) return HttpRefusal.NO_SESSION
-        // 2. A caller may not bring its own credential header.
-        if (CREDENTIAL_HEADERS.any { request.header(it) != null }) return HttpRefusal.HEADER_NOT_ALLOWED
+        // 2. A caller may not bring its own credential header or a header that names a host.
+        if (request.headers.names().any { refusedHeader(it) }) return HttpRefusal.HEADER_NOT_ALLOWED
         val url = request.url
         // 3. User info, before the origin, so user info naming another origin is still a credential refusal.
         if (url.encodedUsername.isNotEmpty() || url.encodedPassword.isNotEmpty()) return HttpRefusal.CREDENTIAL_URL
@@ -30,6 +35,11 @@ internal object RequestPolicy {
             if (host == null || HostClassifier.classify(host) == HostClass.PUBLIC) return HttpRefusal.PUBLIC_HTTP
         }
         return null
+    }
+
+    private fun refusedHeader(name: String): Boolean {
+        val lower = name.lowercase()
+        return lower in REFUSED_HEADERS || REFUSED_HEADER_PREFIXES.any { lower.startsWith(it) }
     }
 
     private fun holdsToken(text: String, tokens: List<String>): Boolean {
