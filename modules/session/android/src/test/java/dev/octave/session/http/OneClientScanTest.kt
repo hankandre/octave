@@ -21,6 +21,7 @@ class OneClientScanTest {
             "URI.toURL" to "val t = URI.create(u).toURL().readText()",
             "a raw Socket" to "val s = Socket(host, port)",
             "an imported Builder" to "import okhttp3.OkHttpClient.Builder\nval c = Builder().build()",
+            "an aliased import in the client file" to "import okhttp3.OkHttpClient as Http",
             "a spaced builder" to "val c = OkHttpClient.Builder ().build()",
             "an aliased client" to "import okhttp3.OkHttpClient as Http\nval c = Http()",
             "a client read elsewhere" to "val c = OctaveHttp.client\nval d = c.newBuilder().build()",
@@ -31,6 +32,10 @@ class OneClientScanTest {
         )
         for ((name, text) in escapes) {
             assertTrue(violations(mapOf("modules/x/android/src/main/java/X.kt" to text)).isNotEmpty(), "the scan catches $name")
+        }
+        // Inside the client file too, only `import okhttp3.OkHttpClient` itself is allowed.
+        for (text in listOf("import okhttp3.OkHttpClient.Builder", "import okhttp3.OkHttpClient as Http", "val d = client.newBuilder().build()")) {
+            assertTrue(violations(mapOf("modules/x/android/src/main/java/$CLIENT_FILE" to text)).isNotEmpty(), "the scan catches $text in $CLIENT_FILE")
         }
         val allowed = mapOf(
             "modules/x/android/src/main/java/A.kt" to "val r = request.newBuilder().build()\nval s = response.newBuilder().build()",
@@ -76,6 +81,7 @@ class OneClientScanTest {
         const val SOCKET_FILE = "DirectSocketFactory.kt"
         val BUILDER = Regex("""\bOkHttpClient\s*\.\s*Builder\s*\(""")
         val FORBIDDEN = mapOf(
+            "an import of OkHttpClient's members or an alias" to Regex("""\bimport\s+okhttp3\.OkHttpClient\s*(\.|\bas\b)"""),
             "java.net.URL" to Regex("""\bURL\s*\(|\.\s*toURL\s*\(|\bopenStream\s*\(|\bopenConnection\s*\("""),
             "URLConnection" to Regex("""URLConnection\b"""),
             "a socket channel" to Regex("""\b(SocketChannel|DatagramSocket|AsynchronousSocketChannel)\b"""),
