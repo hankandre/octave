@@ -8,7 +8,6 @@ const config: ExpoConfig = {
   slug: "octave-tv",
   version: "0.1.0",
   orientation: "landscape",
-  userInterfaceStyle: "dark",
   android: {
     package: ANDROID_APPLICATION_ID,
   },
