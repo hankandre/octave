@@ -13,7 +13,8 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 ## Layout
 
 - The core is the pnpm workspace package `@octave/core` in `packages/core` (`packages/core/src/domain/`, `packages/core/src/jellyfin/`, `packages/core/src/player/`, `packages/core/src/`) with its fixtures in `packages/core/tests/fixtures/`.
-- Planned: `apps/tv` (T3-01) and `modules/player` (T8-01). Until a task creates a path, do not write rules or code that assume it.
+- The TV app is the workspace package `@octave/tv` in `apps/tv` (T3-01): Expo SDK 58 on react-native-tvos. `pnpm tv:prebuild` generates `apps/tv/android/`, which is never committed; change native settings only through `apps/tv/app.config.ts` and the config plugins in `apps/tv/plugins/`. The app's JVM tests live in `apps/tv/native/`.
+- Planned: `modules/player` (T8-01). Until a task creates a path, do not write rules or code that assume it.
 
 ## Tasks
 
@@ -53,7 +54,8 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
 - Jellyscale fixture check (needs the fixture servers up and set up): `pnpm fixture:check-jellyscale` re-probes the pinned Jellyscale and fails if its endpoint inventory changed.
 - Task CLI: `pnpm task next`, `pnpm task show <id>`, `pnpm task list [--status s] [--phase p]`, `pnpm task set <id> --status s [--owner o] [--evidence-file f]`.
-- Not yet built: `pnpm tv:native:test` (T3-01), `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
+- TV app (needs the Android SDK in `ANDROID_HOME` and the JDK `mise.toml` names): `pnpm tv:prebuild` (generate `apps/tv/android`), `pnpm tv:build` (release APK), `pnpm tv:apk:check` (its badging), `pnpm tv:native:test` (the app's and modules' JVM tests), and `ANDROID_SERIAL=<your own emulator> pnpm tv:smoke` (first focus on an Android TV emulator)
+- Not yet built: `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
 
 ## Hard rules
 

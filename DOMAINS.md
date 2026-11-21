@@ -2,7 +2,7 @@
 
 Octave's bounded contexts: what each owns, the language it uses, where its code lives, and which way dependencies may point. Use this to decide where new code goes and to scope agent tasks. A task that touches more than two domains probably needs a plan (`WORKFLOW.md`). Every task in `tasks/prd.json` names one of these domains.
 
-Paths: **Today** is where the code is on `main`. **Target** is where it moves: `packages/core` (done in T2-02), `apps/tv` (T3-01), `modules/player` (T8-01), and the native HTTP module (T3-03). A target path does not exist until its task lands.
+Paths: **Today** is where the code is on `main`. **Target** is where it moves: `packages/core` (done in T2-02), `apps/tv` (done in T3-01), `modules/player` (T8-01), and the native HTTP module (T3-03). A target path does not exist until its task lands.
 
 ## Map
 
@@ -177,7 +177,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Owns:** navigation (the collapsed side rail); screens; focus, the D-pad, select, Back, and held keys; the design tokens and shared controls; dialogs and toasts; the non-secret preferences store (`packages/core/src/preference-store.ts` port, `packages/core/src/streaming-limits.ts`).
 
-**Today.** Only the preference and streaming-limit ports, and the plain-copy helpers (`packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/diagnostics.ts`).
+**Today.** The preference and streaming-limit ports, and the plain-copy helpers (`packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/diagnostics.ts`). In the app: the composition root with one route (`apps/tv/src/App.tsx`) and a placeholder first screen (`apps/tv/src/first-screen/`, T3-01).
 
 **Target.** `apps/tv` (T3-01), with the tokens and base controls from T3-06 and the shell from T3-09.
 
@@ -193,9 +193,9 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Owns:** the release build and its Baseline Profile; the Play bundle with 16 KB page alignment; signing; licences, notices, and the source offer (GPL-3.0); the Play TV track.
 
-**Today.** Nothing on `main`.
+**Today.** `apps/tv`'s build configuration (`apps/tv/app.config.ts`, the config plugins in `apps/tv/plugins/`), the scripts behind `pnpm tv:prebuild`, `tv:build`, `tv:apk:check`, `tv:native:test` and `tv:smoke` (`scripts/tv-*.mjs`), and the `tv` job of `.github/workflows/ci.yml`, which builds and checks a release APK signed with the template's debug key (T3-01).
 
-**Target.** `apps/tv` build configuration and the release workflows of phase T11.
+**Target.** The same, with real signing and the release workflows of phase T11.
 
 ---
 
