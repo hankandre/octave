@@ -14,6 +14,7 @@ const config: ExpoConfig = {
   plugins: [
     ["@react-native-tvos/config-tv", { isTV: true }],
     ["expo-build-properties", { android: { buildArchs: ["arm64-v8a", "x86_64"] } }],
+    "./plugins/with-app-jvm-tests.js",
   ],
 };
 
