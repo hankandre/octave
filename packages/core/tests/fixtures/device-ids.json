@@ -1,0 +1,96 @@
+{
+  "description": "DeviceId = SHA-256 hex of installId:serverId:lowercased username (ARCHITECTURE.md section 3). Every host must derive each value. Values derived by Node (node:crypto, String.prototype.toLowerCase) on 2026-11-21.",
+  "vectors": [
+    {
+      "name": "ascii mixed case",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "Louise",
+      "deviceId": "07bce1a97d44b7008418adc02ad74694142287bef4bd4007377574dc451aaf78"
+    },
+    {
+      "name": "latin with diacritics",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "ZOË Ångström",
+      "deviceId": "53ec180397a5cca67368c4103ddb5e9c5ba4871bdbbcde8fb4d27a4badfdc0e5"
+    },
+    {
+      "name": "ascii lowercase",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "alice",
+      "deviceId": "8209eb1d5eedc9090df5f3aea1c86a7ebd16cc50752641371e179f52dc9d166f"
+    },
+    {
+      "name": "ascii uppercase",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "ALICE",
+      "deviceId": "8209eb1d5eedc9090df5f3aea1c86a7ebd16cc50752641371e179f52dc9d166f"
+    },
+    {
+      "name": "uuid install id",
+      "installId": "3f2c8a1e-0b7d-4c55-9a1e-6d2f4b8c7e10",
+      "serverId": "server-1",
+      "username": "Alice",
+      "deviceId": "0ac8f3538ea5c1a11c6ed83d2b097808a35b8770f8a18cadd0a1fa4640f1d3bc"
+    },
+    {
+      "name": "server url as server id",
+      "installId": "3f2c8a1e-0b7d-4c55-9a1e-6d2f4b8c7e10",
+      "serverId": "http://192.168.1.10:8096",
+      "username": "Alice",
+      "deviceId": "3bc5140d995810da116609c21a69d5aab0776beb1017e81433601f366744b53c"
+    },
+    {
+      "name": "quick connect stand-in user",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "#quick-connect",
+      "deviceId": "7ec5cce089f74a8d7a531b5fea79a0a1e8d9901febc4dc3b102e0736a0cb1540"
+    },
+    {
+      "name": "colon in username",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "a:b",
+      "deviceId": "df0bb73fe2c8179e998aba5d53630a6ee2c9b35fd61bdfc0189802026f05406a"
+    },
+    {
+      "name": "capital I with dot above",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "İREM",
+      "deviceId": "8cce761160c1d7c5d0ff4fa0a2bc8adff8bac9b77dd0fce648f7cb57e6192c29"
+    },
+    {
+      "name": "greek final sigma",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "ΟΔΥΣΣΕΥΣ",
+      "deviceId": "4ec62420d8b49378ed6a2b42ccbc425b3af8304959cde6c4f02c43df163bb0c5"
+    },
+    {
+      "name": "capital sharp s",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "STRAẞE",
+      "deviceId": "0a5eb6da396787695d4a1272dd7cdae19dfd3248d5f2ac68b62f2a5eb4e83fd5"
+    },
+    {
+      "name": "cjk",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "山田太郎",
+      "deviceId": "dd2b331833b89ac0ddaf2132b96ae4629840ad7e0ce0af7e406d6387b63d7737"
+    },
+    {
+      "name": "emoji outside the basic multilingual plane",
+      "installId": "install-1",
+      "serverId": "server-1",
+      "username": "Jo🎬Ann",
+      "deviceId": "08499605640cd2f9181673bdfaa1ba1f0e62e60b4aeb8f7df6bd9b35a011d222"
+    }
+  ]
+}
