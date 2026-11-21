@@ -15,7 +15,48 @@ const useAPort = "The core runs on any host. Take what you need through a port a
 const browserGlobals = hostGlobals.map((name) => ({ name, message: useAPort }));
 const clockGlobals = ["setTimeout", "clearTimeout", "setInterval", "clearInterval"];
 
+// apps/tv keeps tvOS possible (decision 0003): shared TypeScript calls no Android-only API and reaches no native module
+// directly. Such code goes in a `.android.ts` or `.android.tsx` file with a sibling the tvOS build can load.
+const androidOnly = ["ToastAndroid", "PermissionsAndroid", "DrawerLayoutAndroid", "ProgressBarAndroid", "DatePickerAndroid", "TimePickerAndroid", "NativeModules", "TurboModuleRegistry"];
+const nativeModuleLoaders = ["requireNativeModule", "requireOptionalNativeModule", "requireNativeViewManager"];
+const platformFile = "Android-only. Put this in a `.android.ts` file with a sibling the tvOS build can load, or take it through a port.";
+const bannedNames = `/^(${[...androidOnly, ...nativeModuleLoaders].join("|")})$/`;
+const platformModules = "/^(react-native|expo|expo-modules-core)$/";
+
 export default [
+  {
+    ignores: ["apps/tv/android/**", "apps/tv/ios/**", "apps/tv/.expo/**", "apps/tv/dist/**"],
+  },
+  {
+    files: ["apps/tv/**/*.{ts,tsx}"],
+    languageOptions: { parser, parserOptions: { ecmaFeatures: { jsx: true } } },
+    linterOptions: { reportUnusedDisableDirectives: "error" },
+  },
+  {
+    files: ["apps/tv/**/*.{ts,tsx}"],
+    ignores: ["apps/tv/**/*.android.ts", "apps/tv/**/*.android.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "react-native", importNames: androidOnly, message: platformFile },
+            { name: "expo-modules-core", importNames: nativeModuleLoaders, message: platformFile },
+            { name: "expo", importNames: nativeModuleLoaders, message: platformFile },
+          ],
+        },
+      ],
+      // The same names reached without a named import: `RN.ToastAndroid` and `require("react-native").NativeModules`.
+      "no-restricted-syntax": [
+        "error",
+        { selector: `MemberExpression[property.name=${bannedNames}]`, message: platformFile },
+        {
+          selector: `VariableDeclarator[init.callee.name='require'][init.arguments.0.value=${platformModules}] > ObjectPattern > Property[key.name=${bannedNames}]`,
+          message: platformFile,
+        },
+      ],
+    },
+  },
   {
     files: ["packages/core/src/**/*.ts"],
     languageOptions: { parser },
