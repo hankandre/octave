@@ -18,6 +18,7 @@
     "samples:generate": "bash scripts/generate-samples.sh",
     "tv:prebuild": "node scripts/tv-prebuild.mjs",
     "tv:build": "cd apps/tv/android && ./gradlew :app:assembleRelease",
+    "tv:native:test": "node scripts/tv-native-test.mjs",
     "tv:apk:check": "node scripts/tv-apk-check.mjs",
     "lint": "node --import ./scripts/typescript-6-resolve.mjs node_modules/eslint/bin/eslint.js --max-warnings 0 packages/core/src apps/tv",
     "lint:boundaries": "node scripts/lint-boundaries.mjs",
