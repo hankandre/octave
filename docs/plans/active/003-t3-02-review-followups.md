@@ -5,10 +5,10 @@
 Record the T3-02 fresh-context review's medium fix and low findings so the owner and later tasks see them (T3-02).
 
 - [x] Medium, item 4 wording: `.github/workflows/ci.yml`, `.github/dependabot.yml`, `tasks/backlog.jsonl` and the spec no longer say `tv` is required before ruleset 26769544 lists it
-- [ ] Medium, item 4 gate (a): the ci.yml `tv` job green on the PR head commit, its `pnpm tv:e2e` step passing, and `release-evidence/tv/e2e-conformance.txt` in `octave-tv-evidence` showing `url total=202 passed=202`, a device-id line with passed equal to total, and `host url=expo-builtin engine=hermes` (Ship phase)
-- [ ] Medium, item 4 gate (b): `gh api repos/{owner}/{repo}/rulesets/26769544 --jq '.rules[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context'` lists `tv` (owner action; no agent edits the ruleset)
+- [x] Medium, item 4 gate (a): the ci.yml `tv` job green on the PR head commit, its `pnpm tv:e2e` step passing, and `release-evidence/tv/e2e-conformance.txt` in `octave-tv-evidence` showing `url total=202 passed=202`, a device-id line with passed equal to total, and `host url=expo-builtin engine=hermes` (Ship phase)
+- [x] Medium, item 4 gate (b): `gh api repos/{owner}/{repo}/rulesets/26769544 --jq '.rules[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context'` lists `tv` (owner action; no agent edits the ruleset)
 - [x] Lows below logged as follow-ups, not fixed
-- [ ] T3-02 set to done with evidence naming the green `tv` run and the ruleset read
+- [x] T3-02 set to done with evidence naming the green `tv` run and the ruleset read
 - [x] `pnpm check` is green
 
 ## Context and domains touched
@@ -63,3 +63,4 @@ Re-verification, 2026-11-21 (head 93e6b5a4, no code change):
 ## Outcome & retrospective
 
 Open.
+- 2026-11-21: Item 4 (a) met on PR #251 head 985ed7dc, run https://github.com/hankandre/octave/actions/runs/44941946329: tv green, e2e-conformance.txt shows host url=expo-builtin engine=hermes, url 202/202, device-id 13/13. Item 4 (b): the owner approved adding tv; the coordinator added it with the owner's go-ahead, and the ruleset read now lists checks, dependency-review, tripwire, tv.

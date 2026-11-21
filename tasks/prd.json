@@ -824,10 +824,10 @@
             "pnpm tv:e2e runs this device test in the CI emulator job, and the job is required"
           ],
           "verify": "pnpm check && pnpm tv:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit 21e364fe (after 7d9579bb): review fix rewords tv-required claims until ruleset 26769544 lists tv; lows in plan 003. pnpm check green (2583+616 tests); check-red T3-02 --expect green: items 1-3 green. Earlier own API 36 TV emulator run: tv:e2e url 202/202, device-id 13/13, host url=expo-builtin engine=hermes. Waiting: tv job green on the PR head, and the owner adding tv to ruleset 26769544 before merge. Untested: Shield, other images, tvOS."
+          "passes": true,
+          "evidence": "PR #251, run https://github.com/hankandre/octave/actions/runs/44941946329 at head 985ed7dc: tv job green; octave-tv-evidence e2e-conformance.txt: host url=expo-builtin engine=hermes, url 202/202, device-id 13/13. Ruleset 26769544 read lists checks, dependency-review, tripwire, tv (added 2026-11-21, owner-approved). pnpm check green; check-red items 1-3 green. Untested: Shield, other images, tvOS."
         },
         {
           "id": "T3-03",
