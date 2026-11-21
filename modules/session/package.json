@@ -1,0 +1,7 @@
+{
+  "name": "@octave/session",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "description": "Octave's native session module: the one authenticated OkHttp client (T3-03); sign-in and requests follow in T3-05."
+}

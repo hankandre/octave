@@ -15,3 +15,5 @@ apps/tv/android/
 apps/tv/ios/
 apps/tv/.expo/
 apps/tv/dist/
+modules/*/android/build/
+modules/*/android/.cxx/
