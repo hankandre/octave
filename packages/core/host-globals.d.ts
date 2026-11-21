@@ -2,8 +2,8 @@
 // library does not declare. Adding a global here is an architecture change
 // (ARCHITECTURE.md section 2); prefer a port in src/ports/.
 //
-// Every host must provide these five (on the TV, URL comes from a polyfill,
-// decision 0004):
+// Every host must provide these five (on the TV, URL and URLSearchParams are
+// Expo's built-in whatwg-url-minimum, installed by Expo's runtime; T3-02):
 //   URL, URLSearchParams, AbortController, AbortSignal, console.
 //
 // Only the reference adapters in src/adapters/ use the next seven. A host that

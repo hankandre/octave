@@ -54,8 +54,8 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
 - Jellyscale fixture check (needs the fixture servers up and set up): `pnpm fixture:check-jellyscale` re-probes the pinned Jellyscale and fails if its endpoint inventory changed.
 - Task CLI: `pnpm task next`, `pnpm task show <id>`, `pnpm task list [--status s] [--phase p]`, `pnpm task set <id> --status s [--owner o] [--evidence-file f]`.
-- TV app (needs the Android SDK in `ANDROID_HOME` and the JDK `mise.toml` names): `pnpm tv:prebuild` (generate `apps/tv/android`), `pnpm tv:build` (release APK), `pnpm tv:apk:check` (its badging), `pnpm tv:native:test` (the app's and modules' JVM tests), and `ANDROID_SERIAL=<your own emulator> pnpm tv:smoke` (first focus on an Android TV emulator)
-- Not yet built: `pnpm tv:e2e` (T3-02), `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
+- TV app (needs the Android SDK in `ANDROID_HOME` and the JDK `mise.toml` names): `pnpm tv:prebuild` (generate `apps/tv/android`), `pnpm tv:build` (release APK), `pnpm tv:apk:check` (its badging), `pnpm tv:native:test` (the app's and modules' JVM tests), `ANDROID_SERIAL=<your own emulator> pnpm tv:smoke` (first focus on an Android TV emulator), `pnpm tv:e2e:build` (the e2e APK), and `ANDROID_SERIAL=<your own emulator> pnpm tv:e2e` (the core's conformance suites under Hermes on the emulator; builds the e2e APK when it is missing or stale)
+- Not yet built: `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
 
 ## Hard rules
 
@@ -128,7 +128,7 @@ Dependencies
 
 - Add a focused test with every behavior change.
 - Place unit tests beside modules as `*.test.ts`.
-- Use Vitest for the core, JVM tests for Kotlin, and the emulator tests T3-02 and T3-10 add for the app.
+- Use Vitest for the core, JVM tests for Kotlin, and the emulator tests for the app (`pnpm tv:e2e`, T3-02; the focus test, T3-10).
 - Never skip, weaken, or delete a test to pass a check.
 - Never change or delete a frozen test (a file listed in `docs/specs/<TASK-ID>.tests.json`); report a wrong one and the Product Owner step rules.
 - Never stub a function to make a build pass.
