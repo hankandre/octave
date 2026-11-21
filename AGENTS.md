@@ -14,6 +14,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 
 - The core is the pnpm workspace package `@octave/core` in `packages/core` (`packages/core/src/domain/`, `packages/core/src/jellyfin/`, `packages/core/src/player/`, `packages/core/src/`) with its fixtures in `packages/core/tests/fixtures/`.
 - The TV app is the workspace package `@octave/tv` in `apps/tv` (T3-01): Expo SDK 58 on react-native-tvos. `pnpm tv:prebuild` generates `apps/tv/android/`, which is never committed; change native settings only through `apps/tv/app.config.ts` and the config plugins in `apps/tv/plugins/`. The app's JVM tests live in `apps/tv/native/`.
+- The native session module is the workspace package `@octave/session` in `modules/session` (T3-03): an Expo module with no JavaScript surface yet, holding the one authenticated OkHttp client in `dev.octave.session.http`, with its JVM tests beside it. `pnpm tv:native:test` runs them; `node scripts/tv-native-test-only.mjs <filter>` runs one class.
 - Planned: `modules/player` (T8-01). Until a task creates a path, do not write rules or code that assume it.
 
 ## Tasks
