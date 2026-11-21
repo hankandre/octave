@@ -45,6 +45,7 @@ jobs:
       - run: pnpm audit --audit-level moderate
       - run: pnpm lint:boundaries
       - run: pnpm lint
+      - run: pnpm lint:network
       - run: pnpm lint:ghost-terms
       - run: pnpm lint:flow
       - run: pnpm test
