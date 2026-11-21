@@ -23,6 +23,15 @@ const platformFile = "Android-only. Put this in a `.android.ts` file with a sibl
 const bannedNames = `/^(${[...androidOnly, ...nativeModuleLoaders].join("|")})$/`;
 const platformModules = "/^(react-native|expo|expo-modules-core)$/";
 
+// Only the composition root constructs adapters (DOMAINS.md, Dependency rule 4): expo-crypto sits behind the core's
+// Crypto port, in apps/tv/src/host/ alone (T3-02).
+const hostOnly = { name: "expo-crypto", message: "expo-crypto is the Crypto port's adapter. Import hostCrypto from apps/tv/src/host/crypto.ts." };
+const platformPaths = [
+  { name: "react-native", importNames: androidOnly, message: platformFile },
+  { name: "expo-modules-core", importNames: nativeModuleLoaders, message: platformFile },
+  { name: "expo", importNames: nativeModuleLoaders, message: platformFile },
+];
+
 export default [
   {
     ignores: ["apps/tv/android/**", "apps/tv/ios/**", "apps/tv/.expo/**", "apps/tv/dist/**"],
@@ -36,16 +45,7 @@ export default [
     files: ["apps/tv/**/*.{ts,tsx}"],
     ignores: ["apps/tv/**/*.android.ts", "apps/tv/**/*.android.tsx"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            { name: "react-native", importNames: androidOnly, message: platformFile },
-            { name: "expo-modules-core", importNames: nativeModuleLoaders, message: platformFile },
-            { name: "expo", importNames: nativeModuleLoaders, message: platformFile },
-          ],
-        },
-      ],
+      "no-restricted-imports": ["error", { paths: [...platformPaths, hostOnly] }],
       // The same names reached without a named import: `RN.ToastAndroid` and `require("react-native").NativeModules`.
       "no-restricted-syntax": [
         "error",
@@ -55,6 +55,22 @@ export default [
           message: platformFile,
         },
       ],
+    },
+  },
+  // Flat config replaces a rule's options, so the host folder restates the platform paths without expo-crypto.
+  {
+    files: ["apps/tv/src/host/**/*.{ts,tsx}"],
+    ignores: ["apps/tv/**/*.android.ts", "apps/tv/**/*.android.tsx"],
+    rules: {
+      "no-restricted-imports": ["error", { paths: platformPaths }],
+    },
+  },
+  // Files the block above does not cover (Android-only files and JavaScript) still cannot reach expo-crypto.
+  {
+    files: ["apps/tv/**/*.android.ts", "apps/tv/**/*.android.tsx", "apps/tv/**/*.{js,jsx,mjs,cjs}"],
+    ignores: ["apps/tv/src/host/**"],
+    rules: {
+      "no-restricted-imports": ["error", { paths: [hostOnly] }],
     },
   },
   {
