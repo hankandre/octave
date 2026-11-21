@@ -21,9 +21,9 @@ description: Run Octave's checks and record evidence before asking for review. U
 
 - Run `pnpm tv:native:test`.
 
-## When the app changed (from T3-02)
+## When the app changed
 
-- Run `pnpm tv:e2e` on the emulator.
+- Run `ANDROID_SERIAL=<your own emulator> pnpm tv:e2e`; it builds the e2e APK (`pnpm tv:e2e:build`) when it is missing or stale.
 - For visible changes run `pnpm tv:visual` (T3-07) and attach the changed images.
 
 ## When the app sends a request (from T3-05)

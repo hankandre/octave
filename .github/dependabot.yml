@@ -11,8 +11,8 @@ updates:
       # dependency-cruiser and @typescript-eslint/parser need TypeScript below 7; a 7.x alias would break both lints.
       - dependency-name: "typescript-6"
         update-types: ["version-update:semver-major"]
-      # apps/tv's packages (docs/specs/T3-01.md, Dependencies): the tv job is not a required check until T3-02, so
-      # auto-merge could land a bump it never built. They move only with an Expo SDK upgrade until then.
+      # apps/tv's packages (docs/specs/T3-01.md, Dependencies): they move only with an Expo SDK upgrade. T3-02 makes
+      # the tv job required; which SDK-coupled packages may then move on their own is a backlog line (T3-02).
       - dependency-name: "expo"
       - dependency-name: "expo-*"
       - dependency-name: "babel-preset-expo"

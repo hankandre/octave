@@ -126,7 +126,7 @@ mise exec -- pnpm check
 |---|---|---|
 | Negotiation, reporting, or anything the server sees | `pnpm test:tripwire` against the pinned servers | today |
 | Kotlin or an Expo native module | `pnpm tv:native:test` (JVM tests) | today |
-| The core on the device | `pnpm tv:e2e` (Hermes conformance, focus test) | T3-02 |
+| The app, or the core on the device | `pnpm tv:e2e` on your own emulator (Hermes conformance today; the focus test from T3-10) | today; T3-10 |
 | Any request the app sends | `pnpm tv:wire` against the pinned Jellyscale | T3-05 |
 | Anything visible | `pnpm tv:visual`; attach the changed images | T3-07 |
 
@@ -171,7 +171,7 @@ Octave's verifiers, from cheapest to most authoritative. New work should land a 
 | Contract | Recorded Jellyfin 10.11 and 12.4 responses and Jellyscale as fixtures; gateway tests assert request bodies *and* query strings | API drift, silent conversion flags | today |
 | Shared vectors | `packages/core/tests/fixtures/hls-master-urls.json`, `hls-playlists.json`, `host-classes.json`: every validator on every platform passes all three | Drift between the TypeScript rules and each native validator | today (TypeScript); Kotlin T3-03, T8-08 |
 | **Server tripwire** | `pnpm test:tripwire` (`tests/integration/tripwire.ts`; expectations in `tripwire-expectations.ts`) plays every sample through the real gateway against pinned Jellyfin 10.11.7, Jellyfin 12.4 and Jellyscale (`tests/integration/docker-compose.yml`), watching ffmpeg in the container, `/Sessions` `TranscodingInfo`, the Jellyfin transcode logs, and on Jellyscale the `transcode_jobs` table. Under full capabilities every playable sample must direct play with no job and the header on every request; the disc folder, the ISO, and a forced-limit run must convert with an indicator reason over same-origin, credential-free HLS; no job may outlive the stopped report by 10 s. Three capability sets (`no-h264`, `no-hevc`, `no-av1`) each lack one video codec: Jellyfin must convert the lacking sample with the client's reason and the owner's chip text, Jellyscale must refuse it with `device-cannot-play` until T10-08. One wire recorder checks every request of every server for the header, no token in a URL, no redirect followed and no other origin | **The core invariant, independent of any UI** | today |
-| Device | The core's conformance suite under Hermes on the emulator; the 500-press scripted focus test | Host divergence (URL, crypto); focus jumps | T3-02, T3-10 |
+| Device | `pnpm tv:e2e`: the core's URL and DeviceId conformance suites under Hermes on the emulator; the 500-press scripted focus test | Host divergence (URL, crypto); focus jumps | today (conformance); T3-10 (focus) |
 | **Wire** | `pnpm tv:wire`: tagged tests on the emulator against the pinned Jellyscale record every request and fail on one without the header, a credential in a URL, a followed redirect, or another origin. A playback task passes only when its wire test passes | Token leaks and unauthenticated paths, end to end | T3-05, T10-01 |
 | Visual | Fixture screens at 1920×1080 compared with CI baselines | Unintended look changes | T3-07 |
 | Shield (owner) | The owner's Nvidia Shield and a cheap Google TV box | HDR, passthrough, feel, performance budget | T0-06, the Shield checks |
