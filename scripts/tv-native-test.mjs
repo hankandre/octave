@@ -48,7 +48,7 @@ const sourceFiles = (dir) =>
     : false;
 
 // The projects whose tests count: :app, whose sources live under apps/tv/native, and each modules/<name>/android.
-function projects() {
+export function projects() {
   const app = {
     project: ":app",
     testSources: join(APP_DIR, "native", "app", "src", "test"),
@@ -70,7 +70,7 @@ function projects() {
   return [app, ...modules];
 }
 
-const reportsIn = (dirs) =>
+export const reportsIn = (dirs) =>
   dirs.flatMap((dir) =>
     existsSync(dir)
       ? readdirSync(dir)

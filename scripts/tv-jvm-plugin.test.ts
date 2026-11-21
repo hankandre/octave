@@ -61,6 +61,15 @@ describe("with-app-jvm-tests", () => {
     expect(plugin.addRootTask(once)).toBe(once);
   });
 
+  it("T3-03: filters every project's tests only when the root project has octave.tests", () => {
+    const block = plugin.addRootTask(ROOT_TEMPLATE).slice(ROOT_TEMPLATE.length);
+    expect(block).toContain('if (rootProject.hasProperty("octave.tests")) {');
+    expect(block).toContain("tasks.withType(Test).configureEach {");
+    expect(block).toContain("filter.includeTestsMatching(octaveTests)");
+    expect(block).toContain("filter.failOnNoMatchingTests = false");
+    expect(block.indexOf("includeTestsMatching")).toBeGreaterThan(block.indexOf('hasProperty("octave.tests")'));
+  });
+
   it("uses JUnit Jupiter through the 6.x BOM, not JUnit 4", () => {
     expect(plugin.JUNIT_BOM).toMatch(/^org\.junit:junit-bom:6\.\d+\.\d+$/);
     expect(plugin.addAppTests(APP_TEMPLATE)).not.toMatch(/junit:junit:4/);
