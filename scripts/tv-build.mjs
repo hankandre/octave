@@ -1,0 +1,123 @@
+// Builds the TV app's release APK (pnpm tv:build) or its e2e APK (pnpm tv:e2e:build, `--e2e`; T3-02). Both are the
+// release build type with a Hermes bundle; the e2e bundle also holds apps/tv/src/e2e/, which Metro empties unless
+// OCTAVE_E2E=1 (apps/tv/e2e-gate.js). The JavaScript bundle task is rerun every time, because Gradle tracks neither the
+// flag nor packages/core, and judgeBundle() proves the flavour of every bundle it packages. The e2e APK is moved to
+// apps/tv/dist/e2e/ with a stamp of e2eSourceHash(), so the release APK path never holds a harness build.
+// Run: node scripts/tv-build.mjs [--e2e]
+import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+import { RELEASE_APK } from "./tv-apk-check.mjs";
+import { ANDROID_DIR, APP_DIR, prebuild, prebuildIsCurrent } from "./tv-prebuild.mjs";
+
+const repo = fileURLToPath(new URL("..", import.meta.url));
+export const E2E_APK = join(APP_DIR, "dist", "e2e", "octave-tv-e2e.apk");
+export const E2E_STAMP = join(APP_DIR, "dist", "e2e", "octave-tv-e2e.hash");
+const MARKER = Buffer.from("OCTAVE_E2E", "latin1");
+const BUNDLE_DIR = join(ANDROID_DIR, "app", "build", "generated", "assets");
+const BUNDLE = join(BUNDLE_DIR, "react", "release", "index.android.bundle");
+
+// Returns `ERROR tv build: ...` lines; empty when a release bundle lacks the harness marker and an e2e bundle has it.
+export function judgeBundle(bytes, flavour) {
+  if (bytes.length === 0) return [`ERROR tv build: the ${flavour} bundle is empty`];
+  const hasHarness = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).includes(MARKER);
+  if (flavour === "release" && hasHarness) return ["ERROR tv build: the release bundle contains the e2e harness"];
+  if (flavour === "e2e" && !hasHarness) return ["ERROR tv build: the e2e bundle lacks the harness (was OCTAVE_E2E seen by Metro?)"];
+  return [];
+}
+
+const FIXTURES = ["host-classes.json", "hls-master-urls.json", "device-ids.json"].map((name) => `packages/core/tests/fixtures/${name}`);
+const GENERATED = ["android/", "ios/", "dist/", ".expo/"].map((dir) => `apps/tv/${dir}`);
+
+// The repository paths an e2e bundle is made from: the app outside its generated trees, the core's sources without
+// tests, the three fixture files and the lockfile.
+function isE2eInput(path) {
+  if (path === "pnpm-lock.yaml" || FIXTURES.includes(path)) return true;
+  if (path.split("/").includes("node_modules")) return false;
+  if (path.startsWith("packages/core/src/")) return !path.endsWith(".test.ts");
+  return path.startsWith("apps/tv/") && !GENERATED.some((dir) => path.startsWith(dir));
+}
+
+// A hash of what the e2e bundle is made from, over the files git tracks or would track (git-ignored files are left
+// out, so files a build writes never change it). `root` is the tree's root, the repository by default.
+export function e2eSourceHash(root = repo) {
+  const listed = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: root, maxBuffer: 64 * 1024 * 1024 })
+    .toString("utf8")
+    .split("\0");
+  const paths = [...new Set(listed)].filter((path) => path !== "" && isE2eInput(path) && existsSync(join(root, path))).sort();
+  const hash = createHash("sha256");
+  for (const path of paths) {
+    hash.update(path);
+    hash.update("\0");
+    hash.update(readFileSync(join(root, path)));
+    hash.update("\0");
+  }
+  return hash.digest("hex");
+}
+
+export function e2eApkIsCurrent() {
+  return existsSync(E2E_APK) && existsSync(E2E_STAMP) && readFileSync(E2E_STAMP, "utf8").trim() === e2eSourceHash();
+}
+
+function findBundle() {
+  if (existsSync(BUNDLE)) return BUNDLE;
+  const found = [];
+  const walk = (dir) => {
+    for (const entry of existsSync(dir) ? readdirSync(dir, { withFileTypes: true }) : []) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.name === "index.android.bundle") found.push(path);
+    }
+  };
+  walk(BUNDLE_DIR);
+  if (found.length !== 1) throw new Error(`expected one index.android.bundle under ${relative(repo, BUNDLE_DIR)}, found ${found.length}`);
+  return found[0];
+}
+
+// Builds one flavour. Returns the error lines; empty on success.
+export function buildTv({ e2e }) {
+  const flavour = e2e ? "e2e" : "release";
+  if (!prebuildIsCurrent()) {
+    console.log("tv build: apps/tv/android is missing or stale; running pnpm tv:prebuild");
+    if (prebuild() !== 0) return ["ERROR tv build: expo prebuild failed"];
+  }
+  // Hash the sources before the build, so the stamp names what the bundle was made from.
+  const sourceHash = e2e ? e2eSourceHash() : undefined;
+  const env = { ...process.env };
+  delete env.OCTAVE_E2E;
+  if (e2e) env.OCTAVE_E2E = "1";
+  rmSync(RELEASE_APK, { force: true });
+  const gradle = spawnSync("./gradlew", [":app:createBundleReleaseJsAndAssets", "--rerun", ":app:assembleRelease"], { cwd: ANDROID_DIR, stdio: "inherit", env });
+  if (gradle.status !== 0) return [`ERROR tv build: Gradle exited with ${gradle.status ?? gradle.signal}`];
+
+  let bundle;
+  try {
+    bundle = findBundle();
+  } catch (error) {
+    return [`ERROR tv build: ${error.message}`];
+  }
+  const errors = judgeBundle(readFileSync(bundle), flavour);
+  if (errors.length > 0) {
+    rmSync(RELEASE_APK, { force: true });
+    return errors;
+  }
+  if (!existsSync(RELEASE_APK)) return [`ERROR tv build: Gradle wrote no APK at ${relative(repo, RELEASE_APK)}`];
+  if (!e2e) {
+    console.log(`tv build: release APK at ${relative(repo, RELEASE_APK)}`);
+    return [];
+  }
+  mkdirSync(join(APP_DIR, "dist", "e2e"), { recursive: true });
+  rmSync(E2E_STAMP, { force: true });
+  renameSync(RELEASE_APK, E2E_APK);
+  writeFileSync(E2E_STAMP, `${sourceHash}\n`);
+  console.log(`tv build: e2e APK at ${relative(repo, E2E_APK)}`);
+  return [];
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const errors = buildTv({ e2e: process.argv.slice(2).includes("--e2e") });
+  for (const error of errors) console.error(error);
+  if (errors.length > 0) process.exit(1);
+}

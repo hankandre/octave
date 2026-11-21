@@ -1,0 +1,175 @@
+// The TV app's device test (T3-02): install the e2e APK on the emulator ANDROID_SERIAL names, start it through the
+// leanback launcher category, read the OCTAVE_E2E lines its root writes (the core's URL and DeviceId conformance
+// suites and the host checks, under Hermes) and judge them. judgeConformance() is the oracle; the lines go to
+// release-evidence/tv/e2e-conformance.txt. The e2e APK is built first when it is missing or older than its sources.
+// Run: ANDROID_SERIAL=<emulator> node scripts/tv-e2e.mjs [apk]   (pnpm tv:e2e)
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
+import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
+import { E2E_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
+
+const FIXTURES = fileURLToPath(new URL("../packages/core/tests/fixtures/", import.meta.url));
+const EVIDENCE = fileURLToPath(new URL("../release-evidence/tv/", import.meta.url));
+const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
+const RUN_MS = 60_000;
+const PREFIX = "OCTAVE_E2E ";
+
+// A logcat line in any column format: `... <pid> <tid> <priority> <tag>: <message>` (as scripts/tv-first-focus.mjs).
+const LOGCAT = /\d+\s+\d+\s+[VDIWEFA]\s+([^:]*?)\s*:\s?(.*)$/;
+
+// The message of each ReactNativeJS line that starts with `OCTAVE_E2E `, in order.
+export function extractE2eLines(logcatLines) {
+  return logcatLines.flatMap((line) => {
+    const match = LOGCAT.exec(line);
+    if (match === null) return [];
+    const [, tag, message] = match;
+    const text = message.trim();
+    return tag === "ReactNativeJS" && text.startsWith(PREFIX) ? [text] : [];
+  });
+}
+
+// The vector counts a full run must report, read from the shared files.
+export function expectedCounts() {
+  const read = (name) => JSON.parse(readFileSync(join(FIXTURES, name), "utf8"));
+  const hosts = read("host-classes.json");
+  const hls = read("hls-master-urls.json");
+  return { url: hosts.vectors.length + hls.vectors.length + hls.refusals.length, deviceId: read("device-ids.json").vectors.length };
+}
+
+const fields = (text) => Object.fromEntries([...text.matchAll(/(\S+?)=(\S+)/g)].map(([, key, value]) => [key, value]));
+
+// Returns `ERROR tv e2e: <reason>` lines; empty only for exactly one finished run with Expo's URL under Hermes, every
+// URL and DeviceId vector passing at the expected counts, good random ids and a working Clock.
+export function judgeConformance(lines, expected) {
+  const errors = [];
+  const fail = (reason) => errors.push(`ERROR tv e2e: ${reason}`);
+  const messages = lines.filter((line) => line.startsWith(PREFIX)).map((line) => line.slice(PREFIX.length).trim());
+  const withHead = (head) => messages.filter((message) => message === head || message.startsWith(`${head} `));
+
+  const starts = messages.filter((message) => message === "start conformance").length;
+  const dones = messages.filter((message) => message === "done").length;
+  if (starts === 0) fail("no start line; the run never began");
+  if (dones === 0) fail("no done line; the run did not finish");
+  if (starts > 1 || dones > 1) fail(`more than one run in the transcript (${starts} start lines, ${dones} done lines)`);
+
+  for (const message of messages) {
+    const threw = /^(\S+) threw$/.exec(message);
+    if (threw !== null) fail(`the ${threw[1]} section threw`);
+  }
+
+  const hosts = withHead("host");
+  if (hosts.length === 0) fail("no host line; the URL implementation and the engine are unknown");
+  else if (hosts.length > 1) fail(`${hosts.length} host lines; expected one`);
+  else {
+    const host = fields(hosts[0]);
+    if (host.url !== "expo-builtin") fail(`the URL under test is not Expo's built-in URL (url=${host.url ?? "missing"})`);
+    if (host.engine !== "hermes") fail(`the run was not under Hermes (engine=${host.engine ?? "missing"})`);
+  }
+
+  const counted = (head, total, what) => {
+    const failures = withHead(`${head}-fail`);
+    if (failures.length > 0) fail(`${failures.length} ${head}-fail line(s)`);
+    const summaries = withHead(head).filter((message) => message !== `${head} threw`);
+    if (summaries.length === 0) {
+      if (!messages.includes(`${head} threw`)) fail(`no ${head} line`);
+      return;
+    }
+    if (summaries.length > 1) fail(`${summaries.length} ${head} lines; expected one`);
+    const summary = fields(summaries[0]);
+    const reported = Number(summary.total);
+    const passed = Number(summary.passed);
+    if (!Number.isInteger(reported) || !Number.isInteger(passed)) fail(`the ${head} line has no total or passed count`);
+    else {
+      if (reported !== total) fail(`${head} total=${reported}, but ${what} hold ${total} vectors`);
+      if (passed !== reported) fail(`${head} passed=${passed} of total=${reported}`);
+    }
+  };
+  counted("url", expected.url, "the two shared URL files");
+  counted("device-id", expected.deviceId, "device-ids.json");
+
+  const crypto = withHead("crypto").filter((message) => message !== "crypto threw");
+  if (crypto.length === 0) {
+    if (!messages.includes("crypto threw")) fail("no crypto line; random ids were not checked");
+  } else if (crypto.length > 1 || crypto[0] !== "crypto random-id=ok") fail(`crypto: ${crypto.join(" | ")}; random-id must be ok`);
+
+  const clock = withHead("clock").filter((message) => message !== "clock threw");
+  if (clock.length === 0) {
+    if (!messages.includes("clock threw")) fail("no clock line; the Clock was not checked");
+  } else {
+    const parts = fields(clock[0]);
+    const bad = ["now", "after", "every"].filter((part) => parts[part] !== "ok");
+    if (clock.length > 1 || bad.length > 0) fail(`clock: ${bad.map((part) => `${part}=${parts[part] ?? "missing"}`).join(" ") || "more than one line"}; every part must be ok`);
+  }
+  return errors;
+}
+
+function fail(message) {
+  console.error(`ERROR tv e2e: ${message}`);
+  process.exit(1);
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function main(args) {
+  // The serial chooses the device; it is never printed or written.
+  const serial = process.env.ANDROID_SERIAL;
+  if (!serial) fail("set ANDROID_SERIAL to the emulator's serial; this script never picks a device itself");
+  let adbPath;
+  try {
+    adbPath = platformTool(androidSdk(), "adb");
+  } catch (error) {
+    fail(error.message);
+  }
+  const adb = (...rest) => spawnSync(adbPath, ["-s", serial, ...rest], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const shell = (...rest) => adb("shell", ...rest);
+
+  let apk = args[0];
+  if (apk === undefined) {
+    apk = E2E_APK;
+    if (!e2eApkIsCurrent()) {
+      console.log("tv e2e: the e2e APK is missing or older than its sources; running pnpm tv:e2e:build");
+      const errors = buildTv({ e2e: true });
+      if (errors.length > 0) {
+        for (const error of errors) console.error(error);
+        process.exit(1);
+      }
+    }
+  }
+  if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:e2e:build first`);
+  if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
+
+  const install = adb("install", "-r", apk);
+  if (install.status !== 0) fail(`adb install failed: ${(install.stdout + install.stderr).trim().split("\n").pop()}`);
+  shell("am", "force-stop", ANDROID_APPLICATION_ID);
+  shell("logcat", "-c");
+
+  const resolved = shell("cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN", "-c", LEANBACK, ANDROID_APPLICATION_ID);
+  const component = resolved.stdout.trim().split("\n").pop()?.trim() ?? "";
+  if (!component.startsWith(`${ANDROID_APPLICATION_ID}/`)) fail(`the leanback launcher category resolves to "${component}", not an activity of ${ANDROID_APPLICATION_ID}`);
+  shell("am", "start", "-a", "android.intent.action.MAIN", "-c", LEANBACK, "-n", component);
+
+  const read = () => extractE2eLines(shell("logcat", "-d", "-v", "threadtime", "ReactNativeJS:I", "*:S").stdout.split("\n"));
+  let lines = [];
+  for (const deadline = Date.now() + RUN_MS; Date.now() < deadline; await sleep(500)) {
+    lines = read();
+    if (lines.includes(`${PREFIX}done`)) break;
+  }
+  lines = read();
+  shell("am", "force-stop", ANDROID_APPLICATION_ID);
+  mkdirSync(EVIDENCE, { recursive: true });
+  writeFileSync(join(EVIDENCE, "e2e-conformance.txt"), `${lines.join("\n")}\n`);
+
+  const expected = expectedCounts();
+  const errors = judgeConformance(lines, expected);
+  if (errors.length > 0) {
+    console.error(lines.join("\n"));
+    for (const error of errors) console.error(error);
+    process.exit(1);
+  }
+  console.log(`tv e2e: url ${expected.url}/${expected.url}, device-id ${expected.deviceId}/${expected.deviceId}, host ok`);
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));
