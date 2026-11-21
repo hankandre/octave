@@ -851,10 +851,10 @@
             "MockWebServer tests cover each rule above with a second server standing in for the other origin"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "In progress, PR #254 (commit 659aeb74). CI green on the PR head: checks, dependency-review, tripwire, tv (run 44953929762). Local at 659aeb74: pnpm check exit 0; tv:native:test 169 tests, 0 failed. Blocked on two human gates: Product Owner's logged reason for item 1's reading and the task fencing the React Native/Expo clients (backlog 162); owner keeps or vetoes the OkHttp BOM moving okhttp-urlconnection to 5.5.1 (backlog 164). Both lines exist only on this branch, not on main. Shield, emulator e2e and pinned Jellyscale not run."
+          "passes": true,
+          "evidence": "PR #254. CI green on 659aeb74 (run https://github.com/hankandre/octave/actions/runs/44953929762: checks, dependency-review, tripwire, tv); final head re-runs all four as required checks before merge. Local at 659aeb74: pnpm check exit 0; tv:native:test 169 tests, 0 failed. Gates closed 2026-11-21: Product Owner accepted item 1 as Octave's own source, T3-04 items 6-7 fence Expo/React Native clients (product-owner-log); okhttp-urlconnection BOM alignment kept (decisions-T3-03.md, owner may veto). Untested: Shield, emulator e2e, pinned Jellyscale."
         },
         {
           "id": "T3-15",
