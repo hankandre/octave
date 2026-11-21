@@ -1,0 +1,22 @@
+{
+  "task": "T3-02",
+  "files": [
+    "scripts/tv-host.test.ts",
+    "scripts/tv-e2e.test.ts",
+    "packages/core/src/conformance/device-id-conformance.test.ts",
+    "packages/core/tests/fixtures/device-ids.json"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-host.test.ts", "-t", "T3-02 item 1:"] },
+    { "item": 2, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-e2e.test.ts", "-t", "T3-02 item 2:"] },
+    {
+      "item": 3,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/conformance/device-id-conformance.test.ts", "-t", "T3-02 item 3:"]
+    },
+    {
+      "item": 4,
+      "gate": "ci",
+      "why": "A release and an e2e APK built with prebuild, Gradle and the Android SDK, and two emulator boots, take longer than the red gate's ten minutes, and a test cannot read a repository setting. Item 2's tests bind the static half (the root scripts tv:e2e and tv:e2e:build, the run: pnpm tv:e2e:build step and the second emulator step with script: pnpm tv:e2e). Evidence, both parts: (a) the tv job of ci.yml green on the pull request's head commit, with its pnpm tv:e2e step passing and release-evidence/tv/e2e-conformance.txt in the octave-tv-evidence artifact showing url total=202 passed=202, the device-id line with passed equal to total, and the host line url=expo-builtin engine=hermes; (b) gh api repos/{owner}/{repo}/rulesets/26769544 --jq '.rules[] | select(.type==\"required_status_checks\") | .parameters.required_status_checks[].context' lists tv. Part (b) is the owner's action: the owner adds tv to the ruleset once the job is green; no agent edits the ruleset, and the shipping agent only confirms it with that read."
+    }
+  ]
+}
