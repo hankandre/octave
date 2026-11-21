@@ -125,7 +125,7 @@ mise exec -- pnpm check
 | Change | Command | From |
 |---|---|---|
 | Negotiation, reporting, or anything the server sees | `pnpm test:tripwire` against the pinned servers | today |
-| Kotlin or an Expo native module | `pnpm tv:native:test` (JVM tests) | T3-01 |
+| Kotlin or an Expo native module | `pnpm tv:native:test` (JVM tests) | today |
 | The core on the device | `pnpm tv:e2e` (Hermes conformance, focus test) | T3-02 |
 | Any request the app sends | `pnpm tv:wire` against the pinned Jellyscale | T3-05 |
 | Anything visible | `pnpm tv:visual`; attach the changed images | T3-07 |
@@ -165,9 +165,9 @@ Octave's verifiers, from cheapest to most authoritative. New work should land a 
 
 | Level | Oracle | Catches | From |
 |---|---|---|---|
-| Type | TypeScript strict; Kotlin types | Shape errors | today; Kotlin T3-01 |
+| Type | TypeScript strict; Kotlin types | Shape errors | today |
 | Lint | dependency-cruiser layer rules, ESLint, the ghost-term check; the native network build check | Layering, platform leaks, desktop-era text; default Media3 data sources, stray HTTP clients | today; T3-04 |
-| Unit | Vitest on the core in Node; JVM tests for Kotlin | Logic, policy flags, URL rules, redaction | today; T3-01 |
+| Unit | Vitest on the core in Node; JVM tests for Kotlin | Logic, policy flags, URL rules, redaction | today |
 | Contract | Recorded Jellyfin 10.11 and 12.4 responses and Jellyscale as fixtures; gateway tests assert request bodies *and* query strings | API drift, silent conversion flags | today |
 | Shared vectors | `packages/core/tests/fixtures/hls-master-urls.json`, `hls-playlists.json`, `host-classes.json`: every validator on every platform passes all three | Drift between the TypeScript rules and each native validator | today (TypeScript); Kotlin T3-03, T8-08 |
 | **Server tripwire** | `pnpm test:tripwire` (`tests/integration/tripwire.ts`; expectations in `tripwire-expectations.ts`) plays every sample through the real gateway against pinned Jellyfin 10.11.7, Jellyfin 12.4 and Jellyscale (`tests/integration/docker-compose.yml`), watching ffmpeg in the container, `/Sessions` `TranscodingInfo`, the Jellyfin transcode logs, and on Jellyscale the `transcode_jobs` table. Under full capabilities every playable sample must direct play with no job and the header on every request; the disc folder, the ISO, and a forced-limit run must convert with an indicator reason over same-origin, credential-free HLS; no job may outlive the stopped report by 10 s. Three capability sets (`no-h264`, `no-hevc`, `no-av1`) each lack one video codec: Jellyfin must convert the lacking sample with the client's reason and the owner's chip text, Jellyscale must refuse it with `device-cannot-play` until T10-08. One wire recorder checks every request of every server for the header, no token in a URL, no redirect followed and no other origin | **The core invariant, independent of any UI** | today |
@@ -268,7 +268,7 @@ Three MCP servers let agents find code without reading whole files. **Rule: loca
 | **serena** (LSP-backed symbols) | `find_symbol`, `get_symbols_overview`, `find_referencing_symbols`, `rename_symbol` | Outlining a file before reading it; impact analysis; safe renames during the `packages/core` move (T2-02) |
 | **codebase-memory-mcp** (graph) | `get_architecture`, `search_graph`, `trace_path`, `detect_changes` | Architecture overviews, call paths across layers, the symbols a diff touches |
 
-Serena runs the TypeScript language server (`.serena/project.yml`); add Kotlin when T3-01 brings Kotlin source. After large moves, check codebase-memory's `check_index_coverage` before trusting a graph answer.
+Serena runs the TypeScript and Kotlin language servers (`.serena/project.yml`). After large moves, check codebase-memory's `check_index_coverage` before trusting a graph answer.
 
 ## Parallel agents
 

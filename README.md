@@ -21,6 +21,16 @@ pnpm check
 
 `pnpm check` runs the import-boundary lint, ESLint, the ghost-term check, the core's tests in Node, the type-check, and the task workflow's tests.
 
+The TV app in `apps/tv` also needs the Android SDK (`ANDROID_HOME`) and Temurin 17 (`mise.toml`). Build and check its release APK, run its JVM tests, and run the first-focus smoke test on an Android TV emulator of your own:
+
+```sh
+mise exec -- pnpm tv:prebuild
+mise exec -- pnpm tv:native:test
+mise exec -- pnpm tv:build
+mise exec -- pnpm tv:apk:check
+ANDROID_SERIAL=<your emulator> mise exec -- pnpm tv:smoke
+```
+
 The server tripwire plays generated samples through the gateway against pinned Jellyfin 10.11, Jellyfin 12.4 and Jellyscale servers in Docker, once with full device capabilities and once for each of three capability sets that lack a video codec:
 
 ```sh
