@@ -121,8 +121,7 @@ jobs:
   # first-focus smoke test on an Android TV emulator. T3-02 adds the e2e APK and
   # the device test (pnpm tv:e2e: the core's conformance suites under Hermes),
   # in a second emulator boot so the first one still tests the uploaded APK.
-  # T3-02 asks the owner to add tv to ruleset 26769544's required checks; it gates
-  # a merge only once the ruleset lists it (read the ruleset, not this comment).
+  # Required on main by ruleset 26769544 since 2026-11-21 (T3-02, owner-approved).
   tv:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
