@@ -827,7 +827,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 7d9579bb (after 3c7295c1, cee2737e, 1fa2fa30, 5ccbee6b): DeviceId suite, host adapters, e2e build and pnpm tv:e2e, CI steps, docs. pnpm check green; check-red T3-02 --expect green: items 1-3 green. Own API 36 TV emulator: pnpm tv:smoke pass; pnpm tv:e2e \"url 202/202, device-id 13/13, host ok\", host url=expo-builtin engine=hermes; release bundle has no OCTAVE_E2E even with the flag set. Waiting: tv job green on the PR, and the owner adding tv to ruleset 26769544 before merge. Untested: Shield, other images, tvOS."
+          "evidence": "commit 21e364fe (after 7d9579bb): review fix rewords tv-required claims until ruleset 26769544 lists tv; lows in plan 003. pnpm check green (2583+616 tests); check-red T3-02 --expect green: items 1-3 green. Earlier own API 36 TV emulator run: tv:e2e url 202/202, device-id 13/13, host url=expo-builtin engine=hermes. Waiting: tv job green on the PR head, and the owner adding tv to ruleset 26769544 before merge. Untested: Shield, other images, tvOS."
         },
         {
           "id": "T3-03",
