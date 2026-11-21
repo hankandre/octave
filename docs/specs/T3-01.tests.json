@@ -1,0 +1,20 @@
+{
+  "task": "T3-01",
+  "files": [
+    "scripts/tv-app.test.ts",
+    "scripts/tv-apk-check.test.ts",
+    "scripts/tv-first-focus.test.ts",
+    "scripts/tv-native-test.test.ts",
+    "scripts/tv-platform.test.ts",
+    "scripts/fixtures/tv/badging-release.txt"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-app.test.ts", "-t", "T3-01 item 1:"] },
+    { "item": 2, "gate": "ci", "why": "A release APK needs prebuild, Gradle and the Android SDK, which take longer than the red gate's ten minutes. Evidence: the tv job of ci.yml green on the pull request's head commit with artifact octave-tv-release-apk, and its pnpm tv:apk:check and pnpm tv:smoke steps passing in that same run (items 3 and 4 applied to the real APK and emulator)." },
+    { "item": 3, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-apk-check.test.ts", "-t", "T3-01 item 3:"] },
+    { "item": 4, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-first-focus.test.ts", "-t", "T3-01 item 4:"] },
+    { "item": 5, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-native-test.test.ts", "-t", "T3-01 item 5:"] },
+    { "item": 6, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-platform.test.ts", "-t", "T3-01 item 6:"] },
+    { "item": 7, "gate": "review", "why": "A test cannot judge a maintainer's statement. The reviewer compares apps/tv/package.json, the tv job's actions and the JUnit coordinates with the spec's Dependencies tables, checks every package the install forced in has a row with its maintenance check, and re-reads the two rejected candidates. Item 1's test already requires every adopted pin and refuses every rejected package." }
+  ]
+}
