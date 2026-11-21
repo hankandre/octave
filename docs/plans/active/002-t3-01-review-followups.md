@@ -8,7 +8,7 @@ Record the T3-01 fresh-context review's medium fixes and low findings so the own
 - [ ] Medium, item 2: the ci.yml `tv` job green on the PR head commit, with artifact `octave-tv-release-apk` and its `pnpm tv:apk:check` and `pnpm tv:smoke` steps passing in that run (Ship phase; merge only after it)
 - [x] Lows below logged as follow-ups, not fixed
 - [ ] T3-01 set to done with evidence naming the green `tv` run
-- [ ] `pnpm check` is green
+- [x] `pnpm check` is green
 
 ## Context and domains touched
 
@@ -35,7 +35,7 @@ None adopted. The item 7 record covers modules `expo` already brings; each passe
 
 ## Surprises & discoveries
 
-`@expo/log-box` also reaches the network (`ExpoLogBoxSurfaceDelegate.kt:107`, through React Native's provider); the review named only fetch, file system and the DOM WebView.
+`@expo/log-box` also reaches the network (`ExpoLogBoxSurfaceDelegate.kt:107`, through React Native's provider), and `expo-modules-core` ships network-inspector interceptors (`ExpoNetworkInspectOkHttpInterceptors.kt:24`, `:62`); the review named only fetch, file system and the DOM WebView.
 
 Follow-ups (low, not fixed in T3-01):
 
@@ -46,7 +46,7 @@ Follow-ups (low, not fixed in T3-01):
 
 ## Validation evidence
 
-Milestone 1, 2026-11-21 (docs, plan and backlog only; no code, Kotlin or screen change, so `tv:native:test`, `tv:e2e`, `tv:visual` and the tripwire are not triggered):
+Milestone 1, 2026-11-21, rerun after the expo-modules-core row (docs, plan and backlog only; no code, Kotlin or screen change, so `tv:native:test`, `tv:e2e`, `tv:visual` and the tripwire are not triggered):
 
 - `mise exec -- pnpm check`: exit 0; core `Tests 2570 passed (2570)`, scripts `Tests 515 passed (515)`.
 - `node scripts/check-red.mjs T3-01 --expect green`: green [1,3,4,5,6], `"problems":[]`; items 2 (ci) and 7 (review) are gates.
