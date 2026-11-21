@@ -2,8 +2,11 @@
 // K1 to K10 read Octave's source; every message names the allowed alternative. A JVM test in pnpm tv:native:test
 // applies the same rules to Octave's compiled classes by type (apps/tv/native/.../NetworkPathsBytecodeTest.kt).
 // Run: node scripts/check-network-paths.mjs [--root <dir>]   (pnpm lint:network)
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { dirname, join, relative, sep } from "node:path";
+import { LINKED_NETWORK_PATHS } from "./linked-network-paths.mjs";
+
+export { LINKED_NETWORK_PATHS };
 import { fileURLToPath } from "node:url";
 
 const SEND_THROUGH = "Send through `OctaveHttp.callFactory(session)`. Octave has one `OkHttpClient`, built in `OctaveHttp.kt`.";
@@ -299,6 +302,104 @@ export function findSourceViolations(files) {
   return files.flatMap((file) => (file.path.startsWith("apps/tv/plugins/") ? scanPlugin(file) : scanKotlin(file)));
 }
 
+// --- the linked libraries (items 6 and 7) ------------------------------------------------------------------------
+
+// A Gradle source set that ships: every folder under src/ but the test ones.
+const shipsSourceSet = (name) => !/^(test|androidTest)/.test(name);
+
+/** Returns `true` when the Kotlin or Java `text` holds a form of NETWORK_OPENERS in code or as a full name in a string. */
+export function opensConnection(text) {
+  return splitSource(text).some(({ code, strings }) => NETWORK_OPENERS.some((name) => nameHits(name, code, strings)));
+}
+
+/**
+ * Lists each `.kt` and `.java` file of a package's Android source (`android/src/<set>` or `ReactAndroid/src/<set>`, every
+ * set but the test ones, never `build/`) that matches NETWORK_OPENERS. `packages` is `{ name, dir }[]`.
+ */
+export function findLinkedClients(packages) {
+  const found = [];
+  for (const { name, dir } of packages) {
+    for (const android of ["android", "ReactAndroid"]) {
+      const src = join(dir, android, "src");
+      if (!existsSync(src)) continue;
+      for (const set of readdirSync(src).sort()) {
+        if (!shipsSourceSet(set) || !statSync(join(src, set)).isDirectory()) continue;
+        const files = walk(join(src, set), (file) => /\.(kt|java)$/.test(file), (_full, folder) => folder === "build", []);
+        for (const full of files) {
+          if (opensConnection(readFileSync(full, "utf8"))) found.push({ package: name, file: toPosix(relative(dir, full)) });
+        }
+      }
+    }
+  }
+  return found;
+}
+
+/** Compares the inventory with the allowlist: an unlisted file, and an entry whose file no longer opens a connection. */
+export function judgeLinkedClients(found, allowlist) {
+  const key = (pkgName, file) => `${pkgName}\u0000${file}`;
+  const listed = new Set(allowlist.map((entry) => key(entry.package, entry.file)));
+  const seen = new Set(found.map((client) => key(client.package, client.file)));
+  const errors = [];
+  for (const client of found) {
+    if (!listed.has(key(client.package, client.file))) {
+      errors.push(
+        `ERROR network: ${client.package}/${client.file} opens its own HTTP path and is not on LINKED_NETWORK_PATHS. Add an entry with its reason, and a rule that refuses it in Octave's code, or remove the dependency.`,
+      );
+    }
+  }
+  for (const entry of allowlist) {
+    if (!seen.has(key(entry.package, entry.file))) {
+      errors.push(`ERROR network: LINKED_NETWORK_PATHS entry ${entry.id} names ${entry.file}, which no longer opens an HTTP path. Remove or correct the entry.`);
+    }
+  }
+  return errors;
+}
+
+// The folder of an installed package `name` as Node would find it from `fromDir`: <ancestor>/node_modules/<name>.
+function findPackage(name, fromDir) {
+  for (let dir = fromDir; ; dir = dirname(dir)) {
+    const candidate = join(dir, "node_modules", ...name.split("/"));
+    if (existsSync(join(candidate, "package.json"))) return realpathSync(candidate);
+    if (dirname(dir) === dir) return undefined;
+  }
+}
+
+/**
+ * The app's installed dependencies with their Android source: from apps/tv/package.json's `dependencies`, following
+ * each package's `dependencies` and installed `peerDependencies`. A workspace package (not under node_modules) is
+ * skipped, because the K rules read it. Returns `{ packages: { name, dir }[], errors }`; a regular dependency that is
+ * not installed is an error, never skipped.
+ */
+export function linkedPackages(root) {
+  const appManifest = join(root, "apps", "tv", "package.json");
+  const errors = [];
+  if (!existsSync(appManifest)) return { packages: [], errors: [`ERROR network: found no app manifest at apps/tv/package.json`] };
+  const seen = new Set();
+  const packages = [];
+  const queue = [{ dir: join(root, "apps", "tv"), manifest: JSON.parse(readFileSync(appManifest, "utf8")), app: true }];
+  while (queue.length > 0) {
+    const { dir, manifest, app } = queue.shift();
+    const wanted = [
+      ...Object.keys(manifest.dependencies ?? {}).map((name) => ({ name, peer: false })),
+      ...Object.keys(manifest.peerDependencies ?? {}).map((name) => ({ name, peer: true })),
+    ];
+    for (const { name, peer } of wanted) {
+      const found = findPackage(name, dir);
+      if (!found) {
+        const optional = peer || manifest.optionalDependencies?.[name] !== undefined;
+        if (!optional) errors.push(`ERROR network: ${app ? "apps/tv" : manifest.name} depends on ${name}, which is not installed`);
+        continue;
+      }
+      if (seen.has(found)) continue;
+      seen.add(found);
+      if (!found.split(sep).includes("node_modules")) continue; // a workspace package
+      packages.push({ name, dir: found });
+      queue.push({ dir: found, manifest: JSON.parse(readFileSync(join(found, "package.json"), "utf8")), app: false });
+    }
+  }
+  return { packages: packages.filter((pkg) => existsSync(join(pkg.dir, "android")) || existsSync(join(pkg.dir, "ReactAndroid"))), errors };
+}
+
 // --- the command --------------------------------------------------------------------------------------------------
 
 const toPosix = (path) => path.split("\\").join("/");
@@ -340,7 +441,12 @@ export function main(args = process.argv.slice(2)) {
   errors.push(...findSourceViolations(files));
   if (kotlin.length === 0) errors.push("ERROR network: read no Octave Kotlin or Java source; a run with nothing to read never passes");
   if (!files.some((file) => file.path === OCTAVE_HTTP)) errors.push(`ERROR network: did not read ${OCTAVE_HTTP}, the one client`);
-  console.log(`network: ${files.length} Octave files, 0 linked files, ${errors.length} violations`);
+  const linked = root ? linkedPackages(root) : { packages: [], errors: [] };
+  errors.push(...linked.errors);
+  const found = findLinkedClients(linked.packages);
+  if (linked.packages.length === 0) errors.push("ERROR network: found no linked package with Android source; a run with nothing to read never passes");
+  else errors.push(...judgeLinkedClients(found, LINKED_NETWORK_PATHS));
+  console.log(`network: ${files.length} Octave files, ${found.length} linked files, ${errors.length} violations`);
   for (const error of errors) console.error(error);
   return errors.length === 0 ? 0 : 1;
 }
