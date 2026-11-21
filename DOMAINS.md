@@ -2,7 +2,7 @@
 
 Octave's bounded contexts: what each owns, the language it uses, where its code lives, and which way dependencies may point. Use this to decide where new code goes and to scope agent tasks. A task that touches more than two domains probably needs a plan (`WORKFLOW.md`). Every task in `tasks/prd.json` names one of these domains.
 
-Paths: **Today** is where the code is on `main`. **Target** is where it moves: `packages/core` (done in T2-02), `apps/tv` (done in T3-01), `modules/player` (T8-01), and the native HTTP module (T3-03). A target path does not exist until its task lands.
+Paths: **Today** is where the code is on `main`. **Target** is where it moves: `packages/core` (done in T2-02), `apps/tv` (done in T3-01), `modules/player` (T8-01), and the native session module `modules/session` (done in T3-03). A target path does not exist until its task lands.
 
 ## Map
 
@@ -51,7 +51,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Server, ServerId, User, Account, Session, DeviceId, Access token, Quick Connect code, Server capabilities.
 
-**Today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `saveAccountLanguages` in `packages/core/src/jellyfin/gateway.ts`; `packages/core/src/domain/host-class.ts`, `packages/core/src/domain/server-connection.ts`, `packages/core/src/domain/server-discovery.ts` (the discovery port), `packages/core/src/domain/sign-in-failure.ts`; `packages/core/src/jellyfin/device-id.ts` (the DeviceId derivation, through the Crypto port in `packages/core/src/ports/crypto.ts`); the confirmation port in `packages/core/src/lan-http-confirmations.ts`; the Transport port in `packages/core/src/ports/transport.ts`, its reference adapter `packages/core/src/adapters/fetch-transport.ts`, and the header builder `packages/core/src/jellyfin/authorization-header.ts` (T2-04).
+**Today.** `JellyfinGateway.connect/login`, `normalizeServerUrl`, `saveAccountLanguages` in `packages/core/src/jellyfin/gateway.ts`; `packages/core/src/domain/host-class.ts`, `packages/core/src/domain/server-connection.ts`, `packages/core/src/domain/server-discovery.ts` (the discovery port), `packages/core/src/domain/sign-in-failure.ts`; `packages/core/src/jellyfin/device-id.ts` (the DeviceId derivation, through the Crypto port in `packages/core/src/ports/crypto.ts`); the confirmation port in `packages/core/src/lan-http-confirmations.ts`; the Transport port in `packages/core/src/ports/transport.ts`, its reference adapter `packages/core/src/adapters/fetch-transport.ts`, and the header builder `packages/core/src/jellyfin/authorization-header.ts` (T2-04). Natively, the session module `modules/session` (T3-03): the in-memory session registry and the one authenticated client in `dev.octave.session.http`, with no JavaScript surface yet.
 
 **Target.** `packages/core` for the rules and the gateway; the sign-in screens in `apps/tv`; the native session module (sign-in, the session registry, `request`; T3-03, T3-05), discovery (T4-01), and the Keystore credential store (T4-05) as native code behind core ports.
 
@@ -203,7 +203,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 | Concern | Owns | Today | Target |
 |---|---|---|---|
-| **Security & Redaction** | Token boundary, the one authenticated client, URL and playlist validation, redaction, canary tests | `packages/core/src/redact.ts`, `packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/domain/host-class.ts`, `packages/core/src/conformance/`, `packages/core/tests/fixtures/`, `docs/security.md` | `packages/core`, the native HTTP module (T3-03), `modules/player` (T8-08) |
+| **Security & Redaction** | Token boundary, the one authenticated client, URL and playlist validation, redaction, canary tests | `packages/core/src/redact.ts`, `packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/domain/host-class.ts`, `packages/core/src/conformance/`, `packages/core/tests/fixtures/`, `docs/security.md`; natively `modules/session/android/src/main/java/dev/octave/session/http/` (T3-03) | `packages/core`, `modules/session`, `modules/player` (T8-08) |
 | **Diagnostics** | The player's info sheet, decoder labels, exportable diagnostics that pass redaction | `packages/core/src/diagnostics.ts` | `apps/tv` (T3-01) and `modules/player` (T8-01) |
 | **Performance** | The budget (cold start, key to focus, janky frames, memory), Baseline Profile, image loading | n/a | T3-12, T3-13, T3-14 |
 | **Device lab** | The Shield and the cheap box, on-device checks | n/a | T0-06, the Shield checks |
