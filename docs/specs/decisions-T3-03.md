@@ -11,3 +11,9 @@ Why: its README says it "is not being actively developed for new features", but 
 Conditions:
 - Keep it on a watch list and re-read its status at the next phase check.
 - If it is archived, dropped from OkHttp releases, or stops getting fixes, replace it. The fallback is a small hand-written server on `java.net.ServerSocket`.
+
+## Does androidx.startup:startup-runtime pass the no-maintenance-mode rule?
+
+Decided 2026-11-21 by the coordinator; the owner may veto it.
+
+Yes. OkHttp 5's Android variant depends on `androidx.startup:startup-runtime` 1.2.0 (released 2024-09-18). It is not a new library: the T3-02 release APK already ships version 1.1.1, pulled in by the AndroidX libraries React Native uses. OkHttp 5 only moves it from 1.1.1 to 1.2.0. It is a small, finished AndroidX library in an active repository (androidx/androidx, not archived), with no maintenance-mode or supersession statement found. Keep it on watch with the other AndroidX libraries, and re-read it at the next phase check.
