@@ -52,6 +52,14 @@ Milestone 1, 2026-11-21 (comments, docs, plan and backlog only; no app, Kotlin o
 - `node scripts/check-red.mjs T3-02 --expect green`: green [1,2,3], `"problems":[]`; item 4 is a `ci` gate.
 - `pnpm lint:backlog`: `backlog ok`.
 
+Re-verification, 2026-11-21 (head 93e6b5a4, no code change):
+
+- `mise exec -- pnpm check`: exit 0; core `Tests 2583 passed (2583)`, scripts `Tests 616 passed (616)`, flow `pass 60 fail 0`.
+- `node scripts/check-red.mjs T3-02 --expect green`: green [1,2,3], `"problems":[]`.
+- `ANDROID_SERIAL=emulator-5560 pnpm tv:e2e` (own `fluster_tv` emulator, API 36): exit 0; `tv e2e: url 202/202, device-id 13/13, host ok`; `host url=expo-builtin engine=hermes`.
+- `gh pr list --head task/T3-02 --state all`: `[]`; the ruleset read lists `checks`, `dependency-review`, `tripwire` and no `tv`. Item 4 stays pending for the Ship phase.
+- Not tested: the Shield (Android 11), other emulator images and Android versions, tvOS, any Jellyfin or Jellyscale server (the task sends no request).
+
 ## Outcome & retrospective
 
 Open.
