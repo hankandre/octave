@@ -17,3 +17,11 @@ Conditions:
 Decided 2026-11-21 by the coordinator; the owner may veto it.
 
 Yes. OkHttp 5's Android variant depends on `androidx.startup:startup-runtime` 1.2.0 (released 2024-09-18). It is not a new library: the T3-02 release APK already ships version 1.1.1, pulled in by the AndroidX libraries React Native uses. OkHttp 5 only moves it from 1.1.1 to 1.2.0. It is a small, finished AndroidX library in an active repository (androidx/androidx, not archived), with no maintenance-mode or supersession statement found. Keep it on watch with the other AndroidX libraries, and re-read it at the next phase check.
+
+## Align React Native's okhttp-urlconnection with OkHttp 5.5.1 (backlog line 164)
+
+Decided 2026-11-21 by the coordinator; the owner may veto it.
+
+Keep the alignment. `modules/session` declares `platform("com.squareup.okhttp3:okhttp-bom:5.5.1")`, which moves React Native's `okhttp-urlconnection` from 4.9.2 to 5.5.1. Without it, React Native's cookie jar calls `okhttp3.internal.Util`, which OkHttp 5 removed, and a request to a host with a stored cookie throws `NoClassDefFoundError`. `CookieJarLinkTest` fails before the change and passes after it. Gradle resolves the Android variant (`okhttp-android` 5.5.1, no `okhttp-jvm`). The BOM is a list of version constraints from the same OkHttp release, with no code.
+
+Fencing React Native's networking instead is a larger scope question. It belongs to the Product Owner's ruling on which task fences the React Native and Expo clients (backlog line 162), not to this fix.
