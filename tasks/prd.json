@@ -854,7 +854,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "In progress, commit 690c6ae6 on task/T3-03 (not pushed). Review fixes done with tests: caller Host/Forwarded/X-Emby-*/X-MediaBrowser-* headers refused (CallerHeaderTest); OkHttp BOM aligns RN okhttp-urlconnection to 5.5.1 (CookieJarLinkTest; owner may veto, backlog 164); stricter one-client scan (OneClientScanTest). pnpm check exit 0; tv:native:test 169 tests, 0 failed; check-red green 8/8. Open: Product Owner's logged reason for item 1's reading (backlog 162); tv CI job on the PR. Shield untested; emulator runs not repeated at this docs-only commit."
+          "evidence": "In progress, PR #254 (commit 659aeb74). CI green on the PR head: checks, dependency-review, tripwire, tv (run 44953929762). Local at 659aeb74: pnpm check exit 0; tv:native:test 169 tests, 0 failed. Blocked on two human gates: Product Owner's logged reason for item 1's reading and the task fencing the React Native/Expo clients (backlog 162); owner keeps or vetoes the OkHttp BOM moving okhttp-urlconnection to 5.5.1 (backlog 164). Both lines exist only on this branch, not on main. Shield, emulator e2e and pinned Jellyscale not run."
         },
         {
           "id": "T3-15",
