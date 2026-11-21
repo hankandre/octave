@@ -851,10 +851,10 @@
             "MockWebServer tests cover each rule above with a second server standing in for the other origin"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "In progress, commit d47bb18a on task/T3-03 (not pushed). Milestones 1-6 done: modules/session owns the one OkHttp 5.5.1 client. pnpm check exit 0; pnpm tv:native:test 163 tests, 0 failed; check-red T3-03 --expect green: 8/8 green; tv:build, tv:apk:check, tv:smoke, tv:e2e pass on emulator-5580 (API 36). Open: Product Owner's logged reason for item 1's reading (backlog); tv CI job on the PR; owner decision on RN's okhttp-urlconnection 4.9.2 cookie jar vs OkHttp 5 (backlog). Shield untested."
         },
         {
           "id": "T3-15",
