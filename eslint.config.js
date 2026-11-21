@@ -31,30 +31,119 @@ const platformPaths = [
   { name: "expo-modules-core", importNames: nativeModuleLoaders, message: platformFile },
   { name: "expo", importNames: nativeModuleLoaders, message: platformFile },
 ];
+const platformSyntax = [
+  { selector: `MemberExpression[property.name=${bannedNames}]`, message: platformFile },
+  {
+    selector: `VariableDeclarator[init.callee.name='require'][init.arguments.0.value=${platformModules}] > ObjectPattern > Property[key.name=${bannedNames}]`,
+    message: platformFile,
+  },
+];
+
+// T3-04: no network path from the app's JavaScript (decision 0005). The app's transport is the native session module,
+// so no file under apps/tv (or a module's JavaScript, once modules/ is linted) sends, holds a token or names a header.
+// Flat config replaces a rule's options per file, so every apps/tv block below spreads these arrays into its own.
+// The ids T1 to T7 are the spec's (docs/specs/T3-04.md); scripts/network-lint.test.ts holds the messages. Each message
+// ends with its id because ESLint's default formatter drops a message's final full stop.
+const id = (rule, text) => `${text} (T3-04 ${rule})`;
+const sendsNothing = id(
+  "T1",
+  "The app sends nothing from JavaScript (decision 0005). Call the gateway in `@octave/core`; it sends through the Transport port and the native session module.",
+);
+const holdsNoToken = id("T2", "JavaScript holds no token and sends no header (decision 0005). Pass the session id; native code adds the header.");
+const bundledImagesOnly = id(
+  "T3",
+  'React Native\'s `Image` shows bundled assets only: `source={require("./file.png")}`. Server artwork goes through the native image view (T3-11); video through the PlayerEngine launch request.',
+);
+const ownHttpPath = id(
+  "T4",
+  "This package opens its own HTTP path, which cannot send the header. Use the gateway in `@octave/core` for data and the native image view (T3-11) for artwork.",
+);
+const noWebView = id("T5", "A WebView cannot send the header (invariant I7). Build the screen from the shared native controls.");
+const noFetchTransport = id(
+  "T7",
+  "The core's fetch transport sends from JavaScript over React Native's client, with a header built in JavaScript (decision 0005). Call the gateway in `@octave/core`; the app's transport is the native session module.",
+);
+
+const sendingGlobals = ["fetch", "XMLHttpRequest", "WebSocket", "EventSource"];
+const imageCalls = ["prefetch", "getSize", "getSizeWithHeaders", "queryCache"];
+// esquery's regex literals cannot hold `/`, so a slash is written \x2F.
+const ownHttpModules = "/^(expo\\x2Ffetch|expo-file-system(\\x2F.*)?|expo-asset(\\x2F.*)?|@expo\\x2Flog-box(\\x2F.*)?|@expo\\x2Fdom-webview(\\x2F.*)?|expo-image(\\x2F.*)?)$/";
+const fetchTransportModule = "/(^|\\x2F)adapters\\x2Ffetch-transport(\\.[cm]?[jt]s)?$/";
+const secretKeys = "/^(headers|authorization|token|accesstoken|apikey|api_key|x-emby-token|x-emby-authorization|x-mediabrowser-token)$/i";
+const imageSources = "/^(source|src|srcSet|defaultSource|loadingIndicatorSource)$/";
+
+const networkGlobals = sendingGlobals.map((name) => ({ name, message: sendsNothing }));
+const networkProperties = [
+  ...["globalThis", "global", "window"].flatMap((object) => sendingGlobals.map((property) => ({ object, property, message: sendsNothing }))),
+  ...imageCalls.map((property) => ({ object: "Image", property, message: bundledImagesOnly })),
+];
+const networkPaths = [
+  ...["expo/fetch", "expo-file-system", "expo-asset", "@expo/log-box", "@expo/dom-webview", "expo-image"].map((name) => ({ name, message: ownHttpPath })),
+];
+const networkPatterns = [
+  { group: ["expo-file-system/*", "expo-asset/*", "@expo/log-box/*", "@expo/dom-webview/*", "expo-image/*"], message: ownHttpPath },
+  { group: ["**/adapters/fetch-transport", "**/adapters/fetch-transport.*"], message: noFetchTransport },
+];
+const networkSyntax = [
+  // T2: a header or token as a property, a class field or a JSX attribute; the MediaBrowser header as text.
+  { selector: `Property[key.name=${secretKeys}]`, message: holdsNoToken },
+  { selector: `Property[key.value=${secretKeys}]`, message: holdsNoToken },
+  { selector: `PropertyDefinition[key.name=${secretKeys}]`, message: holdsNoToken },
+  { selector: `JSXAttribute[name.name=${secretKeys}]`, message: holdsNoToken },
+  { selector: "Literal[value=/MediaBrowser\\s[\\s\\S]*Token=/]", message: holdsNoToken },
+  { selector: "TemplateLiteral:has(TemplateElement[value.raw=/MediaBrowser\\s/]):has(TemplateElement[value.raw=/Token=/])", message: holdsNoToken },
+  // T3: React Native's Image takes bundled assets only.
+  {
+    selector: `JSXAttribute[name.name=${imageSources}]:not([value.type='JSXExpressionContainer'][value.expression.type='CallExpression'][value.expression.callee.name='require'][value.expression.arguments.length=1][value.expression.arguments.0.type='Literal'])`,
+    message: bundledImagesOnly,
+  },
+  { selector: "Property[key.name='uri']", message: bundledImagesOnly },
+  { selector: "Property[key.value='uri']", message: bundledImagesOnly },
+  { selector: `MemberExpression[object.property.name='Image'][property.name=/^(${imageCalls.join("|")})$/]`, message: bundledImagesOnly },
+  // T4 and T7 for require() and import(), which no-restricted-imports does not see.
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${ownHttpModules}]`, message: ownHttpPath },
+  { selector: `ImportExpression[source.value=${ownHttpModules}]`, message: ownHttpPath },
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${fetchTransportModule}]`, message: noFetchTransport },
+  { selector: `ImportExpression[source.value=${fetchTransportModule}]`, message: noFetchTransport },
+  // T5.
+  { selector: "ExpressionStatement[directive='use dom']", message: noWebView },
+];
+const networkImports = (paths) => ["error", { paths: [...paths, ...networkPaths], patterns: networkPatterns }];
+const networkRules = {
+  "no-restricted-globals": ["error", ...networkGlobals],
+  "no-restricted-properties": ["error", ...networkProperties],
+  "no-restricted-imports": networkImports([]),
+  "no-restricted-syntax": ["error", ...networkSyntax],
+};
+const appFiles = ["apps/tv/**/*.{ts,tsx,js,jsx,mjs,cjs}", "modules/*/src/**/*.{ts,tsx,js,jsx,mjs,cjs}", "modules/*/index.{ts,js}"];
 
 export default [
   {
     ignores: ["apps/tv/android/**", "apps/tv/ios/**", "apps/tv/.expo/**", "apps/tv/dist/**"],
   },
   {
-    files: ["apps/tv/**/*.{ts,tsx}"],
+    files: ["apps/tv/**/*.{ts,tsx}", "modules/*/src/**/*.{ts,tsx}", "modules/*/index.ts"],
     languageOptions: { parser, parserOptions: { ecmaFeatures: { jsx: true } } },
     linterOptions: { reportUnusedDisableDirectives: "error" },
+  },
+  // The app's JavaScript parses JSX too, so a JSX sample in a .js file meets the network rules, not a parse error.
+  {
+    files: ["apps/tv/**/*.{js,jsx,mjs,cjs}", "modules/*/src/**/*.{js,jsx,mjs,cjs}", "modules/*/index.js"],
+    languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+    linterOptions: { reportUnusedDisableDirectives: "error" },
+  },
+  // T3-04's network rules for every app file; the blocks below restate them beside the platform rules.
+  {
+    files: appFiles,
+    rules: networkRules,
   },
   {
     files: ["apps/tv/**/*.{ts,tsx}"],
     ignores: ["apps/tv/**/*.android.ts", "apps/tv/**/*.android.tsx"],
     rules: {
-      "no-restricted-imports": ["error", { paths: [...platformPaths, hostOnly] }],
+      "no-restricted-imports": networkImports([...platformPaths, hostOnly]),
       // The same names reached without a named import: `RN.ToastAndroid` and `require("react-native").NativeModules`.
-      "no-restricted-syntax": [
-        "error",
-        { selector: `MemberExpression[property.name=${bannedNames}]`, message: platformFile },
-        {
-          selector: `VariableDeclarator[init.callee.name='require'][init.arguments.0.value=${platformModules}] > ObjectPattern > Property[key.name=${bannedNames}]`,
-          message: platformFile,
-        },
-      ],
+      "no-restricted-syntax": ["error", ...platformSyntax, ...networkSyntax],
     },
   },
   // Flat config replaces a rule's options, so the host folder restates the platform paths without expo-crypto.
@@ -62,7 +151,7 @@ export default [
     files: ["apps/tv/src/host/**/*.{ts,tsx}"],
     ignores: ["apps/tv/**/*.android.ts", "apps/tv/**/*.android.tsx"],
     rules: {
-      "no-restricted-imports": ["error", { paths: platformPaths }],
+      "no-restricted-imports": networkImports(platformPaths),
     },
   },
   // Files the block above does not cover (Android-only files and JavaScript) still cannot reach expo-crypto.
@@ -70,7 +159,7 @@ export default [
     files: ["apps/tv/**/*.android.ts", "apps/tv/**/*.android.tsx", "apps/tv/**/*.{js,jsx,mjs,cjs}"],
     ignores: ["apps/tv/src/host/**"],
     rules: {
-      "no-restricted-imports": ["error", { paths: [hostOnly] }],
+      "no-restricted-imports": networkImports([hostOnly]),
     },
   },
   {
@@ -96,6 +185,8 @@ export default [
         { name: "crypto", message: takeCrypto },
         { name: "fetch", message: useTransport },
         { name: "XMLHttpRequest", message: useTransport },
+        { name: "WebSocket", message: id("T6", useTransport) },
+        { name: "EventSource", message: id("T6", useTransport) },
       ],
       "no-restricted-properties": [
         "error",
