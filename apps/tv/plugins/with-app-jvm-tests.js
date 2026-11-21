@@ -1,7 +1,8 @@
 // Adds Octave's JVM tests to the generated Gradle project (T3-01 item 5). It appends, once, to android/app/build.gradle:
 // the test sources under apps/tv/native/app/src/test/java, JUnit Jupiter through the JUnit BOM, the JUnit Platform on
 // the unit-test tasks, and two system properties the tests read; and to android/build.gradle the task
-// `octaveNativeTest`, which runs :app's unit tests and those of every project under the repository's modules/. AGP 9
+// `octaveNativeTest`, which runs :app's unit tests and those of every project under the repository's modules/, with an
+// optional test filter (-Poctave.tests=<filter>). AGP 9
 // creates unit-test tasks only for the tested build type, debug, so these are the testDebugUnitTest tasks; the tests
 // read defaultConfig, which both build types share.
 const { withAppBuildGradle, withProjectBuildGradle } = require("expo/config-plugins");
@@ -47,6 +48,16 @@ tasks.register("octaveNativeTest") {
             .collect { it.tasks.findByName("testDebugUnitTest") ?: it.tasks.findByName("test") }
             .findAll { it != null }
     })
+}
+// scripts/tv-native-test-only.mjs passes -Poctave.tests=<filter> to run one test class; without it nothing changes.
+if (rootProject.hasProperty("octave.tests")) {
+    def octaveTests = rootProject.property("octave.tests").toString()
+    allprojects {
+        tasks.withType(Test).configureEach {
+            filter.includeTestsMatching(octaveTests)
+            filter.failOnNoMatchingTests = false
+        }
+    }
 }
 // @octave-end octave-native-test
 `;
