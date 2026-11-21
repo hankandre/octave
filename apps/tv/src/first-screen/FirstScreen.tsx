@@ -2,7 +2,7 @@
 // skeleton poster tiles (DESIGN.md §7.17). Its first tile takes focus when the screen mounts, so the first D-pad press
 // moves focus instead of only leaving touch mode (T3-01 item 4). Each focus writes `OCTAVE_FOCUS tile-<n>` for the
 // smoke test's oracle (scripts/tv-first-focus.mjs).
-import { APP_NAME } from "../../../../packages/core/src/domain/app-identity";
+import { APP_NAME } from "@octave/core/src/domain/app-identity";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, sizes, typeTitle } from "./placeholder-values";
