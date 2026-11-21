@@ -895,7 +895,8 @@
             "It fails when TypeScript passes headers, a token or an Authorization value to an image, video or fetch call outside the transport adapter",
             "Each rule has a test with a failing and a passing sample, and the message names the allowed alternative",
             "The check runs in pnpm check and in CI",
-            "The check says, with a test per path, how it treats the HTTP paths Expo links into the APK: expo/fetch, expo-file-system's own OkHttpClient, expo-asset, @expo/log-box, @expo/dom-webview with the \"use dom\" directive, and expo-modules-core's network-inspector interceptors; each is refused or sits on a named allowlist with its reason, and the spec says whether the OkHttpClient rule scans Octave's source only or the built dex"
+            "The check says, with a test per path, how it treats the HTTP paths Expo links into the APK: expo/fetch, expo-file-system's own OkHttpClient, expo-asset, @expo/log-box, @expo/dom-webview with the \"use dom\" directive, and expo-modules-core's network-inspector interceptors; each is refused or sits on a named allowlist with its reason, and the spec says whether the OkHttpClient rule scans Octave's source only or the built dex",
+            "The check says, with a test per path, how it treats React Native's own networking, which never uses the one client: JavaScript fetch and XMLHttpRequest (NetworkingModule), WebSocket (WebSocketModule), a network source on React Native's Image (FrescoModule), and any call to OkHttpClientProvider; each is refused outside the transport adapter or sits on a named allowlist with its reason"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
