@@ -29,6 +29,9 @@ android {
 }
 
 dependencies {
+  // The BOM moves every OkHttp artifact in the APK to one version, so React Native's okhttp-urlconnection (its cookie
+  // jar) is 5.5.1 beside okhttp 5.5.1; at 4.9.2 it calls a class OkHttp 5 removed (apps/tv/native CookieJarLinkTest).
+  implementation platform("com.squareup.okhttp3:okhttp-bom:${okhttpVersion}")
   implementation "com.squareup.okhttp3:okhttp:${okhttpVersion}"
 
   testImplementation "com.squareup.okhttp3:mockwebserver3:${okhttpVersion}"
