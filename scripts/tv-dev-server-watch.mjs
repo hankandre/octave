@@ -1,7 +1,9 @@
 // The development-server watch (T3-19 item 2, spec "The development-server watch"): while `pnpm tv:smoke` starts the
 // release app, a listener holds the development server port on the host, reached from the device through
 // `adb reverse` (localhost) and, on an emulator, through 10.0.2.2. Control connections made from the device before the
-// app starts prove the watch can see it; any connection after them is the app's and fails the smoke test.
+// app starts prove the watch can see it; any connection after them is the app's and fails the smoke test. The watch has
+// three phases (T3-30): a connection before runControls() is called is a stray, counted apart; while runControls() runs
+// it is a control; after runControls() resolves it is the app's.
 //
 // The listener cannot tell emulators apart (every emulator's 10.0.2.2 is the host's loopback), so one smoke run per
 // host at a time.
@@ -21,13 +23,15 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
   const runner = openAdb({ adbPath: adb, serial });
   const runAdb = (args) => runner.runAsync(args);
   const lastOf = (run) => (run.stdout + run.stderr).trim().split("\n").pop() ?? "";
-  let controlPhase = true;
+  let phase = "before";
+  let strays = 0;
   let controlsSeen = 0;
   let appConnections = 0;
   const controlHosts = serial.startsWith("emulator-") ? ["localhost", "10.0.2.2"] : ["localhost"];
 
   const server = createServer((socket) => {
-    if (controlPhase) controlsSeen += 1;
+    if (phase === "before") strays += 1;
+    else if (phase === "controls") controlsSeen += 1;
     else appConnections += 1;
     socket.destroy();
   });
@@ -59,18 +63,23 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
 
   let stopped = null;
   return {
-    // Resolves to the failures of the control commands (empty when each exited 0). Every connection accepted before it
-    // resolves is a control; every one after is the app's.
+    // Resolves to the failures of the control commands (empty when each exited 0). A connection accepted while it runs is
+    // a control; one accepted before it was called is a stray; every one after it resolves is the app's.
     async runControls() {
+      phase = "controls";
       const runs = await Promise.all(
         controlHosts.map((host) => runAdb(["shell", `toybox nc -w 2 ${host} ${port} </dev/null`])),
       );
       for (const deadline = Date.now() + CONTROL_WAIT_MS; controlsSeen < controlHosts.length && Date.now() < deadline; ) await sleep(50);
-      controlPhase = false;
+      phase = "app";
       return runs.flatMap((run, i) => (run.code === 0 ? [] : [`the control to ${controlHosts[i]}:${port} exited ${run.code}: ${lastOf(run)}`]));
     },
     result() {
       return { controlsExpected: controlHosts.length, controlsSeen, appConnections };
+    },
+    // Connections made before runControls() was called: not counted as controls or as the app's.
+    strays() {
+      return strays;
     },
     stop() {
       stopped ??= (async () => {
@@ -82,8 +91,12 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
   };
 }
 
-/** Returns `ERROR tv smoke: …` lines; empty only when every control was seen and the app opened no connection. */
-export function judgeDevServerWatch({ controlsExpected, controlsSeen, appConnections }) {
+/**
+ * Returns `ERROR tv smoke: …` lines; empty only when every control was seen, no control command failed, no more
+ * connections than controls arrived while the controls ran, and the app opened no connection. A failed control command
+ * is an error whether or not its connection was seen, so a stray cannot stand in for a control that never connected.
+ */
+export function judgeDevServerWatch({ controlsExpected, controlsSeen, appConnections }, controlFailures = []) {
   const errors = [];
   if (controlsSeen < controlsExpected) {
     errors.push(
@@ -92,6 +105,12 @@ export function judgeDevServerWatch({ controlsExpected, controlsSeen, appConnect
   }
   if (appConnections > 0) {
     errors.push(`ERROR tv smoke: the release app opened ${appConnections} connection${appConnections === 1 ? "" : "s"} to the development server port while it started`);
+  }
+  for (const failure of controlFailures) errors.push(`ERROR tv smoke: ${failure}`);
+  if (controlsSeen > controlsExpected) {
+    errors.push(
+      `ERROR tv smoke: more connections than controls arrived while the controls ran (${controlsSeen} for ${controlsExpected}), so a control cannot be told from another connection; run it again`,
+    );
   }
   return errors;
 }

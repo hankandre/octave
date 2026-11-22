@@ -25,7 +25,8 @@ None added.
 
 ## Progress
 
-- [x] 1 (commit "feat(scripts): keep the device serial out of adb output")
+- [x] 1 (commit f5313224)
+- [x] 2 control window, judge, runSmoke; item 3 green
 
 ## Decisions
 
@@ -36,7 +37,12 @@ None added.
 
 ## Observed facts
 
-(Filled in by milestones 2 and 5: adb's wording for a missing network device, the control command's exit status when it cannot connect and when it connects, the CI image.)
+Observed on the implementer's own emulator (AVD `fluster_tv`, API 36, 2026-11-22), host adb from platform-tools 37.0.3:
+
+- adb's wording for a missing network device: `adb: device '<host>:5555' not found`, exit 1; for a missing emulator: `adb: device 'emulator-5999' not found`, exit 1. `adb connect` to an address nothing answers does not return within 20 s (no exit status).
+- The control command `toybox nc -w 2 <host> <port> </dev/null`: exit 0 and one connection seen when the host listener accepts (localhost through `adb reverse`, and 10.0.2.2). Nothing listening: 10.0.2.2 exits 1 with `nc: connect: Connection refused`; localhost without a reverse exits 1 with the same text; localhost through a reverse with no host listener exits 0 (the device-side forwarder accepts first), so the localhost control is counted by the watch's own listener, and its exit status does not show a host connection.
+- Node's `Command failed: <file> <arguments>` text no longer matters: `adbRunner` and every Node error object are gone from the adb runner's results.
+- The CI image: unverified until the `tv` job runs (Ship).
 
 ## Validation evidence
 
