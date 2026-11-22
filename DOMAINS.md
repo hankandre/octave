@@ -177,7 +177,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Owns:** navigation (the collapsed side rail); screens; focus, the D-pad, select, Back, and held keys; the design tokens and shared controls; dialogs and toasts; the non-secret preferences store (`packages/core/src/preference-store.ts` port, `packages/core/src/streaming-limits.ts`).
 
-**Today.** The preference and streaming-limit ports, and the plain-copy helpers (`packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/diagnostics.ts`). In the app: the composition root with one route (`apps/tv/src/App.tsx`), a placeholder first screen (`apps/tv/src/first-screen/`, T3-01), the design tokens, `px()`, `textStyle()`, reduced-motion hook, `FocusFrame` and the nine base controls (`apps/tv/src/design/`, T3-06), and the `octave/design-tokens` lint rule (`scripts/eslint-design-tokens.mjs`).
+**Today.** The preference and streaming-limit ports, and the plain-copy helpers (`packages/core/src/safe-reason.ts`, `packages/core/src/transport-error.ts`, `packages/core/src/diagnostics.ts`). In the app: the composition root with one route (`apps/tv/src/App.tsx`), a placeholder first screen (`apps/tv/src/first-screen/`, T3-01), the design tokens, `px()`, `textStyle()`, reduced-motion hook, `FocusFrame` and the nine base controls (`apps/tv/src/design/`, T3-06), the browse rows and cards `MediaRow`, `RowList`, `MediaCard`, the artwork slot and row memory (`apps/tv/src/design/rows/`, T3-08), and the `octave/design-tokens` lint rule (`scripts/eslint-design-tokens.mjs`).
 
 **Target.** `apps/tv` (T3-01), with the tokens and base controls from T3-06 and the shell from T3-09.
 
