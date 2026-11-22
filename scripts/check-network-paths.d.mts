@@ -19,7 +19,7 @@ export const OCTAVE_HTTP: string;
 export const DIRECT_SOCKETS: string;
 export const NETWORK_OPENERS: (NamePattern & { rule: string })[];
 export const KOTLIN_RULES: KotlinRule[];
-export function splitSource(text: string): { code: string; strings: string[] }[];
+export function splitSource(text: string, options?: { templates?: boolean }): { code: string; strings: string[] }[];
 export function findSourceViolations(files: SourceFile[]): string[];
 export function readOctaveSource(root: string): SourceFile[];
 export function main(args?: string[]): number;
@@ -37,7 +37,7 @@ export interface LinkedClient {
   file: string;
 }
 export const LINKED_NETWORK_PATHS: LinkedEntry[];
-export function opensConnection(text: string): boolean;
+export function opensConnection(text: string, options?: { templates?: boolean }): boolean;
 export function findLinkedClients(packages: { name: string; dir: string }[]): LinkedClient[];
 export function judgeLinkedClients(found: LinkedClient[], allowlist: LinkedEntry[]): string[];
 export function linkedPackages(root: string): { packages: { name: string; dir: string }[]; errors: string[] };

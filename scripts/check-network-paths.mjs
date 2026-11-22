@@ -41,6 +41,12 @@ export const NETWORK_OPENERS = [
   { rule: "K4", re: prefix("Cronet"), what: "Cronet, another HTTP stack" },
   { rule: "K4", re: prefix("Volley"), what: "Volley, another HTTP stack" },
   { rule: "K4", re: word("DownloadManager"), what: "DownloadManager, which fetches without the header" },
+  // Players and image loaders that fetch a URL themselves, without the header (invariant I7).
+  { rule: "K4", re: word("MediaPlayer"), what: "android.media.MediaPlayer, which fetches without the header" },
+  { rule: "K4", re: word("VideoView"), what: "VideoView, which fetches without the header" },
+  { rule: "K4", re: /(?<![A-Za-z0-9_$.])(?:coil3?|com\.bumptech\.glide|com\.squareup\.picasso)\./, what: "an image loader with its own HTTP path (Coil, Glide or Picasso)" },
+  { rule: "K4", re: word("Glide"), what: "Glide, an image loader with its own HTTP path" },
+  { rule: "K4", re: word("Picasso"), what: "Picasso, an image loader with its own HTTP path" },
   { rule: "K4", re: call("Socket"), what: "a raw socket", socket: true },
   { rule: "K4", re: call("SSLSocket"), what: "a raw socket", socket: true },
   { rule: "K4", re: prefix("SocketChannel"), what: "a raw socket channel", socket: true },
@@ -98,7 +104,13 @@ export const KOTLIN_RULES = [
     names: [],
   },
   { id: "K4", alternative: SEND_THROUGH, names: NETWORK_OPENERS.filter((name) => name.rule === "K4") },
-  { id: "K5", alternative: SEND_THROUGH, names: NETWORK_OPENERS.filter((name) => name.rule === "K5") },
+  {
+    id: "K5",
+    alternative: SEND_THROUGH,
+    // `URL` as a name, not only as a call: `import java.net.URL as Net` then `Net(address).readText()` opens a stream in
+    // the Kotlin standard library, where no call of Octave's names `URL(` or `openStream(`.
+    names: [...NETWORK_OPENERS.filter((name) => name.rule === "K5"), { re: word("URL"), what: "java.net.URL, which opens its own connection" }],
+  },
   {
     id: "K6",
     alternative:
@@ -142,9 +154,11 @@ const ruleById = new Map(KOTLIN_RULES.map((rule) => [rule.id, rule]));
 
 /**
  * Splits Kotlin or Java source into lines of code, with comments removed and each string literal's text moved out:
- * `code` keeps `""` where a string stood, `strings` holds the string texts that start on that line.
+ * `code` keeps `""` where a string stood, `strings` holds the string texts that start on that line. With `templates`
+ * (Kotlin, the default), the code of a `${...}` template is read as code, nested strings and braces included; Java has no
+ * templates, so its strings are read as text throughout.
  */
-export function splitSource(text) {
+export function splitSource(text, { templates = true } = {}) {
   const lines = [{ code: "", strings: [] }];
   let line = lines[0];
   const newline = () => {
@@ -152,60 +166,95 @@ export function splitSource(text) {
     lines.push(line);
   };
   let i = 0;
-  while (i < text.length) {
-    const ch = text[i];
-    const next = text[i + 1];
-    if (ch === "\n") {
-      newline();
+
+  // Reads a string literal from its opening quote. The text before and after a template goes to `strings`.
+  const readString = () => {
+    const raw = text.startsWith('"""', i);
+    i += raw ? 3 : 1;
+    line.code += '""';
+    let body = "";
+    while (i < text.length) {
+      if (raw ? text.startsWith('"""', i) : text[i] === '"') break;
+      if (!raw && text[i] === "\\") {
+        body += text.slice(i, i + 2);
+        i += 2;
+        continue;
+      }
+      if (templates && text[i] === "$" && text[i + 1] === "{") {
+        line.strings.push(body);
+        body = "";
+        i += 2;
+        line.code += " ";
+        readCode(true);
+        line.code += " ";
+        continue;
+      }
+      if (!raw && text[i] === "\n") break; // an unterminated string ends at the line
+      if (text[i] === "\n") {
+        line.strings.push(body);
+        body = "";
+        newline();
+      } else {
+        body += text[i];
+      }
       i += 1;
-    } else if (ch === "/" && next === "/") {
-      while (i < text.length && text[i] !== "\n") i += 1;
-    } else if (ch === "/" && next === "*") {
-      i += 2;
-      while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) {
-        if (text[i] === "\n") newline();
+    }
+    if (raw && text.startsWith('"""', i)) {
+      i += 3;
+      while (text[i] === '"') i += 1; // a raw string may end with more quotes; they are its text
+    } else if (!raw && text[i] === '"') {
+      i += 1;
+    }
+    line.strings.push(body);
+  };
+
+  // Reads code up to the end of the text, or, in a template, up to the `}` that closes it.
+  const readCode = (inTemplate) => {
+    let depth = 0;
+    while (i < text.length) {
+      const ch = text[i];
+      const next = text[i + 1];
+      if (inTemplate && ch === "{") {
+        depth += 1;
+        line.code += ch;
         i += 1;
-      }
-      i += 2;
-    } else if (ch === '"') {
-      const raw = text.startsWith('"""', i);
-      i += raw ? 3 : 1;
-      let body = "";
-      while (i < text.length) {
-        if (raw ? text.startsWith('"""', i) : text[i] === '"') break;
-        if (!raw && text[i] === "\\") {
-          body += text.slice(i, i + 2);
-          i += 2;
-          continue;
+      } else if (inTemplate && ch === "}") {
+        i += 1;
+        if (depth === 0) return;
+        depth -= 1;
+        line.code += ch;
+      } else if (ch === "\n") {
+        newline();
+        i += 1;
+      } else if (ch === "/" && next === "/") {
+        while (i < text.length && text[i] !== "\n") i += 1;
+      } else if (ch === "/" && next === "*") {
+        i += 2;
+        while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) {
+          if (text[i] === "\n") newline();
+          i += 1;
         }
-        if (!raw && text[i] === "\n") break; // an unterminated string ends at the line
-        if (text[i] === "\n") {
-          line.strings.push(body);
-          body = "";
-          newline();
+        i += 2;
+      } else if (ch === '"') {
+        readString();
+      } else if (ch === "'") {
+        // A character literal: 'x', '\n', '\u0041'. Anything else is copied as code.
+        const literal = /^'(?:\\u[0-9a-fA-F]{4}|\\.|[^'\\\n])'/.exec(text.slice(i, i + 9));
+        if (literal) {
+          line.code += "' '";
+          i += literal[0].length;
         } else {
-          body += text[i];
+          line.code += ch;
+          i += 1;
         }
-        i += 1;
-      }
-      i += raw ? 3 : text[i] === '"' ? 1 : 0;
-      line.strings.push(body);
-      line.code += '""';
-    } else if (ch === "'") {
-      // A character literal: 'x', '\n', '\u0041'. Anything else is copied as code.
-      const literal = /^'(?:\\u[0-9a-fA-F]{4}|\\.|[^'\\\n])'/.exec(text.slice(i, i + 9));
-      if (literal) {
-        line.code += "' '";
-        i += literal[0].length;
       } else {
         line.code += ch;
         i += 1;
       }
-    } else {
-      line.code += ch;
-      i += 1;
     }
-  }
+  };
+
+  readCode(false);
   return lines;
 }
 
@@ -223,7 +272,7 @@ function nameHits(name, code, strings) {
 
 function scanKotlin(file) {
   const errors = [];
-  const lines = splitSource(file.text);
+  const lines = splitSource(file.text, { templates: !file.path.endsWith(".java") });
   const report = (index, ruleId, what) => errors.push(message(file.path, index + 1, what, ruleById.get(ruleId)));
   const isOctaveHttp = file.path === OCTAVE_HTTP;
   const isDirectSockets = file.path === DIRECT_SOCKETS;
@@ -307,9 +356,12 @@ export function findSourceViolations(files) {
 // A Gradle source set that ships: every folder under src/ but the test ones.
 const shipsSourceSet = (name) => !/^(test|androidTest)/.test(name);
 
-/** Returns `true` when the Kotlin or Java `text` holds a form of NETWORK_OPENERS in code or as a full name in a string. */
-export function opensConnection(text) {
-  return splitSource(text).some(({ code, strings }) => NETWORK_OPENERS.some((name) => nameHits(name, code, strings)));
+/**
+ * Returns `true` when the Kotlin or Java `text` holds a form of NETWORK_OPENERS in code (a Kotlin template's code
+ * included) or as a full name in a string. Pass `{ templates: false }` for Java.
+ */
+export function opensConnection(text, options) {
+  return splitSource(text, options).some(({ code, strings }) => NETWORK_OPENERS.some((name) => nameHits(name, code, strings)));
 }
 
 /**
@@ -326,7 +378,7 @@ export function findLinkedClients(packages) {
         if (!shipsSourceSet(set) || !statSync(join(src, set)).isDirectory()) continue;
         const files = walk(join(src, set), (file) => /\.(kt|java)$/.test(file), (_full, folder) => folder === "build", []);
         for (const full of files) {
-          if (opensConnection(readFileSync(full, "utf8"))) found.push({ package: name, file: toPosix(relative(dir, full)) });
+          if (opensConnection(readFileSync(full, "utf8"), { templates: full.endsWith(".kt") })) found.push({ package: name, file: toPosix(relative(dir, full)) });
         }
       }
     }
@@ -366,8 +418,8 @@ function findPackage(name, fromDir) {
 
 /**
  * The app's installed dependencies with their Android source: from apps/tv/package.json's `dependencies`, following
- * each package's `dependencies` and installed `peerDependencies`. A workspace package (not under node_modules) is
- * skipped, because the K rules read it. Returns `{ packages: { name, dir }[], errors }`; a regular dependency that is
+ * each package's `dependencies` and installed `peerDependencies`. A workspace package (not under node_modules) is not
+ * listed, because the K rules read its source, but its dependencies are followed. Returns `{ packages: { name, dir }[], errors }`; a regular dependency that is
  * not installed is an error, never skipped.
  */
 export function linkedPackages(root) {
@@ -392,8 +444,8 @@ export function linkedPackages(root) {
       }
       if (seen.has(found)) continue;
       seen.add(found);
-      if (!found.split(sep).includes("node_modules")) continue; // a workspace package
-      packages.push({ name, dir: found });
+      // A workspace package's own source is read by the K rules, but its dependencies are linked into the app too.
+      if (found.split(sep).includes("node_modules")) packages.push({ name, dir: found });
       queue.push({ dir: found, manifest: JSON.parse(readFileSync(join(found, "package.json"), "utf8")), app: false });
     }
   }

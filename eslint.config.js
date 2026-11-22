@@ -65,16 +65,31 @@ const noFetchTransport = id(
 );
 
 const sendingGlobals = ["fetch", "XMLHttpRequest", "WebSocket", "EventSource"];
-const imageCalls = ["prefetch", "getSize", "getSizeWithHeaders", "queryCache"];
+const imageCalls = ["prefetch", "prefetchWithMetadata", "getSize", "getSizeWithHeaders", "queryCache"];
 // esquery's regex literals cannot hold `/`, so a slash is written \x2F.
 const ownHttpModules = "/^(expo\\x2Ffetch|expo-file-system(\\x2F.*)?|expo-asset(\\x2F.*)?|@expo\\x2Flog-box(\\x2F.*)?|@expo\\x2Fdom-webview(\\x2F.*)?|expo-image(\\x2F.*)?)$/";
 const fetchTransportModule = "/(^|\\x2F)adapters\\x2Ffetch-transport(\\.[cm]?[jt]s)?$/";
 const secretKeys = "/^(headers|authorization|token|accesstoken|apikey|api_key|x-emby-token|x-emby-authorization|x-mediabrowser-token)$/i";
 const imageSources = "/^(source|src|srcSet|defaultSource|loadingIndicatorSource)$/";
+// React Native's networking and image loading below its globals: the modules behind fetch, XMLHttpRequest, WebSocket
+// and Image, and the native modules they call, by name (NativeModules.X, TurboModuleRegistry.get("X"),
+// requireNativeModule("X")). Names read from react-native-tvos 0.88.1 and Expo SDK 58.
+const rnSendingPaths = "/^react-native[^\\x2F]*\\x2F(Libraries\\x2F(Network|WebSocket)\\x2F|src\\x2F.*\\x2FNative(Networking|WebSocketModule))/";
+const rnImagePaths = "/^react-native[^\\x2F]*\\x2F(Libraries\\x2FImage\\x2F|src\\x2F.*\\x2FNative(ImageLoader|Fresco))/";
+const nativeModuleNames = (names) => `/^(${names.join("|")})$/`;
+const sendingModules = nativeModuleNames(["Networking", "WebSocketModule", "ExpoFetchModule"]);
+const imageModules = nativeModuleNames(["ImageLoader", "FrescoModule"]);
+const ownHttpNativeModules = nativeModuleNames(["FileSystem", "ExponentFileSystem", "ExpoAsset", "ExpoDomWebViewModule"]);
+const byNativeName = (names, message) => [
+  { selector: `MemberExpression[property.name=${names}]`, message },
+  { selector: `MemberExpression[computed=true][property.value=${names}]`, message },
+  { selector: `ObjectPattern > Property[key.name=${names}]`, message },
+  { selector: `CallExpression[arguments.0.value=${names}]`, message },
+];
 
 const networkGlobals = sendingGlobals.map((name) => ({ name, message: sendsNothing }));
 const networkProperties = [
-  ...["globalThis", "global", "window"].flatMap((object) => sendingGlobals.map((property) => ({ object, property, message: sendsNothing }))),
+  ...["globalThis", "global", "window", "self"].flatMap((object) => sendingGlobals.map((property) => ({ object, property, message: sendsNothing }))),
   ...imageCalls.map((property) => ({ object: "Image", property, message: bundledImagesOnly })),
 ];
 const networkPaths = [
@@ -83,6 +98,11 @@ const networkPaths = [
 const networkPatterns = [
   { group: ["expo-file-system/*", "expo-asset/*", "@expo/log-box/*", "@expo/dom-webview/*", "expo-image/*"], message: ownHttpPath },
   { group: ["**/adapters/fetch-transport", "**/adapters/fetch-transport.*"], message: noFetchTransport },
+  {
+    group: ["react-native*/Libraries/Network/*", "react-native*/Libraries/WebSocket/*", "react-native*/src/**/NativeNetworking*", "react-native*/src/**/NativeWebSocketModule*"],
+    message: sendsNothing,
+  },
+  { group: ["react-native*/Libraries/Image/*", "react-native*/src/**/NativeImageLoader*", "react-native*/src/**/NativeFresco*"], message: bundledImagesOnly },
 ];
 const networkSyntax = [
   // T2: a header or token as a property, a class field or a JSX attribute; the MediaBrowser header as text.
@@ -99,7 +119,18 @@ const networkSyntax = [
   },
   { selector: "Property[key.name='uri']", message: bundledImagesOnly },
   { selector: "Property[key.value='uri']", message: bundledImagesOnly },
-  { selector: `MemberExpression[object.property.name='Image'][property.name=/^(${imageCalls.join("|")})$/]`, message: bundledImagesOnly },
+  // Image's network calls on any object: `RN.Image.prefetch`, and `Image` imported under another name.
+  { selector: `MemberExpression[property.name=/^(${imageCalls.join("|")})$/]`, message: bundledImagesOnly },
+  // T1: the sending globals read from any object, such as an alias of globalThis (`const g = globalThis; g.fetch`).
+  { selector: `MemberExpression[property.name=/^(${sendingGlobals.join("|")})$/]`, message: sendsNothing },
+  // T1, T3 and T4: React Native's and Expo's networking modules by path and by native module name.
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${rnSendingPaths}]`, message: sendsNothing },
+  { selector: `ImportExpression[source.value=${rnSendingPaths}]`, message: sendsNothing },
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${rnImagePaths}]`, message: bundledImagesOnly },
+  { selector: `ImportExpression[source.value=${rnImagePaths}]`, message: bundledImagesOnly },
+  ...byNativeName(sendingModules, sendsNothing),
+  ...byNativeName(imageModules, bundledImagesOnly),
+  ...byNativeName(ownHttpNativeModules, ownHttpPath),
   // T4 and T7 for require() and import(), which no-restricted-imports does not see.
   { selector: `CallExpression[callee.name='require'][arguments.0.value=${ownHttpModules}]`, message: ownHttpPath },
   { selector: `ImportExpression[source.value=${ownHttpModules}]`, message: ownHttpPath },
