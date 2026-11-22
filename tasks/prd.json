@@ -957,7 +957,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Commit 415a1559. Local pnpm tv:wire (fluster_tv API 36) summary.txt in full: transport-probe-then-signed-in mock T3-05 pass; transport-probe-then-signed-in jellyfin-10-11 T3-05 pass; transport-probe-then-signed-in jellyfin-12 T3-05 pass; transport-probe-then-signed-in jellyscale T3-05 pass; transport-redirect mock T3-05 pass; transport-canary mock T3-05 pass; transport-errors mock T3-05 pass; transport-private-lan-and-proxy mock T3-05 pass. No fail. Pending: CI wire summary on draft PR head (item 7), tripwire (item 8), tv."
+          "evidence": "Commit da8199d3 (CI fix for run 45002313854: adb connection drop voided wire; tv:wire now waits for steady adbd and reruns a void run once). Local pnpm tv:wire (fluster_tv API 36, own emulator) summary: all 8 T3-05 pairs pass (probe-then-signed-in mock, jellyfin-10-11, jellyfin-12, jellyscale; redirect; canary; errors; private-lan-and-proxy); no fail. Pending: CI wire summary on the pushed head (item 7), tv."
         },
         {
           "id": "T3-16",
