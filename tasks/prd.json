@@ -2404,10 +2404,10 @@
             "Contract tests cover Jellyfin 10.11, 12.4 and Jellyscale fixtures"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit faba9e9e: latestItems, toRecentlyAdded, domain/home.ts and docs done. Blocked: frozen T2-04 tables (gateway-transport, gateway-redirect-port, transport-canary tests) need a latestItems key; scripts/core-transport-deps.test.ts fails."
         },
         {
           "id": "T5-07",
