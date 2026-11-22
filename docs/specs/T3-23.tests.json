@@ -1,0 +1,57 @@
+{
+  "task": "T3-23",
+  "files": [
+    "scripts/tv-apk-manifest-namespace.test.ts",
+    "scripts/fixtures/tv/manifest-surface-after.txt",
+    "scripts/fixtures/tv/resources-xml-after.txt",
+    "scripts/fixtures/tv/backup-rules-after.txt"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-apk-manifest-namespace.test.ts",
+        "-t",
+        "T3-23 item 1:"
+      ]
+    },
+    {
+      "item": 2,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-apk-manifest-namespace.test.ts",
+        "-t",
+        "T3-23 item 2:"
+      ]
+    },
+    {
+      "item": 3,
+      "gate": "review",
+      "why": "A record in a spec cannot be a failing test. The reviewer confirms the implementation record holds the probe, the merged-manifest and aapt2 dump lines, and a kept-or-dropped answer for each probed attribute, that git status shows no probe file, and that the pasted grep for example.com and probe. over the generated manifest and the final APK's dump is empty."
+    },
+    {
+      "item": 4,
+      "gate": "ci",
+      "why": "pnpm tv:apk:check on the real release APK already passes on main and needs the tv job's build, so it cannot be a failing test. Evidence: the tv job of ci.yml green on the pull request's head commit with its pnpm tv:apk:check step passing, and the checks job green (pnpm test runs T3-22's frozen tests); git diff --exit-code origin/main over T3-22's three frozen files (scripts/tv-manifest-trim.test.ts, scripts/tv-apk-manifest.test.ts, scripts/fixtures/tv/manifest-surface-before.txt), because pnpm lint:flow walks only manifests added on the branch and does not guard them; the implementer also runs node scripts/check-red.mjs T3-22 --expect green and pnpm tv:apk:check locally."
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-apk-manifest-namespace.test.ts",
+        "-t",
+        "T3-23 item 5:"
+      ]
+    }
+  ]
+}
