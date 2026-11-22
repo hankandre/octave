@@ -4,6 +4,8 @@
 // listener is reported unreachable (under pnpm tv:e2e nothing is reversed, so every pair is). Lines hold fixed words
 // and counts only.
 import type { Crypto } from "@octave/core/src/ports/crypto";
+import { createGatewayFactory } from "../../host/gateway";
+import { hostInstallId } from "../../host/host-gateway";
 import { loadSessionModule } from "../../host/session-module";
 import { createSessionTransport } from "../../host/transport";
 import { SeamRecorder } from "./seam-recorder";
@@ -35,7 +37,10 @@ export async function runWire(host: { crypto: Crypto; props: unknown }, log: (li
       try {
         const seam = new SeamRecorder(loadSessionModule());
         seam.add(host.props);
-        outcome = run === undefined ? { words: "outcome=no-device-test" } : await run({ base, list, crypto: host.crypto, transport: createSessionTransport(seam.native), seam });
+        const transport = createSessionTransport(seam.native);
+        const factory = createGatewayFactory({ crypto: host.crypto, transport, installId: hostInstallId });
+        outcome =
+          run === undefined ? { words: "outcome=no-device-test" } : await run({ base, list, crypto: host.crypto, transport, seam, gateway: (url) => factory(url) });
       } catch {
         outcome = { words: "outcome=threw" };
       }

@@ -147,6 +147,26 @@ const networkRules = {
   "no-restricted-imports": networkImports([]),
   "no-restricted-syntax": ["error", ...networkSyntax],
 };
+// T4-09: apps/tv builds a JellyfinGateway only in apps/tv/src/host/gateway.ts, which passes the stored install id.
+// The rule closes the class's value import, not only its construction, so an alias, a namespace member and a subclass
+// fail too; a type import and the module's other exports stay allowed. It reads names and module paths: a class reached
+// through an object at run time, or a core module that re-exports the class under another path, is not seen
+// (docs/security.md, "Lint rules"). The block for host/gateway.ts below restates the lists without these entries.
+const viaFactory = "Build gateways with the factory in apps/tv/src/host/gateway.ts, which passes the stored install id.";
+const gatewayModule = "/(^|\\x2F)jellyfin\\x2Fgateway$/";
+const gatewaySyntax = [
+  { selector: "NewExpression[callee.name='JellyfinGateway']", message: viaFactory },
+  {
+    selector: `ImportDeclaration[importKind!='type'][source.value=${gatewayModule}] > ImportSpecifier[importKind!='type'][imported.name='JellyfinGateway']`,
+    message: viaFactory,
+  },
+  { selector: `ImportDeclaration[source.value=${gatewayModule}] > :matches(ImportNamespaceSpecifier, ImportDefaultSpecifier)`, message: viaFactory },
+  { selector: `:matches(ExportNamedDeclaration, ExportAllDeclaration)[exportKind!='type'][source.value=${gatewayModule}]`, message: viaFactory },
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${gatewayModule}]`, message: viaFactory },
+  { selector: `ImportExpression[source.value=${gatewayModule}]`, message: viaFactory },
+];
+const gatewayFactory = "apps/tv/src/host/gateway.ts";
+
 const appFiles = ["apps/tv/**/*.{ts,tsx,js,jsx,mjs,cjs}", "modules/*/src/**/*.{ts,tsx,js,jsx,mjs,cjs}", "modules/*/index.{ts,js}"];
 
 export default [
@@ -169,14 +189,25 @@ export default [
     files: appFiles,
     rules: networkRules,
   },
+  // T4-09's gateway rule beside the network rules for every app file; the next block restates both with the platform rules.
+  {
+    files: ["apps/tv/**/*.{ts,tsx,js,jsx,mjs,cjs}"],
+    ignores: [gatewayFactory],
+    rules: { "no-restricted-syntax": ["error", ...networkSyntax, ...gatewaySyntax] },
+  },
   {
     files: ["apps/tv/**/*.{ts,tsx}"],
     ignores: ["apps/tv/**/*.android.ts", "apps/tv/**/*.android.tsx"],
     rules: {
       "no-restricted-imports": networkImports([...platformPaths, hostOnly]),
       // The same names reached without a named import: `RN.ToastAndroid` and `require("react-native").NativeModules`.
-      "no-restricted-syntax": ["error", ...platformSyntax, ...networkSyntax],
+      "no-restricted-syntax": ["error", ...platformSyntax, ...networkSyntax, ...gatewaySyntax],
     },
+  },
+  // The one file that constructs the gateway: the same lists without the gateway rule.
+  {
+    files: [gatewayFactory],
+    rules: { "no-restricted-syntax": ["error", ...platformSyntax, ...networkSyntax] },
   },
   // Flat config replaces a rule's options, so the host folder restates the platform paths without expo-crypto.
   {

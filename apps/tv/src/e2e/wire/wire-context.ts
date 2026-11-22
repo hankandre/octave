@@ -1,4 +1,5 @@
 // What run-wire.ts hands each wire test, and the helpers the tests share (T3-05).
+import type { JellyfinGateway } from "@octave/core/src/jellyfin/gateway";
 import type { Crypto } from "@octave/core/src/ports/crypto";
 import type { Transport } from "@octave/core/src/ports/transport";
 import type { SeamRecorder } from "./seam-recorder";
@@ -13,6 +14,9 @@ export interface WireContext {
   readonly crypto: Crypto;
   readonly transport: Transport;
   readonly seam: SeamRecorder;
+  // A gateway for `base` over this pair's transport, from the app's one factory (T4-09), so it sends the stored
+  // install id's DeviceId.
+  readonly gateway: (base: string) => Promise<JellyfinGateway>;
 }
 
 // A test's outcome: the words of its result line, or unreachable when its first call found no listener.
