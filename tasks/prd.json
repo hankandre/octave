@@ -1342,7 +1342,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 3df15aad (branch task/T3-30; no PR yet). Items 1, 2, 3, 4, 6 green locally: pnpm check exit 0, check-red --expect green. Own emulator: pnpm tv:smoke pass (\"port 8081: 2 of 2 control connections seen, 0 app connections, 0 connections before the controls (not counted)\"); second smoke run failed at once naming the first process; pnpm tv:e2e pass. pnpm tv:wire not run locally (fixture ports held by another worktree); item 5 (tv and wire CI jobs) waits for Ship."
+          "evidence": "commit 1dbbfc78 (branch task/T3-30; no PR yet). Review fixes in: install-time connection is a stray, exec/sh/env forms fail the adb check. pnpm check exit 0, lint:flow 0 frozen changes. Local smoke/e2e pass at 3df15aad. Item 5 pending Ship: tv job (dev-server-watch.txt, two smoke pass lines) and wire job (pass per pair); tv:wire not run locally."
         },
         {
           "id": "T3-31",
