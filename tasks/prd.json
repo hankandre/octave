@@ -692,7 +692,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 75c35a61 on task/T1-19: lane field in task CLI and owner tool, lane-state gate, runLanes with serial slot and halt, WORKFLOW.md. Frozen item 1-6 runs green except the real-file lane test, which waits for the Product Owner lane commit (Approach 4). PR not opened."
+          "evidence": "commit e0c14b92 on task/T1-19 (lanes on every task, Product Owner pass) after 75c35a61: lane field, lane-state gate, runLanes, WORKFLOW.md. pnpm check exit 0 (vitest 3062, workflow 234). PR not opened; concurrency of overlapping agent() calls unverified, record in PR."
         },
         {
           "id": "T1-20",
