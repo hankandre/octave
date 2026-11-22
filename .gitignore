@@ -18,3 +18,4 @@ apps/tv/dist/
 modules/*/android/build/
 modules/*/android/.cxx/
 tests/integration/.fixture-ports
+tests/integration/.fixture-ports.tmp

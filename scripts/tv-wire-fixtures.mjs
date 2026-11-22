@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { RECORD, fixtureOrigins, withFixtureOrigins } from "../tests/integration/fixture-ports.mjs";
+import { RECORD, fixtureOrigins, readRecord, withFixtureOrigins } from "../tests/integration/fixture-ports.mjs";
 import { serverAnswers } from "./tv-wire-proxy.mjs";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
@@ -40,14 +40,16 @@ function runPnpm(script) {
   if (run.status !== 0) throw new Error(`pnpm ${script} failed`);
 }
 
-// Starts the fixture servers when a selected target does not answer at its recorded origin, then reads the record again
+// Starts the fixture servers when this checkout has no record (the default origins may be another checkout's servers) or
+// a selected target does not answer at its recorded origin, then reads the record again
 // (pnpm fixture:up may have chosen new ports) and sets the users up when one is missing; both steps are safe to repeat.
 export async function ensureFixtures(
   targets,
   { recordFile = RECORD, credentialsFile = CREDENTIALS, answers = serverAnswers, pnpm = runPnpm } = {},
 ) {
   const origins = fixtureTargets(recordFile);
-  const healthy = (await Promise.all(targets.map((target) => answers(origins[target])))).every(Boolean);
+  const recorded = readRecord(recordFile) !== null;
+  const healthy = recorded && (await Promise.all(targets.map((target) => answers(origins[target])))).every(Boolean);
   if (!healthy) pnpm("fixture:up");
   const credentials = readWireCredentials(credentialsFile, recordFile);
   if (!healthy || targets.some((target) => credentials[`${target}_password`] === undefined)) pnpm("fixture:setup");
