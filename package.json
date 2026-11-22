@@ -14,7 +14,7 @@
     "fixture:up": "bash tests/integration/fixture-up.sh",
     "fixture:setup": "bash tests/integration/setup-servers.sh",
     "fixture:check-jellyscale": "tsx tests/integration/record-jellyscale-fixtures.ts --check",
-    "fixture:down": "docker compose -f tests/integration/docker-compose.yml down -v",
+    "fixture:down": "bash tests/integration/fixture-down.sh",
     "samples:generate": "bash scripts/generate-samples.sh",
     "tv:prebuild": "node scripts/tv-prebuild.mjs",
     "tv:build": "node scripts/tv-build.mjs",

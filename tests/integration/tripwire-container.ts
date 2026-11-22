@@ -1,13 +1,11 @@
 // Container-side signals for the tripwire: processes and Jellyfin log files,
 // read with docker compose exec because the image has no ps or pgrep.
 import { execFile } from "node:child_process";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { composeArgs } from "./compose-project.mjs";
 import { classifyProcess } from "./tripwire-rules";
 
 const run = promisify(execFile);
-const composeFile = join(dirname(fileURLToPath(import.meta.url)), "docker-compose.yml");
 const PROCESS_POLL_MS = 200;
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -17,7 +15,7 @@ function messageOf(error: unknown): string {
 }
 
 async function containerShell(service: string, script: string): Promise<string> {
-  const { stdout } = await run("docker", ["compose", "-f", composeFile, "exec", "-T", service, "sh", "-c", script], {
+  const { stdout } = await run("docker", ["compose", ...composeArgs(), "exec", "-T", service, "sh", "-c", script], {
     maxBuffer: 64 * 1024 * 1024,
   });
   return stdout;
