@@ -576,7 +576,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 86013f7c: ask action, ownerRuling, ruling-log.mjs, history seeding, docs. test:workflow 159/163 pass; 4 frozen item 1(b),1(f),2 round-2,4 matched tests fail on their own harness (rerun label returns null; one answers the wrong rule), reported as frozenTestProblems. pnpm check otherwise green."
+          "evidence": "commit 26daf1d3 (feature in commit 86013f7c): ask action, ownerRuling, ruling-log.mjs, history seeding, docs. pnpm check green (workflow 163/163); task-rulings 49/49; check-red green 1-6; lint:flow ok; frozen task.test.mjs and task-resume.test.mjs unchanged vs merge base."
         },
         {
           "id": "T1-17",
