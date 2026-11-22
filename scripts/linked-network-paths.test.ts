@@ -13,6 +13,12 @@
 // - judgeLinkedClients(found, allowlist): string[] of `ERROR network:` lines (the spec's two messages).
 // - findSourceViolations and KOTLIN_RULES as in scripts/check-network-paths.test.ts.
 //
+// Product Owner ruling of 2026-11-22 (T3-19 item 3; tasks/product-owner-log.md): expo-file-system, expo-asset,
+// @expo/log-box and @expo/dom-webview may be excluded from autolinking. For each of the four, exactly one holds: it is
+// linked, and its test is T3-04's as frozen; or apps/tv/package.json excludes it from Android autolinking, and
+// LINKED_NETWORK_PATHS has no row for it. The rules that refuse it in Octave's code are tested either way. No other
+// package can leave these tests through the exclusion list.
+//
 // Spec check issue 3: react-native-worklets (a direct dependency) links two such files; they are tested under item 7
 // without pinning their entry id. Spec check issue 8: `hasWebView(` is not a WebView.
 import { spawnSync } from "node:child_process";
@@ -73,6 +79,30 @@ function packageDir(name: string): string {
   throw new Error(`cannot resolve ${name} from apps/tv or expo`);
 }
 
+// T3-19 item 3 names these four and no other. Each maps to the id of its rows.
+const MAY_BE_UNLINKED: Record<string, string> = {
+  "expo-file-system": "E2",
+  "expo-asset": "E3",
+  "@expo/log-box": "E4",
+  "@expo/dom-webview": "E5",
+};
+
+// What expo-modules-autolinking excludes on Android, read as it reads it (58.1.0, build/commands/autolinkingOptions.js,
+// parsePackageJsonOptions): `expo.autolinking.android` is spread over `expo.autolinking`, so an `exclude` under
+// `android` replaces the top-level one, it is never merged with it; a value that is not a list excludes nothing.
+function excludedOnAndroid(): Set<string> {
+  const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+  const manifest: unknown = JSON.parse(readFileSync(join(repo, "apps", "tv", "package.json"), "utf8"));
+  const expo = isObject(manifest) && isObject(manifest.expo) ? manifest.expo : {};
+  const autolinking = isObject(expo.autolinking) ? expo.autolinking : {};
+  const merged = { ...autolinking, ...(isObject(autolinking.android) ? autolinking.android : {}) };
+  const exclude: unknown[] = Array.isArray(merged.exclude) ? merged.exclude : [];
+  return new Set(exclude.filter((name): name is string => typeof name === "string"));
+}
+
+const EXCLUDED = excludedOnAndroid();
+const UNLINKED = new Set(Object.keys(MAY_BE_UNLINKED).filter((name) => EXCLUDED.has(name)));
+
 const REAL_PACKAGES = [
   "expo",
   "expo-modules-core",
@@ -86,7 +116,9 @@ const REAL_PACKAGES = [
   "react-native-screens",
   "react-native-safe-area-context",
   "@shopify/flash-list",
-].map((name) => ({ name, dir: packageDir(name) }));
+]
+  .filter((name) => !UNLINKED.has(name))
+  .map((name) => ({ name, dir: packageDir(name) }));
 
 // --- helpers --------------------------------------------------------------------------------------------------
 
@@ -134,6 +166,19 @@ async function entriesFor(id: string): Promise<Entry[]> {
   return (await load()).LINKED_NETWORK_PATHS.filter((entry) => entry.id === id);
 }
 
+// One of the four packages of MAY_BE_UNLINKED: allowlisted as frozen while it is linked; with no row at all, by id or
+// by package name, once it is excluded from autolinking.
+async function expectAllowlistedOrUnlinked(packageName: string, fileSuffixes: string[]): Promise<void> {
+  const id = MAY_BE_UNLINKED[packageName];
+  expect(id, `${packageName} is not one of the four packages T3-19 may unlink`).toBeDefined();
+  if (!UNLINKED.has(packageName)) {
+    await expectAllowlisted(await entriesFor(id), packageName, fileSuffixes);
+    return;
+  }
+  const rows = (await load()).LINKED_NETWORK_PATHS.filter((entry) => entry.id === id || entry.package === packageName);
+  expect(rows, `${packageName} is excluded from autolinking in apps/tv/package.json, so LINKED_NETWORK_PATHS may hold no row for it`).toEqual([]);
+}
+
 // --- item 6: what Expo links ----------------------------------------------------------------------------------
 
 describe("T3-04 item 6: the HTTP paths Expo links into the APK", () => {
@@ -151,7 +196,7 @@ describe("T3-04 item 6: the HTTP paths Expo links into the APK", () => {
   it(
     "T3-04 item 6: E2 expo-file-system's own OkHttpClient is allowlisted and refused in Octave's code (T4, K7)",
     async () => {
-      await expectAllowlisted(await entriesFor("E2"), "expo-file-system", [
+      await expectAllowlistedOrUnlinked("expo-file-system", [
         "FileSystemDownload.kt",
         "legacy/FileSystemLegacyModule.kt",
         "FileSystemDownloadTask.kt",
@@ -167,7 +212,7 @@ describe("T3-04 item 6: the HTTP paths Expo links into the APK", () => {
   it(
     "T3-04 item 6: E3 expo-asset is allowlisted and refused in Octave's code (T4, K7)",
     async () => {
-      await expectAllowlisted(await entriesFor("E3"), "expo-asset", ["ResourceAsset.kt"]);
+      await expectAllowlistedOrUnlinked("expo-asset", ["ResourceAsset.kt"]);
       expectLintRefused("T4", "apps/tv/src/probe.tsx", 'import { Asset } from "expo-asset";\nexport const asset = Asset;\n');
       await expectKotlinRefused("K7", "import expo.modules.asset.ResourceAsset");
     },
@@ -177,7 +222,7 @@ describe("T3-04 item 6: the HTTP paths Expo links into the APK", () => {
   it(
     "T3-04 item 6: E4 @expo/log-box is allowlisted and refused in Octave's code (T4, K7)",
     async () => {
-      await expectAllowlisted(await entriesFor("E4"), "@expo/log-box", ["ExpoLogBoxSurfaceDelegate.kt", "ExpoLogBoxWebViewWrapper.kt"]);
+      await expectAllowlistedOrUnlinked("@expo/log-box", ["ExpoLogBoxSurfaceDelegate.kt", "ExpoLogBoxWebViewWrapper.kt"]);
       expectLintRefused("T4", "apps/tv/src/probe.tsx", 'export const logBox = import("@expo/log-box");\n');
       await expectKotlinRefused("K7", "import expo.modules.logbox.ExpoLogBoxSurfaceDelegate");
     },
@@ -187,7 +232,7 @@ describe("T3-04 item 6: the HTTP paths Expo links into the APK", () => {
   it(
     'T3-04 item 6: E5 @expo/dom-webview and "use dom" are allowlisted and refused in Octave\'s code (T4, T5, K7, K9)',
     async () => {
-      await expectAllowlisted(await entriesFor("E5"), "@expo/dom-webview", ["DomWebView.kt"]);
+      await expectAllowlistedOrUnlinked("@expo/dom-webview", ["DomWebView.kt"]);
       expectLintRefused("T4", "apps/tv/src/probe.tsx", 'import { DomWebView } from "@expo/dom-webview";\nexport const view = DomWebView;\n');
       expectLintRefused("T5", "apps/tv/src/probe.tsx", '"use dom";\nexport default function Page() {\n  return null;\n}\n');
       await expectKotlinRefused("K7", "import expo.modules.webview.DomWebView");
