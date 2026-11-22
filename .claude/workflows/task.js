@@ -307,6 +307,13 @@ function planLeft(leftFindings) {
   }
   return { left, unfixed, gates, problems };
 }
+// How many lows the review returned are neither reported fixed nor listed as left. The run does not block on it (a missing field must not stop a task), but it shows the count so a silent gap is visible.
+function unaccountedLows(lowCount, followUp) {
+  const out = followUp || {};
+  const fixed = Array.isArray(out.fixedFindings) ? out.fixedFindings.length : 0;
+  const leftLows = (Array.isArray(out.leftFindings) ? out.leftFindings : []).filter((finding) => finding.severity === 'low').length;
+  return Math.max(0, lowCount - fixed - leftLows);
+}
 // LEFT-END
 const input = typeof args === 'string' ? { task: args } : args || {};
 const items = Array.isArray(input.tasks) ? input.tasks : input.task ? [input.task] : [];
@@ -346,6 +353,10 @@ const WORK = {
     ciSteps: strings,
     frozenTestProblems: strings,
     productOwnerQuestions: QUESTIONS,
+    fixedFindings: {
+      type: 'array',
+      items: { type: 'object', properties: { where: { type: 'string' }, summary: { type: 'string' } }, required: ['where', 'summary'] },
+    },
     leftFindings: {
       type: 'array',
       items: {
@@ -462,9 +473,11 @@ async function runTask(task, opts) {
   // What the review's follow-ups step left, and the real-TV gates among it; they stay [] when no review ran (from: "ship").
   let left = [];
   let realTvGates = [];
+  let unaccounted = 0;
   const result = (outcome, detail) => {
     log(`${task}: ${outcome}`);
-    return realTvGates.length ? { task, outcome, detail, realTvGates } : { task, outcome, detail };
+    const out = realTvGates.length ? { task, outcome, detail, realTvGates } : { task, outcome, detail };
+    return unaccounted ? { ...out, unaccountedLows: unaccounted } : out;
   };
 
   const problemsOf = (out) => (out.blockers || []).concat(out.failures || []);
@@ -743,7 +756,7 @@ Adversarially review git diff origin/main...${branch} for token, URL, or session
 ${lows.length ? `Also fix in the same pull request each of these low findings that is small, with a test for each behavior change; log none of the findings you fix (no plan line, no backlog line):\n${lows.join('\n')}` : ''}
 A low is small when you can fix and test it in the same pull request without a new dependency, a new native module method or event, a change to an acceptance item or a frozen test, or a look, wording or direction call. When it needs one of those, leave it. Only lows may be left: a critical, high or medium finding you cannot fix is a blocker (done=false), not a left finding.
 For each finding you leave, append one line to tasks/backlog.jsonl (WORKFLOW.md section 2a), at the end, without touching another line, and commit it with your fixes. The fields are: what (the fix, in one sentence); why (\`<severity> review finding from ${task}: <the problem>; for the phase's hardening task\`, plus \`; real-TV gate: <home-network|local-information>\` when one holds); source (\`"${task}"\`); size (S, M or L); date (from \`date +%F\`). Never append a line whose what is already in the file. Never write a plan line, or a backlog line that asks for a task of its own: one hardening task per phase takes these, and a Product Owner pass places them. Never edit tasks/prd.json.
-Only a finding that opens a path into a self-hoster's home network, or leaks local information (a LAN address, a serial, a hostname, a credential), gates an install on a real TV. Return in leftFindings every finding listed above that is not fixed on the branch, including one an earlier attempt of this step left, each with realTvGate home-network, local-information or none. Describe a leaked value, never quote it, in the backlog, the result, the evidence and the PR.
+Only a finding that opens a path into a self-hoster's home network, or leaks local information (a LAN address, a serial, a hostname, a credential), gates an install on a real TV. Return in fixedFindings each low you fixed (where, summary). Return in leftFindings every finding listed above that is not fixed on the branch, including one an earlier attempt of this step left, each with realTvGate home-network, local-information or none. Describe a leaked value, never quote it, in the backlog, the result, the evidence and the PR.
 Then, if every acceptance item is met (the review above counts as the fresh-context design review; the Ship phase links screenshots) and the spec does not reserve sign-off for the human, set the task's status to done with \`${taskCli} set ${task} --status done --evidence-file <file>\` (passes follows status). ${evidenceRule} Because no PR exists yet, the evidence must contain \`commit <sha>\`. Then tick its line in the active plan, and commit. Do not push.${ciSteps.length ? `\nThese acceptance steps need CI and are done in the Ship phase, so treat them as pending (not as blockers) and leave status in_progress:\n${ciSteps.join('\n')}` : ''}
 Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
     `follow-ups ${task}`,
@@ -754,6 +767,8 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
   if (!followUp) return result('failed', 'The follow-up agent returned nothing.');
   if (denied(followUp)) return result('denied', denied(followUp));
   const leftPlan = planLeft(followUp.leftFindings);
+  unaccounted = unaccountedLows(lows.length, followUp);
+  if (unaccounted) log(`${task}: ${unaccounted} low finding(s) are neither in fixedFindings nor in leftFindings; a real-TV gate may be missing`);
   left = leftPlan.left;
   realTvGates = leftPlan.gates;
   for (const gate of realTvGates) log(`${task}: real-TV gate (${gate.holds}): ${gate.where}`);
@@ -789,7 +804,7 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
   const shipPrompt = `${common}
 Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested device, Jellyfin and Jellyscale gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual artifact from the PR's CI run (gh api repos/{owner}/{repo}/actions/runs/<run>/artifacts) and names the images that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. Fill the PR body's Frozen tests section from the changes list that \`${nodeCli('check-flow.mjs')} --repo ${worktree} --json\` prints (or write "none changed"). After a merge, run git -C ${main} pull --ff-only and remove the worktree and branch.
 Evidence: ${evidence}
-Review: ${skipReview ? 'done in an earlier run.' : `${blocking.length} fixed, ${left.length} left in tasks/backlog.jsonl.`}${realTvGates.length ? `\nList each of these among the untested device gates in the PR body as "real-TV gate (<holds>), for the Product Owner to place":\n${realTvGates.map((gate) => `${gate.holds}: ${gate.where}: ${gate.summary}`).join('\n')}` : ''}${ciSteps.length ? `
+Review: ${skipReview ? 'done in an earlier run.' : `${blocking.length} fixed, ${left.length} left in tasks/backlog.jsonl.`}${unaccounted ? `\nThe follow-ups step did not account for ${unaccounted} low review finding(s) (neither fixed nor listed); say so in the PR body, and check the diff and tasks/backlog.jsonl for a home-network or local-information finding.` : ''}${realTvGates.length ? `\nList each of these among the untested device gates in the PR body as "real-TV gate (<holds>), for the Product Owner to place":\n${realTvGates.map((gate) => `${gate.holds}: ${gate.where}: ${gate.summary}`).join('\n')}` : ''}${ciSteps.length ? `
 Before enabling auto-merge, do these CI-dependent acceptance steps on this PR branch. Temporary commits are allowed only when a step asks for one, and each must be reverted in a later commit. Record each run URL in the task's evidence. Then, if every acceptance item is met, set the task's status to done with \`${taskCli} set ${task} --status done --evidence-file <file>\` (passes follows status), commit, and push. ${evidenceRule} If any listed step cannot be completed (for example it needs a review or a human), do not enable auto-merge; return merged=false and put the reason in ciFailures. This is the one case where the Ship phase changes files:
 ${ciSteps.join('\n')}` : ''}`;
   const shipEffort = ciSteps.length ? 'medium' : 'low';
@@ -805,7 +820,7 @@ ${ciSteps.join('\n')}` : ''}`;
     ship = await agent(shipPrompt, { model: models.ship, effort: shipEffort, schema: SHIP, phase: 'Ship', label: `ship ${task} (retry)` });
   }
   if (!ship || !ship.merged) return result('ci-red', ship ? { prUrl: ship.prUrl, ciFailures: ship.ciFailures } : 'The ship retry returned nothing.');
-  return { task, outcome: 'merged', prUrl: ship.prUrl, fixed: blocking, left, realTvGates };
+  return { task, outcome: 'merged', prUrl: ship.prUrl, fixed: blocking, left, realTvGates, ...(unaccounted ? { unaccountedLows: unaccounted } : {}) };
 }
 
 // The teardown runs outside runTask, so it names the Ship phase (meta.phases stays fixed). It never throws: a failure becomes the detail.
