@@ -8,6 +8,9 @@ const CALLERS = ["tv-first-focus", "tv-dev-server-watch", "tv-e2e", "tv-cleartex
 // Files that start a program held in a variable and do not know adb: aapt2 and dexdump, and a manifest's command. A sixth
 // such file is a finding until it is added here, which is a reviewed change.
 const PINNED = new Set(["tv-apk-check", "tv-apk-manifest", "tv-apk-inspector", "tv-apk-dex", "check-red"].map((name) => `scripts/${name}.mjs`));
+// Files that start adb or a variable program on a CI runner with stdio discarded, so nothing of adb reaches a console or a file.
+// An entry is skipped only while the file still holds `stdio: "ignore"`.
+const DISCARDS_OUTPUT = new Set(["scripts/ci-emulator-retry.mjs"]);
 const CALLS = ["spawn", "spawnSync", "execFile", "execFileSync", "exec", "execSync", "fork"];
 // Programs that start another program from their arguments, so a literal naming one hides what it starts.
 const WRAPPERS = /(^|[\\/])(sh|bash|zsh|dash|ash|ksh|fish|env|cmd(\.exe)?|powershell(\.exe)?|pwsh|xargs|nohup|timeout|nice|stdbuf|setsid|script|busybox|doas|sudo|time|command|exec|eval)(\.exe)?$/i;
@@ -119,6 +122,7 @@ export function adbOutputFindings(files) {
   for (const { path, source } of files) {
     if (path === ADB_MODULE) continue;
     const { code, text } = scan(source);
+    if (DISCARDS_OUTPUT.has(path) && /stdio\s*:\s*["']ignore["']/.test(text)) continue;
     // A file "knows adb" when its code holds the word at the start of a name or a text, or asks the SDK for a tool.
     const knowsAdb = /\badb/i.test(text) || /\bplatformTool\s*\(/.test(code);
 
