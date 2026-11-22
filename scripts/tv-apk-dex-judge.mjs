@@ -1,0 +1,415 @@
+// Judges a `dexdump -d` listing against R8's mapping and the lists (T3-19, rules D0 to D6 in docs/specs/T3-19.md,
+// read with decision log 14 and 15). The listing is read one line at a time and judged one method at a time.
+import { dexTypeName, framesAt, originalsOf, resolveField, resolveMethod, typeTokens } from "./tv-apk-dex-mapping.mjs";
+
+const OCTAVE = "dev.octave.";
+const DEV_SUPPORT_CLIENT = "com.facebook.react.devsupport.inspector.DevSupportHttpClient";
+const CALL_FACTORY = "okhttp3.Call$Factory";
+const NEW_CALL = "newCall";
+const SEND_THROUGH = "send through OctaveHttp.callFactory(session) instead";
+
+const INSTRUCTION = /^[0-9a-f]+: [^|]*\|([0-9a-f]+): (\S+)(?: (.*))?$/;
+const CODE_HEADER = /^[0-9a-f]+: [^|]*\|\[[0-9a-f]+\] (.+)$/;
+const POSITION = /^ {8}0x([0-9a-f]+) line=(\d+)/;
+const MEMBER_REF = /(\[*L[^;\s]+;)\.([^:\s]+):([^\s,]+)/;
+const QUOTED = /'([^']*)'/;
+
+const matchesClass = (holder, name) => holder === name || holder.startsWith(`${name}$`);
+const isOctave = (frame) => frame.octave;
+
+function slashless(token) {
+  return token.startsWith("L") ? token.slice(1, -1).replace(/\//g, ".") : token;
+}
+
+// Splits `com.a.B$C.name:(…)V` into class, name and descriptor.
+function splitMethod(text) {
+  const colon = text.indexOf(":(");
+  const left = colon === -1 ? text : text.slice(0, colon);
+  const dot = left.lastIndexOf(".");
+  return { dexClass: left.slice(0, dot), name: left.slice(dot + 1), descriptor: colon === -1 ? null : text.slice(colon + 1) };
+}
+
+/** Parses one instruction's operand into the member it names (if any) and the class types it names. */
+export function readOperand(opcode, operand) {
+  if (!operand || opcode.startsWith("const-string")) return { member: null, types: [] };
+  const comment = operand.lastIndexOf(" // ");
+  const text = comment === -1 ? operand : operand.slice(0, comment);
+  const m = MEMBER_REF.exec(text);
+  if (!m) return { member: null, types: typeTokens(text) };
+  const owner = dexTypeName(m[1]) ?? slashless(m[1]);
+  const descriptor = m[3];
+  const rest = text.slice(0, m.index) + text.slice(m.index + m[0].length);
+  return {
+    member: { owner, name: m[2], descriptor, method: descriptor.startsWith("(") },
+    types: [...typeTokens(descriptor), ...typeTokens(rest)],
+  };
+}
+
+const returnToken = (descriptor) => descriptor.slice(descriptor.lastIndexOf(")") + 1);
+
+/**
+ * Judges a dexdump listing (an iterable or async iterable of lines). Returns
+ * `{ errors: string[], stats: { opened, classes, sinkReferences, entryPoints } }`.
+ */
+export async function judgeDex(lines, mapping, lists) {
+  const sinks = lists.sinks;
+  const libraryInternal = lists.libraryInternal;
+  const oneClient = lists.oneClient;
+  const rows = lists.entryPoints;
+  const listed = [...rows.flatMap((row) => row.classes), ...lists.hooks];
+  const factories = new Set(sinks.flatMap((sink) => sink.factoryInvokes ?? []));
+  const sinkMethodNames = new Set(sinks.flatMap((sink) => (sink.methods ?? []).flatMap((m) => m.names)).filter((name) => name !== "<init>"));
+
+  const errors = new Map();
+  const report = (key, text) => {
+    const entry = errors.get(key);
+    if (entry) entry.count += 1;
+    else errors.set(key, { text, count: 1 });
+  };
+  const matchedRows = new Set();
+  const matchedCallers = new Set();
+  const stats = { opened: 0, classes: 0, sinkReferences: 0, rawSinks: 0, octaveSeen: false };
+  const superclass = new Map();
+  const pending = [];
+
+  const devSupportDex = new Set();
+  for (const [dex, section] of mapping.sections) if (originalsOf(mapping, dex).has(DEV_SUPPORT_CLIENT) || section.original === DEV_SUPPORT_CLIENT) devSupportDex.add(dex);
+
+  const sectionIsOctave = (dexClass) => [...originalsOf(mapping, dexClass)].some((name) => name.startsWith(OCTAVE));
+  const libInternal = (holder) => libraryInternal.some((prefix) => holder.startsWith(prefix));
+
+  // The stacks of one site, each frame { holder, octave }. An unattributed site gets one `unresolved:` frame, judged as
+  // Octave's code when its dex class holds an Octave class (spec check issue 2).
+  function stacksOf(dexClass, name, descriptor, line) {
+    const found = framesAt(mapping, dexClass, name, descriptor, line);
+    if (found.length > 0) return found.map((holders) => holders.map((holder) => ({ holder, octave: holder.startsWith(OCTAVE) })));
+    const section = mapping.sections.get(dexClass);
+    // A class R8 synthesized (a lambda, a bridge) is attributed by its class line (spec, "Attribution", step 4).
+    if (section?.synthesized) return [[{ holder: section.original, octave: section.original.startsWith(OCTAVE) }]];
+    const label = `unresolved:${dexClass}.${name}${section ? ` (class line ${section.original})` : ""}`;
+    return [[{ holder: label, octave: sectionIsOctave(dexClass) }]];
+  }
+
+  const where = (site) => `${site.dexClass}.${site.name}${site.line !== null ? ` line ${site.line}` : ""}`;
+
+  // D1 and D2 for one sink reference at a site.
+  function judgeSink(site, sink, { exemptOctaveNewCall = false } = {}) {
+    stats.rawSinks += 1;
+    let counted = false;
+    for (const stack of site.stacks) {
+      const frames = stack.filter((frame) => !libInternal(frame.holder));
+      if (frames.length === 0) continue;
+      if (exemptOctaveNewCall && frames[0].holder.startsWith(OCTAVE)) continue;
+      counted = true;
+      if (frames.some(isOctave)) {
+        stats.octaveSeen = true;
+        const inner = frames[0];
+        if (!(inner.octave && (oneClient[sink.id] ?? []).includes(inner.holder))) {
+          const octave = frames.find(isOctave);
+          report(`D1|${octave.holder}|${sink.id}`, `D1 ${octave.holder} holds ${sink.id} (${sink.what}) at ${where(site)}, outside the one client; ${SEND_THROUGH}`);
+        }
+      }
+      for (const frame of frames) {
+        if (frame.octave) continue;
+        const covering = rows.filter((row) => row.classes.some((name) => matchesClass(frame.holder, name)));
+        const row = covering.find((r) => r.sinks.includes(sink.id));
+        if (row) matchedRows.add(`${row.id}|${row.classes.find((name) => matchesClass(frame.holder, name))}`);
+        else if (covering.length > 0) {
+          report(`D2|${frame.holder}|${sink.id}`, `D2 ${frame.holder} holds ${sink.id} (${sink.what}) at ${where(site)}, but row ${covering[0].id} allows only ${covering[0].sinks.join(", ")}; add the sink to the row with its reason, or remove the dependency`);
+        } else {
+          report(`D2|${frame.holder}|${sink.id}`, `D2 ${frame.holder} holds ${sink.id} (${sink.what}) at ${where(site)}, and no APK_NETWORK_ENTRY_POINTS row covers it; add a row with its reason, or remove the dependency`);
+        }
+      }
+    }
+    if (counted) stats.sinkReferences += 1;
+  }
+
+  const namesAny = (sink, names) =>
+    [...names].some((name) => (sink.anyReference ?? []).includes(name) || (sink.anyReferencePrefix ?? []).some((prefix) => name.startsWith(prefix)));
+
+  function methodSinks(holders) {
+    const out = [];
+    for (const sink of sinks) {
+      const hit = (sink.methods ?? []).some((m) => holders.some((h) => m.classes.includes(h.holder) && m.names.includes(h.name)));
+      if (hit) out.push(sink);
+    }
+    return out;
+  }
+
+  // The original classes a dex type names, for a type-only reference.
+  const typeOriginals = (types) => {
+    const out = new Set();
+    for (const type of types) for (const name of originalsOf(mapping, type)) out.add(name);
+    return out;
+  };
+
+  function judgeInstruction(site, opcode, operand) {
+    const { member, types } = readOperand(opcode, operand);
+    if (!member && types.length === 0) return;
+    const typeNames = typeOriginals(types);
+    let holders = [];
+    if (member) {
+      holders = member.method
+        ? resolveMethod(mapping, member.owner, member.name, member.descriptor)
+        : resolveField(mapping, member.owner, member.name, member.descriptor).map((holder) => ({ holder, name: member.name }));
+    }
+    const named = new Set([...typeNames, ...holders.map((h) => h.holder)]);
+    const octave = site.stacks.some((stack) => stack.some(isOctave));
+    if (octave) stats.octaveSeen = true;
+
+    // Sinks.
+    const found = new Set();
+    for (const sink of sinks) {
+      if (namesAny(sink, named)) {
+        found.add(sink.id);
+        judgeSink(site, sink);
+      }
+    }
+    if (member?.method) {
+      for (const sink of methodSinks(holders)) {
+        if (!found.has(sink.id)) {
+          found.add(sink.id);
+          judgeSink(site, sink);
+        }
+      }
+      for (const sink of sinks) {
+        if (found.has(sink.id) || !(sink.factoryInvokes ?? []).some((name) => holders.some((h) => h.holder === name))) continue;
+        found.add(sink.id);
+        // Decision log 14: an Octave invoke of Call$Factory.newCall is sending through the one client.
+        const exempt = holders.every((h) => h.holder === CALL_FACTORY && h.name === NEW_CALL);
+        judgeSink(site, sink, { exemptOctaveNewCall: exempt });
+      }
+      if (sinkMethodNames.has(member.name) && mapping.sections.has(member.owner)) pending.push({ site, owner: member.owner, name: member.name, found });
+    }
+
+    if (!octave) {
+      // D6.
+      const refs = [member?.owner, ...types].filter((t) => t && devSupportDex.has(t));
+      if (refs.length > 0) judgeDevSupportCaller(site);
+      return;
+    }
+
+    // D4: Octave references a listed entry point or hook, resolved by member.
+    const octaveHolder = site.stacks.flatMap((s) => s).find(isOctave).holder;
+    for (const name of named) {
+      const hit = listed.find((entry) => matchesClass(name, entry));
+      if (hit) report(`D4|${octaveHolder}|${name}`, `D4 ${octaveHolder} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
+    }
+    // Decision log 14: Octave takes a call or web socket factory only from Octave's own code.
+    if (member) {
+      const fieldRead = !member.method && /^[is]get/.test(opcode);
+      const valueType = member.method ? returnToken(member.descriptor) : member.descriptor;
+      const name = dexTypeName(valueType);
+      const factoryValue = name !== null && [...originalsOf(mapping, name)].some((original) => factories.has(original));
+      if (factoryValue && (member.method || fieldRead)) {
+        const foreign = holders.find((h) => !h.holder.startsWith(OCTAVE));
+        if (foreign) report(`D1F|${octaveHolder}|${foreign.holder}`, `D1 ${octaveHolder} takes a call or web socket factory from ${foreign.holder}.${foreign.name} at ${where(site)}; ${SEND_THROUGH}`);
+      }
+    }
+    const refs = [member?.owner, ...types].filter((t) => t && devSupportDex.has(t));
+    if (refs.length > 0) judgeDevSupportCaller(site);
+  }
+
+  // D6: a reference to DevSupportHttpClient's dex class from outside it.
+  function judgeDevSupportCaller(site) {
+    for (const stack of site.stacks) {
+      const outer = stack[stack.length - 1].holder;
+      if (outer === DEV_SUPPORT_CLIENT) continue;
+      if (lists.devSupportCallers.some((caller) => caller.class === outer)) matchedCallers.add(outer);
+      else report(`D6|${outer}`, `D6 ${outer} references DevSupportHttpClient at ${where(site)} and is not on DEV_SUPPORT_CLIENT_CALLERS; add it with why it does not run in a release build, or remove the call`);
+    }
+  }
+
+  // Decision log 15: a field, a method descriptor, or a superclass or interface typed OkHttpClient is an S1 reference.
+  const declarationSinks = sinks.filter((sink) => sink.declarations);
+  function judgeDeclaration(dexClass, kind, name, descriptor, holders) {
+    const types = typeTokens(descriptor);
+    const names = typeOriginals(types);
+    for (const sink of declarationSinks) {
+      if (!namesAny(sink, names)) continue;
+      const section = mapping.sections.get(dexClass);
+      const resolved = section ? holders() : [`unresolved:${dexClass}`];
+      const stacks = resolved.map((holder) => [{ holder, octave: holder.startsWith(OCTAVE) || (holder.startsWith("unresolved:") && sectionIsOctave(dexClass)) }]);
+      judgeSink({ dexClass, name: `${kind} ${name}`, line: null, stacks }, sink);
+    }
+  }
+
+  // --- the listing ---
+  let cls = null;
+  let block = null;
+  let declName = null;
+  let method = null;
+  let positions = null;
+
+  function finishMethod() {
+    if (!method) return;
+    const rowsByLine = positions ?? [];
+    for (const ins of method.instructions) {
+      let line = null;
+      for (const row of rowsByLine) {
+        if (row.addr <= ins.addr) line = row.line;
+        else break;
+      }
+      const site = { dexClass: method.dexClass, name: method.name, line, stacks: stacksOf(method.dexClass, method.name, method.descriptor, line) };
+      judgeInstruction(site, ins.opcode, ins.operand);
+    }
+    method = null;
+    positions = null;
+  }
+
+  function finishClass() {
+    finishMethod();
+    cls = null;
+    block = null;
+  }
+
+  function declare(type) {
+    if (!cls || declName === null) return;
+    const dexClass = cls.name;
+    const name = declName;
+    declName = null;
+    if (block === "fields") {
+      judgeDeclaration(dexClass, "field", name, type, () => resolveField(mapping, dexClass, name, type));
+    } else if (block === "methods") {
+      judgeDeclaration(dexClass, "method", name, type, () => resolveMethod(mapping, dexClass, name, type).map((h) => h.holder));
+    }
+  }
+
+  for await (const text of lines) {
+    if (method) {
+      const ins = INSTRUCTION.exec(text);
+      if (ins) {
+        method.instructions.push({ addr: parseInt(ins[1], 16), opcode: ins[2], operand: ins[3] ?? "" });
+        continue;
+      }
+      if (text.startsWith("      positions     :")) {
+        positions = [];
+        continue;
+      }
+      const p = positions !== null ? POSITION.exec(text) : null;
+      if (p) {
+        positions.push({ addr: parseInt(p[1], 16), line: Number(p[2]) });
+        continue;
+      }
+      if (text.startsWith("      locals")) {
+        finishMethod();
+        continue;
+      }
+      if (text.startsWith("      catches") || text.startsWith("        ")) continue;
+      finishMethod();
+    }
+    if (text.startsWith("Opened '")) {
+      stats.opened += 1;
+      continue;
+    }
+    if (text.startsWith("Class #")) {
+      finishClass();
+      continue;
+    }
+    if (text.startsWith("  Class descriptor  : ")) {
+      const name = dexTypeName(QUOTED.exec(text)?.[1] ?? "");
+      if (name) {
+        cls = { name };
+        stats.classes += 1;
+        if (sectionIsOctave(name)) stats.octaveSeen = true;
+      }
+      continue;
+    }
+    if (!cls) continue;
+    if (text.startsWith("  Superclass        : ")) {
+      const token = QUOTED.exec(text)?.[1] ?? "";
+      const name = dexTypeName(token);
+      if (name) superclass.set(cls.name, name);
+      judgeDeclaration(cls.name, "superclass", name ?? "", token, () => [mapping.sections.get(cls.name).original]);
+      continue;
+    }
+    if (text.startsWith("  Interfaces        -")) {
+      block = "interfaces";
+      continue;
+    }
+    if (text.startsWith("  Static fields     -") || text.startsWith("  Instance fields   -")) {
+      block = "fields";
+      continue;
+    }
+    if (text.startsWith("  Direct methods    -") || text.startsWith("  Virtual methods   -")) {
+      block = "methods";
+      continue;
+    }
+    if (block === "interfaces" && /^ {4}#\d+\s+: '/.test(text)) {
+      const token = QUOTED.exec(text)?.[1] ?? "";
+      judgeDeclaration(cls.name, "interface", dexTypeName(token) ?? "", token, () => [mapping.sections.get(cls.name).original]);
+      continue;
+    }
+    if (text.startsWith("      name          : ")) {
+      declName = QUOTED.exec(text)?.[1] ?? null;
+      continue;
+    }
+    if (text.startsWith("      type          : ")) {
+      declare(QUOTED.exec(text)?.[1] ?? "");
+      continue;
+    }
+    const header = CODE_HEADER.exec(text);
+    if (header) {
+      finishMethod();
+      method = { ...splitMethod(header[1]), instructions: [] };
+      positions = null;
+    }
+  }
+  finishClass();
+
+  // Sink methods invoked on a subclass the APK declares (WebView subclasses' loadUrl, for example).
+  for (const { site, owner, name, found } of pending) {
+    const seen = new Set();
+    for (let at = superclass.get(owner); at && !seen.has(at); at = superclass.get(at)) {
+      seen.add(at);
+      const holders = [...originalsOf(mapping, at)].map((holder) => ({ holder, name }));
+      for (const sink of methodSinks(holders)) {
+        if (found.has(sink.id)) continue;
+        found.add(sink.id);
+        judgeSink(site, sink);
+      }
+    }
+  }
+
+  // D0 on the listing.
+  const out = [];
+  if (stats.classes === 0) out.push("the dexdump listing holds no class");
+  if (stats.rawSinks === 0) out.push("the dexdump listing holds no sink reference, so the check would see nothing; is dexdump's output whole?");
+  if (!stats.octaveSeen) out.push("the dexdump listing holds no dev.octave. class; Octave's code is missing or renamed beyond the mapping");
+  const hasOkHttp = mapping.classLines.some((line) => line.original.startsWith("okhttp3."));
+  if (hasOkHttp && !mapping.classLines.some((line) => line.original === "okhttp3.OkHttpClient")) {
+    out.push("the mapping has okhttp3 classes but no class line for okhttp3.OkHttpClient, so S1 cannot be found");
+  }
+
+  out.push(...[...errors.values()].map(({ text, count }) => (count > 1 ? `${text} (and ${count - 1} more like it)` : text)));
+
+  // D3: a row no sink matched.
+  for (const row of rows) {
+    for (const name of row.classes) {
+      if (!matchedRows.has(`${row.id}|${name}`)) out.push(`D3 row ${row.id} names ${name}, which holds none of ${row.sinks.join(", ")} in the APK; remove it from the row, or correct the row`);
+    }
+  }
+
+  // D5: an excluded package is back.
+  for (const prefix of lists.absentPackages) {
+    const kept = new Set();
+    for (const line of mapping.classLines) if (!line.removed && line.original.startsWith(prefix)) kept.add(line.original);
+    for (const [dex] of mapping.sections) for (const name of originalsOf(mapping, dex)) if (name.startsWith(prefix)) kept.add(name);
+    for (const section of mapping.sections.values()) for (const stack of section.stacks) for (const frame of stack.frames) if (frame.holder.startsWith(prefix)) kept.add(frame.holder);
+    if (kept.size > 0) {
+      const names = [...kept].sort();
+      out.push(`D5 ${prefix} is on ABSENT_PACKAGES, but the APK holds ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` and ${names.length - 3} more` : ""}; exclude its package from autolinking again, or remove the dependency`);
+    }
+  }
+
+  // D6: the callers list matches the APK.
+  if (devSupportDex.size === 0 && lists.devSupportCallers.length > 0) {
+    out.push("D6 DevSupportHttpClient is not in the APK, so DEV_SUPPORT_CLIENT_CALLERS must be empty");
+  } else {
+    for (const caller of lists.devSupportCallers) {
+      if (!matchedCallers.has(caller.class)) out.push(`D6 ${caller.class} is on DEV_SUPPORT_CLIENT_CALLERS but references DevSupportHttpClient nowhere in the APK; remove it`);
+    }
+  }
+
+  return { errors: out, stats: { opened: stats.opened, classes: stats.classes, sinkReferences: stats.sinkReferences, entryPoints: new Set([...matchedRows].map((key) => key.split("|")[0])).size } };
+}
