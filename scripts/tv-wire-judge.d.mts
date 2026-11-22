@@ -20,6 +20,7 @@ export interface WirePair {
   canaryOrigin?: number;
   privateLan?: number;
 }
+export function holdsSecret(text: string, secrets: readonly string[]): boolean;
 export const TOKENLESS_CALLS: string[];
 export const MIN_CANARY_CROSSINGS: number;
 export function judgeRecords(records: CaptureRecord[], options: { host: string; secrets: string[]; redirects?: boolean }): string[];

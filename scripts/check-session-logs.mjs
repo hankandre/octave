@@ -14,7 +14,7 @@
 // Scope: Kotlin and Java under modules/session/android/src/main/, TypeScript under modules/session/src/ and
 // apps/tv/src/host/, and modules/session/android/build.gradle. The JVM test AuthorizationValueTest is stricter for the
 // module's Kotlin (no log call at all); this check runs without Gradle and reads the TypeScript half too.
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -329,4 +329,4 @@ export function main(root = fileURLToPath(new URL("..", import.meta.url))) {
   return 0;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) process.exitCode = main();
+if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1])) process.exitCode = main();
