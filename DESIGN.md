@@ -180,7 +180,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 ### 7.4 Home and its rows (`MediaRow`)
 
 - **Home, in this order on every visit and for every account:** the hero, **Continue watching**, then one **Recently added** row. There is no row of library tiles and no per-library Latest rows; libraries live in the rail. An empty row is hidden and the others keep their order. Later rows (My list, T12-02) take places their own tasks set.
-- **Continue watching** is one row: in-progress films and episodes together with each series' next episode, most recently played first, at most 20 cards (owner, 2026-11-22; T5-02 builds the row with 16 and a later task raises it). Cards play in one press.
+- **Continue watching** is one row: in-progress films and episodes together with each series' next episode, most recently played first, at most 20 cards (owner, 2026-11-22; T5-02 builds the row with 16, and T5-07 raises it to 20 and adds the window). Cards play in one press.
 - **The window** (owner, 2026-11-22). A title leaves Continue watching 90 days after it was last played. The account can change the window in Settings: 30, 90, 180 or 365 days, or Never. A title that aged out is only hidden: its progress is kept, its own page still offers Resume, and playing it again brings it back. The device works this out from `UserData.LastPlayedDate`; nothing is asked of the server.
 - **Remove** (owner, 2026-11-22). Holding select on a Continue watching card opens a short menu (`Menu`, 7.10) that holds Remove. Remove hides the title from the row and keeps its progress; its own page still offers Resume, and playing it again brings it back (T5-05, which waits for Jellyscale #233). Until now a held select opened the details (7.5, section 9, and decision D15 B). What else the menu holds, the details among them, and its labels await the owner.
 - **Recently added** is one row of movies and shows, newest first. A series with new episodes shows once, as the series, and opens the series page. The row ends with a "See all" tile that opens the newest additions as a grid.
@@ -294,7 +294,7 @@ Panels (right-side sheets, a third of the canvas, the video keeps playing; Back 
 - **EmptyState**: a centred column, a 72 px line icon in `text3`, a title (`typeHeading`), one sentence, and at most one action.
 - **Skeleton**: `surface2` blocks shaped like the content, shown only after 150 ms. No shimmer under reduced motion.
 - **Logo** (owner, 2026-11-22): the "D1 bars" mark. The direction is video first, not music.
-- **Loader, "Signal"** (owner, 2026-11-22): the D1 bars, where the brass bar pulses and sends out rings. On each pulse one more letter of "octave" lights up, o first, then c, and so on. Where space is tight a small form shows the bars only. It replaces the ring as Octave's loading indicator (section 5 and 7.14). The exact motion awaits the owner's confirmation from the coordinator's logo page, round 7, and the brass colour is not a token yet; the task that builds it adds both. With reduced motion the mark is static (section 5), and the pulse stays within section 11, rule 5.
+- **Loader, "Signal"** (owner, 2026-11-22; the motion as the owner updated it the same day, `docs/specs/decisions-owner-chat-2026-11-22.md`, 3): the D1 bars, where the brass bar is a beacon. Every pulse, about 1.5 s apart, sends a wave across the whole name "octave"; each letter lights as the wave reaches it, o first and e last, and then fades back. The next pulse repeats the sweep. When the film is ready the whole name lights and holds. Where space is tight the bars-only form is used: the pulse and the rings, with no name. It replaces the ring as Octave's loading indicator (section 5 and 7.14). With reduced motion the still mark is shown with "Loading…" (section 5), and the pulse stays within section 11, rule 5. The reference is the coordinator's logo page, round 7. The brass colour is not a token yet: the owner's answer is pending (the recommendation is `#E8C48A`, the value `artAccent` already falls back to in section 3), and T3-35, which builds the loader, reads it from the owner's decision file and adds the tokens.
 
 ### 7.18 Settings
 
@@ -514,7 +514,7 @@ The owner's words are in `docs/specs/decisions-owner-inbox-2026-11-22.md`.
 - **Continue watching (T5-01).** Remove hides the title and keeps its progress. Remove lives in a short menu opened by holding select. A title leaves the row 90 days after it was last played; the row shows at most 20, newest first; the account can change the window (30, 90, 180 or 365 days, or Never). A title that aged out is only hidden, and the device works the ageing out from `UserData.LastPlayedDate` (7.4).
 - **Settings (T9-01).** Subtitles, auto-play, the skip modes and the Continue watching window follow the account and are stored on the server's display preferences. The streaming limits, and later passthrough and refresh rate, stay on the device (7.18).
 - **Icons.** The icon set is Tabler (MIT), loaded as a font with expo-font, with no native module.
-- **Logo and loader.** The logo is the D1 bars. The loader is "Signal", with a letter of "octave" lighting on each pulse and a bars-only small form; it replaces the ring (7.17). Video first, not music.
+- **Logo and loader.** The logo is the D1 bars. The loader is "Signal": each pulse of the brass bar sends a wave across "octave" that lights each letter in turn, and the whole name holds lit when the film is ready; a bars-only form where space is tight. It replaces the ring (7.17). Video first, not music.
 - **Errors.** A screen shows only Octave's fixed sentence for an error code, never native reason text (section 10, T8-25).
 
 What the evidence says for each option, for the decisions that had options:
@@ -531,5 +531,5 @@ What the evidence says for each option, for the decisions that had options:
 - The rail's look and entries; how many posters show beside it; what Back does on Home; the sign-in screen with its QR code (T1-08).
 - The token values after the TV design pass (T3-06), and the lift and memory choice (decision 0004, choice 2).
 - What the held-select menu on a Continue watching card holds besides Remove, and its labels: a held select opened the details until now (T5-05).
-- The loader's exact motion and the brass colour's value; the icons' stroke weight.
+- The brass colour's value as a token (T3-35); the icons' stroke weight (T3-34).
 - The Settings sections, their order, and Advanced (T9-08); a profile PIN (T12-01); recent searches (T12-05).
