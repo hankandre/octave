@@ -6,7 +6,7 @@ import type { ClientConversionReason, PlaybackDelivery, PlaybackPlan, PlaybackPl
 import { PlaybackRefusedError, secondsToTicks } from "../domain/playback";
 import type { AccountLanguageChange, AccountLanguageSettings } from "../domain/account-language-choices";
 import type { AccountLanguages, LanguageCulture } from "../domain/languages";
-import { classifyServerAddress, type HostClass } from "../domain/host-class";
+import { classifyServerAddress, hasPlainAsciiAuthority, isPlainAsciiHost, type HostClass } from "../domain/host-class";
 import type { ServerConnection } from "../domain/server-connection";
 import { SignInFailure } from "../domain/sign-in-failure";
 import { isSupportedServerVersion, parseServerVersion } from "../domain/server-version";
@@ -154,6 +154,9 @@ export function buildStaticStreamUrl(
   return url.toString();
 }
 
+const UNSAFE_SUBTITLE_URL =
+  "Jellyfin returned an unsafe external subtitle URL. Subtitle URLs must use the same server origin and must not contain credentials.";
+
 function buildSubtitleUrl(serverUrl: string, path: string | null | undefined): string | undefined {
   if (!path) return undefined;
   let url: URL;
@@ -162,12 +165,24 @@ function buildSubtitleUrl(serverUrl: string, path: string | null | undefined): s
   } catch {
     throw new Error("Jellyfin returned an invalid external subtitle URL.");
   }
+  // G1 and G2: host rules R1 and R2 on the server's own strings, before the parsed URL is used.
+  const trimmed = path.trim();
+  const relative = trimmed.startsWith("/") && !trimmed.startsWith("//");
+  const serverHost = new URL(serverUrl).hostname;
+  if (
+    (!relative && !hasPlainAsciiAuthority(trimmed)) ||
+    !hasPlainAsciiAuthority(serverUrl) ||
+    !isPlainAsciiHost(url.hostname) ||
+    !isPlainAsciiHost(serverHost)
+  ) {
+    throw new Error(UNSAFE_SUBTITLE_URL);
+  }
   stripCredentialQuery(url);
   const serverOrigin = new URL(serverUrl).origin;
   const safeProtocol = url.protocol === "http:" || url.protocol === "https:";
   const hasCredentials = Boolean(url.username || url.password);
   if (!safeProtocol || url.origin !== serverOrigin || hasCredentials) {
-    throw new Error("Jellyfin returned an unsafe external subtitle URL. Subtitle URLs must use the same server origin and must not contain credentials.");
+    throw new Error(UNSAFE_SUBTITLE_URL);
   }
   url.hash = "";
   return url.toString();
