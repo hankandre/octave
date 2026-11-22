@@ -1,0 +1,416 @@
+[
+  {
+    "Name": "Rehabilitation Of Synthetic Human",
+    "ServerId": "server-1011",
+    "Id": "id-1",
+    "Container": "ts",
+    "PremiereDate": "2022-02-16T00:00:00.0000000Z",
+    "ChannelId": null,
+    "RunTimeTicks": 100000000,
+    "ProductionYear": 2022,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "id-1",
+      "ItemId": "id-1"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 0.6666666666666666,
+    "VideoType": "BluRay",
+    "ImageTags": {
+      "Primary": "id-2"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-2": "diE|rGDNI9tmPpMca0tSO@xFs9R%xuofWARiNGkWWVso"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic Show S00E01",
+    "ServerId": "server-1011",
+    "Id": "id-17",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "IndexNumber": 1,
+    "ParentIndexNumber": 0,
+    "IsFolder": false,
+    "Type": "Episode",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "74098ae7-4da9-10f4-c132-c1d51e73afb1000001",
+      "ItemId": "id-17"
+    },
+    "ChildCount": 0,
+    "SeriesName": "Synthetic Show",
+    "SeriesId": "series-synthetic",
+    "SeasonId": "id-18",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "SeasonName": "Specials",
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-19"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-19": "W~KUf+wVX2z6bI]}X8V@NyR-X7ocRlR.WCX5X8X7bHWXWoSyg0bs"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic Show S01E02",
+    "ServerId": "server-1011",
+    "Id": "item-episode-2",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "IndexNumber": 2,
+    "ParentIndexNumber": 1,
+    "IsFolder": false,
+    "Type": "Episode",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "item-episode-2",
+      "ItemId": "item-episode-2"
+    },
+    "ChildCount": 0,
+    "SeriesName": "Synthetic Show",
+    "SeriesId": "series-synthetic",
+    "SeasonId": "id-20",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "SeasonName": "Season 1",
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-21"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-21": "W~KUf+wVX2z6bI]}X8V@NyR-X7ocRlR.WCX5X8X7bHWXWoSyg0bs"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic Show S01E01",
+    "ServerId": "server-1011",
+    "Id": "item-episode-1",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "IndexNumber": 1,
+    "ParentIndexNumber": 1,
+    "IsFolder": false,
+    "Type": "Episode",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "item-episode-1",
+      "ItemId": "item-episode-1"
+    },
+    "ChildCount": 0,
+    "SeriesName": "Synthetic Show",
+    "SeriesId": "series-synthetic",
+    "SeasonId": "id-20",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "SeasonName": "Season 1",
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-22"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-22": "W~KUf+wVX2z6bI]}X8V@NyR-X7ocRlR.WCX5X8X7bHWXWoSyg0bs"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic Versions (2024)",
+    "ServerId": "server-1011",
+    "Id": "id-3",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "ProductionYear": 2024,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "id-3",
+      "ItemId": "id-3"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-4"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-4": "W~LN[G;ss%z6iQ}Sxvs7bFnUaes.n$bHjajZbHjZx[s8j[i~nls:"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic Extras (2024)",
+    "ServerId": "server-1011",
+    "Id": "id-5",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "ProductionYear": 2024,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "id-5",
+      "ItemId": "id-5"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-6"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-6": "W~KUf+wVX2z6bI]}X8V@NyR-X7ocRlR.WCX5X8X7bHWXWoSyg0bs"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic Multitrack (2024)",
+    "ServerId": "server-1011",
+    "Id": "item-multitrack",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "ProductionYear": 2024,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "item-multitrack",
+      "ItemId": "item-multitrack"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-7"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-7": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic Sidecar (2024)",
+    "ServerId": "server-1011",
+    "Id": "id-8",
+    "HasSubtitles": true,
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "ProductionYear": 2024,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "id-8",
+      "ItemId": "id-8"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-9"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-9": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic ASS (2024)",
+    "ServerId": "server-1011",
+    "Id": "id-10",
+    "HasSubtitles": true,
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "ProductionYear": 2024,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "id-10",
+      "ItemId": "id-10"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-11"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-11": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic AV1 (2024)",
+    "ServerId": "server-1011",
+    "Id": "id-12",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "ProductionYear": 2024,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "id-12",
+      "ItemId": "id-12"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-13"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-13": "W~K-?^xhXL*Zi%|Ft7WTWXj0WVo0S#W-SzbFW.bHkVjZayWCjJjZ"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic HEVC HDR10 (2024)",
+    "ServerId": "server-1011",
+    "Id": "id-14",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "ProductionYear": 2024,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "id-14",
+      "ItemId": "id-14"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-15"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-15": "WiIh{X*BH[*?Ec7Y_N%urxz#NYAUD%xaxaR7oMR+-qNHRjtjjYs,"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  },
+  {
+    "Name": "Synthetic H264 (2024)",
+    "ServerId": "server-1011",
+    "Id": "item-h264",
+    "Container": "mkv",
+    "ChannelId": null,
+    "RunTimeTicks": 100210000,
+    "ProductionYear": 2024,
+    "IsFolder": false,
+    "Type": "Movie",
+    "UserData": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 0,
+      "IsFavorite": false,
+      "Played": false,
+      "Key": "item-h264",
+      "ItemId": "item-h264"
+    },
+    "ChildCount": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "VideoType": "VideoFile",
+    "ImageTags": {
+      "Primary": "id-16"
+    },
+    "BackdropImageTags": [],
+    "ImageBlurHashes": {
+      "Primary": {
+        "id-16": "W~K-:.xhbV*Zi%|Ft7WTShj0Woo0WDW;aya|WXa#kVbEW.WDjbj?"
+      }
+    },
+    "LocationType": "FileSystem",
+    "MediaType": "Video"
+  }
+]
