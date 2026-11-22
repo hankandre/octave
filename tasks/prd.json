@@ -923,7 +923,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit fddfcb63 (with 160d0a28 D4 per decision log 22, ee63b888 dev-server watch and R5, 1c4fb8ea unlinking; expo-asset kept). pnpm check green; frozen items 1-5 green; tv:native:test 176/0; tv:build+tv:apk:check pass (5111 classes, 192 sinks in 15 entry points); tv:smoke and tv:e2e pass on own emulator-5620 (API 36 ATV x86_64). Entry 22 is a security-rule edit open to owner veto. Untested: Shield/real TVs, other Android versions, CI tv job, C++ inspector gate."
+          "evidence": "commit 76d2b7c2 (review fix, decision log 25: synthetic-only lambda-group sites judged; X6 removed; plan 008 logs the lows). pnpm check green (2583+1309 tests; frozen T3-19, 0 frozen changes); tv:apk:check passes (5111 classes, 192 sinks in 14 entry points) on release build defa2869. Earlier: tv:native:test 176/0, tv:smoke and tv:e2e on own emulator (API 36 ATV x86_64). Entries 22 and 25 are D4 scope edits open to owner veto. Untested: Shield/real TVs, arm64, other Android versions, CI tv job, C++ inspector gate, Jellyfin/Jellyscale."
         },
         {
           "id": "T3-04",
