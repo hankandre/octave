@@ -197,3 +197,80 @@ jobs:
             release-evidence/tv/
             apps/tv/android/app/build/test-results/
           if-no-files-found: warn
+
+  # The wire tests (T3-05, pnpm tv:wire): the e2e app on an Android TV emulator
+  # signs in and calls through the session module's one OkHttp client, against a
+  # local mock and the pinned Jellyfin 10.11, Jellyfin 12.4 and Jellyscale
+  # fixture, each through a recorder that keeps no header, query value or body.
+  # The run sets the emulator's global http_proxy to a listener of its own and
+  # judges the captures, the app's lines and the whole logcat dump. Its
+  # release-evidence/wire/summary.txt is T3-05 item 7's evidence. Not a required
+  # check until T10-01; the T3-05 pull request is held until it is green.
+  wire:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 11.3.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tv:prebuild
+      - run: pnpm tv:e2e:build
+      # fixture:setup waits for each library scan, which never settles on an
+      # empty library, so the playable samples are generated as the tripwire job
+      # does. The wire tests read no media.
+      - name: Generate samples with jellyfin-ffmpeg
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+            -e PATH=/usr/lib/jellyfin-ffmpeg:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+            --entrypoint bash jellyfin/jellyfin:10.11.7 scripts/generate-samples.sh
+      - run: pnpm fixture:up
+      # Setup output, stderr included, must hold no password.
+      - name: Set up the fixture servers
+        run: |
+          set -o pipefail
+          pnpm fixture:setup 2>&1 | node tests/integration/check-no-secret.mjs
+      # The udev rule from android-emulator-runner's README. Software emulation
+      # is never a silent fallback: no /dev/kvm fails here.
+      - name: Enable KVM
+        run: |
+          test -e /dev/kvm || { echo "ERROR wire: /dev/kvm is missing on this runner"; exit 1; }
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Wire tests on an Android TV emulator
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        env:
+          ANDROID_SERIAL: emulator-5554
+        with:
+          api-level: 36
+          target: android-tv
+          arch: x86_64
+          profile: tv_1080p
+          emulator-port: 5554
+          disable-linux-hw-accel: false
+          script: pnpm tv:wire
+      - name: Upload the wire evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: octave-wire-evidence
+          path: release-evidence/wire/
+          if-no-files-found: warn
+      - name: Stop fixture
+        if: always()
+        run: pnpm fixture:down
