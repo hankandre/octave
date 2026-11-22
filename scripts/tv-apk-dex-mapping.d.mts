@@ -17,5 +17,6 @@ export function dexTypeName(token: string): string | null;
 export function typeTokens(text: string): string[];
 export function originalsOf(mapping: Mapping, dexClass: string): Set<string>;
 export function resolveMethod(mapping: Mapping, dexClass: string, name: string, descriptor: string | null): { holder: string; name: string }[];
+export function memberTypes(mapping: Mapping, dexClass: string, name: string, descriptor: string | null, method: boolean): Set<string> | null;
 export function resolveField(mapping: Mapping, dexClass: string, name: string, typeDescriptor: string | null): string[];
 export function framesAt(mapping: Mapping, dexClass: string, name: string, descriptor: string | null, line: number | null): string[][];
