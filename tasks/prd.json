@@ -1360,10 +1360,10 @@
             "Component tests cover each rule, and the scripted on-device run in T3-10 covers them on the emulator"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit e8af5a1f: rows and cards built, Jest green. Milestone 5 run 1: poster row at drawDistance 150 ended on card 49 in 5 of 12 Right bursts (jumps to 7, then to 42). Stopped for a ruling. Frozen flash-list-double.tsx fails tsc, so pnpm check is red."
+          "passes": true,
+          "evidence": "Rows and cards built; commit b62e3d73. pnpm check green (Jest 150, Vitest, node 235). Milestone 5 on emulator: 49-press bursts held, thumb draw distance 243, Up/Down router, held Up/Down bursts 12 of 12. T3-10 covers device run."
         },
         {
           "id": "T3-09",
