@@ -18,6 +18,8 @@ export type RowRouter = {
   registerCard(rowId: string, itemId: string, view: unknown): void;
   /** A card took focus: point the rows above and below at their nearest card. */
   focused(rowId: string, index: number): void;
+  /** A row scrolled: when it holds the focused card, point the neighbours again (its offset moved after the focus event). */
+  scrolled(rowId: string): void;
 };
 
 const keyOf = (rowId: string, itemId: string): string => `${rowId}\u0000${itemId}`;
@@ -26,8 +28,9 @@ export function createRowRouter(memory: RowMemory): RowRouter {
   let rows: RouterRow[] = [];
   const guides = new Map<string, Guide>();
   const cards = new Map<string, unknown>();
+  let last: { rowId: string; index: number } | null = null;
 
-  return {
+  const router: RowRouter = {
     update(next) {
       rows = next;
     },
@@ -39,7 +42,11 @@ export function createRowRouter(memory: RowMemory): RowRouter {
       if (view === null) cards.delete(keyOf(rowId, itemId));
       else cards.set(keyOf(rowId, itemId), view);
     },
+    scrolled(rowId) {
+      if (last !== null && last.rowId === rowId) router.focused(rowId, last.index);
+    },
     focused(rowId, index) {
+      last = { rowId, index };
       const at = rows.findIndex((row) => row.id === rowId);
       if (at < 0) return;
       const source = rows[at];
@@ -57,4 +64,5 @@ export function createRowRouter(memory: RowMemory): RowRouter {
       }
     },
   };
+  return router;
 }
