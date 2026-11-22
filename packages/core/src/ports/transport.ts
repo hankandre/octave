@@ -1,8 +1,9 @@
 // How the core reaches a Jellyfin or Jellyscale server (decision 0005). The core holds an opaque session id and
 // never a token: the host's transport owns the token, builds the Authorization header, and follows no redirect.
 // The core's port is a subset of the native session surface (signIn, request, endSession); restoreSessions and
-// sessionEnded arrive with T4-05. Android implements it in Kotlin (T3-05); adapters/fetch-transport.ts is the
-// reference implementation for Node tests and the tripwire.
+// sessionEnded arrive with T4-05. Android implements it in Kotlin (modules/session, adapted by
+// apps/tv/src/host/transport.ts; T3-05); adapters/fetch-transport.ts is the reference implementation for Node tests
+// and the tripwire.
 
 // Opaque: made by the transport at sign-in. Not derived from the token; means nothing to the server.
 export type SessionId = string;

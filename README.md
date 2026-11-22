@@ -31,7 +31,10 @@ mise exec -- pnpm tv:apk:check
 ANDROID_SERIAL=<your emulator> mise exec -- pnpm tv:smoke
 mise exec -- pnpm tv:e2e:build
 ANDROID_SERIAL=<your emulator> mise exec -- pnpm tv:e2e
+ANDROID_SERIAL=<your emulator> mise exec -- pnpm tv:wire
 ```
+
+`pnpm tv:wire` (T3-05) signs in and calls through the session module's one OkHttp client in the e2e app, against a local mock and the pinned servers below, and records every request. It sets the emulator's global HTTP proxy for the run, so use your own emulator.
 
 The server tripwire plays generated samples through the gateway against pinned Jellyfin 10.11, Jellyfin 12.4 and Jellyscale servers in Docker, once with full device capabilities and once for each of three capability sets that lack a video codec:
 
