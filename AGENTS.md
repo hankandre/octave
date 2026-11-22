@@ -126,6 +126,7 @@ Dependencies
 - Propose a test, lint, or rule after the second correction for the same mistake.
 - Never claim a check passed without showing its output.
 - When a command is denied, stop and report it; never retry it in another place or form.
+- Run one plain command per tool call; never chain a removal, a kill, or a heredoc with other commands.
 
 ## Parallel work
 
