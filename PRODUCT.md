@@ -33,7 +33,7 @@ Octave borrows the feel of a streaming service and leaves out what such a servic
 
 1. **Your next episode comes first.** The first thing on Home is what you were in the middle of, and one press plays it.
 2. **Home stays where you left it.** The rows and their order are the same on every visit. A row's contents change only when the library or your own history does.
-3. **You decide what Continue watching holds.** You can remove a title from it; its position is kept and its own page still offers Resume. Whether titles also leave by themselves after a while, and what Remove means exactly, are open owner decisions (T5-01).
+3. **You decide what Continue watching holds.** You can remove a title from it; its position is kept and its own page still offers Resume. A title you have not played for 90 days leaves the row by itself, and each account can change that window (30, 90, 180 or 365 days, or Never). A title that left is only hidden: nothing expires, its position is kept, and playing it again brings it back (owner, 2026-11-22, T5-01).
 4. **The end of a film is the end.** In a series the next episode plays after a countdown you can see, hide, or turn off. Nothing unrelated starts by itself.
 5. **Your account is yours.** Remembering several accounts must not let one person open another's. What Octave learns about a viewer stays on that viewer's server, under their account.
 6. **Nothing from outside.** No ads, no promoted titles, and nothing that is not in the library.
@@ -140,9 +140,19 @@ Dolby Vision, passthrough, and frame-rate matching are proven on the owner's Shi
 
 These are the owner's decisions; each has a task.
 
-- **Continue watching (T5-01).** What Remove means (hide and keep the position, or reset progress), where it lives (the title's page, or a menu on a held select), and whether titles also leave the row by themselves after a window, with which default. The earlier desktop rule (titles leave after two weeks) has no evidence behind it; manual removal does.
+- **The menu on a Continue watching card (T5-05).** Remove lives in a short menu on a held select (decided, below). What else that menu holds, and its labels, are open: a held select opened the details until now.
 - **A PIN per profile (T12-01).** Whether and when a profile gets a PIN, entered with the D-pad and never shown in clear.
-- **Which settings follow the account and which stay on the device (T9-01).** The earlier "one set of playback settings per computer" does not fit a shared TV. Proposed: personal choices (subtitles, auto-play, skip) follow the account; hardware choices (passthrough, refresh rate) stay with the device.
+- **The Settings sections (T9-08).** Their list and order, and what sits under an Advanced section.
 - **Recent searches on a shared TV (T12-05).** They save presses but show one viewer's searches to the next.
 - **One Home across servers.** Servers stay separate for now.
 - **Other TV platforms.** Samsung, LG, and Vidaa owners ask for clients (Fider #1615, 466 votes); no platform beyond Android TV, Fire TV, and Apple TV is planned.
+
+## Decided product questions
+
+The owner's decisions of 2026-11-22 from the decision inbox (`docs/specs/decisions-owner-inbox-2026-11-22.md`). The evidence for each option is in `DESIGN.md` section 12.
+
+- **Continue watching (T5-01).** Remove hides the title and keeps its progress; the other option was to reset the progress, which is the only way on a server without Jellyscale #233. Remove lives in a short menu on a held select; the other option was the title's page. A title leaves the row 90 days after it was last played, the row shows at most 20, newest first, and each account can change the window (30, 90, 180 or 365 days, or Never); the other option was to keep everything by default. A title that aged out is only hidden, and the device works the ageing out from the server's last-played date.
+- **Which settings follow the account (T9-01).** Subtitles, auto-play, the skip modes and the Continue watching window follow the account and are stored on the server's display preferences, so another device signed in to the account has them. The streaming limits, and later passthrough and refresh rate, stay on the device. The other option for storage was the device, keyed by account.
+- **Errors.** A screen shows only Octave's own fixed sentence for an error, never the reason text of the player, the system or the server.
+- **The application ID** is `cloud.jellyscale.octave` (T3-21).
+- **Discovery** lists a `.home.arpa` name as well as a `.local` name (T4-01).

@@ -625,6 +625,27 @@
           "evidence": "commit 21b9b1b4 (fix) on 2636dd3f: follow-ups step fixes small lows, leaves go to tasks/backlog.jsonl, real-TV gates in result, unaccountedLows count; task-followups tests and pnpm check green"
         },
         {
+          "id": "T1-21",
+          "title": "Let a Product Owner pass move finished phases out of tasks/prd.json",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T1-13"
+          ],
+          "acceptance": [
+            "scripts/task-owner.mjs gains one operation that moves a phase whose tasks are all done into a file pnpm task never loads whole; the spec names the file and says whether the rule 'There is no done.json' must change, which is the owner's to change",
+            "An id in depends_on or taken_by that names a moved task still resolves: pnpm task show, lint:flow, lint:backlog and scripts/prd.test.ts pass after a move",
+            "The 250,000-byte limit is unchanged"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T1-19",
           "title": "Give each task a lane and run each lane without a relaunch",
           "domain": "Process",
@@ -1574,8 +1595,9 @@
             "A release build meant for a real TV is signed with that key, read from the environment or an ignored local file; without the key the build fails and names what is missing, and never falls back to the template's debug keystore",
             "A test reads the signing certificate of a built APK and fails when it is the template's public debug certificate; the spec says which key CI's emulator builds use",
             "Any script or documented command that installs onto a real TV refuses a debuggable build (docs/security.md, Development builds)",
-            "Owner step: a build on the Shield that was signed with the debug key is uninstalled before the first private-key install, and the task's evidence records it",
-            "docs/security.md describes the signing rule in the same PR, and the PR calls out the signing change"
+            "Owner step: a build on the Shield that was signed with the debug key, or has the old application ID, is uninstalled before the first private-key install, and the task's evidence records it",
+            "docs/security.md describes the signing rule in the same PR, and the PR calls out the signing change",
+            "The application ID is cloud.jellyscale.octave (owner, 2026-11-22), changed in packages/core/src/domain/app-identity.ts, the one place that defines it; every test, fixture and document holding dev.octave.tv follows, and the Kotlin package names stay"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
           "status": "todo",
@@ -1905,7 +1927,7 @@
           ],
           "acceptance": [
             "A native method with no arguments sends the one fixed discovery datagram and returns the servers that answered within 2 seconds; adding it is recorded in ARCHITECTURE.md as a new native method",
-            "A reply is dropped when it is over 4 KB, is not JSON with string Address, Id and Name, or has an address the host-class rule refuses; of the rest, a reply is listed only when its Address host is a private-LAN IP literal equal to the datagram's source address, or a .local name; a loopback address, a public address, an IP literal that differs from the source and any other name are dropped; dropped replies are counted, never listed or probed",
+            "A reply is dropped when it is over 4 KB, is not JSON with string Address, Id and Name, or has an address the host-class rule refuses; of the rest, a reply is listed only when its Address host is a private-LAN IP literal equal to the datagram's source address, or a .local or .home.arpa name; a loopback address, a public address, an IP literal that differs from the source and any other name are dropped; dropped replies are counted, never listed or probed",
             "A server that advertises only an https domain is not listed; it can still be typed by hand (T4-02)",
             "Names are stripped of control and direction-override characters and capped at 128 characters",
             "Two replies naming the same id at different addresses are marked as conflicting",
@@ -2146,10 +2168,11 @@
           ],
           "acceptance": [
             "Blocked on Jellyscale #233: the task starts when the server can hide a title from Continue watching for one account",
-            "Remove is reachable where T5-01 put it, in at most two presses from the focused card",
+            "Remove is in the short menu that holding select opens on a Continue watching card (T5-01), at most two presses from the focused card",
+            "Owner step, before the Tests step: what else that menu holds and its labels, since a held select opened the details until now",
             "After Remove the card leaves the row at once and focus moves to the next card",
             "The title stays removed after a relaunch and on another device signed in to the same account",
-            "What happens to the saved position follows T5-01's answer, and the title's own page shows it",
+            "Remove keeps the saved position, and the title's own page still offers Resume",
             "A failed request puts the card back and shows one sentence",
             "Playing the title again returns it to the row"
           ],
@@ -2611,6 +2634,29 @@
           "evidence": "PR #288, commit f19a4a88 on task/T8-22. pnpm check exit 0 (core 3062, apps/tv 1616, lint:flow ok, test:workflow 106). Mutation: removing each half of G2 fails subtitle-url-host-g2.test.ts. Tripwire (CI job, run https://github.com/jellyscale-org/octave/actions/runs/45057666194) passed. Item 6 proved on a fake gateway only; Jellyscale gates T8-02, T8-09 untested."
         },
         {
+          "id": "T8-25",
+          "title": "Show only Octave's fixed sentence for each error code",
+          "domain": "Playback Session",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T2-05",
+            "T9-07"
+          ],
+          "acceptance": [
+            "A failure in the state a screen reads carries a code from a closed list and no text from the player, the system, the server or an exception",
+            "Each code has one row of DESIGN.md's copy table; a test fails for a code without one, and a missing sentence goes to the owner",
+            "A test raises failures whose native message holds a host, a path, a URL and a MAC address (T9-07's leftover strings among them) and finds none in what a screen reads",
+            "The filtered native reason goes only to the log and diagnostics path, and docs/security.md says so"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T8-02",
           "title": "Direct-play the original file with Media3",
           "domain": "Player Engine",
@@ -2676,7 +2722,8 @@
           "human": false,
           "depends_on": [
             "T8-03",
-            "T1-08"
+            "T1-08",
+            "T8-25"
           ],
           "acceptance": [
             "The player shows only the picture until a key is pressed; an arrow shows the controls with focus on the scrubber and does not seek",
@@ -3057,7 +3104,8 @@
           "skill": "change-review",
           "human": false,
           "depends_on": [
-            "T8-09"
+            "T8-09",
+            "T8-25"
           ],
           "acceptance": [
             "Each refusal reason shows its own sentence over the title's backdrop, with Retry and Back: conversion not allowed, this device cannot play the file, unsafe stream address, live source, no sources",
@@ -3195,9 +3243,28 @@
           ],
           "acceptance": [
             "Owner decision: which settings are per account (the proposal: subtitles, auto-play, skip modes, the Continue watching window) and which per device (the proposal: streaming limits, and later passthrough and refresh rate)",
-            "Owner decision: the list and order of sections on the TV settings screen, and what sits under one Advanced section",
             "Owner decision: where per-account settings are stored, on the server's display preferences or on the device keyed by account",
             "The answers are written into DESIGN.md and PRODUCT.md"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T9-08",
+          "title": "Decide the Settings sections, their order and what sits under Advanced",
+          "domain": "App Shell & Presentation",
+          "model": "fable",
+          "skill": "verify",
+          "human": true,
+          "depends_on": [
+            "T9-01"
+          ],
+          "acceptance": [
+            "Owner decision: the list and order of sections on the TV settings screen, and what sits under one Advanced section (the proposal: DESIGN.md 7.18's list, with no Advanced section)",
+            "The answer is written into DESIGN.md 7.18"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -3219,9 +3286,9 @@
           "acceptance": [
             "One versioned preferences record is rebuilt from an allowlist of validated fields on every read and write",
             "A field outside the allowlist, or with an invalid value, is dropped and the default is used",
-            "Per-account fields are kept apart by account, as T9-01 decided; switching accounts switches them",
+            "The device's record holds the per-device fields; the per-account fields pass the same allowlist and are stored on the server's display preferences by a later task, as T9-01 decided",
             "The record never holds a token, credential, URL, play-session id or anything derived from one; a test writes each and reads none back",
-            "Defaults: auto-play next on, countdown 10 s, intros and credits Show a Skip button, limits No limit"
+            "Defaults: auto-play next on, countdown 10 s, intros and credits Show a Skip button, limits No limit, Continue watching window 90 days"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -3239,13 +3306,14 @@
           "depends_on": [
             "T5-01",
             "T9-02",
+            "T9-08",
             "T8-15",
             "T8-18"
           ],
           "acceptance": [
-            "Settings opens from the rail with its sections listed as T9-01 decided; Up and Down move, Right enters a section, Left returns",
+            "Settings opens from the rail with its sections listed as T9-08 decided; Up and Down move, Right enters a section, Left returns",
             "Playback has: Play next episode automatically, Countdown (5, 10 or 15 seconds), Intros and Credits (Show a Skip button, Skip automatically, Do nothing), and the two streaming limits",
-            "Home has the Continue watching window with the default T5-01 decided",
+            "Home has the Continue watching window (30, 90, 180 or 365 days, or Never; 90 by default), saved per account",
             "A change applies at once, in the player too, and confirms with a toast where its effect cannot be seen",
             "Every control is one of the shared controls; none is a platform dialog",
             "A row for something not built says Not available yet in words and takes no focus"
@@ -3691,19 +3759,19 @@
       "tasks": [
         {
           "id": "T11-01",
-          "title": "Decide the application ID and the store listing",
+          "title": "Decide the store listing and the publishing account",
           "domain": "Distribution",
           "model": "fable",
           "skill": null,
           "human": true,
           "depends_on": [
-            "T0-05"
+            "T0-05",
+            "T3-21"
           ],
           "acceptance": [
-            "Owner decision: the final Android application ID, replacing the placeholder dev.octave.tv before the first upload",
+            "The application ID is cloud.jellyscale.octave (owner, 2026-11-22); T3-21 changes it and this task changes no ID",
             "Owner decision: the store name, the short and full descriptions, the banner and the screenshots",
-            "Owner decision: which Play account and signing arrangement publish the app",
-            "The ID is changed in the one place that defines it, and the build and tests pass with it"
+            "Owner decision: which Play account and signing arrangement publish the app"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
