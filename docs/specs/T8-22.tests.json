@@ -1,0 +1,22 @@
+{
+  "task": "T8-22",
+  "files": [
+    "packages/core/src/player/launch-request-hardening.test.ts",
+    "packages/core/src/player/coordinator-launch-refusal.test.ts",
+    "packages/core/src/jellyfin/subtitle-url-host.test.ts",
+    "scripts/security-doc-t8-22.test.ts",
+    "packages/core/src/player/coordinator.test.ts",
+    "packages/core/src/player/coordinator-retry-position.test.ts",
+    "packages/core/src/player/coordinator-audio-pick.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/launch-request-hardening.test.ts", "-t", "T8-22 item 1:"] },
+    { "item": 2, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/launch-request-hardening.test.ts", "-t", "T8-22 item 2:"] },
+    { "item": 3, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/launch-request-hardening.test.ts", "-t", "T8-22 item 3:"] },
+    { "item": 4, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/launch-request-hardening.test.ts", "src/jellyfin/subtitle-url-host.test.ts", "-t", "T8-22 item 4:"] },
+    { "item": 5, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/launch-request-hardening.test.ts", "-t", "T8-22 item 5:"] },
+    { "item": 6, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/coordinator-launch-refusal.test.ts", "-t", "T8-22 item 6:"] },
+    { "item": 7, "gate": "review", "why": "Only a reviewer can remove one rule at a time and check that each of L1 to L5, S1, S2, G1, G2, D4 and D5 has a case that fails without it; the red gate proves each item fails without the whole change." },
+    { "item": 8, "run": ["pnpm", "exec", "vitest", "run", "scripts/security-doc-t8-22.test.ts", "-t", "T8-22 item 8:"] }
+  ]
+}
