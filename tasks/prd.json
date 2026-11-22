@@ -1597,10 +1597,10 @@
             "The tv job's pnpm tv:e2e stays green, and docs/security.md and docs/commands.md say which checks the e2e APK gets, in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:e2e:build && pnpm tv:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit df1c1337. pnpm check and pnpm tv:e2e (own emulator) exit 0. Printed, with APK = <checkout>/apps/tv/dist/e2e/octave-tv-e2e.apk and [...] cut (full lines: plan 015), pg_map_id a005bc06e5db632695193179114b6dc53836e0053a175d5ba50f1afdf97cdaae: \"tv apk dex: APK passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)\"; \"tv inspector: APK passes (1 dex, 5310 classes, R8 release with its mapping; [...])\"; \"tv native inspector: APK passes (44 libraries in 2 ABIs; [...])\". No list changed. Item 4 CI half pending."
+          "passes": true,
+          "evidence": "PR #302; tv job green on head 3550da16, run https://github.com/jellyscale-org/octave/actions/runs/45078572205. pnpm tv:e2e printed: \"tv apk dex: <e2e apk> passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)\"; \"tv inspector: <e2e apk> passes (1 dex, 5310 classes, R8 release with its mapping; [...])\"; \"tv native inspector: <e2e apk> passes (44 libraries in 2 ABIs; [...])\"; \"tv e2e: url 202/202, device-id 13/13, host ok\"; cleartext and resolved-address ok. Full lines in PR body."
         },
         {
           "id": "T3-37",

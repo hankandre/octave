@@ -8,7 +8,7 @@
 - [x] `scripts/tv-e2e-apk.mjs` and its call in `scripts/tv-e2e.mjs`
 - [x] `docs/security.md`, `docs/commands.md`, backlog line
 - [x] Local verify on the emulator
-- [ ] CI: `tv` job green on the PR head (Ship phase; evidence outside the manifest)
+- [x] CI: `tv` job green on the PR head (PR #302, run 45078572205, head 3550da16; evidence outside the manifest)
 
 ## Milestones
 
@@ -38,4 +38,4 @@
   - `ERROR tv apk dex: D6 DevSupportHttpClient is not in the APK, so DEV_SUPPORT_CLIENT_CALLERS must be empty`
   - Under `pnpm tv:e2e` the other two checks passed, the run closed with `ERROR tv e2e: the e2e APK failed scripts/tv-apk-dex.mjs (exit 1); it was not installed; fix it and run pnpm tv:e2e:build`, exit 1, no adb call.
 - First `pnpm check` run had five apps/tv jest timeouts (cold cache, machine loaded); rerun alone and the full check passed.
-- The `tv` job step duration before/after is a CI measurement, recorded at Ship.
+- `tv` job, step "Conformance under Hermes on an Android TV emulator" (`pnpm tv:e2e`), from the job step timestamps. Before (main, run 45075056040): 1m55s, no retry. Before (run 45077010959, whose first attempt did not start its script, so the `once more` step ran it): 1m40s. After (PR #302, run 45078572205): the first attempt ended after 1m07s without starting its script and the `once more` step ran `pnpm tv:e2e` in 2m03s, with the three pass lines on the e2e APK at 22:59:16 to 22:59:17 and the tv e2e lines after them. The step is 8 to 23 s longer than before; the three checks themselves ran from 22:59:16 to 22:59:17, so most of the difference is emulator variance (unverified).
