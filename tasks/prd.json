@@ -980,10 +980,10 @@
             "An answer larger than the cap stated for its endpoint class is refused with a typed error before it is parsed, or the body is streamed; the spec lists the caps, each below 32 MiB, and a test sends an oversized answer"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "Second review fix at commit 1bf7ac60: lint:logs closes the console, regex, template and Timber bypasses (bypass test 6 red on old script). Lows in plan 009 (commit 9959e7f0). pnpm check exit 0; tv:native:test 328, 0 failed; tv:wire --task T3-05 on own emulator-5590: 8 pairs pass; tv:apk:check inspector passes on a local release APK. Held in_progress: the wire and tv CI jobs must be green on the PR head (dexdump on the runner unverified). No PR yet."
+          "passes": true,
+          "evidence": "PR #268. CI run 45017829422 on the PR head: checks, dependency-review, tripwire, tv (dexdump found, tv inspector passes) and wire (T3-05 pairs) all green. Local: pnpm check exit 0, tv:native:test 328 pass. EchoedToken mutation (forms = emptyList()) fails the test, run in the PR body. Lows in plan 009."
         },
         {
           "id": "T3-20",
