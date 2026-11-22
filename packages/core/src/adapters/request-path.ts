@@ -9,15 +9,20 @@
 
 const DECODING_ROUNDS = 4;
 const ESCAPE_RUN = /(?:%[0-9A-Fa-f]{2})+/g;
-const lenientUtf8 = new TextDecoder("utf-8");
 
-// Percent-decoding that never throws, as Kotlin's PercentDecoding: a % not followed by two hex digits stays as
-// written, and bytes that are not UTF-8 become U+FFFD.
+// Percent-decoding that never throws, for dot detection only: a % not followed by two hex digits stays as written; a
+// run of escapes that is not UTF-8 keeps its ASCII bytes and turns every other byte into U+FFFD. It may differ from
+// Kotlin's PercentDecoding in non-ASCII text next to a bad byte, never in a dot, a slash or a backslash.
 function decodeLeniently(text: string): string {
   return text.replace(ESCAPE_RUN, (run) => {
-    const bytes = new Uint8Array(run.length / 3);
-    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Number.parseInt(run.slice(i * 3 + 1, i * 3 + 3), 16);
-    return lenientUtf8.decode(bytes);
+    try {
+      return decodeURIComponent(run);
+    } catch {
+      return run.replace(/%([0-9A-Fa-f]{2})/g, (_escape, hex: string) => {
+        const byte = Number.parseInt(hex, 16);
+        return byte < 0x80 ? String.fromCharCode(byte) : "\uFFFD";
+      });
+    }
   });
 }
 
@@ -28,7 +33,6 @@ function hasDotSegment(text: string): boolean {
 export function isSafeRequestPath(path: string): boolean {
   if (!path.startsWith("/") || path.startsWith("//") || /[?#]/.test(path)) return false;
   if (path.includes("\\")) return false;
-  // eslint-disable-next-line no-control-regex
   if (/[\u0000-\u001f\u007f]/.test(path)) return false;
   // P5: decodeURIComponent throws on a malformed escape and on bytes that are not UTF-8 (an overlong form included).
   try {
