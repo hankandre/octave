@@ -2,7 +2,7 @@
 // Usage: node .claude/workflows/ruling-log.mjs --repo <worktree> --task <ID> --commit <sha>
 //        node .claude/workflows/ruling-log.mjs --repo <worktree> --task <ID> --history
 // Prints one JSON line on stdout and ERROR lines on stderr; exits 0 when ok, 1 otherwise.
-// Check mode: {ok, commit, heading, problems}. History mode: {ok, sections, counts, firstRulings, problems}.
+// Check mode: {ok, commit, heading, problems}. History mode: {ok, sections, counts, firstRulings, commits, problems}.
 // It only reads the repository; it never writes, stashes or resets.
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -86,7 +86,7 @@ export function parseRulingHistory(text, task) {
 }
 
 export function rulingHistory({ repo, task }) {
-  const result = { ok: false, sections: 0, counts: {}, firstRulings: {}, problems: [] };
+  const result = { ok: false, sections: 0, counts: {}, firstRulings: {}, commits: [], problems: [] };
   if (!TASK_ID.test(task || "")) {
     result.problems.push(`unknown task id ${JSON.stringify(task)}`);
     return result;
@@ -96,7 +96,14 @@ export function rulingHistory({ repo, task }) {
     result.problems.push(`the worktree ${dir} does not exist`);
     return result;
   }
-  const shown = makeGit(dir)(["show", `HEAD:${LOG}`]);
+  const git = makeGit(dir);
+  const shown = git(["show", `HEAD:${LOG}`]);
+  // The commits on HEAD's history that added a ruling section for this task, so a later run cannot reuse one as the log entry of a new ruling.
+  const listed = git(["log", "--format=%H", "HEAD", "--", LOG]);
+  for (const sha of listed.ok && listed.text ? listed.text.split("\n") : []) {
+    const added = git(["show", "--format=", "--unified=0", sha, "--", LOG]).text.split("\n");
+    if (added.some((line) => line.startsWith("+## ") && headingOf(task).test(line.slice(1)))) result.commits.push(sha);
+  }
   Object.assign(result, parseRulingHistory(shown.ok ? shown.text : "", task));
   result.ok = true;
   return result;

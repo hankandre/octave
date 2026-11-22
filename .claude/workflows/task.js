@@ -239,7 +239,7 @@ const isRulingHistory = (json) => typeof json.sections === 'number' && isObject(
 function decideRulingHistory(gate, final) {
   const json = readGate(gate, isRulingHistory);
   if (!json) return final ? { action: 'none', detail: 'the ruling history gave no readable result twice' } : unreadable('the ruling history');
-  return { action: 'pass', detail: '', sections: json.sections, counts: json.counts, firstRulings: json.firstRulings };
+  return { action: 'pass', detail: '', sections: json.sections, counts: json.counts, firstRulings: json.firstRulings, commits: Array.isArray(json.commits) ? json.commits.filter((c) => typeof c === 'string') : [] };
 }
 // GATE-END
 // STEP-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
@@ -501,6 +501,7 @@ async function runTask(task, opts) {
         totalRulings = history.sections;
         for (const key of Object.keys(history.counts)) ruleCounts[key] = history.counts[key];
         for (const key of Object.keys(history.firstRulings)) firstRulings[key] = history.firstRulings[key];
+        for (const sha of history.commits) usedCommits.push(sha);
       } else log(`${task}: no readable ruling history; counting rulings from this run only`);
     }
     const plan = planRuling(questions, ruleCounts, firstRulings, totalRulings);
@@ -521,7 +522,7 @@ Log every ruling: append a section headed "## <date from date +%F>, ${task} ruli
     if ((ruling.needsPass || []).length) return { stop: result('blocked', ruling.needsPass) };
     const commit = typeof ruling.logCommit === 'string' ? ruling.logCommit.trim() : '';
     if (!/^[0-9a-f]{7,40}$/i.test(commit)) return { stop: result(RULING_UNLOGGED, 'The Product Owner returned no valid logCommit for its ruling.') };
-    if (usedCommits.includes(commit)) return { stop: result(RULING_UNLOGGED, `The ruling returned the logCommit ${commit} of an earlier ruling, so it has no log entry of its own.`) };
+    if (usedCommits.some((used) => used.toLowerCase().startsWith(commit.toLowerCase()) || commit.toLowerCase().startsWith(used.toLowerCase()))) return { stop: result(RULING_UNLOGGED, `The ruling returned the logCommit ${commit} of an earlier ruling, so it has no log entry of its own.`) };
     const logged = await runGate(rulingLogCommand(commit), `ruling log ${task}`, phase, decideRulingLog);
     if (logged.action === 'denied') return { stop: result('denied', logged.detail) };
     if (logged.action !== 'pass') return { stop: result(RULING_UNLOGGED, logged.detail) };
