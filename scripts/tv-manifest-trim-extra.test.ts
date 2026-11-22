@@ -118,6 +118,28 @@ describe("checkManifest on the recorded dumps of the release APK", () => {
   });
 });
 
+describe("checkManifest reads every backup attribute from the manifest dump", () => {
+  const ALLOW = "A: http://schemas.android.com/apk/res/android:allowBackup(0x01010280)=false";
+  const dump = (manifest: string) => (...args: string[]) => {
+    if (args[0] === "resources") return RESOURCES_AFTER;
+    if (args[0] === "xmltree" && args.includes("AndroidManifest.xml")) return manifest;
+    if (args[0] === "xmltree" && args.includes(RULES_FILE)) return RULES_AFTER;
+    throw new Error(`unexpected aapt2 dump ${args.join(" ")}`);
+  };
+
+  it.each([
+    ["backupAgent", 'A: http://schemas.android.com/apk/res/android:backupAgent(0x0101027f)="dev.octave.tv.BackupAgent" (Raw: "dev.octave.tv.BackupAgent")'],
+    ["fullBackupOnly", "A: http://schemas.android.com/apk/res/android:fullBackupOnly(0x01010473)=true"],
+    ["fullBackupContent", "A: http://schemas.android.com/apk/res/android:fullBackupContent(0x01010473)=@0x7f130006"],
+  ])("T3-22 extra: fails a recorded manifest that also declares android:%s", (name, line) => {
+    expect(MANIFEST_AFTER).toContain(ALLOW);
+    const manifest = MANIFEST_AFTER.replace(ALLOW, `${ALLOW}\n        ${line}`);
+    const errors = checkManifest(dump(manifest), "app-release.apk");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(new RegExp(`^ERROR tv apk: android:${name}`));
+  });
+});
+
 describe("judgeBackup refuses backup settings that take no effect today", () => {
   it.each([
     ["backupAgent", { backupAgent: "dev.octave.tv.BackupAgent" }],
