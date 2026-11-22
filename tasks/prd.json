@@ -1025,10 +1025,10 @@
             "docs/security.md states the permissions and the backup rule in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check && pnpm tv:smoke",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "Implemented on task/T3-22 to commit 43833c85 (review follow-ups logged in plan 006). Local: pnpm check exit 0; check-red green [1,2,3,5]; earlier at 429d70c4: tv:build ok, tv:apk:check \"2 permissions, 0 queries, backup off\", tv:native:test 176/0 failed, tv:smoke and tv:e2e pass on own Android 16 TV emulator. Pending: PR, tv job on head (tv:apk:check, tv:smoke). Untested: Android 7-15 (API 24-35), Shield (Android 11), arm64, real TV, on-device backup/transfer (T4-05, T4-09)."
+          "passes": true,
+          "evidence": "PR #262: tv job of ci.yml green on head 31e8ef8b (run https://github.com/hankandre/octave/actions/runs/44983380568); its pnpm tv:apk:check (4 permissions, 3 queries gone) and pnpm tv:smoke (First focus emulator step) pass. Local: pnpm check ok; tv:native:test 176/0. Untested: API 24-35, Shield, arm64, real TV, on-device backup (T4-05, T4-09)."
         },
         {
           "id": "T3-21",
