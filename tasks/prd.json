@@ -573,10 +573,10 @@
             "Tests in a new file that pnpm test:workflow runs cover each case, the frozen .claude/workflows/task.test.mjs is not changed, and WORKFLOW.md and .claude/agents/product-owner.md state the step's wider remit in the same PR"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 26daf1d3 (feature in commit 86013f7c): ask action, ownerRuling, ruling-log.mjs, history seeding, docs. pnpm check green (workflow 163/163); task-rulings 49/49; check-red green 1-6; lint:flow ok; frozen task.test.mjs and task-resume.test.mjs unchanged vs merge base."
+          "passes": true,
+          "evidence": "Review fix in commit 50e8b5a5: usedCommits seeded from ruling-log --history, so a logCommit from an earlier run is rejected. pnpm check passes (166 workflow tests). Lows logged in docs/plans/active/012-t1-16-review-followups.md."
         },
         {
           "id": "T1-17",
