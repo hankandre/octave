@@ -189,11 +189,20 @@ export async function judgeDex(lines, mapping, lists) {
       return;
     }
 
-    // D4: Octave references a listed entry point or hook, resolved by member.
+    // D4 (decision log 22): each dev.octave. frame makes one reference. The innermost remaining frame references the
+    // operand, resolved by member; an Octave frame further out references the next-inner frame, the callee R8 inlined.
     const octaveHolder = site.stacks.flatMap((s) => s).find(isOctave).holder;
-    for (const name of named) {
+    const judgeReference = (from, name) => {
       const hit = listed.find((entry) => matchesClass(name, entry));
-      if (hit) report(`D4|${octaveHolder}|${name}`, `D4 ${octaveHolder} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
+      if (hit) report(`D4|${from}|${name}`, `D4 ${from} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
+    };
+    for (const stack of site.stacks) {
+      const frames = stack.filter((frame) => !libInternal(frame.holder));
+      frames.forEach((frame, i) => {
+        if (!frame.octave) return;
+        if (i === 0) for (const name of named) judgeReference(frame.holder, name);
+        else if (!frames[i - 1].octave) judgeReference(frame.holder, frames[i - 1].holder);
+      });
     }
     // Decision log 14: Octave takes a call or web socket factory only from Octave's own code.
     if (member) {

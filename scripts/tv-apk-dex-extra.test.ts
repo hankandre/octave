@@ -137,3 +137,67 @@ describe("T3-19 decision log 14: where Octave may take a call factory", () => {
     TIMEOUT,
   );
 });
+
+// Decision log 22: each dev.octave. frame makes one reference. The innermost remaining frame references the operand;
+// an Octave frame further out references the next-inner frame, the callee R8 inlined into it.
+const TAKER_OUTER = "    1:2:java.lang.Object take(java.lang.Object):9 -> a";
+const takerMapping = (...inner: string[]) =>
+  [composeMapping(), "dev.octave.tv.Taker -> dev.octave.tv.Taker:", ...inner.map((line) => `    1:2:${line} -> a`), TAKER_OUTER, ""].join("\n");
+const NETWORKING = "Lcom/facebook/react/modules/network/NetworkingModule;";
+const NO_SINK = "invoke-static {v0}, Ljava/util/Objects;.requireNonNull:(Ljava/lang/Object;)Ljava/lang/Object; // method@0000";
+
+describe("T3-19 decision log 22: D4 judges the reference Octave's own source makes", () => {
+  it(
+    "library code inlined into an Octave method whose operand names a listed class does not fail D4",
+    async () => {
+      const dump = composeDump() + method("dev.octave.tv.Taker", [`new-instance v0, ${NETWORKING} // type@0000`]);
+      const run = await runDex({ dump, mapping: takerMapping("java.lang.Object com.example.Lib.build():4:4") });
+      expect(errors(run), run.out).toEqual([]);
+      expect(run.code).toBe(0);
+    },
+    TIMEOUT,
+  );
+
+  it.each([
+    ["a hook's", "com.facebook.react.modules.network.OkHttpClientProvider", "void com.facebook.react.modules.network.OkHttpClientProvider.setOkHttpClientFactory(com.facebook.react.modules.network.OkHttpClientFactory):50:50"],
+    ["a listed class's", "com.facebook.react.modules.network.NetworkingModule", "void com.facebook.react.modules.network.NetworkingModule.clearCookies(com.facebook.react.bridge.Callback):70:70"],
+  ])(
+    "%s method inlined directly into an Octave method, with no sink and no operand naming the class, fails D4",
+    async (_kind, listed, frame) => {
+      const dump = composeDump() + method("dev.octave.tv.Taker", [NO_SINK]);
+      const run = await runDex({ dump, mapping: takerMapping(frame) });
+      expect(run.code, run.out).toBe(1);
+      expect(errors(run).some((line) => line.includes("D4 dev.octave.tv.Taker references") && line.includes(listed)), run.out).toBe(true);
+      expect(errors(run).every((line) => line.includes("D4")), run.out).toBe(true);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "the same listed frame with an unlisted library frame between it and the Octave frame does not fail D4",
+    async () => {
+      const dump = composeDump() + method("dev.octave.tv.Taker", [NO_SINK]);
+      const run = await runDex({
+        dump,
+        mapping: takerMapping(
+          "void com.facebook.react.modules.network.OkHttpClientProvider.setOkHttpClientFactory(com.facebook.react.modules.network.OkHttpClientFactory):50:50",
+          "void com.example.Lib.configure():7",
+        ),
+      });
+      expect(errors(run), run.out).toEqual([]);
+      expect(run.code).toBe(0);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "a sink in library code inlined into an Octave method still fails D1",
+    async () => {
+      const dump = composeDump() + method("dev.octave.tv.Taker", ["invoke-virtual {v0}, Ljava/net/URL;.openConnection:()Ljava/net/URLConnection; // method@0000"]);
+      const run = await runDex({ dump, mapping: takerMapping("java.lang.Object com.example.Lib.fetch(java.net.URL):4:4") });
+      expect(run.code, run.out).toBe(1);
+      expect(errors(run).some((line) => line.includes("D1 dev.octave.tv.Taker holds S2")), run.out).toBe(true);
+    },
+    TIMEOUT,
+  );
+});
