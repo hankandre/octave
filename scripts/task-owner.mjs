@@ -1,5 +1,6 @@
 // The Product Owner's write path: add, drop, move and edit tasks in tasks/prd.json, and mark the backlog entries a new task takes.
 // Run: node scripts/task-owner.mjs apply <ops.json> --date <YYYY-MM-DD> [--root <dir>]
+// A task's lane (task.mjs LANES) is placement, like its domain: an edit of lane needs no approval or scope. Only a Product Owner pass sets it.
 // All or nothing, in the canonical file format. The status fields (status, owner, passes, evidence) stay with `pnpm task set`.
 // There is no operation for `rules`: AGENTS.md and prd rule 15 give a pass add, split, reorder and drop only.
 // An acceptance edit passes with owner_approval (an approval file naming the task) or with scope (the Product Owner's reason that it
@@ -9,9 +10,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { validateBacklog } from "./check-backlog.mjs";
+import { LANES } from "./task.mjs";
 
-const TASK_KEYS = ["id", "title", "domain", "model", "skill", "human", "depends_on", "acceptance", "verify"];
-const EDITABLE = ["title", "domain", "model", "skill", "depends_on", "human", "verify", "acceptance"];
+const TASK_KEYS = ["id", "title", "domain", "lane", "model", "skill", "human", "depends_on", "acceptance", "verify"];
+const EDITABLE = ["title", "domain", "lane", "model", "skill", "depends_on", "human", "verify", "acceptance"];
 const NEEDS_APPROVAL = ["acceptance", "human", "verify"];
 const STATUS_FIELDS = ["status", "owner", "passes", "evidence"];
 const APPROVAL_PATH = /^(docs\/specs\/decisions-[^/]+\.md|docs\/decisions\/[^/]+\.md)$/;
@@ -45,12 +47,32 @@ function checkFields(prd, fields, id) {
           ? Array.isArray(value) && value.every((dep) => typeof dep === "string" && dep !== id && find(prd, dep))
           : key === "acceptance"
             ? isStrings(value) && value.length > 0
-            : typeof value === "string" && value.trim() !== "";
+            : key === "lane"
+              ? LANES.includes(value)
+              : typeof value === "string" && value.trim() !== "";
     if (!ok) {
       const unknown = key === "depends_on" && Array.isArray(value) ? value.filter((dep) => dep === id || !find(prd, dep)) : [];
       fail(`${id}: ${key} has an invalid value${unknown.length ? `: ${unknown.join(", ")} is not another existing task` : ""}`);
     }
   }
+}
+
+// A lane given to a task that has none goes right after domain, so every task reads the same.
+function applyFields(task, fields) {
+  const { lane, ...rest } = fields;
+  Object.assign(task, rest);
+  if (lane === undefined) return;
+  if ("lane" in task) {
+    task.lane = lane;
+    return;
+  }
+  const entries = Object.entries(task);
+  for (const key of Object.keys(task)) delete task[key];
+  for (const [key, value] of entries) {
+    task[key] = value;
+    if (key === "domain") task.lane = lane;
+  }
+  if (!("lane" in task)) task.lane = lane;
 }
 
 function approve(op, readApproval, summary) {
@@ -138,7 +160,7 @@ function applyOne(prd, op, ctx) {
         else approve(op, ctx.readApproval, ctx.summary);
       }
       checkFields(prd, fields, op.id);
-      Object.assign(task, fields);
+      applyFields(task, fields);
       ctx.summary.push(`edited ${op.id}: ${Object.keys(fields).join(", ")}`);
       return undefined;
     }

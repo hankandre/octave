@@ -1,5 +1,5 @@
 // Read and update tasks/prd.json without loading it whole into an agent's context.
-// Run: node scripts/task.mjs next | show <id> | list [--status s] [--phase p] | set <id> --status s [...]
+// Run: node scripts/task.mjs next [--lane l] | show <id> | list [--status s] [--phase p] [--lane l] | set <id> --status s [...]
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,13 +10,18 @@ export const MAX_FILE_BYTES = 350_000;
 export const MAX_EVIDENCE_CHARS = 600;
 export const EVIDENCE_REFERENCE = /\bPR #\d+\b|\bcommit [0-9a-f]{7,40}\b/i;
 
+// The lanes a task can have, and the ones of which at most one runs at a time (AGENTS.md: native module, player and on-device work stay serial).
+// task.js cannot import this file, so it keeps a copy that .claude/workflows/task-lanes.test.mjs holds equal.
+export const LANES = ["workflow", "core", "ui", "apk-checks", "tv-scripts", "release", "native-session", "player", "device"];
+export const SERIAL_LANES = ["native-session", "player", "device"];
+
 const SET_REFUSAL = "ERROR task: set changes only status, owner, passes and evidence";
 const NOT_CANONICAL =
   "ERROR task: tasks/prd.json is not in its canonical 2-space JSON format; refusing to reformat it";
 const USAGE = [
-  "usage: pnpm task next",
+  "usage: pnpm task next [--lane l]",
   "       pnpm task show <id>",
-  "       pnpm task list [--status s] [--phase p]",
+  "       pnpm task list [--status s] [--phase p] [--lane l]",
   "       pnpm task set <id> --status s [--owner o] [--evidence-file f]",
   "A machine consumer should run: node scripts/task.mjs <command>",
 ].join("\n");
@@ -27,10 +32,16 @@ const fail = (message) => {
 
 const allTasks = (prd) => prd.phases.flatMap((phase) => phase.tasks.map((task) => ({ phase: phase.id, task })));
 
-export function nextTask(prd) {
+const checkLane = (lane) => {
+  if (lane !== undefined && !LANES.includes(lane)) fail(`ERROR task: unknown lane ${lane}`);
+};
+
+export function nextTask(prd, filters = {}) {
+  checkLane(filters.lane);
   const passing = new Set(allTasks(prd).filter(({ task }) => task.passes === true).map(({ task }) => task.id));
   for (const { phase, task } of allTasks(prd)) {
     if (task.status !== "todo" || task.human === true) continue;
+    if (filters.lane !== undefined && task.lane !== filters.lane) continue;
     if ((task.depends_on || []).every((id) => passing.has(id))) return { phase, ...task };
   }
   return null;
@@ -49,8 +60,14 @@ export function listLines(prd, filters = {}) {
   if (filters.phase !== undefined && !prd.phases.some((phase) => phase.id === filters.phase)) {
     fail(`ERROR task: unknown phase ${filters.phase}`);
   }
+  checkLane(filters.lane);
   return allTasks(prd)
-    .filter(({ phase, task }) => (filters.status === undefined || task.status === filters.status) && (filters.phase === undefined || phase === filters.phase))
+    .filter(
+      ({ phase, task }) =>
+        (filters.status === undefined || task.status === filters.status) &&
+        (filters.phase === undefined || phase === filters.phase) &&
+        (filters.lane === undefined || task.lane === filters.lane),
+    )
     .map(({ task }) => `${task.id}\t${task.status}\t${task.title}`);
 }
 
@@ -84,13 +101,26 @@ export function parseListArgs(argv) {
       args: argv,
       allowPositionals: true,
       strict: true,
-      options: { status: { type: "string" }, phase: { type: "string" } },
+      options: { status: { type: "string" }, phase: { type: "string" }, lane: { type: "string" } },
     });
   } catch (error) {
-    fail(`ERROR task: list takes only --status and --phase; ${error.message}`);
+    fail(`ERROR task: list takes only --status, --phase and --lane; ${error.message}`);
   }
-  if (parsed.positionals.length > 0) fail("ERROR task: list takes only --status and --phase");
-  return { status: parsed.values.status, phase: parsed.values.phase };
+  if (parsed.positionals.length > 0) fail("ERROR task: list takes only --status, --phase and --lane");
+  checkLane(parsed.values.lane);
+  return { status: parsed.values.status, phase: parsed.values.phase, lane: parsed.values.lane };
+}
+
+export function parseNextArgs(argv) {
+  let parsed;
+  try {
+    parsed = parseArgs({ args: argv, allowPositionals: true, strict: true, options: { lane: { type: "string" } } });
+  } catch (error) {
+    fail(`ERROR task: next takes only --lane; ${error.message}`);
+  }
+  if (parsed.positionals.length > 0) fail("ERROR task: next takes only --lane");
+  checkLane(parsed.values.lane);
+  return { lane: parsed.values.lane };
 }
 
 const length = (text) => Array.from(text).length;
@@ -145,7 +175,7 @@ function main(argv) {
   const read = () => readFileSync(TASK_FILE, "utf8");
   switch (command) {
     case "next":
-      console.log(JSON.stringify(nextTask(JSON.parse(read())), null, 2));
+      console.log(JSON.stringify(nextTask(JSON.parse(read()), parseNextArgs(rest)), null, 2));
       return;
     case "show":
       if (rest.length !== 1) fail("ERROR task: show takes exactly one task id");
