@@ -1,9 +1,8 @@
 // T3-05 item 8: each checkout runs the fixture servers under its own Compose project, so one checkout never adopts,
-// recreates or stops another's containers. The name is derived from the checkout's real path; the host ports stay
-// fixed (docs/specs/T3-05.md, "Compose projects"), so a second checkout stops and names the holder instead.
+// recreates or stops another's containers. The name is derived from the checkout's real path. The host ports are
+// chosen per checkout (T3-27, fixture-ports.mjs); FIXTURE_PORTS is only the default and slot 0.
 //
-// Run as a script it prints this checkout's name, for the shell scripts. With --check-ports it also reads which
-// Compose project publishes each fixture port and exits 1, printing the judge's lines, when another project does.
+// Run as a script it prints this checkout's name, for the shell scripts.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { realpathSync } from "node:fs";
@@ -14,7 +13,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "..", "..");
 const composeFile = join(here, "docker-compose.yml");
 
-// The host ports tests/integration/docker-compose.yml publishes.
+// The host ports tests/integration/docker-compose.yml publishes: the default triple.
 export const FIXTURE_PORTS = [18096, 18097, 18098];
 
 // "octave-" and the first 10 hex characters of the SHA-256 of the checkout's real path.
@@ -59,10 +58,5 @@ export function readPortHolders(ports = FIXTURE_PORTS) {
 
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const name = composeProjectName(repo);
-  if (process.argv.includes("--check-ports")) {
-    const errors = judgePortHolders(readPortHolders(), name);
-    for (const line of errors) console.error(line);
-    process.exit(errors.length > 0 ? 1 : 0);
-  }
   console.log(name);
 }

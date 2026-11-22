@@ -17,3 +17,4 @@ apps/tv/.expo/
 apps/tv/dist/
 modules/*/android/build/
 modules/*/android/.cxx/
+tests/integration/.fixture-ports
