@@ -1,0 +1,27 @@
+{
+  "task": "T3-05",
+  "files": [
+    "scripts/tv-transport.test.ts",
+    "scripts/tv-wire.test.ts",
+    "tests/integration/compose-project.test.ts",
+    "scripts/tv-wire-private-lan.test.ts",
+    "scripts/tv-session-module.test.ts",
+    "packages/core/tests/fixtures/transport-query-encoding.json",
+    "packages/core/src/adapters/fetch-transport-query.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-transport.test.ts", "-t", "T3-05 item 1:"] },
+    { "item": 2, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-transport.test.ts", "scripts/tv-wire.test.ts", "-t", "T3-05 item 2:"] },
+    { "item": 3, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-wire.test.ts", "-t", "T3-05 item 3:"] },
+    { "item": 4, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-wire.test.ts", "-t", "T3-05 item 4:"] },
+    { "item": 5, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-transport.test.ts", "-t", "T3-05 item 5:"] },
+    { "item": 6, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-wire.test.ts", "-t", "T3-05 item 6:"] },
+    {
+      "item": 7,
+      "gate": "ci",
+      "why": "A pinned Jellyscale built from source, Docker and an Android emulator cannot run inside the red gate's ten minutes. The rule applied is item 3's frozen judgeCapture. Evidence: release-evidence/wire/summary.txt from the wire job of ci.yml on the pull request's head commit, quoted in the task's evidence, holding the line `transport-probe-then-signed-in jellyscale T3-05 pass` and a pass line for every other T3-05 pair, which are the device halves of items 2 to 6: transport-probe-then-signed-in on mock, jellyfin-10-11 and jellyfin-12 (item 3, and item 1's one-client path), transport-redirect mock (item 2), transport-canary mock with the logcat judge (item 4), transport-errors mock (item 5), transport-private-lan-and-proxy mock, and the run as a whole judged by judgeWire (item 6); no fail line; plus the same file from the implementer's own pnpm tv:wire run. The wire job is not a required check until T10-01, so the pull request is not marked ready and auto-merge is not enabled until that job is green on the head commit (spec check note 4)."
+    },
+    { "item": 8, "run": ["pnpm", "exec", "vitest", "run", "tests/integration/compose-project.test.ts", "-t", "T3-05 item 8:"] },
+    { "item": 9, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-wire-private-lan.test.ts", "-t", "T3-05 item 9:"] }
+  ]
+}
