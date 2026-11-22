@@ -27,7 +27,8 @@ None added.
 
 - [x] 1 (commit f5313224)
 - [x] 2 control window, judge, runSmoke; item 3 green (commit c84d6d4b)
-- [x] 3 the owner file and the two messages; item 4 green
+- [x] 3 the owner file and the two messages; item 4 green (commit 8cf4def8)
+- [x] 4 the documents; item 6 green
 
 ## Decisions
 
