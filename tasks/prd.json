@@ -920,10 +920,10 @@
             "docs/security.md names the check and what it cannot see in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check && pnpm tv:smoke",
-          "status": "blocked",
+          "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 2db395d0 (record only; code as of c6479ec4). tv:apk:check still exits 1 on the same 10 D4 lines in R8-merged wd0 (rerun, APK of 0bf8d980+bb6b2364); open question 3 unanswered, no rule changed. Probe outside the repo: (a) leaves 5, (b) leaves 3 and fails 1 unfrozen test, (a)+(b) pass, (d) passes with 76/76; (c) unprobed. pnpm check green (2596+1413); frozen items 1-5 pass. Not run: tv:native:test, build, smoke, e2e, dev-server watch, toybox nc, CI tv job. Untested: any emulator, Shield, real TVs, any Android version, Jellyfin, Jellyscale"
+          "evidence": "commit 77f67909 (entry 27; docs cceaeb21), for PR #267. Keep-rule APK 0e713087: tv:apk:check passes (5301 classes, 219 sinks, 14 entry points), 1 ref left to pre-R8 test; no-keep build 514f8085 fails D7 (19 classes). check green (2596+1428), tv:native:test 215/0, smoke and e2e pass on emulator-5620 (API 36 ATV x86_64), frozen 1-5 green. Not pushed; CI tv job not run. Untested: Shield, real TVs, arm64, other Android versions, Jellyfin, Jellyscale, C++ inspector gate."
         },
         {
           "id": "T3-04",
