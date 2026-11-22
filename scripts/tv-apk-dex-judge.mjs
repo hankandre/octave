@@ -262,7 +262,9 @@ export async function judgeDex(lines, mapping, lists) {
       // R8's dispatch casts a merged lambda's captured value back to its type before the case's code; the cast is R8's,
       // and the dex type is often a merged class, so its originals name classes no lambda in the group uses. The cast
       // alone is not judged by D4; every member reference and other type reference there is, and sinks are judged above.
-      const dispatchCast = opcode === "check-cast" && isSyntheticOnly(stack);
+      // Only where the site is Octave's through the group test: a synthesized class whose own class line is dev.octave.
+      // is judged as it was before the review fix, so no cast that failed then passes now.
+      const dispatchCast = opcode === "check-cast" && isSyntheticOnly(stack) && !stack[0].holder.startsWith(OCTAVE);
       frames.forEach((frame, i) => {
         if (!frame.octave) return;
         if (i === 0) {
