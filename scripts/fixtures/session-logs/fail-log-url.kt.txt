@@ -1,0 +1,9 @@
+package dev.octave.session.http
+
+import android.util.Log
+
+internal object Sample {
+    fun sent(request: okhttp3.Request) {
+        Log.d("Octave", request.url.toString())
+    }
+}

@@ -1,0 +1,11 @@
+package dev.octave.session.http
+
+internal object Sample {
+    fun send(call: okhttp3.Call) {
+        try {
+            call.execute()
+        } catch (error: java.io.IOException) {
+            error.printStackTrace()
+        }
+    }
+}

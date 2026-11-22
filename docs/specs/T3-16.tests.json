@@ -1,0 +1,52 @@
+{
+  "task": "T3-16",
+  "files": [
+    "modules/session/android/src/test/java/dev/octave/session/http/RequestSeamTest.kt",
+    "modules/session/android/src/test/java/dev/octave/session/http/EchoedTokenTest.kt",
+    "modules/session/android/src/test/java/dev/octave/session/http/HeaderVectorControlTest.kt",
+    "modules/session/android/src/test/java/dev/octave/session/http/RequestPathTest.kt",
+    "modules/session/android/src/test/java/dev/octave/session/http/ResponseCapTest.kt",
+    "modules/session/android/src/test/java/dev/octave/session/http/SessionTransportTest.kt",
+    "packages/core/tests/fixtures/request-paths.json",
+    "scripts/check-session-logs.test.ts",
+    "scripts/fixtures/session-logs/fail-console-template.ts.txt",
+    "scripts/fixtures/session-logs/fail-console-url.ts.txt",
+    "scripts/fixtures/session-logs/fail-log-template.kt.txt",
+    "scripts/fixtures/session-logs/fail-log-url.kt.txt",
+    "scripts/fixtures/session-logs/fail-logging-interceptor.gradle.txt",
+    "scripts/fixtures/session-logs/fail-logging-interceptor.kt.txt",
+    "scripts/fixtures/session-logs/fail-print-stack-trace.kt.txt",
+    "scripts/fixtures/session-logs/fail-println-headers.kt.txt",
+    "scripts/fixtures/session-logs/fail-system-err.java.txt",
+    "scripts/fixtures/session-logs/fail-timber.kt.txt",
+    "scripts/fixtures/session-logs/pass.gradle.txt",
+    "scripts/fixtures/session-logs/pass.kt.txt",
+    "scripts/fixtures/session-logs/pass.ts.txt",
+    "scripts/tv-apk-inspector.test.ts",
+    "scripts/fixtures/tv/inspector/debug-build.json",
+    "scripts/fixtures/tv/inspector/release-build.json",
+    "scripts/security-doc-t3-16.test.ts"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "gate": "met",
+      "why": "Already true on main: SessionTransport.request refuses a header key, a non-path or absolute path, and another origin before a request is built (docs/specs/T3-16.md, Facts). The red gate stops a test that passes before implementation, so the named pin is frozen but not run here. Evidence: node scripts/tv-native-test-only.mjs dev.octave.session.http.RequestSeamTest (request_refuses_headers_absolute_urls_and_other_origins, 15 shapes, green at the freeze on bb6b2364)."
+    },
+    {
+      "item": 2,
+      "gate": "met",
+      "why": "Already true on main: TokenStrip replaces every form of the session's token before a body crosses (docs/specs/T3-16.md, Facts). The filter-off control is the pre-sign-in path, where the filter has no token (the spec's decision; spec-check note 4 asks the guardian review to confirm it). Evidence: node scripts/tv-native-test-only.mjs dev.octave.session.http.EchoedTokenTest (an_echoed_token_is_removed_from_response_bodies, green at the freeze on bb6b2364)."
+    },
+    {
+      "item": 3,
+      "gate": "met",
+      "why": "Already true on main: kotlin_header_matches_the_recorded_vector in MediaBrowserHeaderTest.kt holds the Kotlin builder to packages/core/tests/fixtures/authorization-header.json, as authorization-header.test.ts holds the core's. The control a_changed_quote_or_encoding_does_not_match is frozen in HeaderVectorControlTest.kt. Evidence: node scripts/tv-native-test-only.mjs dev.octave.session.http.MediaBrowserHeaderTest and the same for dev.octave.session.http.HeaderVectorControlTest (both green at the freeze on bb6b2364)."
+    },
+    { "item": 4, "run": ["pnpm", "exec", "vitest", "run", "scripts/check-session-logs.test.ts", "-t", "T3-16 item 4:"] },
+    { "item": 5, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-apk-inspector.test.ts", "-t", "T3-16 item 5:"] },
+    { "item": 6, "run": ["pnpm", "exec", "vitest", "run", "scripts/security-doc-t3-16.test.ts", "-t", "T3-16 item 6:"] },
+    { "item": 7, "run": ["node", "scripts/tv-native-test-only.mjs", "dev.octave.session.http.RequestPathTest"] },
+    { "item": 8, "run": ["node", "scripts/tv-native-test-only.mjs", "dev.octave.session.http.ResponseCapTest"] }
+  ]
+}

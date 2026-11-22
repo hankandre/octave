@@ -119,10 +119,12 @@ class SessionTransportTest {
         assertEquals(1, server.requests.size)
     }
 
+    // T3-16: a session's GET answer is capped at 8 MiB (docs/specs/T3-16.md, "The answer caps"; ResponseCapTest holds
+    // every class). T3-05's single 32 MiB limit is gone, so the case sends 8 MiB + 1 byte.
     @Test
-    fun a_body_over_32_mib_is_unexpected() {
+    fun a_body_over_the_session_read_cap_is_unexpected() {
         val session = signIn(server)
-        val big = Buffer().apply { write(ByteArray((SessionTransport.MAX_BODY_BYTES + 1).toInt()) { ' '.code.toByte() }) }
+        val big = Buffer().apply { write(ByteArray(8 * 1024 * 1024 + 1) { ' '.code.toByte() }) }
         server.answer("/Items/big") { MockResponse.Builder().code(200).body(big.clone()).build() }
         assertError("unexpected-response", sessionRequest(session, "GET", "/Items/big"))
         SessionRegistry.close(SessionId.parse(session)!!)
@@ -214,14 +216,13 @@ class SessionTransportTest {
         assertEquals(emptyList<String>(), server.paths(), "nothing was sent")
     }
 
-    // Recorded, not asserted contained: the dot-segment refusal is T3-16's (backlog entry 172).
+    // T3-16: a dot segment is refused before anything is sent (RequestPathTest holds every vector).
     @Test
-    fun a_dot_segment_path_is_resolved_by_okhttp_and_reaches_the_server_as_recorded_here() {
+    fun a_dot_segment_path_is_refused_and_sends_nothing() {
         val session = signIn(server, "${server.origin}/jf")
         server.requests.clear()
-        val result = sessionRequest(session, "GET", "/Items/../../x")
-        assertEquals(404, result["status"])
-        assertEquals(listOf("GET /x"), server.paths(), "OkHttp resolves the dot segments, leaving the base path")
+        assertError("refused", sessionRequest(session, "GET", "/Items/../../x"))
+        assertEquals(emptyList<String>(), server.paths(), "nothing was sent")
         SessionRegistry.close(SessionId.parse(session)!!)
     }
 
