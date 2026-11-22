@@ -19,6 +19,13 @@ export function hasPlainAsciiAuthority(address: string): boolean {
   return PLAIN_ASCII_AUTHORITY.test(address.trim());
 }
 
+// A server-supplied value that is a path on the server: one leading slash, and no second slash or
+// backslash. The WHATWG parser reads `/\` as `//` for http(s) and drops tabs and newlines first.
+export function isRootRelativePath(value: string): boolean {
+  const cleaned = value.trim().replace(/[\t\n\r]/g, "");
+  return cleaned.startsWith("/") && cleaned[1] !== "/" && cleaned[1] !== "\\";
+}
+
 // R2: a bracketed IPv6 literal, or only letters, digits, `.`, `_` and `-`.
 export function isPlainAsciiHost(hostname: string): boolean {
   if (hostname.startsWith("[") && hostname.endsWith("]")) return true;

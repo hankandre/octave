@@ -6,7 +6,7 @@ import type { ClientConversionReason, PlaybackDelivery, PlaybackPlan, PlaybackPl
 import { PlaybackRefusedError, secondsToTicks } from "../domain/playback";
 import type { AccountLanguageChange, AccountLanguageSettings } from "../domain/account-language-choices";
 import type { AccountLanguages, LanguageCulture } from "../domain/languages";
-import { classifyServerAddress, hasPlainAsciiAuthority, isPlainAsciiHost, type HostClass } from "../domain/host-class";
+import { classifyServerAddress, hasPlainAsciiAuthority, isPlainAsciiHost, isRootRelativePath, type HostClass } from "../domain/host-class";
 import type { ServerConnection } from "../domain/server-connection";
 import { SignInFailure } from "../domain/sign-in-failure";
 import { isSupportedServerVersion, parseServerVersion } from "../domain/server-version";
@@ -167,7 +167,7 @@ function buildSubtitleUrl(serverUrl: string, path: string | null | undefined): s
   }
   // G1 and G2: host rules R1 and R2 on the server's own strings, before the parsed URL is used.
   const trimmed = path.trim();
-  const relative = trimmed.startsWith("/") && !trimmed.startsWith("//");
+  const relative = isRootRelativePath(trimmed);
   const serverHost = new URL(serverUrl).hostname;
   if (
     (!relative && !hasPlainAsciiAuthority(trimmed)) ||
