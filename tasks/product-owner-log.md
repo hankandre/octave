@@ -478,3 +478,10 @@ A directed change, asked by the coordinator, that carries out one answer the own
 - Not changed: the size message ("trim or move finished phases in a Product Owner pass"), the 600-character evidence limit, the `rules` of `tasks/prd.json`, and the backlog line T1-21 took, which still quotes 250,000 bytes as the limit it was written under.
 - The four tasks drafted and not added earlier today ("Drafted, not added") are not added here: this change was directed to the limit only. The next full pass can add them, since the file now has room.
 - Checked: the file is 248,185 bytes after the edits (the two edits change no length).
+
+## 2026-11-22 (Product Owner pass, directed: a lane for every task, T1-19 Approach step 4)
+
+A directed pass on `task/T1-19`, asked by the workflow after the lane field and `laneProblems` were implemented (`docs/specs/T1-19.md`, "Proposed lane for every task"). No task is added, moved or dropped, and no acceptance item, `human` or `verify` is edited. Backlog entry 232 already carries `"taken_by": "T1-19"`, so the backlog is unchanged. The owner can veto any of it.
+
+- Gave every task a lane through `edit {lane}` (164 operations, `node scripts/task-owner.mjs apply`), as the spec proposes: workflow 18, core 22, ui 48, apk-checks 9, tv-scripts 11, release 7, native-session 16, player 19, device 14. The 164 ids are all of the file's tasks, each once. Every device-lane task is `human: true`; T11-06 is `human: false` and stays in `tv-scripts`.
+- Made room in `tasks/prd.json`: the file was 248,585 bytes with the lanes, 1,415 under `MAX_FILE_BYTES`. No finished phase can leave the file (later tasks name its tasks in `depends_on`, and no archive exists), so the evidence of 37 done tasks is cut to its first clause with the PR or commit reference kept, and ends "Detail in the PR." The file is now 242,803 bytes, 7,197 under the limit. Status, owner and passes are untouched.
