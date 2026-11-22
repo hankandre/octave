@@ -137,16 +137,14 @@ export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = E
     // Read the watch only after the event loop has turned since the last spawnSync, so no app connection is still queued.
     await sleep(SETTLE_MS);
     const watched = watch.result();
-    const watchErrors = judgeDevServerWatch(watched);
+    const watchErrors = judgeDevServerWatch(watched, controlFailures);
     writeFileSync(
       join(evidence, "dev-server-watch.txt"),
-      `${[`port ${port}: ${watched.controlsSeen} of ${watched.controlsExpected} control connections seen, ${watched.appConnections} app connections`, ...controlFailures, ...watchErrors].join("\n")}\n`,
+      `${[`port ${port}: ${watched.controlsSeen} of ${watched.controlsExpected} control connections seen, ${watched.appConnections} app connections, ${watch.strays()} connections before the controls (not counted)`, ...controlFailures, ...watchErrors].join("\n")}\n`,
     );
     const focusErrors = judgeFirstFocus(transcript);
     if (focusErrors.length > 0) console.error(transcript.join("\n"));
-    // A failed control command explains a missing control; it is not an error by itself when the control was seen.
-    const missed = watched.controlsSeen < watched.controlsExpected ? controlFailures.map((line) => `ERROR tv smoke: ${line}`) : [];
-    return [...missed, ...watchErrors, ...focusErrors];
+    return [...watchErrors, ...focusErrors];
   } catch (error) {
     if (error instanceof SmokeFailure) return [error.message];
     throw error;
