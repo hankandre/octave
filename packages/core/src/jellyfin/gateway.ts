@@ -15,7 +15,7 @@ import { MemoryLanHttpConfirmations, type LanHttpConfirmationStore } from "../la
 import { limitMbpsFor, mbpsToBitsPerSecond, MemoryStreamingLimits, type StreamingLimitStore } from "../streaming-limits";
 import { redactText } from "../redact";
 import { redactTransportError } from "../transport-error";
-import { toBrowseCards, toEpisodeCards, toGenres, toNextEpisode, toHomeLibraries, toMediaCards, toRecentPlays, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
+import { toBrowseCards, toEpisodeCards, toGenres, toNextEpisode, toHomeLibraries, toMediaCards, toRecentPlays, toRecentlyAdded, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
 import type { Crypto } from "../ports/crypto";
 import { TransportError, type QueryPair, type SessionId, type SignInCredential, type SignInResult, type Transport, type TransportResponse, type TransportTarget } from "../ports/transport";
@@ -44,6 +44,7 @@ export const CONTROL_REQUEST_TIMEOUT_MS = 15_000;
 export const REPORT_REQUEST_TIMEOUT_MS = 3_000;
 
 export const HOME_ROW_LIMIT = 16;
+export const RECENTLY_ADDED_LIMIT = 15;
 // The only ItemFields a card needs. ProductionYear and RunTimeTicks are
 // always returned and are not valid values here.
 const CARD_FIELDS = "PrimaryImageAspectRatio";
@@ -523,6 +524,25 @@ export class JellyfinGateway {
       timeout: CONTROL_REQUEST_TIMEOUT_MS,
     });
     return toMediaCards(data);
+  }
+
+  // Home's Recently added: one list across every library, no parentId (T5-02). Movies and episodes are named so a
+  // music or photo library cannot fill the slots; the server groups episodes into their series.
+  async latestItems(signal?: AbortSignal): Promise<MediaCard[]> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<BaseItemDto[]>("/Items/Latest", {
+      params: {
+        userId,
+        limit: RECENTLY_ADDED_LIMIT,
+        groupItems: true,
+        includeItemTypes: "Movie,Episode",
+        enableUserData: true,
+        ...CARD_IMAGE_PARAMS,
+      },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toRecentlyAdded(data, RECENTLY_ADDED_LIMIT);
   }
 
   // The genres of a library, from GET /Genres with the user and the library (P16-01 A5).
