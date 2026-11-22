@@ -1,0 +1,81 @@
+{
+  "task": "T1-20",
+  "files": [
+    "scripts/pipeline-cost.test.ts",
+    "scripts/pipeline-cost-report.test.ts",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a0937e1cc9adc9f26.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a094dc09b5a0dea5f.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a0fd639e330e2339a.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a3f83ac6b3d09145b.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a42935f0ba6a838ad.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a451dec73b4748f6f.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a5194f4a0759ec921.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a878e03a4093b1dbb.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a94d68fc95f088a1f.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a9eb0a2138aa6d056.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a9ee769a527e0ca00.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-ae8c13454c8275f2b.jsonl",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/workflows/wf_e3a521ae-589.json",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/workflows/wf_fixture-bad.json",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/workflows/wf_fixture-old.json",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/workflows/wf_fixture-open.json",
+    "scripts/fixtures/pipeline-cost/projects/-repo/session-1/workflows/wf_fixture-other.json",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a0937e1cc9adc9f26.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a094dc09b5a0dea5f.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a0fd639e330e2339a.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a3f83ac6b3d09145b.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a42935f0ba6a838ad.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a451dec73b4748f6f.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a5194f4a0759ec921.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a878e03a4093b1dbb.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a94d68fc95f088a1f.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a9eb0a2138aa6d056.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-a9ee769a527e0ca00.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/subagents/workflows/wf_e3a521ae-589/agent-ae8c13454c8275f2b.jsonl",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/workflows/wf_e3a521ae-589.json",
+    "scripts/fixtures/pipeline-cost/resume/-repo/session-1/workflows/wf_fixture-t907-resume.json"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/pipeline-cost.test.ts",
+        "-t",
+        "T1-20 item 1:"
+      ]
+    },
+    {
+      "item": 2,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/pipeline-cost.test.ts",
+        "-t",
+        "T1-20 item 2:"
+      ]
+    },
+    {
+      "item": 3,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/pipeline-cost-report.test.ts",
+        "-t",
+        "T1-20 item 3:"
+      ]
+    },
+    {
+      "item": 4,
+      "gate": "review",
+      "why": "the diff touches no workflow stage file"
+    }
+  ]
+}
