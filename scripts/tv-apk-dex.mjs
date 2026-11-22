@@ -24,11 +24,14 @@ const MARKER = /~~(R8|D8|L8)(\{[^}]*\})/g;
 
 /**
  * Reads an APK's zip central directory and returns each `classes*.dex` entry with the compiler markers its bytes hold:
- * `{ dex: { name, markers: { tool, pgMapId }[] }[], problems: string[] }`.
+ * `{ dex: { name, markers: { tool, pgMapId }[] }[], problems: string[], damage: string | null }`. Every offset and length
+ * is checked against the file before it is read (T3-29): a cut-short or damaged APK gives `damage`, what was wrong, and
+ * no dex; it never throws for the file's content.
  */
 export function readApkDex(apk) {
   const buf = readFileSync(apk);
-  const problems = [];
+  const damaged = (what) => ({ dex: [], problems: [], damage: what });
+  const fits = (at, length) => at >= 0 && at + length <= buf.length;
   let end = -1;
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65_557); i -= 1) {
     if (buf.readUInt32LE(i) === 0x06054b50) {
@@ -36,37 +39,48 @@ export function readApkDex(apk) {
       break;
     }
   }
-  if (end === -1) return { dex: [], problems: [`${apk} is not a zip file`] };
+  if (end === -1) return damaged("no zip end record");
   const count = buf.readUInt16LE(end + 10);
+  const dirSize = buf.readUInt32LE(end + 12);
   let at = buf.readUInt32LE(end + 16);
+  if (at + dirSize > end) return damaged("the central directory runs past the end record");
+  const problems = [];
   const dex = [];
   for (let n = 0; n < count; n += 1) {
-    if (buf.readUInt32LE(at) !== 0x02014b50) {
-      problems.push(`${apk}: the zip central directory is damaged`);
-      break;
-    }
+    if (!fits(at, 46) || buf.readUInt32LE(at) !== 0x02014b50) return damaged(`central header ${n + 1} of ${count} is missing`);
     const method = buf.readUInt16LE(at + 10);
-    const size = buf.readUInt32LE(at + 20);
+    const compressedSize = buf.readUInt32LE(at + 20);
+    const size = buf.readUInt32LE(at + 24);
     const nameLength = buf.readUInt16LE(at + 28);
     const extraLength = buf.readUInt16LE(at + 30);
     const commentLength = buf.readUInt16LE(at + 32);
     const local = buf.readUInt32LE(at + 42);
+    if (!fits(at, 46 + nameLength + extraLength + commentLength)) return damaged(`central header ${n + 1} of ${count} is cut short`);
     const name = buf.toString("utf8", at + 46, at + 46 + nameLength);
     at += 46 + nameLength + extraLength + commentLength;
     if (!/^classes\d*\.dex$/.test(name)) continue;
-    if (size === 0xffffffff || local === 0xffffffff) {
+    if (compressedSize === 0xffffffff || size === 0xffffffff || local === 0xffffffff) {
       problems.push(`${name} is a zip64 entry, which this check does not read`);
       continue;
     }
+    if (!fits(local, 30) || buf.readUInt32LE(local) !== 0x04034b50) return damaged(`${name}'s local header is outside the file`);
     const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
-    const body = buf.subarray(start, start + size);
+    // The stored body is the compressed size (central +20); what it inflates to is the uncompressed size (+24).
+    if (!fits(start, compressedSize)) return damaged(`${name}'s body is cut short`);
+    const body = buf.subarray(start, start + compressedSize);
     let data;
     if (method === 0) data = body;
-    else if (method === 8) data = inflateRawSync(body);
-    else {
+    else if (method === 8) {
+      try {
+        data = inflateRawSync(body);
+      } catch {
+        return damaged(`${name} does not inflate`);
+      }
+    } else {
       problems.push(`${name} uses zip method ${method}, which this check does not read`);
       continue;
     }
+    if (data.length !== size) return damaged(`${name} holds ${data.length} bytes, but its entry says ${size}`);
     const markers = [];
     for (const m of data.toString("latin1").matchAll(MARKER)) {
       let fields = {};
@@ -79,7 +93,7 @@ export function readApkDex(apk) {
     }
     dex.push({ name, markers });
   }
-  return { dex, problems };
+  return { dex, problems, damage: null };
 }
 
 /** Runs `dexdump -d <apk>` and returns its output as lines, and its exit code once it has finished. */
@@ -118,15 +132,25 @@ export async function main(args = [], system = {}) {
   if (!existsSync(mappingPath)) missing.push(`no R8 mapping at ${mappingPath}; run pnpm tv:build, which writes it beside the APK`);
   if (missing.length > 0) return fail(missing);
 
-  const errors = [];
-  const apkDex = readApkDex(apk);
-  errors.push(...apkDex.problems);
+  // D0: a cut-short or damaged APK is one line, before any other rule adds to it.
+  const damaged = (what) => fail([`${apk} is truncated or damaged (${what}); run pnpm tv:build to rebuild it`]);
+  let apkDex;
+  try {
+    apkDex = readApkDex(apk);
+  } catch (error) {
+    return damaged(error instanceof Error ? error.message : String(error));
+  }
+  if (apkDex.damage !== null) return damaged(apkDex.damage);
+  const errors = [...apkDex.problems];
   if (apkDex.dex.length === 0 && apkDex.problems.length === 0) errors.push(`${apk} holds no classes*.dex`);
   const mapping = await readMapping(mappingPath);
   if (!mapping.pgMapId) errors.push(`${mappingPath} has no pg_map_id line; it is not an R8 mapping`);
   for (const dex of apkDex.dex) {
     const r8 = dex.markers.filter((marker) => marker.tool === "R8");
     if (r8.length === 0) errors.push(`${dex.name} has no R8 marker; the APK was not minified by R8`);
+    else if (r8.every((marker) => marker.pgMapId === null)) {
+      errors.push(`${dex.name} has an R8 marker but no pg-map-id, so it cannot be matched to ${mappingPath}; run pnpm tv:build`);
+    }
     for (const marker of dex.markers.filter((m) => m.pgMapId !== null)) {
       if (marker.pgMapId !== mapping.pgMapId) {
         errors.push(
