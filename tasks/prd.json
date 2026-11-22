@@ -1064,7 +1064,10 @@
           "depends_on": [
             "T3-01",
             "T3-02",
-            "T3-21"
+            "T3-21",
+            "T3-19",
+            "T3-20",
+            "T3-22"
           ],
           "acceptance": [
             "Shield check (owner): launched from the TV launcher with the remote, the first screen takes focus with no priming press, and the first Right press moves focus one tile",
@@ -1233,7 +1236,11 @@
           "human": true,
           "depends_on": [
             "T3-10",
-            "T3-11"
+            "T3-11",
+            "T3-19",
+            "T3-20",
+            "T3-22",
+            "T3-21"
           ],
           "acceptance": [
             "Owner decision: the owner sets the budget numbers for cold start to first focusable frame, key press to focus change, and janky frames while a key is held, from the T0 results",
@@ -1261,7 +1268,11 @@
           "model": "sonnet",
           "human": false,
           "depends_on": [
-            "T3-01"
+            "T3-01",
+            "T3-19",
+            "T3-20",
+            "T3-22",
+            "T3-21"
           ],
           "acceptance": [
             "The release build includes a Baseline Profile covering start-up, Home row scrolling and opening a title",
@@ -1282,7 +1293,11 @@
           "model": "sonnet",
           "human": false,
           "depends_on": [
-            "T3-01"
+            "T3-01",
+            "T3-19",
+            "T3-20",
+            "T3-22",
+            "T3-21"
           ],
           "acceptance": [
             "A Perfetto trace of holding Down on Home shows no image-library load start or resource callback over 2 ms on the UI thread",
