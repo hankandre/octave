@@ -7,8 +7,8 @@ Fix the T3-16 fresh-context review's medium finding and record its low findings 
 - [x] Medium fixed: C2 runs P4 and P5 on the encoded path of every session and closing call, so a caller of `OctaveHttp.callFactory(session)` cannot send `..%2f`, `..%5c` or `%252e%252e` under the base path (`BasePathDotSegmentTest.kt`, red on the old code)
 - [x] Lows below logged as follow-ups, not fixed
 - [x] Second review, medium 1 fixed: `pnpm lint:logs` fails the `console`, regex-literal, template and `Timber` forms the review found (`scripts/check-session-logs-bypass.test.ts`, 6 of 8 cases red on the old script), so `docs/security.md`'s Tested row for the log check holds for them
-- [ ] Regression gate: `pnpm tv:wire --task T3-05` all `pass` on an emulator of the agent's own, or the `wire` job green on the PR head (`docs/specs/T3-16.md`, validation; the native `request` changed)
-- [ ] CI gate: the `tv` job green on the PR head, which also shows whether `dexdump` is on its runner image (`tv:apk:check` needs it)
+- [x] Regression gate: `pnpm tv:wire --task T3-05` all `pass` on an emulator of the agent's own, or the `wire` job green on the PR head (`docs/specs/T3-16.md`, validation; the native `request` changed) (local run at 342fd255: 8 pairs pass; the second review still wants the `wire` job green on the PR head before done)
+- [ ] CI gate: the `tv` job green on the PR head, which also shows whether `dexdump` is on its runner image (`tv:apk:check` needs it). Local evidence: `newestBuildTool` takes the newest build-tools version that holds the tool, main's green `tv` job already finds `aapt2` there the same way, and both local build-tools packages (36.0.0, 37.0.0) ship `dexdump`; the runner's copy stays unverified until CI
 - [ ] T3-16 set to done with evidence naming the PR
 
 ## Context and domains touched
@@ -77,6 +77,17 @@ Re-verify, 2026-11-22, at 47278414 (no code change):
 - `pnpm tv:wire --task T3-05`: not rerun; `docker ps` still shows Compose project `octave-8b8377b9f2` on 18096, 18097 and 18098. No on-device run this session; `pnpm tv:e2e` not needed (`git diff --stat origin/main...HEAD -- apps/tv` is empty).
 
 Not run: the Shield, any other Android version or AVD, the dogfood Jellyfin and Jellyscale servers, the pinned Jellyfin and Jellyscale fixtures (wire run blocked).
+
+Milestone 1b, 2026-11-22, at 342fd255:
+
+- `mise exec -- pnpm exec vitest run scripts/check-session-logs-bypass.test.ts` on the old `check-session-logs.mjs`: 8 tests, 6 failed (the 2 controls pass); with the fix: 8 passed.
+- `mise exec -- pnpm check`: exit 0; vitest 2641 and 1374 passed; `logs: 27 files ... read`; flow ok, 0 frozen changes.
+- `mise exec -- pnpm tv:native:test`: tv native: 328 tests, 0 failed, 2 projects.
+- `mise exec -- node scripts/check-red.mjs T3-16 --expect green`: green [4,5,6,7,8], problems [].
+- `ANDROID_SERIAL=emulator-5590 pnpm tv:wire --task T3-05` on a fresh read-only `fluster_tv` emulator of this agent's own (API 36), after `pnpm samples:generate` (the first try failed at `fixture:setup`: the Jellyscale scan saw 0 items because this worktree had no samples; the orphaned `octave-8b8377b9f2` containers were gone): 8 pairs pass (probe-then-signed-in on mock, Jellyfin 10.11, Jellyfin 12.4 and Jellyscale; redirect, canary, errors, private-LAN-and-proxy on the mock); logcat clean. Fixtures and emulator torn down after.
+- `mise exec -- pnpm tv:build && pnpm tv:apk:check`: `tv inspector: ... passes (1 dex, 5487 classes, R8 release with its mapping ...)`, dexdump from local build-tools.
+
+Not run: the Shield, any other Android version or AVD, the dogfood Jellyfin and Jellyscale servers; CI's `tv` and `wire` jobs (no PR yet).
 
 ## Outcome & retrospective
 
