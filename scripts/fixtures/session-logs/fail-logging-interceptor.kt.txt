@@ -1,0 +1,8 @@
+package dev.octave.session.http
+
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+
+internal object Sample {
+    val client = OkHttpClient.Builder().addInterceptor(HttpLoggingInterceptor()).build()
+}

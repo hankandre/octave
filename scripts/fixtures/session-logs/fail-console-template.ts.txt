@@ -1,0 +1,3 @@
+export function sent(headers: Record<string, string>): void {
+  console.info(`sent ${JSON.stringify(headers)}`);
+}

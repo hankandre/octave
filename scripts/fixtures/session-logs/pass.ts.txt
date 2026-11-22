@@ -1,0 +1,8 @@
+// console.log(url) in a comment is not a call.
+const catalogLog: string[] = [];
+
+export function ready(): number {
+  console.info("ready");
+  catalogLog.push("console.log(url) inside a string");
+  return catalogLog.length;
+}

@@ -1,0 +1,7 @@
+package dev.octave.session.http;
+
+final class Sample {
+    static void sent(okhttp3.Request request) {
+        System.err.println(request);
+    }
+}

@@ -1,0 +1,43 @@
+{
+  "note": "T3-16 item 7 (docs/specs/T3-16.md, \"The path rule\"): request paths the native request and the core's reference transport refuse before anything is sent, and paths they accept. A refused path holds a . or .. segment as written or percent-encoded, a backslash, a control character, or an escape that does not decode to UTF-8. Read by modules/session/android/src/test/java/dev/octave/session/http/RequestPathTest.kt and packages/core/src/adapters/request-path.test.ts. An accepted path reaches the server as the session's base path plus the path, byte for byte. The vectors with a `why` were added for spec-check note 5, where the Kotlin and TypeScript decoders can disagree; the result each records is the one both sides must give. So a path is also refused when a % does not begin two hex digits or the escapes do not decode to UTF-8, a rule beyond P1 to P4 that neither C1 nor a lenient decoder supplies. Paths OkHttp would re-encode (a raw space or a raw non-ASCII character) are not here: Kotlin refuses them by C1 and the reference transport has no C1 (RequestPathTest holds the Kotlin half).",
+  "refused": [
+    { "name": "dot-dot segment", "path": "/Items/../x" },
+    { "name": "dot segment", "path": "/Items/./x" },
+    { "name": "root dot-dot", "path": "/.." },
+    { "name": "root dot", "path": "/." },
+    { "name": "trailing dot-dot", "path": "/Items/.." },
+    { "name": "trailing dot", "path": "/Items/." },
+    { "name": "leading dot-dot", "path": "/../other" },
+    { "name": "encoded dot-dot lower", "path": "/Items/%2e%2e/x" },
+    { "name": "encoded dot-dot upper", "path": "/Items/%2E%2E/x" },
+    { "name": "encoded dot lower", "path": "/Items/%2e/x" },
+    { "name": "encoded dot upper", "path": "/Items/%2E/x" },
+    { "name": "dot then encoded dot lower", "path": "/Items/.%2e/x" },
+    { "name": "encoded dot lower then dot", "path": "/Items/%2e./x" },
+    { "name": "dot then encoded dot upper", "path": "/Items/.%2E/x" },
+    { "name": "encoded dot upper then dot", "path": "/Items/%2E./x" },
+    { "name": "double-encoded dot-dot", "path": "/Items/%252e%252e/x" },
+    { "name": "dot-dot with encoded slashes lower", "path": "/Items/..%2f..%2fx" },
+    { "name": "dot-dot with encoded slash upper", "path": "/Items/..%2Fx" },
+    { "name": "dot-dot with encoded backslash", "path": "/Items/..%5cx" },
+    { "name": "backslash separators", "path": "/Items\\..\\..\\x" },
+    { "name": "tab inside a dot-dot", "path": "/Items/.\t./x" },
+    { "name": "line feed inside a dot-dot", "path": "/Items/.\n./x" },
+    { "name": "lone percent", "path": "/Items/%", "why": "a malformed escape: OkHttp 5.5.1 sends it unchanged (recorded at the freeze), decodeURIComponent throws, and a server may read it either way; refused on both sides" },
+    { "name": "short escape", "path": "/Items/%2", "why": "a malformed escape: OkHttp 5.5.1 sends it unchanged (recorded at the freeze), decodeURIComponent throws; refused on both sides" },
+    { "name": "non-hex escape", "path": "/Items/%zz", "why": "a malformed escape: OkHttp 5.5.1 sends it unchanged (recorded at the freeze), decodeURIComponent throws; refused on both sides" },
+    { "name": "overlong UTF-8 dot-dot", "path": "/Items/%c0%ae%c0%ae/x", "why": "the overlong form of .. (0xC0 0xAE) is not UTF-8: OkHttp 5.5.1 sends it unchanged, decodeURIComponent throws, and a lenient decoder on a server or proxy may read it as a dot; encodeURIComponent never writes it" }
+  ],
+  "accepted": [
+    { "name": "plain", "path": "/Items" },
+    { "name": "dots inside a segment", "path": "/Items/a..b" },
+    { "name": "hidden-file name", "path": "/Items/.hidden" },
+    { "name": "three dots", "path": "/Items/..." },
+    { "name": "dot in a name", "path": "/Items/a.b/c" },
+    { "name": "encoded slash inside a segment", "path": "/Items/a%2Fb" },
+    { "name": "characters encodeURIComponent leaves", "path": "/Items/!'()*" },
+    { "name": "encoded non-ASCII id", "path": "/Items/%C3%BC" },
+    { "name": "encoded dot inside a segment", "path": "/Items/a%2eb", "why": "a dot inside a segment, written as an escape, is not a dot segment" },
+    { "name": "tilde", "path": "/Items/a~b", "why": "~ is unreserved; encodeURIComponent leaves it and OkHttp does not re-encode it" }
+  ]
+}

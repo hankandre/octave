@@ -1,0 +1,17 @@
+package dev.octave.session.http
+
+import android.util.Log
+
+// Log.d("Octave", request.url.toString()) is the kind of call the check refuses; this comment is not one.
+/* println(headers) inside a block comment is not a call either. */
+internal object Sample {
+    private val catalogLog = mutableListOf<String>()
+
+    fun opened() {
+        Log.i("Octave", "session opened")
+        println()
+        val text = "println(headers) and Log.d(tag, url) inside a string"
+        catalogLog.add(text)
+        if (catalogLog.size > 1) catalogLog.clear()
+    }
+}
