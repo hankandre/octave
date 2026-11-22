@@ -504,7 +504,7 @@ A directed pass on `task/T1-19`, asked by the coordinator. The frozen test `scri
 
 A directed pass, asked by the coordinator after the size limit of `tasks/prd.json` was raised (PR #298). It adds the four tasks drafted earlier today, with the owner's updates the coordinator relayed from chat; places a finding of T3-08's milestone 5; and batches today's review lows under the owner's review rule (`WORKFLOW.md`, "Review follow-ups"). Seven tasks are added: T5-07, T3-34, T3-35, T3-36, T3-37, T3-38 and T9-09. No task is dropped or moved. The owner's chat answers are written down in `docs/specs/decisions-owner-chat-2026-11-22.md`. `DESIGN.md` is edited in this commit (7.4, 7.17, section 12). Seven backlog lines were appended (256 to 262), since the tool adds a task only against a backlog entry; lines are named by their number in `tasks/backlog.jsonl` on this branch. The owner can veto any of it.
 
-Files of tasks in flight are not touched (`.claude/workflows`, `scripts/task*.mjs`, `apps/tv/src/design`, `scripts/tv-apk-*`, `modules/session`). No task has a lane: T1-19, which adds the field, was not on `main` when this pass applied its operations (`grep LANES scripts/task.mjs` found nothing).
+Files of tasks in flight are not touched (`.claude/workflows`, `scripts/task*.mjs`, `apps/tv/src/design`, `scripts/tv-apk-*`, `modules/session`). Lanes: T1-19, which adds the field, merged while this pass's pull request was open, so the branch was rebased and each new task was given a lane by the files it will touch: T5-07 and T9-09 `core`; T3-34 and T3-35 `ui`; T3-36 `apk-checks` (a config plugin and the manifest, as T3-22 and T3-32); T3-37 `tv-scripts`; T3-38 `native-session`, a serial lane, because it changes `modules/session`.
 
 ### 1. The four drafted tasks
 
