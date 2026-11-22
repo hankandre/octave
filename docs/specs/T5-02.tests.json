@@ -22,7 +22,10 @@
     "packages/core/tests/fixtures/jellyscale/b920b193cd6f/home-latest.json",
     "packages/core/tests/fixtures/jellyscale/b920b193cd6f/home-nextup.json",
     "packages/core/tests/fixtures/jellyscale/b920b193cd6f/home-recently-played.json",
-    "packages/core/tests/fixtures/jellyscale/b920b193cd6f/home-resume.json"
+    "packages/core/tests/fixtures/jellyscale/b920b193cd6f/home-resume.json",
+    "packages/core/src/jellyfin/gateway-transport.test.ts",
+    "packages/core/src/jellyfin/gateway-redirect-port.test.ts",
+    "packages/core/src/transport-canary.test.ts"
   ],
   "items": [
     {
