@@ -20,13 +20,17 @@ internal object TransportCodes {
     fun of(refusal: HttpRefusal): String = if (refusal == HttpRefusal.REDIRECT) REDIRECT else REFUSED
 
     // REDIRECT is redirect; every other refusal is refused; a call timeout or a socket timeout is timeout; an answer
-    // that cannot be read or is too large is unexpected-response; any other IOException, and anything else thrown, is
-    // network.
+    // that cannot be read, is too large or nests deeper than 64 is unexpected-response; a StackOverflowError or an
+    // OutOfMemoryError raised anywhere in a transport call is unexpected-response, decided by type (docs/specs/T3-25.md,
+    // "The two errors"): after the depth bound no answer can raise a StackOverflowError by nesting, so this is the
+    // second line, and an OutOfMemoryError is mapped, not prevented; any other IOException, and anything else thrown,
+    // is network.
     fun of(error: Throwable): String = when (error) {
         is OctaveHttpException -> of(error.refusal)
         is UnusableAnswer -> UNEXPECTED_RESPONSE
         is InterruptedIOException -> TIMEOUT
         is IOException -> NETWORK
+        is StackOverflowError, is OutOfMemoryError -> UNEXPECTED_RESPONSE
         else -> NETWORK
     }
 }

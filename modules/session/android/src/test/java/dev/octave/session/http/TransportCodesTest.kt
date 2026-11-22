@@ -39,7 +39,9 @@ class TransportCodesTest {
             IOException("unexpected end of stream") to "network",
             UnusableAnswer() to "unexpected-response",
             IllegalStateException("boom") to "network",
-            OutOfMemoryError() to "network",
+            LinkageError("boom") to "network",
+            OutOfMemoryError() to "unexpected-response",
+            StackOverflowError() to "unexpected-response",
         )
         for ((error, code) in cases) assertEquals(code, TransportCodes.of(error), error.javaClass.name)
     }
