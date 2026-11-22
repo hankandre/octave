@@ -8,7 +8,7 @@ Implement `docs/specs/T3-30.md` (T3-30).
 - [x] Item 2: `pnpm check` fails a script that starts adb itself (`scripts/check-adb-output.mjs`)
 - [x] Item 3: the watch counts a control only while its own controls run, and a failed control fails the run
 - [x] Item 4: two smoke runs on one host: the host-wide lock, an owner file, a message that names the other run
-- [ ] Item 5: gate ci: the `tv` and `wire` jobs on the PR head (Ship)
+- [x] Item 5: gate ci: the `tv` and `wire` jobs on the PR head (Ship)
 - [x] Item 6: `docs/security.md` and `docs/commands.md`
 
 ## Context and domains touched
@@ -32,7 +32,7 @@ None added.
 
 - [x] 5 review fixes: the watch lets the event loop run before the controls window (a connection during `adb install` is a stray); the check fails `exec`/`execSync` command strings and wrapper programs (`sh`, `env`, ...) in a file that knows adb. Tests: `scripts/tv-dev-server-watch-stray-install.test.ts`, `scripts/check-adb-output-wrappers.test.ts`.
 - [x] 7 review fixes, second pass: the check also fails a `shell` option and a command line as the program name in a file that knows adb (`spawnSync("adb devices", { shell: true })` returned no finding after milestone 5). Test: `scripts/check-adb-output-shell-option.test.ts`. The `docs/security.md` row's "Not covered" list now names the forms the check does not read.
-- [ ] 6 Ship: PR, `tv` job (whole dev-server-watch.txt, two `pnpm tv:smoke` pass lines), `wire` job (a `pass` line per pair). If the CI control command exits non-zero though its connection arrived, change the control command, not the judge.
+- [x] 6 Ship: PR, `tv` job (whole dev-server-watch.txt, two `pnpm tv:smoke` pass lines), `wire` job (a `pass` line per pair). If the CI control command exits non-zero though its connection arrived, change the control command, not the judge.
 
 ## Follow-ups (low review findings, not fixed here)
 
@@ -73,3 +73,8 @@ Own emulator (`fluster_tv`, API 36, port 5590, under the device lock, torn down 
 - `pnpm tv:wire` was not run locally: the three real targets need the fixture servers, which another worktree's agent holds on the fixed ports (project `octave-0b031fb429`), and tearing them down is not this task's to do. The wire logcat path was run on the emulator instead: `startLogKeeper` over `openAdb(...).stream` kept 3589 lines with the start and end markers seen, no line holding the serial, and the serial written into the marker text came back as `[device]`. The CI `wire` job on the PR head is item 5's regression check (Ship).
 - Not run: the Shield or any real TV, network adb against a real device, any Android version but the emulator image's, the dogfood servers.
 
+
+## Ship CI result (PR #277, head 4ec2ff34)
+
+- Run 45049773825: `wire` passed with a `pass` line for every pair; `tv` failed once at the runner's post-boot `adb shell input keyevent 82` of the second emulator boot (`adb: device offline`, exit 255, before `pnpm tv:e2e` ran) and passed on re-run of the failed job (job 137299025818): `tv focus: tile-0 took focus with no key, and one Right moved it to tile-1`; `tv smoke: the release app opened no connection to the development server port while it started`; dev-server-watch.txt: `port 8081: 2 of 2 control connections seen, 0 app connections, 0 connections before the controls (not counted)`.
+- The same post-boot adb flake failed main's tv job on runs 45047508102 (first boot) and 45044215131 (second boot), so it is not from this change. The adb-reset step added in 4ec2ff34 did not prevent the first failure and is unproven; it stays only because it is harmless.
