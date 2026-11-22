@@ -22,19 +22,25 @@ internal object RequestPath {
         if (!path.startsWith("/") || path.startsWith("//") || path.contains('?') || path.contains('#')) return false
         if (path.contains('\\')) return false
         if (path.any { it < ' ' || it == '\u007f' }) return false
-        if (!escapesAreUtf8(path)) return false
+        return escapesAreUtf8(path) && !holdsDotSegment(path)
+    }
+
+    // P4: a segment is . or .., as written or after up to four rounds of percent-decoding, split on / and \. RequestPolicy
+    // also runs it, with P5, on the encoded path of every session call (C2), since OkHttp leaves ..%2f, ..%5c and
+    // %252e%252e in an encoded path unchanged.
+    fun holdsDotSegment(path: String): Boolean {
         var text = path
         for (round in 0..DECODING_ROUNDS) {
-            if (text.split('/', '\\').any { it == "." || it == ".." }) return false
+            if (text.split('/', '\\').any { it == "." || it == ".." }) return true
             if (!text.contains('%')) break
             text = PercentDecoding.decode(text)
         }
-        return true
+        return false
     }
 
     // P5: each % begins two ASCII hex digits, and the bytes the path names decode as UTF-8 (no overlong form, no
     // encoded surrogate), as decodeURIComponent requires.
-    private fun escapesAreUtf8(path: String): Boolean {
+    fun escapesAreUtf8(path: String): Boolean {
         if (!path.contains('%')) return true
         val bytes = ByteArrayOutputStream(path.length)
         var index = 0

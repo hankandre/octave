@@ -23,9 +23,17 @@ internal object RequestPolicy {
         return checkBasePath(entry, request)
     }
 
-    // 7. The path must be the session's base path or under it (C2, T3-16). OkHttp has resolved dot segments by now.
-    private fun checkBasePath(entry: SessionEntry, request: Request): HttpRefusal? =
-        if (underBasePath(entry.basePath, request.url.encodedPath)) null else HttpRefusal.OUTSIDE_BASE_PATH
+    // 7. The path must be the session's base path or under it (C2, T3-16). OkHttp resolves only plain and %2e dot
+    // segments when it builds a URL; it leaves ..%2f, ..%5c and %252e%252e in the encoded path, which a proxy that
+    // decodes before it resolves could still read as a step out of the base path. So the encoded path must also hold
+    // no dot segment after up to four rounds of decoding (P4), and its escapes must be UTF-8 (P5), for every caller of
+    // OctaveHttp.callFactory(session), not only SessionTransport.request.
+    private fun checkBasePath(entry: SessionEntry, request: Request): HttpRefusal? {
+        val path = request.url.encodedPath
+        if (!underBasePath(entry.basePath, path)) return HttpRefusal.OUTSIDE_BASE_PATH
+        if (RequestPath.holdsDotSegment(path) || !RequestPath.escapesAreUtf8(path)) return HttpRefusal.OUTSIDE_BASE_PATH
+        return null
+    }
 
     // An empty base path holds every path; otherwise the path is the base path or starts with it and a /.
     private fun underBasePath(basePath: String, encodedPath: String): Boolean =
