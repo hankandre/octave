@@ -12,7 +12,7 @@
 // Run: ANDROID_SERIAL=<your own emulator> node scripts/tv-wire.mjs [--task <id>] [--list]   (pnpm tv:wire)
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
@@ -24,11 +24,11 @@ import { openDevice } from "./tv-wire-device.mjs";
 import { judgeCapture, judgeLogcat, judgeRecords, judgeWire } from "./tv-wire-judge.mjs";
 import { describeLogKept, logKeptErrors, startLogKeeper } from "./tv-wire-logcat.mjs";
 import { startMock } from "./tv-wire-mock.mjs";
-import { proxyRequestsNamingTargets, serverAnswers, startProxyListener, startRecorder } from "./tv-wire-proxy.mjs";
+import { proxyRequestsNamingTargets, startProxyListener, startRecorder } from "./tv-wire-proxy.mjs";
+import { ensureFixtures, readWireCredentials, upstreamPort } from "./tv-wire-fixtures.mjs";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
 const LIST = join(repo, "apps", "tv", "src", "e2e", "wire", "wire-tests.json");
-const CREDENTIALS = join(repo, "tests", "integration", ".credentials");
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
 const RUN_MS = 240_000;
 const REAL_TARGETS = ["jellyfin-10-11", "jellyfin-12", "jellyscale"];
@@ -59,16 +59,6 @@ export function pairsOf(list = readWireList()) {
   return pairs;
 }
 
-function readCredentials() {
-  if (!existsSync(CREDENTIALS)) return {};
-  return Object.fromEntries(
-    readFileSync(CREDENTIALS, "utf8")
-      .split("\n")
-      .filter((line) => line.includes("="))
-      .map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]),
-  );
-}
-
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function fail(message) {
@@ -79,15 +69,6 @@ function fail(message) {
 function pnpm(script) {
   const run = spawnSync("pnpm", [script], { cwd: repo, stdio: ["ignore", "inherit", "inherit"] });
   if (run.status !== 0) fail(`pnpm ${script} failed`);
-}
-
-// Starts the fixture servers when a selected real target does not answer; both steps are safe to repeat.
-async function ensureFixtures(targets) {
-  const urls = { "jellyfin-10-11": "http://127.0.0.1:18096", "jellyfin-12": "http://127.0.0.1:18097", jellyscale: "http://127.0.0.1:18098" };
-  const healthy = (await Promise.all(targets.map((target) => serverAnswers(urls[target])))).every(Boolean);
-  if (!healthy) pnpm("fixture:up");
-  const credentials = readCredentials();
-  if (!healthy || targets.some((target) => credentials[`${target}_password`] === undefined)) pnpm("fixture:setup");
 }
 
 function parseArgs(args) {
@@ -244,8 +225,8 @@ async function main(args) {
   device.clearProxy();
 
   const realTargets = [...new Set(selected.map((pair) => pair.target).filter((target) => REAL_TARGETS.includes(target)))];
-  if (realTargets.length > 0) await ensureFixtures(realTargets);
-  const credentials = readCredentials();
+  if (realTargets.length > 0) await ensureFixtures(realTargets, { pnpm });
+  const credentials = readWireCredentials();
 
   if (!e2eApkIsCurrent()) {
     console.log("tv wire: the e2e APK is missing or older than its sources; running pnpm tv:e2e:build");
@@ -287,9 +268,8 @@ async function main(args) {
           const port = pair.test === "transport-redirect" ? mock.ports.redirector : pair.test === "transport-private-lan-and-proxy" ? mock.ports.privateLan : mock.ports.main;
           upstream = { port };
         } else {
-          const url = credentials[`${pair.target}_url`];
-          if (!url) throw new Error(`no fixture credentials for ${pair.target}; run pnpm fixture:setup`);
-          upstream = { port: Number(new URL(url).port) };
+          if (!credentials[`${pair.target}_password`]) throw new Error(`no fixture credentials for ${pair.target}; run pnpm fixture:setup`);
+          upstream = { port: upstreamPort(pair.target, credentials) };
           swap = {
             from: { user: list.user, password: list.password },
             to: { user: credentials[`${pair.target}_username`], password: credentials[`${pair.target}_password`] },
