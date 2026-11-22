@@ -20,7 +20,7 @@
     "tv:build": "node scripts/tv-build.mjs",
     "tv:e2e:build": "node scripts/tv-build.mjs --e2e",
     "tv:native:test": "node scripts/tv-native-test.mjs",
-    "tv:apk:check": "node scripts/tv-apk-check.mjs && node scripts/tv-apk-manifest.mjs && node scripts/tv-apk-inspector.mjs",
+    "tv:apk:check": "node scripts/tv-apk-check.mjs && node scripts/tv-apk-manifest.mjs && node scripts/tv-apk-inspector.mjs && node scripts/tv-apk-dex.mjs",
     "tv:smoke": "node scripts/tv-first-focus.mjs",
     "tv:e2e": "node scripts/tv-e2e.mjs",
     "tv:wire": "node scripts/tv-wire.mjs",

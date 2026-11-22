@@ -1,0 +1,21 @@
+export type Frame = { holder: string; name: string; args: string; ret: string; synthesized: boolean };
+export type Stack = { name: string; range: [number, number] | null; frames: Frame[]; residual: string | null };
+export type FieldLine = { name: string; holder: string; originalName: string; type: string; residual: string | null };
+export type Section = { original: string; dex: string; removed: boolean; synthesized: boolean; stacks: Stack[]; fields: FieldLine[] };
+export type Mapping = {
+  pgMapId: string | null;
+  sections: Map<string, Section>;
+  byOriginal: Map<string, string>;
+  classLines: { original: string; dex: string; removed: boolean }[];
+  originalsCache: Map<string, Set<string>>;
+};
+export const REMOVED: string;
+export function mappingBuilder(): { line(text: string): void; finish(): Mapping };
+export function parseMapping(text: string): Mapping;
+export function readMapping(path: string): Promise<Mapping>;
+export function dexTypeName(token: string): string | null;
+export function typeTokens(text: string): string[];
+export function originalsOf(mapping: Mapping, dexClass: string): Set<string>;
+export function resolveMethod(mapping: Mapping, dexClass: string, name: string, descriptor: string | null): { holder: string; name: string }[];
+export function resolveField(mapping: Mapping, dexClass: string, name: string, typeDescriptor: string | null): string[];
+export function framesAt(mapping: Mapping, dexClass: string, name: string, descriptor: string | null, line: number | null): string[][];
