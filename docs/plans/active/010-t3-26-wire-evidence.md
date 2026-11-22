@@ -26,7 +26,7 @@ None added.
 ## Progress
 
 - [x] 1 to 5, in one commit (the modules depend on each other: the recorder imports the evidence module, the runner imports all three)
-- [x] 6 device run (8 pairs passed on own emulator; Ctrl+C on a real device untested, signal handling covered by tv-wire-device.test.ts): see Validation evidence; Ship runs the `wire` job
+- [x] 6 device run on bf034584 (8 pairs pass; the spec's three device checks run on an own emulator): see Validation evidence; Ship runs the `wire` job
 
 ## Follow-ups (review, low; not fixed in this task)
 
@@ -39,7 +39,7 @@ None added.
 ## Review fixes
 
 - 2026-11-22: `safeUrlParts` works out "spans" per secret (a second secret crossing `?`, `&` or `=` was written in pieces once another secret held in one part); tests in `scripts/tv-wire-evidence-span.test.ts`. The log keeper's interval markers are now tested (`scripts/tv-wire-logcat-ticks.test.ts`: a dropped tick gives `missed` and the cannot-tell error).
-- Item 6 gate stays open: the `wire` job has not run on the PR head, and the spec's device checks (Ctrl+C restoring the proxy and reverses, killing the stream, a planted summary.txt with a bad `ANDROID_SERIAL`) are not run. Keep the PR a draft with no auto-merge until the job is green and its `summary.txt` (with `transport-probe-then-signed-in jellyscale T3-05 pass`) and the kept-log line of `device.txt` are quoted in the task evidence.
+- Item 6 gate stays open: the `wire` job has not run on the PR head. The local run and the spec's device checks are done (Validation evidence). Keep the PR a draft with no auto-merge until the job is green on the head and its `summary.txt` (with `transport-probe-then-signed-in jellyscale T3-05 pass`) and the kept-log line of its `device.txt` are quoted in the task evidence; only then set the task done.
 
 ## Decision log
 
@@ -54,4 +54,23 @@ None added.
 
 ## Validation evidence
 
-See the task's evidence and the PR body.
+2026-11-22, on commit bf034584 (code as of 70314ab2), own emulator (AVD `fluster_tv`, API 36, x86_64, a separate read-only instance), pinned fixture servers of this checkout. Not run: the CI `wire` job, arm64, the Shield (never, for this command), Android other than 16.
+
+- `mise exec -- pnpm check`: exit 0 (`Test Files 99 passed (99)`, `Tests 2641 passed (2641)`; `Test Files 76 passed (76)`, `Tests 1426 passed (1426)`; workflow tests `pass 60`, `fail 0`).
+- `ANDROID_SERIAL=<own emulator> mise exec -- pnpm tv:wire`: exit 0, `tv wire: 8 pair(s) passed; logcat clean, kept whole by streaming; global proxy saw 2 request(s), none naming a wire target`. `summary.txt`:
+
+  ```
+  transport-probe-then-signed-in mock T3-05 pass
+  transport-probe-then-signed-in jellyfin-10-11 T3-05 pass
+  transport-probe-then-signed-in jellyfin-12 T3-05 pass
+  transport-probe-then-signed-in jellyscale T3-05 pass
+  transport-redirect mock T3-05 pass
+  transport-canary mock T3-05 pass
+  transport-errors mock T3-05 pass
+  transport-private-lan-and-proxy mock T3-05 pass
+  ```
+
+  Kept-log line of `device.txt`: `logcat kept by streaming from before the app started (the default buffers): 297 lines, start marker seen, end marker seen, 1 of 1 interval marker(s) seen, stream open to the end`. The command passed twice in a row.
+- Planted `summary.txt` in the real directory, `ANDROID_SERIAL` naming no device: `ERROR tv wire: no device; ANDROID_SERIAL names no attached, booted device`, exit 1, and `release-evidence/wire` no longer exists.
+- SIGINT to the runner 2 s after the proxy was set (11 reverses listed): `ERROR tv wire: stopped by SIGINT; the device's http_proxy and adb reverses were restored`, exit 130; `settings get global http_proxy` prints `:0`, `adb reverse --list` prints nothing, no `summary.txt`. SIGTERM was not sent on a device (covered by `scripts/tv-wire-device.test.ts` only).
+- The runner's own `adb logcat` child killed 3 s after the proxy was set: exit 1 with `ERROR tv wire: cannot tell that the run's whole log was kept: the end marker never arrived on the stream; the stream had closed before the end of the run; 48 of 48 interval marker(s) never arrived on the stream`, a `fail` line for each of the 8 pairs, proxy `:0` and no reverse afterwards. The run waited the whole 240 s first, as the last follow-up above says.
