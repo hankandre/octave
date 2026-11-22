@@ -89,6 +89,12 @@ Milestone 1b, 2026-11-22, at 342fd255:
 
 Not run: the Shield, any other Android version or AVD, the dogfood Jellyfin and Jellyscale servers; CI's `tv` and `wire` jobs (no PR yet).
 
+Re-verify, 2026-11-22, at c0606401 (no code change since 1bf7ac60):
+
+- `mise exec -- pnpm check`: exit 0; vitest 2641 and 1374 passed; `logs: 27 files ... read`; flow ok, 16 commits ahead, 0 frozen changes.
+- `mise exec -- pnpm tv:native:test`: tv native: 328 tests, 0 failed, 2 projects.
+- Done stays with Ship: the `wire` and `tv` jobs green on the PR head, then `task set T3-16 --status done` naming the PR, and the EchoedToken mutation run recorded in the PR body.
+
 ## Outcome & retrospective
 
 Open.
