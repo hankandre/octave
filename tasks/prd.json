@@ -1315,6 +1315,85 @@
           "evidence": ""
         },
         {
+          "id": "T3-36",
+          "title": "Keep the activity and its focus when an input device connects",
+          "domain": "Distribution",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-01"
+          ],
+          "acceptance": [
+            "MainActivity's configChanges in the built manifest holds touchscreen and navigation and keeps every value it holds today (0x80000fb0 in the recorded release listing, keyboard and keyboardHidden among them), set by a config plugin under apps/tv/plugins; a test of the plugin shows the value, and nothing else in the manifest changes (the permissions and queries pnpm tv:apk:check reads are the same)",
+            "The spec shows from Android's documentation which configuration changes a connected or removed keyboard, gamepad or remote raises, and names any value it adds beyond the two, with the reason",
+            "On an emulator, an input device appearing no longer recreates the activity: the spec picks a way to raise the change that can be repeated (T3-08's milestone 5 saw it with adb's monkey), and the evidence quotes a run where the focused element is the same before and after, and the same run failing on the old manifest",
+            "The recorded manifest listings under scripts/fixtures/tv are frozen by T3-22 and T3-23: they are left as they are unless a test that reads them contradicts this task, and then the task returns to the Product Owner for a frozen-test ruling",
+            "docs/commands.md says that the TV scripts never use adb's monkey to send keys"
+          ],
+          "verify": "pnpm check && pnpm tv:build && pnpm tv:apk:check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-34",
+          "title": "Adopt the Tabler icon set behind the IconComponent type",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-06",
+            "T3-08",
+            "T3-09"
+          ],
+          "acceptance": [
+            "Icons come from Tabler's font (@tabler/icons-webfont, MIT) through expo-font; no native module and no other icon package is added",
+            "The spec records the maintenance check, the pinned version, the licence, and which font files ship and what they add to the APK",
+            "One typed map gives each icon name its glyph behind IconComponent; no screen names a codepoint, and a test fails for a name with no glyph",
+            "The control tests' test glyphs are replaced, the played mark's check among them",
+            "The stroke weight is the owner's: the spec reads it from docs/specs/decisions-owner-chat-2026-11-22.md (2) or a later decisions file that names this task, and quotes it; if no file holds the answer the task parks at its Spec step with that one question, and no weight is assumed",
+            "The font's MIT notice is in what T11-05 gathers",
+            "The PR holds 1920×1080 captures of the controls with their icons"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-35",
+          "title": "Build the Signal loader and the bars mark",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-06",
+            "T3-08",
+            "T3-09",
+            "T3-34"
+          ],
+          "acceptance": [
+            "The loader is the D1 bars with the motion the owner gave (docs/specs/decisions-owner-chat-2026-11-22.md, 3; DESIGN.md 7.17): the brass bar is a beacon; every pulse, about 1.5 s apart, sends a wave across the whole name octave; each letter lights as the wave reaches it, o first and e last, then fades back; the next pulse repeats the sweep",
+            "When what was loading is ready the whole name lights and holds; the spec says how long it holds before the content shows and which caller signals ready",
+            "A bars-only form (the pulse and the rings, no name) is used where space is tight; the spec lists which place uses which form",
+            "The brass colour is the owner's: the spec reads it from docs/specs/decisions-owner-chat-2026-11-22.md (3) or a later decisions file that names this task; if no file holds the answer the task parks at its Spec step with that one question. The colour, the pulse period and the timings of the wave, the fade and the rings are design tokens, and no component holds a literal",
+            "It is one shared component and replaces the ring wherever DESIGN.md shows a loading indicator",
+            "Reduced motion shows the still mark with \"Loading…\", and nothing flashes more than three times a second",
+            "The status sentence beside it is unchanged",
+            "The PR holds 1920×1080 captures of each form: mid-sweep, lit and held, bars only, and reduced motion"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-11",
           "title": "Load artwork natively through the authenticated client",
           "domain": "Catalog",
@@ -1444,6 +1523,29 @@
           "evidence": ""
         },
         {
+          "id": "T3-37",
+          "title": "Keep an address a named adb serial resolves to, and host paths, out of the TV scripts' output",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T3-30",
+            "T3-31"
+          ],
+          "acceptance": [
+            "A TV script given a serial that is neither an emulator serial nor an address with a port either stops before it runs adb, with one ERROR line that does not print the serial, or replaces every address adb prints for that serial; the spec chooses, and shows from adb's real output what a named serial prints",
+            "Another spelling of the serial's own IPv6 address is replaced in console output, thrown errors and release-evidence, with a test",
+            "The SDK path in scripts/tv-android-sdk.mjs's errors and the APK path are printed without the part that can hold a home directory name, with a test",
+            "docs/commands.md and docs/security.md say what is replaced and what is refused; T3-30's frozen tests pass unchanged, and if one contradicts an item the task returns to the Product Owner"
+          ],
+          "verify": "pnpm check && pnpm tv:smoke",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-25",
           "title": "Bound what a server's answer can cost the native parser",
           "domain": "Security & Redaction",
@@ -1490,6 +1592,40 @@
             "docs/security.md, Development builds, states the rule and names its tests in the same PR; the PR calls out the change, and the review includes a guardian"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-38",
+          "title": "T3 hardening: close the review lows of T3-24, T3-25, T3-28, T3-29 and T3-30",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-24",
+            "T3-25",
+            "T3-28",
+            "T3-29",
+            "T3-30",
+            "T3-31",
+            "T3-33"
+          ],
+          "acceptance": [
+            "The spec lists every finding of the five reviews (plans 011-t3-24, 012-t3-25, 012-t3-28, 013-t3-29 and 011-t3-30 under docs/plans/active, and the backlog lines this task took) with whether it still holds on main; one already fixed is closed with the commit, and the rest are closed by the items below",
+            "The request path rule, in RequestPath.kt and request-path.ts alike, refuses a segment that is only dots once the characters UTS #46 ignores (U+00AD and the variation selectors among them) or trailing spaces are removed, and refuses the characters a proxy may fold to a separator or a ; (U+FF0F, U+FF3C, U+FF1B, U+FE54, U+037E), as written or after any decoding round; a server address whose base path fails the rule is refused before any session opens; the spec rules on whether a query pair needs a rule for a ; or a control character and records why",
+            "New tests in files no manifest freezes: a closing call sent through the client the logout uses is refused outside the base path; RequestPath.isSafe refuses the raw C1 controls and the raw dot-like characters; a 100,000-deep object through the one client is unexpected-response",
+            "The native signIn closes the session when anything fails after SessionRegistry.open; the OutOfMemoryError mapping allocates nothing after the catch, or docs/security.md and decision 0005 state the limit; the number of values in a native answer is bounded, with the bound taken from the largest recorded answer; the reference transport and the TV adapter refuse an answer nested deeper than 64, or the spec shows from a test under Hermes and Node why they need not",
+            "The ELF reader records a problem for a REL or RELA section not linked to .dynsym, so L0 fails closed, and for an SHT_REL section or tests that path; a test shows L0 for a library with an undefined dispatcher symbol and packed relocations",
+            "D8's reader (scripts/octave-module-packages.mjs) reads a whole qualified package name and fails on a segment that is not a plain identifier, strips comments in one left-to-right pass, and fails closed on a Gradle namespace it cannot read, each with a test; a test asserts the text \"D8 read no Octave Kotlin or Java source\"",
+            "The dex check reports an entry whose CRC-32 does not match as damage in one ERROR tv apk dex: line, and counts a sink site once when the superclass walk finds it again; the source scan (pnpm lint:network) exempts only client sockets in DirectSocketFactory.kt and names the listening, datagram, factory, provider, MediaExtractor and MediaMetadataRetriever openers; the spec rules on a K4 twin for android.net.Network's opens and android.net.http",
+            "scripts/check-adb-output.mjs gives a finding for a template-literal specifier, a re-exporting helper, an interpreter given as a literal program, and a shell option under a quoted key or in a variable, each with a test, or docs/security.md lists the one the spec shows cannot be read as not covered",
+            "docs/security.md and ARCHITECTURE.md say what is built and no more: a stack overflow or out-of-memory error is never network; the debugOptimized run was the judge on a recorded cut; the inspector check also reads one debugger-only string; D8 covers what it reads; D0's bounds claim covers dex entries; and the decision 0005 bullet gives the path rule as built. The PR calls out every changed security rule",
+            "No frozen file changes: where a frozen test contradicts an item the task returns to the Product Owner. pnpm tv:apk:check still passes on the release APK the tv CI job builds, and the PR quotes its lines"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -1687,7 +1823,8 @@
             "T3-24",
             "T3-28",
             "T3-30",
-            "T3-31"
+            "T3-31",
+            "T3-37"
           ],
           "acceptance": [
             "Shield check (owner): launched from the TV launcher with the remote, the first screen takes focus with no priming press, and the first Right press moves focus one tile",
@@ -1733,14 +1870,16 @@
           "human": false,
           "depends_on": [
             "T3-09",
-            "T3-02"
+            "T3-02",
+            "T3-36"
           ],
           "acceptance": [
             "A driver sends at least 500 D-pad presses, singles and held-key bursts, through a fixture Home with a rail and 20 rows of 50 cards, and compares each focus event with the expected one",
             "The run fails on any wrong, missing or stuck focus move, and prints the press number and the focus path",
             "It covers: a row end to end, top to bottom, the rail in and out at several depths, and Up and Down across rows scrolled to different offsets",
             "It runs in the CI emulator job in under ten minutes and is required",
-            "The same driver runs against a device serial for Shield checks, and never writes the serial or an address to disk"
+            "The same driver runs against a device serial for Shield checks, and never writes the serial or an address to disk",
+            "No script of the run sends keys with adb's monkey; the spec names the sender it uses and shows it raises no configuration change"
           ],
           "verify": "pnpm check && pnpm tv:e2e",
           "status": "todo",
@@ -1767,7 +1906,8 @@
             "T3-24",
             "T3-28",
             "T3-30",
-            "T3-31"
+            "T3-31",
+            "T3-37"
           ],
           "acceptance": [
             "Owner decision: the owner sets the budget numbers for cold start to first focusable frame, key press to focus change, and janky frames while a key is held, from the T0 results",
@@ -1804,7 +1944,8 @@
             "T3-23",
             "T3-24",
             "T3-28",
-            "T3-30"
+            "T3-30",
+            "T3-37"
           ],
           "acceptance": [
             "The release build includes a Baseline Profile covering start-up, Home row scrolling and opening a title",
@@ -1834,7 +1975,8 @@
             "T3-23",
             "T3-24",
             "T3-28",
-            "T3-30"
+            "T3-30",
+            "T3-37"
           ],
           "acceptance": [
             "A Perfetto trace of holding Down on Home shows no image-library load start or resource callback over 2 ms on the UI thread",
@@ -2186,6 +2328,30 @@
           "evidence": ""
         },
         {
+          "id": "T5-07",
+          "title": "Age titles out of Continue watching and show at most 20",
+          "domain": "Catalog",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "T5-02"
+          ],
+          "acceptance": [
+            "Continue watching leaves out a title whose UserData.LastPlayedDate is older than the window, computed on the device with the Clock port; the row's requests ask for that field, and nothing on the server is hidden or changed",
+            "The window is an input of the row: 30, 90, 180 or 365 days, or Never; 90 days when the account has none set",
+            "The spec says which date a next-episode card ages by and what a card with no date does, each with a test",
+            "An aged-out title is only hidden, and a title played again is back in the row on the next load",
+            "The row shows at most 20 cards, most recently played first, after ageing and merging (owner, docs/specs/decisions-owner-chat-2026-11-22.md, 1); this replaces T5-02's 16, and T5-02's frozen test of 16 cards is returned to the Product Owner for a frozen-test ruling, not edited by the implementer",
+            "Contract tests cover Jellyfin 10.11, 12.4 and Jellyscale fixtures"
+          ],
+          "verify": "pnpm --filter @octave/core test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T5-03",
           "title": "Build Home: resume in one press",
           "domain": "App Shell & Presentation",
@@ -2195,6 +2361,7 @@
           "human": false,
           "depends_on": [
             "T5-02",
+            "T5-07",
             "T3-09",
             "T3-11"
           ],
@@ -3424,6 +3591,31 @@
           "evidence": ""
         },
         {
+          "id": "T9-09",
+          "title": "Keep the account's settings on the server's display preferences",
+          "domain": "Server Connection & Identity",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "T9-02",
+            "T2-08"
+          ],
+          "acceptance": [
+            "The per-account settings (subtitles, auto-play and its countdown, the skip modes, the Continue watching window) are read from and saved to the account's display preferences on the server, through the gateway only",
+            "The spec shows from recorded answers how the record is addressed and that Jellyfin 10.11, 12.4 and the pinned Jellyscale keep what is written; if one does not, the task stops with the question and files nothing itself",
+            "Values read pass T9-02's allowlist; a save changes only Octave's own keys and writes no token, URL or play-session id",
+            "A failed read uses the defaults, and a failed save is reported to the caller so the screen can put the old value back",
+            "Switching accounts switches the settings, and a second device on the same account reads what the first saved",
+            "Contract tests cover the three servers"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T9-03",
           "title": "Build Settings: playback and Home",
           "domain": "App Shell & Presentation",
@@ -3433,7 +3625,9 @@
           "human": false,
           "depends_on": [
             "T5-01",
+            "T5-07",
             "T9-02",
+            "T9-09",
             "T9-08",
             "T8-15",
             "T8-18"
