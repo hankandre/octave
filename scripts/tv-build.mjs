@@ -4,7 +4,8 @@
 // flag nor packages/core, and judgeBundle() proves the flavour of every bundle it packages. The e2e APK is moved to
 // apps/tv/dist/e2e/ with a stamp of e2eSourceHash(), so the release APK path never holds a harness build. An e2e build
 // also builds the device probe's test APK (octaveDeviceProbeApk, apps/tv/plugins/with-device-probe.js; T3-15) and moves
-// it beside the e2e APK.
+// it beside the e2e APK, and moves Gradle's R8 mapping there too (E2E_MAPPING; T3-31): pnpm tv:e2e judges the e2e APK
+// with that mapping, matched to the dex by pg_map_id, and never reads the release path's.
 // Run: node scripts/tv-build.mjs [--e2e]
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -12,10 +13,12 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, w
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
+import { RELEASE_MAPPING } from "./tv-apk-inspector.mjs";
 import { ANDROID_DIR, APP_DIR, prebuild, prebuildIsCurrent } from "./tv-prebuild.mjs";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
 export const E2E_APK = join(APP_DIR, "dist", "e2e", "octave-tv-e2e.apk");
+export const E2E_MAPPING = join(APP_DIR, "dist", "e2e", "octave-tv-e2e.mapping.txt");
 export const E2E_STAMP = join(APP_DIR, "dist", "e2e", "octave-tv-e2e.hash");
 export const PROBE_APK = join(APP_DIR, "dist", "e2e", "octave-session-probe.apk");
 const PROBE_BUILD_DIR = join(repo, "modules", "session", "android", "build", "outputs", "apk", "androidTest", "debug");
@@ -64,7 +67,7 @@ export function e2eSourceHash(root = repo) {
 }
 
 export function e2eApkIsCurrent() {
-  return existsSync(E2E_APK) && existsSync(PROBE_APK) && existsSync(E2E_STAMP) && readFileSync(E2E_STAMP, "utf8").trim() === e2eSourceHash();
+  return existsSync(E2E_APK) && existsSync(PROBE_APK) && existsSync(E2E_MAPPING) && existsSync(E2E_STAMP) && readFileSync(E2E_STAMP, "utf8").trim() === e2eSourceHash();
 }
 
 function findBundle(bundleDir) {
@@ -90,9 +93,11 @@ const SYSTEM = {
   sourceHash: () => e2eSourceHash(),
   gradle: (tasks, env) => spawnSync("./gradlew", tasks, { cwd: ANDROID_DIR, stdio: "inherit", env }),
   releaseApk: RELEASE_APK,
+  releaseMapping: RELEASE_MAPPING,
   bundleDir: BUNDLE_DIR,
   probeBuildDir: PROBE_BUILD_DIR,
   e2eApk: E2E_APK,
+  e2eMapping: E2E_MAPPING,
   e2eStamp: E2E_STAMP,
   probeApk: PROBE_APK,
 };
@@ -142,13 +147,16 @@ function build(e2e, system) {
   }
   const probes = existsSync(probeBuildDir) ? readdirSync(probeBuildDir).filter((name) => name.endsWith(".apk")) : [];
   if (probes.length !== 1) return [`ERROR tv build: expected one probe APK under ${relative(repo, probeBuildDir)}, found ${probes.length}`];
+  if (!existsSync(system.releaseMapping)) return [`ERROR tv build: Gradle wrote no R8 mapping at ${relative(repo, system.releaseMapping)}`];
   mkdirSync(dirname(system.e2eApk), { recursive: true });
   mkdirSync(dirname(system.probeApk), { recursive: true });
   rmSync(system.e2eStamp, { force: true });
+  rmSync(system.e2eMapping, { force: true });
   renameSync(releaseApk, system.e2eApk);
   renameSync(join(probeBuildDir, probes[0]), system.probeApk);
+  renameSync(system.releaseMapping, system.e2eMapping);
   writeFileSync(system.e2eStamp, `${sourceHash}\n`);
-  console.log(`tv build: e2e APK at ${relative(repo, system.e2eApk)}, probe APK at ${relative(repo, system.probeApk)}`);
+  console.log(`tv build: e2e APK at ${relative(repo, system.e2eApk)}, mapping at ${relative(repo, system.e2eMapping)}, probe APK at ${relative(repo, system.probeApk)}`);
   return [];
 }
 

@@ -1,4 +1,5 @@
 export const E2E_APK: string;
+export const E2E_MAPPING: string;
 export const E2E_STAMP: string;
 export const PROBE_APK: string;
 export function judgeBundle(bytes: Uint8Array, flavour: "release" | "e2e"): string[];
@@ -10,9 +11,11 @@ export interface TvBuildSystem {
   sourceHash(): string;
   gradle(tasks: string[], env: NodeJS.ProcessEnv): { status: number | null; signal?: NodeJS.Signals | null };
   releaseApk: string;
+  releaseMapping: string;
   bundleDir: string;
   probeBuildDir: string;
   e2eApk: string;
+  e2eMapping: string;
   e2eStamp: string;
   probeApk: string;
 }
