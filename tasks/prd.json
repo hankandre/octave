@@ -3312,9 +3312,9 @@
           "human": false,
           "depends_on": [],
           "acceptance": [
-            "safeReason hides a bare host or IP address with no port, and a path that follows a colon with no space (open failed:/home/u/x)",
+            "safeReason hides a bare host or IP address with no port (a dotted name, an IPv4 address or an IPv6 address; a single label with no port, which cannot be told from a word, is logged in tasks/backlog.jsonl), and a path that follows a colon with no space (open failed:/home/u/x)",
             "It hides an IPv6 address with a zone id, bracketed or bare, and the user and password of a scheme-less user:pass@host",
-            "It hides a whole path that contains a space, POSIX or Windows, so no fragment of a file name is shown",
+            "It hides a whole path that contains a space, POSIX or Windows, up to its last word that holds a separator or a file extension, so no fragment of a file name with an extension is shown (My Movie.mkv); the last word of a spaced path with no extension is logged in tasks/backlog.jsonl",
             "A status code after the word token stays readable (Invalid token (401)), a word:NNNN value that is not an address (pts:12345, bitrate:8000) is not replaced, and a single-label host with a short port (nas:80) is hidden",
             "Each case is a test that uses the backlog entry's example string, and the existing canary and performance tests still pass"
           ],
