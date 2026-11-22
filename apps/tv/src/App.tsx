@@ -2,7 +2,7 @@
 import { DarkTheme, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { FirstScreen } from "./first-screen/FirstScreen";
-import { colors } from "./first-screen/placeholder-values";
+import { colors } from "./design/tokens";
 
 const Stack = createNativeStackNavigator();
 

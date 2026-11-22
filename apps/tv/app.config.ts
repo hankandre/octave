@@ -28,6 +28,27 @@ const config: ExpoConfig = {
         },
       },
     ],
+    // The faces are bundled (DESIGN.md §4); nothing loads a font at run time. One variable file backs each family, and
+    // each definition instances it at its weight (docs/specs/T3-06.md, "Fonts").
+    [
+      "expo-font",
+      {
+        android: {
+          fonts: [
+            {
+              fontFamily: "AtkinsonHyperlegibleNext",
+              path: "./assets/fonts/AtkinsonHyperlegibleNext.ttf",
+              fontDefinitions: [{ weight: 400 }, { weight: 500 }, { weight: 600 }, { weight: 700 }],
+            },
+            {
+              fontFamily: "AtkinsonHyperlegibleMono",
+              path: "./assets/fonts/AtkinsonHyperlegibleMono.ttf",
+              fontDefinitions: [{ weight: 500 }, { weight: 700 }],
+            },
+          ],
+        },
+      },
+    ],
     "./plugins/with-app-jvm-tests.js",
     "./plugins/with-trimmed-manifest.js",
     "./plugins/with-device-probe.js",
