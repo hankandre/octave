@@ -1,0 +1,24 @@
+{
+  "task": "T3-26",
+  "files": [
+    "scripts/tv-wire-evidence.test.ts",
+    "scripts/tv-wire-cli.test.ts",
+    "scripts/tv-wire-logcat.test.ts",
+    "scripts/tv-wire-device.test.ts",
+    "scripts/fixtures/tv-wire/signal-child.mjs",
+    "scripts/check-session-logs-cli.test.ts",
+    "scripts/wire-evidence-docs.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-wire-evidence.test.ts", "-t", "T3-26 item 1:"] },
+    { "item": 2, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-wire-cli.test.ts", "-t", "T3-26 item 2:"] },
+    { "item": 3, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-wire-logcat.test.ts", "-t", "T3-26 item 3:"] },
+    { "item": 4, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-wire-device.test.ts", "-t", "T3-26 item 4:"] },
+    { "item": 5, "run": ["pnpm", "exec", "vitest", "run", "scripts/check-session-logs-cli.test.ts", "-t", "T3-26 item 5:"] },
+    {
+      "item": 6,
+      "gate": "ci",
+      "why": "The wire job on the PR head must be green; evidence is its summary.txt (a pass line for every T3-05 pair, transport-probe-then-signed-in jellyscale among them, no fail line) and the kept-log line of its device.txt. The documents half is scripts/wire-evidence-docs.test.ts, run by pnpm check."
+    }
+  ]
+}
