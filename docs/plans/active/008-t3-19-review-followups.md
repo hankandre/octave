@@ -4,7 +4,7 @@
 
 Record the T3-19 fresh-context review's medium finding (fixed) and its low findings so the owner and later tasks see them (T3-19).
 
-- [x] Medium, fixed in commit 76d2b7c2: code R8 attributes only to a merged lambda group's synthesized `invoke()` frame was judged by neither D1 nor D4, and row X6 allowlisted S1 for a group named after R8's choice of lambda. A synthetic-only site is now Octave's code when its group holds any `dev.octave.` frame; outside Octave a sink there is judged by the referenced member's holder and a hook member there fails D4; X6 is gone (W3 covers the `Networking` getter); R8's dispatch cast is not a D4 reference. `scripts/tv-apk-dex-synthetic.test.ts`; decision log 25 in `docs/specs/T3-19.md`; `docs/security.md` corrected
+- [x] Medium, fixed in commit 76d2b7c2: code R8 attributes only to a merged lambda group's synthesized `invoke()` frame was judged by neither D1 nor D4, and row X6 allowlisted S1 for a group named after R8's choice of lambda. A synthetic-only site is now Octave's code when its group holds any `dev.octave.` frame; outside Octave a sink there is judged by the referenced member's holder and a hook member there fails D4; X6 is gone (W3 covers the `Networking` getter); R8's dispatch cast is not a D4 reference. `scripts/tv-apk-dex-synthetic.test.ts`; decision log 25 (a D2 and D4 scope edit: a library group's client-getter call passes on the getter's holder's row) in `docs/specs/T3-19.md`; `docs/security.md` corrected
 - [x] Lows below logged as follow-ups, not fixed
 - [ ] CI gate: the `tv` job green on the PR head; the PR quotes the `tv apk dex:` line, `release-evidence/tv/dev-server-watch.txt`, the first-focus transcript and the run id
 - [ ] T3-19 set to done with evidence naming the PR
@@ -20,7 +20,7 @@ None added.
 ## Milestones
 
 1. **Review record.** Fix the medium finding with tests; log the lows here. Validation: `mise exec -- pnpm check`, `mise exec -- pnpm tv:apk:check` on the release build. Model: opus.
-2. **Ship.** Open the PR (decision logs 22 and 25 flagged as security-rule scope edits open to the owner's veto), record the `tv` job green on the head commit, set T3-19 to done with evidence naming the PR. Model: sonnet.
+2. **Ship.** Open the PR (decision log 22, a D4 scope edit, and decision log 25, a D2 and D4 scope edit, flagged as security-rule edits open to the owner's veto), record the `tv` job green on the head commit, set T3-19 to done with evidence naming the PR. Model: sonnet.
 
 ## Progress
 
