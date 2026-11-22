@@ -619,10 +619,10 @@
             "Tests in a new file that pnpm test:workflow runs cover the three, the frozen .claude/workflows/task.test.mjs is not changed, and the step's text matches WORKFLOW.md's review follow-ups rule"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 2636dd3f: follow-ups step fixes small lows, leaves go to tasks/backlog.jsonl, real-TV gates in result; task-followups tests green, pnpm check green"
         },
         {
           "id": "T1-19",
