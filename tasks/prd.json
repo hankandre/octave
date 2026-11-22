@@ -1192,7 +1192,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 12e6ff32: tokens, octave/design-tokens lint, FocusFrame and 9 controls, fonts, placeholder on tokens; pnpm check, tv:apk:check, tv:smoke, tv:e2e pass. Provisional: PO rulings (Jest setup, container-control reading) open."
+          "evidence": "commit becdfe43: removed FocusFrame repeat guard per PO ruling; earlier commit 12e6ff32 holds tokens, lint, controls, fonts. pnpm check, tv:e2e, tv:smoke pass. Provisional: PO rulings (Jest setup, container-control reading) open."
         },
         {
           "id": "T3-08",
