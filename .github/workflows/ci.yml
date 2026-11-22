@@ -25,6 +25,31 @@ jobs:
         with:
           fail-on-severity: moderate
 
+  # Decides whether the device jobs (tripwire, tv, wire) run (T1-17). Only a pull
+  # request whose every changed path is under docs/ or tasks/ gives "skip". A push,
+  # a merge group, an unreadable diff and a failure of this job all leave the output
+  # empty or "run", and the three jobs then run.
+  changes:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    outputs:
+      device-jobs: ${{ steps.decide.outputs.device-jobs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name == 'pull_request'
+        with:
+          persist-credentials: false
+          fetch-depth: 2 # the merge commit and both parents
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: github.event_name == 'pull_request'
+        with:
+          node-version-file: .node-version
+      - id: decide
+        if: github.event_name == 'pull_request'
+        env:
+          OCTAVE_CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ci-device-jobs.mjs
+
   # The core's checks: the same steps as `pnpm check`, in its order
   # (scripts/ci-check-parity.test.ts fails when they drift).
   checks:
@@ -61,8 +86,11 @@ jobs:
   # with /Sessions, and leave no job after the stop. Three capability sets each
   # lacking one video codec must convert it on Jellyfin and be refused on
   # Jellyscale. Every request must carry the header and no credential
-  # parameter. Required on main by ruleset 26769544.
+  # parameter. Required on main by ruleset 26769544. Skipped on a pull request
+  # that changes only docs/ or tasks/ (the changes job; a skipped job reports success).
   tripwire:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.device-jobs != 'skip' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
@@ -124,7 +152,11 @@ jobs:
   # the device test (pnpm tv:e2e: the core's conformance suites under Hermes),
   # in a second emulator boot so the first one still tests the uploaded APK.
   # Required on main by ruleset 26769544 since 2026-11-21 (T3-02, owner-approved).
+  # Skipped on a pull request that changes only docs/ or tasks/ (the changes job). An
+  # emulator step whose script never started is run once more; a started script never is.
   tv:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.device-jobs != 'skip' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     permissions:
@@ -164,7 +196,40 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      # T1-17: a pnpm shim, first on PATH, creates the file an emulator step names in
+      # OCTAVE_CI_SCRIPT_STARTED before it starts the real pnpm. A first attempt that
+      # fails with no such file never reached its script, and is run once more.
+      - name: Mark when an emulator step's script starts
+        run: |
+          real="$(command -v pnpm)"
+          mkdir -p "$RUNNER_TEMP/octave-ci/bin" "$RUNNER_TEMP/octave-ci/started"
+          install -m 755 scripts/ci-script-started.sh "$RUNNER_TEMP/octave-ci/bin/pnpm"
+          echo "OCTAVE_CI_REAL_PNPM=$real" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/octave-ci/bin" >> "$GITHUB_PATH"
       - name: First focus on an Android TV emulator
+        id: smoke
+        continue-on-error: true
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        env:
+          ANDROID_SERIAL: emulator-5554
+          OCTAVE_CI_SCRIPT_STARTED: ${{ runner.temp }}/octave-ci/started/smoke
+        with:
+          api-level: 36
+          target: android-tv
+          arch: x86_64
+          profile: tv_1080p
+          emulator-port: 5554
+          disable-linux-hw-accel: false
+          script: pnpm tv:smoke
+      - name: Fail, or allow one more first-focus run if its script never started
+        id: smoke-retry
+        if: steps.smoke.outcome != 'success'
+        env:
+          OCTAVE_CI_STEP_OUTCOME: ${{ steps.smoke.outcome }}
+          OCTAVE_CI_SCRIPT_STARTED: ${{ runner.temp }}/octave-ci/started/smoke
+        run: node scripts/ci-emulator-retry.mjs
+      - name: First focus on an Android TV emulator, once more
+        if: steps.smoke-retry.outputs.retry == 'true'
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         env:
           ANDROID_SERIAL: emulator-5554
@@ -178,6 +243,29 @@ jobs:
           script: pnpm tv:smoke
       - run: pnpm tv:e2e:build
       - name: Conformance under Hermes on an Android TV emulator
+        id: e2e
+        continue-on-error: true
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        env:
+          ANDROID_SERIAL: emulator-5554
+          OCTAVE_CI_SCRIPT_STARTED: ${{ runner.temp }}/octave-ci/started/e2e
+        with:
+          api-level: 36
+          target: android-tv
+          arch: x86_64
+          profile: tv_1080p
+          emulator-port: 5554
+          disable-linux-hw-accel: false
+          script: pnpm tv:e2e
+      - name: Fail, or allow one more conformance run if its script never started
+        id: e2e-retry
+        if: steps.e2e.outcome != 'success'
+        env:
+          OCTAVE_CI_STEP_OUTCOME: ${{ steps.e2e.outcome }}
+          OCTAVE_CI_SCRIPT_STARTED: ${{ runner.temp }}/octave-ci/started/e2e
+        run: node scripts/ci-emulator-retry.mjs
+      - name: Conformance under Hermes on an Android TV emulator, once more
+        if: steps.e2e-retry.outputs.retry == 'true'
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         env:
           ANDROID_SERIAL: emulator-5554
@@ -206,8 +294,12 @@ jobs:
   # The run sets the emulator's global http_proxy to a listener of its own and
   # judges the captures, the app's lines and the whole logcat dump. Its
   # release-evidence/wire/summary.txt is T3-05 item 7's evidence. Not a required
-  # check until T10-01; the T3-05 pull request is held until it is green.
+  # check until T10-01; the T3-05 pull request is held until it is green. Skipped on
+  # a pull request that changes only docs/ or tasks/; its emulator step is retried
+  # like the tv job's (only when its script never started).
   wire:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.device-jobs != 'skip' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     permissions:
@@ -253,7 +345,40 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      # T1-17: a pnpm shim, first on PATH, creates the file an emulator step names in
+      # OCTAVE_CI_SCRIPT_STARTED before it starts the real pnpm. A first attempt that
+      # fails with no such file never reached its script, and is run once more.
+      - name: Mark when an emulator step's script starts
+        run: |
+          real="$(command -v pnpm)"
+          mkdir -p "$RUNNER_TEMP/octave-ci/bin" "$RUNNER_TEMP/octave-ci/started"
+          install -m 755 scripts/ci-script-started.sh "$RUNNER_TEMP/octave-ci/bin/pnpm"
+          echo "OCTAVE_CI_REAL_PNPM=$real" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/octave-ci/bin" >> "$GITHUB_PATH"
       - name: Wire tests on an Android TV emulator
+        id: wire
+        continue-on-error: true
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        env:
+          ANDROID_SERIAL: emulator-5554
+          OCTAVE_CI_SCRIPT_STARTED: ${{ runner.temp }}/octave-ci/started/wire
+        with:
+          api-level: 36
+          target: android-tv
+          arch: x86_64
+          profile: tv_1080p
+          emulator-port: 5554
+          disable-linux-hw-accel: false
+          script: pnpm tv:wire
+      - name: Fail, or allow one more wire-test run if its script never started
+        id: wire-retry
+        if: steps.wire.outcome != 'success'
+        env:
+          OCTAVE_CI_STEP_OUTCOME: ${{ steps.wire.outcome }}
+          OCTAVE_CI_SCRIPT_STARTED: ${{ runner.temp }}/octave-ci/started/wire
+        run: node scripts/ci-emulator-retry.mjs
+      - name: Wire tests on an Android TV emulator, once more
+        if: steps.wire-retry.outputs.retry == 'true'
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         env:
           ANDROID_SERIAL: emulator-5554

@@ -24,3 +24,10 @@ Every command an agent or contributor runs in Octave. `AGENTS.md` holds the rule
 ## Native tests
 
 - `pnpm tv:native:test` runs the app's and the native modules' JVM tests; `node scripts/tv-native-test-only.mjs <filter>` runs one class.
+
+## CI
+
+Two rules for `.github/workflows/ci.yml` (T1-17), both read by `scripts/ci-rules.test.ts`:
+
+- **Skip.** The `changes` job runs `scripts/ci-device-jobs.mjs` on pull requests. When every path the merge commit changes is under `docs/` or `tasks/`, the `tripwire`, `tv` and `wire` jobs are skipped, and a skipped job reports success to the required checks. Any other changed path, a diff that cannot be read, a push to main and a merge group run all three. `checks` and `dependency-review` always run. No step of the three jobs reads a path under `docs/` or `tasks/`; add a prefix to the list only with that proof.
+- **Retry.** An emulator step of `tv` or `wire` runs once more only when the emulator never reached its test script (for example `adb: device offline` during boot). A pnpm shim, `scripts/ci-script-started.sh`, creates a start marker before the real pnpm starts, and `scripts/ci-emulator-retry.mjs` reads it after a failed first attempt. A started script is never retried, whatever its result, and a case that cannot be told apart is not retried.
