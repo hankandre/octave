@@ -125,6 +125,10 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
     // Resolves to the failures of the control commands (empty when each exited 0). A connection accepted while it runs is
     // a control; one accepted before it was called is a stray; every one after it resolves is the app's.
     async runControls() {
+      // The caller may have blocked the event loop (a synchronous adb install): connections made meanwhile wait in the
+      // accept backlog. Let the loop accept them as strays before the controls window opens.
+      await new Promise((resolve) => setImmediate(resolve));
+      await sleep(20);
       phase = "controls";
       const runs = await Promise.all(
         controlHosts.map((host) => runAdb(["shell", `toybox nc -w 2 ${host} ${port} </dev/null`])),

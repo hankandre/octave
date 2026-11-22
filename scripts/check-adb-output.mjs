@@ -9,6 +9,8 @@ const CALLERS = ["tv-first-focus", "tv-dev-server-watch", "tv-e2e", "tv-cleartex
 // such file is a finding until it is added here, which is a reviewed change.
 const PINNED = new Set(["tv-apk-check", "tv-apk-manifest", "tv-apk-inspector", "tv-apk-dex", "check-red"].map((name) => `scripts/${name}.mjs`));
 const CALLS = ["spawn", "spawnSync", "execFile", "execFileSync", "exec", "execSync", "fork"];
+// Programs that start another program from their arguments, so a literal naming one hides what it starts.
+const WRAPPERS = /(^|[\\/])(sh|bash|zsh|dash|ash|ksh|fish|env|cmd(\.exe)?|powershell(\.exe)?|pwsh|xargs|nohup|timeout|nice|stdbuf|setsid|script|busybox|doas|sudo|time|command|exec|eval)(\.exe)?$/i;
 const SPECIFIER = String.raw`["'](?:node:)?child_process["']`;
 
 // Returns `{ code, text }` of equal length: `text` has comments blanked; `code` has comments blanked and the inside of each
@@ -109,6 +111,7 @@ export function adbOutputFindings(files) {
     // Local names that reach node:child_process: named imports (with their renames), and namespace, default and require
     // bindings.
     const direct = new Set();
+    const imports = new Map();
     const namespaces = new Set();
     for (const match of text.matchAll(new RegExp(String.raw`import\s+([^;]*?)\s+from\s*${SPECIFIER}`, "gs"))) {
       const clause = match[1].trim();
@@ -128,7 +131,10 @@ export function adbOutputFindings(files) {
         const [imported, local] = part.trim().split(/\s+as\s+/);
         if (imported === undefined || imported === "") continue;
         if (local !== undefined && knowsAdb) add(path, `line ${line}: \`${imported} as ${local}\` renames a child_process function; import it without \`as\`, so each call can be read`);
-        if (CALLS.includes(imported)) direct.add(local ?? imported);
+        if (CALLS.includes(imported)) {
+          direct.add(local ?? imported);
+          imports.set(local ?? imported, imported);
+        }
       }
     }
     for (const match of text.matchAll(new RegExp(String.raw`export\s*(?:\*|\{[^}]*\})\s*from\s*${SPECIFIER}`, "g"))) {
@@ -141,7 +147,10 @@ export function adbOutputFindings(files) {
     for (const match of text.matchAll(new RegExp(String.raw`(?:const|let|var)\s*\{([^}]*)\}\s*=\s*(?:await\s+)?(?:require|import)\s*\(\s*${SPECIFIER}\s*\)`, "g"))) {
       for (const part of match[1].split(",")) {
         const [imported, local] = part.trim().split(/\s*:\s*/);
-        if (CALLS.includes(imported)) direct.add(local ?? imported);
+        if (CALLS.includes(imported)) {
+          direct.add(local ?? imported);
+          imports.set(local ?? imported, imported);
+        }
       }
     }
     namespaces.delete("");
@@ -160,8 +169,8 @@ export function adbOutputFindings(files) {
 
     // Each call's first argument is a string literal or process.execPath; a literal is never adb.
     const callee = [
-      ...(direct.size > 0 ? [String.raw`(?<![\w$.])(${[...direct].join("|")})`] : []),
-      ...(namespaces.size > 0 ? [String.raw`(?<![\w$.])(?:${[...namespaces].join("|")})\s*\.\s*(${CALLS.join("|")})`] : []),
+      ...(direct.size > 0 ? [String.raw`(?<![\w$.])(?<d>${[...direct].join("|")})`] : []),
+      ...(namespaces.size > 0 ? [String.raw`(?<![\w$.])(?:${[...namespaces].join("|")})\s*\.\s*(?<n>${CALLS.join("|")})`] : []),
     ];
     if (callee.length === 0) continue;
     for (const match of code.matchAll(new RegExp(String.raw`(?:${callee.join("|")})\s*\(`, "g"))) {
@@ -169,9 +178,14 @@ export function adbOutputFindings(files) {
       const end = argumentEnd(code, start);
       const argument = text.slice(start, end).trim();
       const line = lineOf(code, match.index);
+      const name = imports.get(match.groups.d) ?? match.groups.n;
       const literal = /^(["'`])((?:(?!\1)[^\\$]|\\.)*)\1$/s.exec(argument);
       if (literal !== null) {
-        if (/(^|[\\/])adb(\.exe)?$/i.test(literal[2])) add(path, `line ${line}: starts adb itself; use openAdb from ./tv-adb.mjs, which redacts the device serial`);
+        if (knowsAdb && (name === "exec" || name === "execSync")) {
+          add(path, `line ${line}: \`${name}\` runs a command string through a shell, which cannot be read for adb; use openAdb from ./tv-adb.mjs`);
+        } else if (knowsAdb && WRAPPERS.test(literal[2])) {
+          add(path, `line ${line}: starts a wrapper program (\`${literal[2]}\`) in a file that knows adb, which can start adb unredacted; use openAdb from ./tv-adb.mjs`);
+        } else if (/(^|[\\/])adb(\.exe)?$/i.test(literal[2])) add(path, `line ${line}: starts adb itself; use openAdb from ./tv-adb.mjs, which redacts the device serial`);
       } else if (argument !== "process.execPath" && (knowsAdb || !PINNED.has(path))) {
         add(path, `line ${line}: starts a program held in a variable (\`${argument.replace(/\s+/g, " ").slice(0, 40)}\`) in ${knowsAdb ? "a file that knows adb" : "a file that is not one of the pinned helpers"}; use openAdb from ./tv-adb.mjs for adb, or start a literal program`);
       }
