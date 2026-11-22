@@ -6,8 +6,8 @@ Record the T3-15 fresh-context review's medium finding (fixed) and its low findi
 
 - [x] Medium, fixed in commit 0ed8a3e7: a failed e2e build (`scripts/tv-build.mjs`, the probe task failing after `:app:assembleRelease`, other than one probe APK, or no bundle found) removes `app-release.apk`, so the release path never holds a harness build; `scripts/tv-build-cleanup.test.ts` covers each exit
 - [x] Lows below logged as follow-ups, not fixed
-- [ ] CI gate: the `tv` job's `pnpm tv:apk:check` and `pnpm tv:e2e` steps green on the PR head; the PR quotes the `tv apk:` lines, the two `tv e2e:` lines and `release-evidence/tv/e2e-cleartext.txt`
-- [ ] T3-15 set to done with evidence naming the PR
+- [x] CI gate: the `tv` job's `pnpm tv:apk:check` and `pnpm tv:e2e` steps green on the PR head; the PR quotes the `tv apk:` lines, the two `tv e2e:` lines and `release-evidence/tv/e2e-cleartext.txt` (run 44988888740, PR #264)
+- [x] T3-15 set to done with evidence naming the PR
 
 ## Context and domains touched
 
@@ -25,7 +25,7 @@ None added.
 ## Progress
 
 - [x] 1
-- [ ] 2
+- [x] 2
 
 ## Decision log
 
