@@ -3319,10 +3319,10 @@
             "Each case is a test that uses the backlog entry's example string, and the existing canary and performance tests still pass"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit b4ca6415 on task/T9-07 (milestones f784b369, 1166ca76, a36f2c59; no PR yet). pnpm check passes (core 2967 tests); check-red --expect green: items 1-4 green."
+          "passes": true,
+          "evidence": "commit 4979aed9: safeReason hides user info with an @ in the user and before paths; review lows logged in plan 012. pnpm check passed (core 2972 tests); frozen safe-reason-gaps items 1-4 green."
         },
         {
           "id": "T9-06",
