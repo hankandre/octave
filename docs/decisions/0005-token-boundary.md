@@ -306,6 +306,15 @@ T3-24 narrows what `request` accepts again (`docs/specs/T3-24.md`, "The rule as 
 - C2 runs P1's `?` and `#` and P2 to P7 (`RequestPath.holdsRefusedForm`, the function `RequestPath.isSafe` also calls) on the whole encoded path of every `Session` and `Closing` call (`BasePathFormsTest.kt`).
 - Limits: characters that fold to a separator or a `;` (U+FF0F, U+FF3C, U+FF1B, U+FE54, U+037E) are not refused; an id that holds a literal `%` and two hex digits that are not UTF-8 is refused, and so is an id that holds a `?` or `#`; the query string is not judged by this rule; a base path that fails the rule signs in and then has every session call refused.
 
+## Amendment, 2026-11-22 (T3-25): a depth bound on answers and two error codes
+
+T3-25 narrows what an answer may hold (`docs/specs/T3-25.md`). It adds no method, no event, no argument key and no error code. The T3-16 caps stay as written.
+
+- Depth is the largest number of arrays and objects open at one point of an answer's text. An answer whose text begins with `[` or `{` after leading whitespace and nests deeper than 64 is refused as `unexpected-response` before it is parsed, at every status, on session and tokenless calls and the sign-in posts. A sign-in answer with an error status and a deeper body is therefore `unexpected-response`, not `status`. The logout's body is not read.
+- The bound is checked by a scan with no recursion on the decoded text (`JsonDepth.kt`), because kotlinx-serialization-json 1.9.0's tree reader recurses once per nested array with no count. Any other text cannot make the reader recurse and is not scanned, so an HTML error page keeps its status.
+- A `StackOverflowError` or an `OutOfMemoryError` raised inside a transport call resolves `{ error: "unexpected-response" }`, decided by type in `TransportCodes.of`, with no message; before T3-25 both were `network`. After the bound no answer can raise a `StackOverflowError` by nesting; the mapping is the second line. An `OutOfMemoryError` is mapped, not prevented: it is caught on the calling thread, the call is not sent again, and before `SessionRegistry.open` it opens no session. One raised on another thread is not seen, and the number of values in an answer is not bounded.
+- `OctaveSessionModule.run`'s last guard keeps `network`.
+
 ## Revisit if
 
 - A crash reporter, over-the-air JavaScript updates or any third-party runtime code is proposed. Under A that is a new reader of the token; under C it is not.
