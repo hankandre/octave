@@ -77,7 +77,7 @@ Every item screen (Detail, Series, Player loading, Up Next) and the Home hero ta
 - **Atkinson Hyperlegible Next**, variable 200–800, for all UI and body. Designed by the Braille Institute for legibility, with distinct `Il1` and `O0` and open apertures, which pays off at three metres.
 - **Atkinson Hyperlegible Mono** for timecodes, Quick Connect codes, server addresses, and technical values only.
 - **The title's own Logo image** is the display face when the server has one, with the title as its accessible label; otherwise the title is set in Atkinson Hyperlegible Next 700.
-- Licence: both faces are SIL Open Font License 1.1 (verified 2026-11-08 from the `license` fields of `googlefonts/atkinson-hyperlegible-next` and `googlefonts/atkinson-hyperlegible-next-mono`). The Mono repository is archived; the font files are complete and need no maintenance, but the maintenance rule is re-checked when T3-06 bundles them.
+- Licence: both faces are SIL Open Font License 1.1 (verified 2026-11-08 from the `license` fields of `googlefonts/atkinson-hyperlegible-next` and `googlefonts/atkinson-hyperlegible-next-mono`). Both repositories are archived (last push 2025-06-10, checked 2026-11-22). The font files are complete and need no maintenance, and the app bundles the variable files that `google/fonts` distributes under the same licence.
 
 **Scale** (px on the 1920×1080 canvas):
 
@@ -85,7 +85,8 @@ Every item screen (Detail, Series, Player loading, Up Next) and the Home hero ta
 |---|---|---|---|
 | `typeHero` | 72 / 1.02, tracking −0.02em | 700 | Hero and detail title without a logo |
 | `typeCode` | 72 / 1.02, Mono | 700 | The Quick Connect code (tabular figures) |
-| `typeTitle` | 48 / 1.15 | 650 | Page titles, dialog titles at 36 |
+| `typeTitle` | 48 / 1.15 | 650 | Page titles |
+| `typeDialogTitle` | 36 / 1.15 | 650 | Dialog titles |
 | `typeHeading` | 33 / 1.25 | 600 | Row and section titles, sentence case |
 | `typeBodyLg` | 31.5 / 1.55 | 400 | Overview (at most 62 characters a line) |
 | `typeBody` | 28 / 1.5 | 400 | Body, settings descriptions |
@@ -347,12 +348,12 @@ Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here
 |---|---|
 | Colour | `void` `#060708`, `surface0` `#0b0c0e`, `surface1` `#131417`, `surface2` `#1b1c20`, `surface3` `#25262b`, `line` `rgb(242 239 233 / .10)`, `lineStrong` `rgb(242 239 233 / .37)`, `text1` `#f2efe9`, `text2` `#a9a59d`, `text3` `#8a867f`, `onLight` `#0b0c0e`, `focus` `#fff4dc`, `focusEdge` `rgb(0 0 0 / .6)`, `danger` `#ff8a6b`, `notice` `#f0b65a`, `ok` `#8fd1a8`, `fillSecondary` `rgb(242 239 233 / .12)`, `fillIcon` `rgb(242 239 233 / .10)`, `track` `rgb(255 255 255 / .22)`, `trackBuffered` `rgb(255 255 255 / .40)`, `veil` `rgb(0 0 0 / .6)` |
 | Artwork defaults | `artAccent` `#e8c48a`, `artGlow` `rgb(232 196 138 / .22)`, `artShade` `#141210` |
-| Type | §4: `typeHero` 72, `typeCode` 72 Mono, `typeTitle` 48, `typeHeading` 33, `typeBodyLg` 31.5, `typeBody` 28, `typeLabel` 24, `typeMeta` 24, `typeMono` 24 Mono; `measure` 62 characters |
+| Type | §4: `typeHero` 72, `typeCode` 72 Mono, `typeTitle` 48, `typeDialogTitle` 36, `typeHeading` 33, `typeBodyLg` 31.5, `typeBody` 28, `typeLabel` 24, `typeMeta` 24, `typeMono` 24 Mono; `measure` 62 characters |
 | Space | `space1` 4, `space2` 8, `space3` 12, `space4` 16, `space5` 24, `space6` 32, `space7` 48, `space8` 64, `space9` 96; `safeX` 96, `safeY` 54 |
-| Sizes | `railCollapsedW` 96, `railOpenW` 400, `posterW` 248, `thumbW` 416, `rowGap` 48, `controlH` 72, `iconButton` 64, `hitMin` 64, `switchW` 64, `switchH` 36, `searchFieldH` 96, `textFieldH` 72, `personDisc` 200, `playerSheetW` 640 (a third of the canvas), `playerPlayDisc` 84, `playerStatusDisc` 64, `upNextW` 560, `scrubTrackH` 4, `scrubTrackHActive` 8, `scrubThumb` 16, `scrubGap` 2, `scrubPreviewW` 384, `scrimPlayerTopH` 360, `scrimPlayerBottomH` 440, `posterRequestMaxW` 400 |
+| Sizes | `railCollapsedW` 96, `railOpenW` 400, `posterW` 248, `thumbW` 416, `rowGap` 48, `controlH` 72, `iconButton` 64, `hitMin` 64, `switchW` 64, `switchH` 36, `searchFieldH` 96, `textFieldH` 72, `personDisc` 200, `playerSheetW` 640 (a third of the canvas), `playerPlayDisc` 84, `playerStatusDisc` 64, `upNextW` 560, `scrubTrackH` 4, `scrubTrackHActive` 8, `scrubThumb` 16, `scrubGap` 2, `scrubPreviewW` 384, `scrimPlayerTopH` 360, `scrimPlayerBottomH` 440, `posterRequestMaxW` 400, `dialogMaxW` 840, `toastMaxW` 840, `emptyIcon` 72, `switchThumb` 28, `fieldBorderWidth` 2 |
 | Shape | `radiusXs` 4, `radiusArt` 6, `radiusControl` 10, `radiusSheet` 16, `radiusPill` 999 |
 | Depth | `shadowLift`, `shadowSheet`, `scrimHero`, `scrimFloor`, `scrimPlayerTop`, `scrimPlayerBottom` (§5) |
-| Motion | `durInstant` 80 ms, `durQuick` 160 ms, `durBase` 240 ms, `durSlow` 480 ms, `easeOut`, `easeInOut`, `lift` 1.08, `chromeIdleMs` 3000, `savedMs` 2000, `dwellMs` 300, `bufferingDelayMs` 500, `skeletonDelayMs` 150 |
+| Motion | `durInstant` 80 ms, `durQuick` 160 ms, `durBase` 240 ms, `durSlow` 480 ms, `easeOut`, `easeInOut`, `lift` 1.08, `chromeIdleMs` 3000, `savedMs` 2000, `dwellMs` 300, `bufferingDelayMs` 500, `skeletonDelayMs` 150, `toastMs` 5000, `pressScale` 0.98 |
 | Focus | `focusRingWidth` 3, `focusEdgeWidth` 1, `focusOffset` 3 |
 | Reduced motion | `durQuick` 0, `durBase` 0, `durSlow` 120, `lift` none |
 
@@ -489,6 +490,16 @@ Also carried: TV body text 28 px and nothing under 24 px (D13 B), exit by the pl
 - Home has one Recently added row of movies and shows, with episodes grouped by series.
 - Libraries open on the full grid, with a remembered sort that includes "Newest added", and a letter rail when sorted A to Z.
 - Sign-in is by QR code and Quick Connect, so single sign-on works.
+
+### Owner decisions, 2026-11-22
+
+The owner accepted these look values for now, to be judged again on the Shield at the token check:
+
+- Switch thumb 28 px. On is a `text1` track with an `onLight` thumb. Off is a `surface3` track with a `text2` thumb.
+- TextField border 2 px `lineStrong`.
+- A disabled label is `text3` on the normal fill.
+- A toast is at most 840 px wide.
+- A skeleton never shimmers.
 
 ### Awaiting the owner
 
