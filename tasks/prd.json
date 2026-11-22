@@ -957,7 +957,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Commit da8199d3 (CI fix for run 45002313854: adb connection drop voided wire; tv:wire now waits for steady adbd and reruns a void run once). Local pnpm tv:wire (fluster_tv API 36, own emulator) summary: all 8 T3-05 pairs pass (probe-then-signed-in mock, jellyfin-10-11, jellyfin-12, jellyscale; redirect; canary; errors; private-lan-and-proxy); no fail. Pending: CI wire summary on the pushed head (item 7), tv."
+          "evidence": "Commit da8199d3 fixes CI run 45002313854 (adb connection drop voided wire: adbd restarts after boot; tv:wire waits for steady adbd, reruns a void run once). Re-run CI-like: fresh -wipe-data fluster_tv API 36, tv:wire at boot: adbd restart at boot seen, wait held (up 61 s), all 8 T3-05 pairs pass, 10 of 10 reverses kept, no fail. pnpm check pass; tv:native:test 214 tests 0 failed. Pending: CI wire summary on the pushed head (item 7)."
         },
         {
           "id": "T3-16",
