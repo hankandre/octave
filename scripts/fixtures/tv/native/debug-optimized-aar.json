@@ -1,0 +1,84 @@
+{
+  "header": [
+    "T3-28 item 1 (docs/specs/T3-28.md, \"Test plan\"): a cut of libreactnative.so of a debugOptimized build (REACT_NATIVE_DEBUGGER_ENABLED on, optimised), react-native-tvos 0.88.1-0, cut on 2026-11-22 at ea333f94 (origin/main).",
+    "Read from https://repo1.maven.org/maven2/io/github/react-native-tvos/react-android/0.88.1-0/react-android-0.88.1-0-debugOptimized.aar, downloaded once with curl into a scratch directory outside the repository and not committed: 177471040 bytes, sha256 93001c059473c417b7a43a2fa96c2a6354209ef90ca6c1b56431d475a04b25f1, equal to the spec Facts value.",
+    "jni/<abi>/libreactnative.so sha256: arm64-v8a 03460e0b1ede52fdc83be696ba37ab7969602745a6c9b863f365d03a1c3866a1, x86_64 401c8899c4186fa5751fd40a9e75417482db8d52c6b4bbca3474f21120e3eaa5. No debugOptimized APK was built; the entry names lib/<abi>/libreactnative.so are those an APK would hold.",
+    "Records libreactnative.so of arm64-v8a and x86_64 only. Each row: sh scripts/fixtures/tv/native/cut-library.sh <entry> <file>."
+  ],
+  "libraries": [
+    {
+      "entry": "lib/arm64-v8a/libreactnative.so",
+      "abi": "arm64-v8a",
+      "name": "libreactnative.so",
+      "problems": [],
+      "packedRelocations": false,
+      "symbols": [
+        {
+          "name": "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent25handleLoadNetworkResourceERKNS1_3cdp16PreparsedRequestERNS1_27LoadNetworkResourceDelegateE",
+          "defined": true,
+          "type": "FUNC",
+          "bind": "GLOBAL",
+          "visibility": "DEFAULT"
+        },
+        {
+          "name": "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent13handleRequestERKNS1_3cdp16PreparsedRequestERNS1_27LoadNetworkResourceDelegateE",
+          "defined": true,
+          "type": "FUNC",
+          "bind": "GLOBAL",
+          "visibility": "DEFAULT"
+        }
+      ],
+      "relocations": [
+        {
+          "section": ".rela.plt",
+          "name": "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent13handleRequestERKNS1_3cdp16PreparsedRequestERNS1_27LoadNetworkResourceDelegateE"
+        },
+        {
+          "section": ".rela.plt",
+          "name": "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent25handleLoadNetworkResourceERKNS1_3cdp16PreparsedRequestERNS1_27LoadNetworkResourceDelegateE"
+        }
+      ],
+      "markers": [
+        "React Native DevTools",
+        "is not implemented by this host target delegate"
+      ]
+    },
+    {
+      "entry": "lib/x86_64/libreactnative.so",
+      "abi": "x86_64",
+      "name": "libreactnative.so",
+      "problems": [],
+      "packedRelocations": false,
+      "symbols": [
+        {
+          "name": "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent25handleLoadNetworkResourceERKNS1_3cdp16PreparsedRequestERNS1_27LoadNetworkResourceDelegateE",
+          "defined": true,
+          "type": "FUNC",
+          "bind": "GLOBAL",
+          "visibility": "DEFAULT"
+        },
+        {
+          "name": "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent13handleRequestERKNS1_3cdp16PreparsedRequestERNS1_27LoadNetworkResourceDelegateE",
+          "defined": true,
+          "type": "FUNC",
+          "bind": "GLOBAL",
+          "visibility": "DEFAULT"
+        }
+      ],
+      "relocations": [
+        {
+          "section": ".rela.plt",
+          "name": "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent13handleRequestERKNS1_3cdp16PreparsedRequestERNS1_27LoadNetworkResourceDelegateE"
+        },
+        {
+          "section": ".rela.plt",
+          "name": "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent25handleLoadNetworkResourceERKNS1_3cdp16PreparsedRequestERNS1_27LoadNetworkResourceDelegateE"
+        }
+      ],
+      "markers": [
+        "React Native DevTools",
+        "is not implemented by this host target delegate"
+      ]
+    }
+  ]
+}

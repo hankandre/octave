@@ -1,0 +1,43 @@
+{
+  "task": "T3-28",
+  "files": [
+    "scripts/tv-elf.test.ts",
+    "scripts/tv-apk-native-inspector.test.ts",
+    "scripts/tv-apk-inspector-cli.test.ts",
+    "scripts/security-doc-t3-28.test.ts",
+    "scripts/fixtures/tv/native/elf.ts",
+    "scripts/fixtures/tv/native/cut-library.sh",
+    "scripts/fixtures/tv/native/release-apk.json",
+    "scripts/fixtures/tv/native/debug-apk.json",
+    "scripts/fixtures/tv/native/debug-optimized-aar.json"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-apk-native-inspector.test.ts", "scripts/tv-elf.test.ts", "-t", "T3-28 item 1:"]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-apk-native-inspector.test.ts", "-t", "T3-28 item 2:"]
+    },
+    {
+      "item": 3,
+      "gate": "met",
+      "why": "Met by the spec: L2 (a relocation naming NetworkIOAgent::handleRequest) and L3 (the string React Native DevTools) tell the builds apart on built libraries, release 0 against debug and debugOptimized 1 and 2 (docs/specs/T3-28.md, Facts); the refused readings and the source reads that remain are listed there. The fixture cuts in scripts/fixtures/tv/native/ were re-read at the freeze with llvm-readelf and grep from the release AAR and APK, the debug AAR and the debugOptimized AAR (sha256 93001c05...b25f1, 177471040 bytes) and agree with the Facts table."
+    },
+    {
+      "item": 4,
+      "gate": "met",
+      "why": "Already true on main: scripts/tv-apk-inspector.mjs prints its summary line and T3-28 does not change it, so the new test passes before the implement step and the red gate cannot run it; it is frozen all the same. Evidence: pnpm exec vitest run scripts/tv-apk-inspector-cli.test.ts -t \"T3-28 item 4:\" (4 tests, green at the freeze on ea333f94: the release recording prints one line with 1 dex, 33 classes; the debug recording fails N1, N2, N3; planted cases fail N3 and N4)."
+    },
+    {
+      "item": 5,
+      "gate": "ci",
+      "why": "T3-16's, T3-04's and T3-19's frozen tests run in the checks job; a CI run cannot be a failing test. Locally: node scripts/check-red.mjs T3-16 --expect green, and the same for T3-04 and T3-19."
+    },
+    {
+      "item": 6,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/security-doc-t3-28.test.ts", "-t", "T3-28 item 6:"]
+    }
+  ]
+}
