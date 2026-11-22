@@ -206,7 +206,7 @@ export const APK_NETWORK_ENTRY_POINTS = [
     ],
     sinks: ["S1"],
     what: "the development server's and the inspector's clients",
-    reason: `${DEV} ReactHostImpl holds one because loadNetworkResource (with InspectorNetworkHelper inlined) reads DevSupportHttpClient's client; it is called from C++ only by the inspector target, whose gate is read from source and not tested (runtime/ReactHostImpl.kt, devsupport/inspector/InspectorNetworkHelper.kt).`,
+    reason: `${DEV} ReactHostImpl holds one because loadNetworkResource (with InspectorNetworkHelper inlined) reads DevSupportHttpClient's client; it is called from C++ only by the inspector target; scripts/tv-apk-native-inspector.mjs (T3-28) fails when a native library of the APK is wired to the C++ dispatcher that calls it, and that the dispatcher is the only route is read from source (runtime/ReactHostImpl.kt, devsupport/inspector/InspectorNetworkHelper.kt).`,
     linkedPath: "R5",
   },
   // --- Expo (E1, E3); expo-file-system (E2) and @expo/dom-webview (E5) are unlinked, so on ABSENT_PACKAGES ---
@@ -278,7 +278,7 @@ export const DEV_SUPPORT_CLIENT_CALLERS = [
   },
   {
     class: "com.facebook.react.runtime.ReactHostImpl",
-    offInRelease: "loadNetworkResource is @DoNotStrip and called from C++ by the inspector target, which ReactHostImpl creates only when InspectorFlags.getFuseboxEnabled() (runtime/ReactHostImpl.kt:442-445, 1591-1593; jsinspector-modern/InspectorFlags.cpp:66-74, default false). Read from source, not tested: if it ran, a connected debugger could make the app fetch any URL.",
+    offInRelease: "loadNetworkResource is @DoNotStrip and called from C++ by the inspector target, which ReactHostImpl creates only when InspectorFlags.getFuseboxEnabled() (runtime/ReactHostImpl.kt:442-445, 1591-1593; jsinspector-modern/InspectorFlags.cpp:66-74, default false). If it ran, a connected debugger could make the app fetch any URL. Tested (T3-28): scripts/tv-apk-native-inspector.mjs fails when a native library of the APK is wired to call the C++ inspector's network dispatcher (NetworkIOAgent::handleRequest), the one C++ caller of loadNetworkResource; that it is the only route, and the run-time flag, are read from source.",
   },
 ];
 
