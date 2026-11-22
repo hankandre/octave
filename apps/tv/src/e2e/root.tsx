@@ -1,12 +1,15 @@
-// The e2e build's root (T3-02): runs the core's conformance suites with the app's host adapters once, and writes the
-// OCTAVE_E2E lines scripts/tv-e2e.mjs judges; then the wire tests of pnpm tv:wire (T3-05), which write OCTAVE_WIRE
+// The e2e build's root (T3-02): first the install-id lines of pnpm tv:e2e's install-id stage (T4-09, OCTAVE_INSTALL);
+// then the core's conformance suites with the app's host adapters, once, writing the OCTAVE_E2E lines
+// scripts/tv-e2e.mjs judges; then the wire tests of pnpm tv:wire (T3-05), which write OCTAVE_WIRE
 // lines. It reaches only an e2e bundle (apps/tv/e2e-gate.js).
 import { useEffect } from "react";
 import { View } from "react-native";
 import { hostClock } from "../host/clock";
 import { hostCrypto } from "../host/crypto";
+import { hostInstallId } from "../host/host-gateway";
 import { urlIsExpoBuiltin } from "../host/url";
 import { runConformance } from "./conformance-run";
+import { runInstallId } from "./install-id-run";
 import { runWire } from "./wire/run-wire";
 
 // Hermes defines HermesInternal as an object; other engines leave it undefined.
@@ -20,9 +23,10 @@ export default function E2eRoot(props: Record<string, unknown>) {
     if (started) return;
     started = true;
     const log = (line: string) => console.info(line);
-    void runConformance({ clock: hostClock, crypto: hostCrypto, urlSource: urlIsExpoBuiltin() ? "expo-builtin" : "other", engine }, log).then(() =>
-      runWire({ crypto: hostCrypto, props }, log),
-    );
+    // The install-id run comes first, whatever its result: the stage waits only for its done line.
+    void runInstallId({ crypto: hostCrypto, installId: hostInstallId }, log)
+      .then(() => runConformance({ clock: hostClock, crypto: hostCrypto, urlSource: urlIsExpoBuiltin() ? "expo-builtin" : "other", engine }, log))
+      .then(() => runWire({ crypto: hostCrypto, props }, log));
   }, [props]);
   return <View />;
 }

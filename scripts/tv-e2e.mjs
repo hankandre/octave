@@ -4,7 +4,8 @@
 // release-evidence/tv/e2e-conformance.txt. The e2e APK is built first when it is missing or older than its sources.
 // Before installing, the e2e APK's network security is judged (T3-15 item 1); after the conformance run, the module's
 // cleartext probe runs (T3-15 item 2, scripts/tv-cleartext.mjs), then the probe's resolved-address check (T3-20,
-// scripts/tv-resolved-address.mjs). An explicit [apk] needs its probe APK too: the second
+// scripts/tv-resolved-address.mjs), then the install-id stage (T4-09, scripts/tv-install-id.mjs), which runs only on a
+// device that is positively an emulator and is skipped, with a recorded line, on any other. An explicit [apk] needs its probe APK too: the second
 // argument, or the one pnpm tv:e2e:build wrote; the probe is never skipped.
 // Run: ANDROID_SERIAL=<emulator> node scripts/tv-e2e.mjs [apk [probe-apk]]   (pnpm tv:e2e)
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -16,6 +17,7 @@ import { androidSdk, newestBuildTool, platformTool } from "./tv-android-sdk.mjs"
 import { judgeNetworkSecurity, readNetworkSecurity } from "./tv-apk-check.mjs";
 import { E2E_APK, PROBE_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { expectedPublicCount, runCleartextProbe } from "./tv-cleartext.mjs";
+import { runInstallIdStage } from "./tv-install-id.mjs";
 import { runResolvedAddressProbe } from "./tv-resolved-address.mjs";
 
 const FIXTURES = fileURLToPath(new URL("../packages/core/tests/fixtures/", import.meta.url));
@@ -208,6 +210,13 @@ async function main(args) {
     process.exit(1);
   }
   console.log("tv e2e: resolved-address private ok, mixed ok, public refused");
+
+  // Last: it clears the app's data and switches the backup transport on an emulator; it prints its own outcome.
+  const installId = await runInstallIdStage({ adbPath, serial, evidenceDir: EVIDENCE });
+  if (installId.errors.length > 0) {
+    for (const error of installId.errors) console.error(error);
+    process.exit(1);
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));
