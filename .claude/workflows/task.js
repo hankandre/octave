@@ -2,7 +2,7 @@ export const meta = {
   name: 'task',
   description: 'Run tasks/prd.json tasks in order: spec, check, failing tests, implement, review, ship; park tasks with open design questions; the inline Product Owner step rules on technical, placement, dependency and scope questions and logs every ruling',
   whenToUse:
-    'Build Octave tasks end to end. args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false} or {task: "T3-01", from: "check" | "tests" | "implement" | "review" | "ship", preFlow: true, notes: [...], evidence: "...", ciSteps: [...], approvedFrozen: [paths], models: {spec: {high: "opus"}}, root: "/abs/path/of/the/folder/holding/the/checkout"}',
+    'Build Octave tasks end to end. args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false} or {lanes: ["workflow", "ui"]} or {task: "T3-01", from: "check" | "tests" | "implement" | "review" | "ship", preFlow: true, notes: [...], evidence: "...", ciSteps: [...], approvedFrozen: [paths], models: {spec: {high: "opus"}}, root: "/abs/path/of/the/folder/holding/the/checkout"}',
   phases: [
     { title: 'Spec', detail: 'refiner writes docs/specs/<TASK>.md' },
     { title: 'Check', detail: 'fresh spec-checker; blocks only on critical or high' },
@@ -16,6 +16,7 @@ export const meta = {
 // args:
 //   {tasks: ["T3-01", ...], risk, native}  run tasks in order
 //   {task: "T3-01", risk, native}           run one task
+//   {lanes: ["ui", "core"], root, models}   run one to four lanes side by side (lane mode): each lane takes its next ready task when its last one ends, and stops with none-ready, lane-busy, a stop outcome or a denial
 //   root: "/abs/dir"                        folder that holds the main checkout (default "..", relative to it)
 //   from: "check" | "tests" | "implement" | "review" | "ship"  skip finished phases (single task only); "ship" is only for a task whose review round ran in an earlier run: it runs the sync, then (unless preFlow) the frozen-test and green gates, then Ship
 //   preFlow: true                           a branch implemented before the test-first flow: no Tests phase, no manifest required (single task, never inferred)
@@ -315,10 +316,66 @@ function unaccountedLows(lowCount, followUp) {
   return Math.max(0, lowCount - fixed - leftLows);
 }
 // LEFT-END
+// LANES-BEGIN (pure; extracted and tested by .claude/workflows/task-lanes.test.mjs)
+// A task's lane (tasks/prd.json) and the lane runner's decisions. A workflow script cannot import, so LANES and SERIAL_LANES are copies of
+// scripts/task.mjs; task-lanes.test.mjs keeps them equal. At most one serial lane has a task running at a time (AGENTS.md: native module,
+// player and on-device work stay serial). MAX_LANES is WORKFLOW.md's cap of four concurrent streams.
+const LANES = ['workflow', 'core', 'ui', 'apk-checks', 'tv-scripts', 'release', 'native-session', 'player', 'device'];
+const SERIAL_LANES = ['native-session', 'player', 'device'];
+const MAX_LANES = 4;
+// What is wrong with args.lanes, as a list of problems (empty when it is fine).
+function checkLaneArgs(value) {
+  const problems = [];
+  const lanes = value && value.lanes;
+  if (!Array.isArray(lanes) || !lanes.length) problems.push('lanes must list one to four lane names');
+  else {
+    if (lanes.length > MAX_LANES) problems.push(`lanes lists ${lanes.length} lanes; the cap is ${MAX_LANES}`);
+    const unknown = lanes.filter((lane) => !LANES.includes(lane));
+    if (unknown.length) problems.push(`unknown lane ${unknown.map((lane) => JSON.stringify(lane)).join(', ')}; the lanes are ${LANES.join(', ')}`);
+    if (lanes.some((lane, i) => lanes.indexOf(lane) !== i)) problems.push('lanes lists a lane twice');
+  }
+  if (value && (value.task || value.tasks)) problems.push('lanes cannot be combined with task or tasks');
+  return problems;
+}
+// lane-state.mjs: what a lane can take next, from origin/main.
+const isLaneState = (json) => typeof json.ok === 'boolean' && typeof json.lane === 'string' && Array.isArray(json.tasks) && Array.isArray(json.inFlight) && Array.isArray(json.problems);
+// Decided from the JSON result, never from the exit code alone. Unreadable output is retried once by the caller (final = false), then blocks (final = true).
+function decideLaneState(gate, final) {
+  if (gate && Array.isArray(gate.deniedCommands) && gate.deniedCommands.length) return { action: 'denied', detail: gate.deniedCommands };
+  const json = readGate(gate, isLaneState);
+  if (!json) return final ? { action: 'blocked', unreadable: true, detail: 'the lane-state check gave no readable result twice' } : unreadable('the lane-state check');
+  if (gate.exitCode !== 0 || json.ok !== true || json.problems.length) return { action: 'blocked', detail: json.problems.join('; ') || `the lane-state check exited ${gate.exitCode}` };
+  return { action: 'pass', detail: '', json };
+}
+// How a lane's task runs: native-session and player work is native (native-engineer and a guardian review), a fable task is high risk.
+function routeFor(lane, task) {
+  return { risk: task && task.model === 'fable' ? 'high' : 'routine', native: lane === 'native-session' || lane === 'player' };
+}
+// One decision for a lane, from its fresh snapshot and the run's state: {laneStates, attempted (Set of ids), slotHolder (lane or null), halted}.
+// Returns {action: 'run', task, risk, native}, {action: 'wait', why: 'serial' | 'dependency'} or {action: 'stop', why, waiting?}.
+function pickLane({ state, lane, snapshot }) {
+  if (state.halted) return { action: 'stop', why: 'halted' };
+  const busy = snapshot.inFlight.filter((entry) => !state.attempted.has(entry.id));
+  if (busy.length) return { action: 'stop', why: 'lane-busy', inFlight: busy };
+  const open = snapshot.tasks.filter((task) => !state.attempted.has(task.id));
+  const candidate = open.find((task) => !task.waitingOn.length);
+  if (candidate) {
+    const serial = snapshot.serial === true || SERIAL_LANES.includes(lane);
+    if (serial && state.slotHolder !== null && state.slotHolder !== lane) return { action: 'wait', why: 'serial' };
+    return { action: 'run', task: candidate, ...routeFor(lane, candidate) };
+  }
+  const others = Object.keys(state.laneStates).filter((other) => other !== lane && ['querying', 'running'].includes(state.laneStates[other]));
+  if (others.length) return { action: 'wait', why: 'dependency' };
+  return { action: 'stop', why: 'none-ready', waiting: open.map((task) => ({ id: task.id, waitingOn: task.waitingOn })) };
+}
+// LANES-END
 const input = typeof args === 'string' ? { task: args } : args || {};
 const items = Array.isArray(input.tasks) ? input.tasks : input.task ? [input.task] : [];
 const models = resolveModels(MODELS, input.models);
-if (!items.length) return { stopped: 'no-task', detail: 'Pass args: {tasks: ["<ID>", ...]} or {task: "<ID>"}' };
+if (input.lanes !== undefined) {
+  const laneProblems = checkLaneArgs(input);
+  if (laneProblems.length) return { stopped: 'bad-args', detail: laneProblems.join('; ') };
+} else if (!items.length) return { stopped: 'no-task', detail: 'Pass args: {tasks: ["<ID>", ...]}, {task: "<ID>"} or {lanes: ["<lane>", ...]}' };
 
 const strings = { type: 'array', items: { type: 'string' } };
 const SPEC = {
@@ -480,6 +537,13 @@ async function runTask(task, opts) {
     return unaccounted ? { ...out, unaccountedLows: unaccounted } : out;
   };
 
+  // Lane mode only (opts.halted and opts.holdSerial are undefined for {task} and {tasks}): a denial anywhere halts every lane at the next phase boundary,
+  // and a task that turns out native in a parallel lane takes the serial slot before its next work step.
+  const halted = (phase) => (opts.halted && opts.halted() ? result('halted', { from: phase }) : null);
+  let reviewNative = false;
+  const holdSlot = async () => {
+    if ((native || reviewNative) && opts.holdSerial) await opts.holdSerial();
+  };
   const problemsOf = (out) => (out.blockers || []).concat(out.failures || []);
   const stepOf = (out) => decideStep(out, !!out && !!denied(out));
   // Implementation step with one retry and an escalation: used for implement, check fixes, and CI fixes.
@@ -634,6 +698,9 @@ Resolve gaps yourself from the task, the code, the docs, and the settled decisio
     goNative(specResult.touchesNative, 'spec');
   }
 
+  const haltedBeforeCheck = skipCheck ? null : halted('check');
+  if (haltedBeforeCheck) return haltedBeforeCheck;
+
   // Branch sync: a resumed branch that is behind origin/main is rebased onto it (freeze commit kept first, never a merge); a branch that holds a merge of main is blocked.
   const syncCommand = `mise exec -- node ${main}/.claude/workflows/branch-sync.mjs --repo ${worktree} --task ${task}`;
   const sync = await runGate(syncCommand, `sync ${task}`, skipReview ? 'Ship' : skipSpec ? 'Check' : 'Spec', decideSync, syncGate);
@@ -682,6 +749,9 @@ Do not push. Return done=true once committed, and put anything that stops you in
   const testsRetry = (problems) => `${testsPrompt}\nThe red gate found these problems with the frozen tests:\n${problems}\nFix them and amend the freeze commit with git commit --amend; a second commit that touches the manifest or a test fails the frozen check.`;
   const writeTests = (text, label) => agent(text, { agentType: 'test-writer', model: testsModel, schema: TESTS, phase: 'Tests', label });
   if (!skipTests) {
+    const haltedBeforeTests = halted('tests');
+    if (haltedBeforeTests) return haltedBeforeTests;
+    await holdSlot();
     const written = await writeTests(testsPrompt, `tests ${task}`);
     if (!written) return result('failed', 'The test writer returned nothing.');
     if (denied(written)) return result('denied', denied(written));
@@ -705,6 +775,9 @@ Do not push. Return done=true once committed, and put anything that stops you in
   let evidence = opts.evidence || `See the evidence field of ${task} (\`${taskCli} show ${task}\`) on ${branch}.`;
   let ciSteps = Array.isArray(opts.ciSteps) ? opts.ciSteps : [];
   if (!skipImpl) {
+  const haltedBeforeImplement = halted('implement');
+  if (haltedBeforeImplement) return haltedBeforeImplement;
+  await holdSlot();
   const implRun = await guarded(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
 Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with \`${taskCli} set ${task} --status in_progress --owner ${implAgent} --evidence-file <file>\`. ${evidenceRule} Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason. Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
@@ -725,6 +798,8 @@ Commit the spec with the work, one milestone per commit. Set the task's status t
   let blocking = [];
   let lows = [];
   if (!skipReview) {
+  const haltedBeforeReview = halted('review');
+  if (haltedBeforeReview) return haltedBeforeReview;
   const review = await agent(
     `${common}
 Review git diff origin/main...${branch} against the spec, the task acceptance, and the hard rules. If the diff touches apps/tv screens, shared controls, or design tokens, also do the design review: follow .claude/skills/change-review/references/design-checklist.md against DESIGN.md and look at the captures from pnpm tv:visual (T3-07) when it exists. Also judge whether each frozen test (listed in docs/specs/${task}.tests.json) really checks its acceptance item${gated.length ? `, and check each gated item against the spec's Acceptance table: ${gated.map((entry) => `item ${entry.item} (${entry.kind}: ${entry.why})`).join('; ')}` : ''}. This is the only review round. Change no files. Return every finding with its severity, file:line, and a concrete failure scenario. Return filesChanged: every path from git diff --name-only origin/main...${branch}. Set needsGuardian=true if the diff touches the gateway, negotiation, the player, redaction, tokens, a native method or event, Kotlin, the native HTTP client, or docs/security.md, or if the task's acceptance asks for a guardian review.`,
@@ -736,6 +811,7 @@ Review git diff origin/main...${branch} against the spec, the task acceptance, a
   if (!native && (review.filesChanged || []).some((path) => NATIVE_PATH.test(path))) {
     implAgent = 'native-engineer';
     implModel = models.implement.native;
+    reviewNative = true;
     log(`${task}: the diff touches Kotlin or a native module; follow-ups go to native-engineer`);
   }
   if ((review.needsGuardian || riskyFiles.length) && reviewAgent !== 'guardian') {
@@ -751,6 +827,7 @@ Adversarially review git diff origin/main...${branch} for token, URL, or session
   blocking = review.findings.filter((finding) => finding.severity !== 'low').map(describe);
   lows = review.findings.filter((finding) => finding.severity === 'low').map(describe);
   log(`${task}: review found ${blocking.length} to fix, ${lows.length} low`);
+  await holdSlot();
   const followUpRun = await guarded(
     `${blocking.length ? `Fix these review findings and commit, with a test for each behavior change:\n${blocking.join('\n')}` : 'No critical, high or medium review findings.'}
 ${lows.length ? `Also fix in the same pull request each of these low findings that is small, with a test for each behavior change; log none of the findings you fix (no plan line, no backlog line):\n${lows.join('\n')}` : ''}
@@ -800,6 +877,8 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
     if (green.action !== 'pass') return result('blocked', green.detail);
   }
 
+  const haltedBeforeShip = halted('ship');
+  if (haltedBeforeShip) return haltedBeforeShip;
   // 5. Ship (CI fixes go through the same retry and Fable escalation)
   const shipPrompt = `${common}
 Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested device, Jellyfin and Jellyscale gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual artifact from the PR's CI run (gh api repos/{owner}/{repo}/actions/runs/<run>/artifacts) and names the images that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. Fill the PR body's Frozen tests section from the changes list that \`${nodeCli('check-flow.mjs')} --repo ${worktree} --json\` prints (or write "none changed"). After a merge, run git -C ${main} pull --ff-only and remove the worktree and branch.
@@ -836,6 +915,142 @@ const tearDownFixtures = async (task, root) => {
     return { stopped: [], detail: error instanceof Error ? error.message : String(error) };
   }
 };
+
+// Lane mode: one loop per lane, side by side. A lane asks the lane-state gate what origin/main shows, decides with pickLane, runs one task through
+// the same withTeardown as a batch, and asks again; it never runs two tasks at once. At most one serial lane (or a parallel-lane task that turned
+// native) holds the serial slot at a time. A denial anywhere halts every lane. A throw ends only that lane.
+async function runLanes(request) {
+  const main = request.root ? `${request.root}/${REPO}` : '.';
+  const state = { laneStates: {}, attempted: new Set(), slotHolder: null, halted: false };
+  const report = {};
+  const finished = [];
+  let halt = null;
+  let changes = 0;
+  let wake;
+  let changed;
+  const renew = () => {
+    changed = new Promise((resolve) => {
+      wake = resolve;
+    });
+  };
+  renew();
+  const signal = () => {
+    const fire = wake;
+    renew();
+    fire();
+  };
+  const bump = () => {
+    changes += 1;
+    signal();
+  };
+  for (const lane of request.lanes) {
+    state.laneStates[lane] = 'querying';
+    report[lane] = { ran: [], stopped: null };
+  }
+  const stopLane = (lane, reason, extra) => {
+    report[lane].stopped = { reason, ...extra };
+    state.laneStates[lane] = 'stopped';
+    log(`lane ${lane}: stopped, ${reason}`);
+    bump();
+  };
+  const setHalt = (where, detail) => {
+    if (!halt) halt = { reason: 'denied', where, detail };
+    state.halted = true;
+    log(`Stopping every lane: a denied command (${where})`);
+    bump();
+  };
+  // The serial slot: a FIFO mutex. holder is state.slotHolder; a waiter is handed the slot at the release.
+  const queue = [];
+  const takeSlot = async (lane) => {
+    if (state.slotHolder === null || state.slotHolder === lane) {
+      state.slotHolder = lane;
+      return;
+    }
+    await new Promise((resolve) => queue.push({ lane, resolve }));
+  };
+  const releaseSlot = (lane) => {
+    if (state.slotHolder !== lane) return;
+    const next = queue.shift();
+    state.slotHolder = next ? next.lane : null;
+    if (next) next.resolve();
+    bump();
+  };
+  // The lane-state gate has its own relay: runTask's gate helpers are closures of one task. It asks once more on an unreadable result.
+  const laneGateCall = (lane, label) =>
+    agent(
+      `Run exactly this command, change nothing, and return its exit code as exitCode and everything it printed, unchanged and in full, as output (the JSON line on standard output must be in it; ERROR lines may follow). It fetches origin, so a changed git remote-tracking state is expected.${request.root ? '' : ' Relative paths are relative to the main checkout, which is your starting directory.'} If a command is denied, report it in deniedCommands and do not work around it: mise exec -- node ${main}/.claude/workflows/lane-state.mjs --repo ${main} --lane ${lane}`,
+      { model: models.gate, schema: GATE, phase: 'Spec', label },
+    );
+  const laneGate = async (lane) => {
+    let out = await laneGateCall(lane, `lane state ${lane}`);
+    if (denied(out)) return { action: 'denied', detail: denied(out) };
+    let decision = decideLaneState(out, false);
+    if (decision.unreadable) {
+      log(`lane ${lane}: the lane-state check gave no readable result; running it once more`);
+      out = await laneGateCall(lane, `lane state ${lane} (again)`);
+      if (denied(out)) return { action: 'denied', detail: denied(out) };
+      decision = decideLaneState(out, true);
+    }
+    return decision;
+  };
+  const loop = async (lane) => {
+    try {
+      while (true) {
+        if (state.halted) return stopLane(lane, 'halted');
+        state.laneStates[lane] = 'querying';
+        const seen = changes;
+        const gate = await laneGate(lane);
+        if (gate.action === 'denied') return setHalt(`lane state ${lane}`, gate.detail), stopLane(lane, 'denied');
+        if (gate.action !== 'pass') return stopLane(lane, 'lane-state', { detail: gate.detail });
+        // A task ended, a slot was released or a lane stopped while the gate ran: the snapshot may be stale, so ask again.
+        if (changes !== seen) continue;
+        const pick = pickLane({ state, lane, snapshot: gate.json });
+        if (pick.action === 'stop') return stopLane(lane, pick.why, pick.waiting ? { waiting: pick.waiting } : pick.inFlight ? { inFlight: pick.inFlight } : undefined);
+        if (pick.action === 'wait') {
+          state.laneStates[lane] = 'waiting';
+          // pickLane waits only while another lane is querying or running, and that lane ends in a task end or a lane stop, which wake this one.
+          await changed;
+          continue;
+        }
+        // run: the slot is taken in this synchronous step, with no await since pickLane.
+        const id = pick.task.id;
+        if (SERIAL_LANES.includes(lane)) state.slotHolder = lane;
+        state.laneStates[lane] = 'running';
+        state.attempted.add(id);
+        report[lane].ran.push(id);
+        const holdSerial = async () => {
+          if (state.slotHolder === lane) return;
+          log(`${id}: lane ${lane} holds native work; the serial slot is taken`);
+          await takeSlot(lane);
+        };
+        let out;
+        try {
+          out = await withTeardown(() => runTask(id, { risk: pick.risk, native: pick.native, root: request.root, halted: () => state.halted, holdSerial }), () => tearDownFixtures(id, request.root));
+        } finally {
+          releaseSlot(lane);
+          state.laneStates[lane] = 'querying';
+          bump();
+        }
+        finished.push({ task: id, ...out });
+        log(`${id}: fixture servers: ${out.fixtures.detail}`);
+        if (out.outcome === 'denied' || (out.fixtures && out.fixtures.denied)) return setHalt(out.fixtures && out.fixtures.denied ? `fixture teardown of ${id} (lane ${lane})` : `${id} (lane ${lane})`, out.fixtures && out.fixtures.denied ? out.fixtures.denied : out.detail), stopLane(lane, 'denied');
+        if (STOP_OUTCOMES.includes(out.outcome) || out.outcome === RULING_UNLOGGED) return stopLane(lane, out.outcome, { task: id });
+      }
+    } catch (error) {
+      releaseSlot(lane);
+      return stopLane(lane, 'failed', { detail: error instanceof Error ? error.message : String(error) });
+    }
+  };
+  await Promise.all(request.lanes.map(loop));
+  return {
+    lanes: report,
+    merged: finished.filter((o) => o.outcome === 'merged'),
+    parked: finished.filter((o) => o.outcome === 'parked'),
+    needsAttention: finished.filter((o) => !['merged', 'parked'].includes(o.outcome)),
+    ...(halt ? { stopped: halt } : {}),
+  };
+}
+if (Array.isArray(input.lanes)) return await runLanes(input);
 
 const outcomes = [];
 for (const task of items) {
