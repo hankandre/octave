@@ -160,7 +160,7 @@ echo "$url" >> "$FAKE_LOG"
 case "$url" in
   */readyz) exit 0 ;;
   */Users/AuthenticateByName) cat > /dev/null; echo '{"AccessToken":"tok0123456789abcdeftok0123456789ab"}' ;;
-  */Items) echo '{"TotalRecordCount":3,"Items":[{"Type":"Movie","Name":"a"},{"Type":"Series","Name":"b"},{"Type":"Episode","Name":"c"}]}' ;;
+  */Items) echo '{"TotalRecordCount":3,"Items":[{"Type":"Movie","Name":"Synthetic H264"},{"Type":"Series","Name":"Synthetic Show"},{"Type":"Episode","Name":"Pilot"}]}' ;;
   *) exit 22 ;;
 esac
 `,
