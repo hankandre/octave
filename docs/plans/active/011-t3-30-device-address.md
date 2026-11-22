@@ -30,6 +30,15 @@ None added.
 - [x] 3 the owner file and the two messages; item 4 green (commit 8cf4def8)
 - [x] 4 the documents; item 6 green
 
+- [x] 5 review fixes: the watch lets the event loop run before the controls window (a connection during `adb install` is a stray); the check fails `exec`/`execSync` command strings and wrapper programs (`sh`, `env`, ...) in a file that knows adb. Tests: `scripts/tv-dev-server-watch-stray-install.test.ts`, `scripts/check-adb-output-wrappers.test.ts`.
+- [ ] 6 Ship: PR, `tv` job (whole dev-server-watch.txt, two `pnpm tv:smoke` pass lines), `wire` job (a `pass` line per pair). If the CI control command exits non-zero though its connection arrived, change the control command, not the judge.
+
+## Follow-ups (low review findings, not fixed here)
+
+- `scripts/check-adb-output.mjs` `SPECIFIER` matches only `"` and `'`: a template-literal specifier (`` import(`node:child_process`) ``, `` require(`node:child_process`) ``) gets no finding in a file that knows adb.
+- The re-export rule and the used-as-a-value rule apply only to files that know adb: a helper that does not mention adb and re-exports `spawnSync` lets an adb-knowing script call it unchecked.
+- Frozen tests: the item 3 tests make the stray with an awaited socket, so they never exercised the install path (now covered by `tv-dev-server-watch-stray-install.test.ts`); the item 2 synthetic cases miss template-literal specifiers and a re-exporting helper.
+
 ## Decisions
 
 - Redaction sits where adb's output is read. The check is a vitest file over `scripts/` and `tests/integration/`.
