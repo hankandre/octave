@@ -1,5 +1,6 @@
 import type { LibraryItem } from "../domain/catalog";
 import type {
+  LaunchRequest,
   PlaybackEndReason,
   PlaybackPlan,
   PlaybackSnapshot,
@@ -274,8 +275,15 @@ export class PlaybackCoordinator {
     } catch (error) {
       throw redactTransportError(error);
     }
-    // Refuses an unsafe URL with LaunchRefusedError before anything is subscribed, launched or reported.
-    const request = launchRequest(plan, sessionId);
+    // Refuses an unsafe URL with LaunchRefusedError before anything is subscribed, launched or reported. The play
+    // session PlaybackInfo opened is stopped on the server (a no-op for a direct play), then the refusal rethrows.
+    let request: LaunchRequest;
+    try {
+      request = launchRequest(plan, sessionId);
+    } catch (error) {
+      this.reporter.stopEncoding(plan);
+      throw error;
+    }
 
     let unsubscribe: () => void;
     try {
