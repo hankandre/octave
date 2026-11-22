@@ -238,7 +238,9 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 - A task whose spec still needs a new design call is parked with its questions, and the run moves on.
 - The spec check blocks only on critical or high issues; medium and low issues go to the implementer.
 - Native work (Kotlin under `modules/` or `apps/tv/android`, from T3-01) routes to `native-engineer`, and any diff on a high-risk path adds a `guardian` review.
-- The run stops early on a denied command, on a test that passes before implementation (`tests-green`), and on a changed frozen test (`frozen-tests`). `.claude/workflows/product-owner.js` runs a Product Owner pass.
+- The run rebases a task branch that is behind `origin/main` (`.claude/workflows/branch-sync.mjs`, after Spec and before Check), keeps the freeze commit where it was, and never merges main into a task branch. A branch that already holds a merge of main is blocked, and the message names the merge commit. A conflict, uncommitted changes to tracked files, or a rebase that would change a frozen file also block the task, and the branch stays as it was; commit or discard the changes and rerun.
+- When a task ends, whatever its outcome, the run brings down the fixture servers its worktree started (`.claude/workflows/fixtures-down.mjs`), reports them in the task's `fixtures` field, and never stops another checkout's Compose project.
+- The run stops early on a denied command (a denied fixture teardown included), on a test that passes before implementation (`tests-green`), and on a changed frozen test (`frozen-tests`). `.claude/workflows/product-owner.js` runs a Product Owner pass.
 
 Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter:
 

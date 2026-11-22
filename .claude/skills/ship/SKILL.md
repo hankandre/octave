@@ -11,6 +11,7 @@ description: Open a pull request for a finished Octave branch, wait for CI, merg
 - Confirm the one review round has no open critical, high, or medium findings.
 - Confirm the branch is not `main`.
 - Rebase on `origin/main` before the first push and rerun failed checks.
+- Never merge `origin/main` into a task branch; rebase it.
 - Push the branch with `git push -u origin <branch>`.
 
 ## Open the PR

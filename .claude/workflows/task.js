@@ -27,7 +27,8 @@ export const meta = {
 // notes reach ONLY the Tests and Implement steps (via specNotes). Spec, check, review, follow-ups and ship never receive them.
 // (Check issues are appended to specNotes by the check step itself, so a resumed run with from: "implement" must pass them again.)
 // A task whose spec needs a new design call is parked, and the run moves on.
-// The run stops early only on STOP_OUTCOMES: a denied command, a test that passes before implementation (tests-green), or a changed frozen test (frozen-tests).
+// A resumed branch is rebased onto origin/main by the sync step before Check (never merged); every task's fixture servers are brought down when it ends.
+// The run stops early only on STOP_OUTCOMES (a denied command, a test that passes before implementation (tests-green), or a changed frozen test (frozen-tests)) or a denied fixture teardown.
 // MODELS-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
 const MODELS = {
   spec: { routine: 'opus', high: 'fable' },
@@ -85,24 +86,96 @@ const NATIVE_PATH = /^(modules\/|apps\/tv\/android\/)/;
 // GATE-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
 // A gate agent relays a script's exit code and its output: one JSON line on stdout, then any ERROR lines from stderr. These functions decide what the run does with it.
 const STOP_OUTCOMES = ['denied', 'tests-green', 'frozen-tests'];
-function readGate(gate) {
-  if (!gate || typeof gate.exitCode !== 'number' || typeof gate.output !== 'string') return null;
-  const lines = gate.output.split('\n').map((line) => line.trim()).filter(Boolean);
-  // The last line that parses as a JSON object: ERROR lines may follow it.
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    try {
-      const value = JSON.parse(lines[i]);
-      if (value !== null && typeof value === 'object' && !Array.isArray(value)) return value;
-    } catch (error) {
-      // not JSON; keep looking
+// TEARDOWN-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs; it also holds the result scanner, which the gates share and decideTeardown needs on its own)
+const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+// The index of the "}" that closes the "{" at start, or -1. Braces inside JSON strings do not count; string state starts outside at every candidate.
+function spanEnd(text, start) {
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < text.length; i += 1) {
+    const char = text[i];
+    if (inString) {
+      if (char === '\\') i += 1;
+      else if (char === '"') inString = false;
+    } else if (char === '"') inString = true;
+    else if (char === '{') depth += 1;
+    else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) return i;
     }
   }
-  return null;
+  return -1;
+}
+// The last JSON object in the output that isResult accepts. The relay may wrap the result in prose, a code fence, log lines or an outer object, so every "{" is a candidate.
+// A span is skipped as a whole only when it is the result; otherwise scanning resumes at the next character, so an object nested in a wrapper is still tried.
+function readGate(gate, isResult = isObject) {
+  if (!gate || typeof gate.exitCode !== 'number' || typeof gate.output !== 'string') return null;
+  const text = gate.output;
+  let found = null;
+  let at = text.indexOf('{');
+  while (at !== -1) {
+    let next = at + 1;
+    const end = spanEnd(text, at);
+    if (end !== -1) {
+      try {
+        const value = JSON.parse(text.slice(at, end + 1));
+        if (isObject(value) && isResult(value)) {
+          found = value;
+          next = end + 1;
+        }
+      } catch (error) {
+        // not JSON; resume at the next character
+      }
+    }
+    at = text.indexOf('{', next);
+  }
+  return found;
 }
 const unreadable = (what) => ({ action: 'retry', unreadable: true, detail: `${what} gave no readable result` });
+const isTeardownResult = (json) => Array.isArray(json.stopped) && Array.isArray(json.problems);
+// fixtures-down.mjs: bring down this worktree's own fixture servers. Never throws; unreadable output is reported as the detail.
+function decideTeardown(gate) {
+  const none = (detail) => ({ stopped: [], detail });
+  try {
+    if (gate && Array.isArray(gate.deniedCommands) && gate.deniedCommands.length) return { stopped: [], detail: 'the fixture teardown command was denied', denied: gate.deniedCommands };
+    const json = readGate(gate, isTeardownResult);
+    if (!json) return none('the fixture teardown gave no readable result');
+    const stopped = json.stopped.filter((name) => typeof name === 'string');
+    if (json.problems.length) return { stopped, detail: json.problems.join('; ') };
+    if (json.ok === false) return { stopped, detail: 'the fixture teardown failed' };
+    if (json.note) return { stopped, detail: String(json.note) };
+    return { stopped, detail: stopped.length ? `stopped ${stopped.join(', ')}` : 'none running' };
+  } catch (error) {
+    return none('the fixture teardown gave no readable result');
+  }
+}
+function fixturesDownCommand({ main, worktree }) {
+  return `mise exec -- node ${main}/.claude/workflows/fixtures-down.mjs --worktree ${worktree} --compose-file ${main}/tests/integration/docker-compose.yml`;
+}
+// Runs one task, then always its teardown once, and puts the teardown's report on the result as fixtures. A throw from the run is the outcome "failed"; the teardown never changes the outcome.
+async function withTeardown(run, teardown) {
+  const message = (error) => (error instanceof Error ? error.message : String(error));
+  let out;
+  try {
+    out = await run();
+  } catch (error) {
+    out = { outcome: 'failed', detail: message(error) };
+  }
+  let fixtures;
+  try {
+    fixtures = await teardown();
+  } catch (error) {
+    fixtures = { stopped: [], detail: message(error) };
+  }
+  return { ...out, fixtures };
+}
+// TEARDOWN-END
+const isFlowResult = (json) => typeof json.ok === 'boolean' && Array.isArray(json.problems);
+const isRedResult = (json) => Array.isArray(json.red) && Array.isArray(json.green);
+const isSyncResult = (json) => typeof json.rebased === 'boolean' && Array.isArray(json.problems);
 // check-red.mjs <ID>: every run must be red before implementation. Returns the frozen blob ids and the gated items on pass.
 function decideRed(gate) {
-  const json = readGate(gate);
+  const json = readGate(gate, isRedResult);
   if (!json) return unreadable('the red gate');
   const green = json.green || [];
   const problems = json.problems || [];
@@ -112,7 +185,7 @@ function decideRed(gate) {
 }
 // check-red.mjs <ID> --expect green, after the follow-ups: every run must pass.
 function decideGreen(gate) {
-  const json = readGate(gate);
+  const json = readGate(gate, isRedResult);
   if (!json) return unreadable('the green gate');
   const problems = json.problems || [];
   if (problems.length) return { action: 'blocked', detail: problems.join('; ') };
@@ -122,7 +195,7 @@ function decideGreen(gate) {
 // check-flow.mjs --json. approvedPaths: frozen paths a Product Owner ruling changed in this run. pinned: the red gate's blob ids (undefined on a resumed run).
 // Unreadable output is retried by the caller once (final = false), then stops the run (final = true).
 function decideFrozen(gate, approvedPaths, pinned, final) {
-  const json = readGate(gate);
+  const json = readGate(gate, isFlowResult);
   if (!json) return final ? { action: 'stop', unreadable: true, detail: 'the frozen-test check gave no readable result twice' } : unreadable('the frozen-test check');
   if (json.missingManifest) return { action: 'blocked', detail: 'no manifest: rerun with from: "tests", or pass preFlow: true for a branch that predates the flow' };
   if (gate.exitCode !== 0 || json.ok !== true) return { action: 'stop', detail: (json.problems || []).join('; ') || `the frozen-test check exited ${gate.exitCode}` };
@@ -137,6 +210,13 @@ function decideFrozen(gate, approvedPaths, pinned, final) {
     if (moved.length) return { action: 'stop', detail: `frozen files differ from the red gate's versions (an amended or squashed freeze commit): ${moved.join(', ')}` };
   }
   return { action: 'pass', detail: '' };
+}
+// The branch sync script: rebase a resumed branch onto origin/main. Blocks on any problem (a merge commit, a conflict, uncommitted changes, a moved frozen file).
+function decideSync(gate, final) {
+  const json = readGate(gate, isSyncResult);
+  if (!json) return final ? { action: 'blocked', detail: 'the branch sync gave no readable result twice' } : unreadable('the branch sync');
+  if (gate.exitCode !== 0 || json.ok !== true || json.problems.length) return { action: 'blocked', detail: json.problems.join('; ') || `the branch sync exited ${gate.exitCode}` };
+  return { action: 'pass', detail: '', rebased: json.rebased };
 }
 // GATE-END
 // STEP-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
@@ -266,7 +346,7 @@ async function runTask(task, opts) {
   const taskCli = `mise exec -- node ${worktree}/scripts/task.mjs`;
   const evidenceRule = 'The evidence must name the PR (PR #n) or a commit (commit <sha>) and stay within 600 characters; move longer notes to the PR body. Write it to a file outside the repo (mktemp) and pass it with --evidence-file.';
   const where = opts.root ? '' : ' Relative paths are relative to the main checkout, which is your starting directory.';
-  const common = `Task ${task} in tasks/prd.json (read it with \`${taskCli} show ${task}\`; never read the whole file). Worktree: ${worktree} (branch ${branch}).${where} Spec: ${spec} in that worktree. Work only in that worktree. Answered questions in docs/specs/decisions-*.md and decisions the spec marks as confirmed by the human are settled human decisions. If a command is denied, report it in deniedCommands and do not work around it.`;
+  const common = `Task ${task} in tasks/prd.json (read it with \`${taskCli} show ${task}\`; never read the whole file). Worktree: ${worktree} (branch ${branch}).${where} Spec: ${spec} in that worktree. Work only in that worktree. Answered questions in docs/specs/decisions-*.md and decisions the spec marks as confirmed by the human are settled human decisions. If a command is denied, report it in deniedCommands and do not work around it. Never merge origin/main or any other branch into the task branch (a merge breaks the rebase-only merge of the PR); only the branch sync step and Ship rebase it.`;
   const result = (outcome, detail) => {
     log(`${task}: ${outcome}`);
     return { task, outcome, detail };
@@ -303,18 +383,21 @@ async function runTask(task, opts) {
   const flowCommand = `${nodeCli('check-flow.mjs')} --repo ${worktree}${opts.preFlow ? '' : ` --task ${task}`} --json`;
   const gate = (command, label, phase) =>
     agent(`Run exactly this command, change nothing, and return its exit code as exitCode and everything it printed, unchanged and in full, as output (the JSON line on standard output must be in it; ERROR lines may follow): ${command}\nIf a command is denied, report it in deniedCommands and do not work around it.`, { model: models.gate, schema: GATE, phase, label });
-  const runGate = async (command, label, phase, decide) => {
-    let out = await gate(command, label, phase);
+  const runGate = async (command, label, phase, decide, run = gate) => {
+    let out = await run(command, label, phase);
     if (denied(out)) return { action: 'denied', detail: denied(out) };
     let decision = decide(out, false);
     if (decision.unreadable) {
       log(`${task}: ${label} gave no readable result; running it once more`);
-      out = await gate(command, `${label} (again)`, phase);
+      out = await run(command, `${label} (again)`, phase);
       if (denied(out)) return { action: 'denied', detail: denied(out) };
       decision = decide(out, true);
     }
     return decision;
   };
+  // The sync command rebases the task branch, so its gate agent is told that changing the branch is expected (const gate says "change nothing").
+  const syncGate = (command, label, phase) =>
+    agent(`Run exactly this command and return its exit code as exitCode and everything it printed, unchanged and in full, as output (the JSON line on standard output must be in it; ERROR lines may follow). The command itself rebases the task branch onto origin/main when the branch is behind, so a changed branch is expected; change nothing else.${where} If a command is denied, report it in deniedCommands and do not work around it: ${command}`, { model: models.gate, schema: GATE, phase, label });
   let pinned;
   let gated = [];
   let rulingUsed = false;
@@ -364,6 +447,13 @@ Resolve gaps yourself from the task, the code, the docs, and the settled decisio
     if (specResult.openQuestions.length) return result('parked', specResult.openQuestions);
     goNative(specResult.touchesNative, 'spec');
   }
+
+  // Branch sync: a resumed branch that is behind origin/main is rebased onto it (freeze commit kept first, never a merge); a branch that holds a merge of main is blocked.
+  const syncCommand = `mise exec -- node ${main}/.claude/workflows/branch-sync.mjs --repo ${worktree} --task ${task}`;
+  const sync = await runGate(syncCommand, `sync ${task}`, skipSpec ? 'Check' : 'Spec', decideSync, syncGate);
+  if (sync.action === 'denied') return result('denied', sync.detail);
+  if (sync.action !== 'pass') return result('blocked', sync.detail);
+  if (sync.rebased) log(`${task}: rebased onto origin/main`);
 
   // 2. Check
   if (!skipCheck) {
@@ -512,12 +602,27 @@ ${ciSteps.join('\n')}` : ''}`;
   return { task, outcome: 'merged', prUrl: ship.prUrl, fixed: blocking, lowsLogged: lows };
 }
 
+// The teardown runs outside runTask, so it names the Ship phase (meta.phases stays fixed). It never throws: a failure becomes the detail.
+const tearDownFixtures = async (task, root) => {
+  try {
+    const { main, worktree } = taskPaths(task, root);
+    const out = await agent(
+      `Run exactly this command and return its exit code as exitCode and everything it printed, unchanged and in full, as output (the JSON line on standard output must be in it). It brings down this task's own Docker Compose fixture servers and their volumes, so a changed Docker state is expected; it touches no other project.${root ? '' : ' Relative paths are relative to the main checkout, which is your starting directory.'} If a command is denied, report it in deniedCommands and do not work around it: ${fixturesDownCommand({ main, worktree })}`,
+      { model: models.gate, schema: GATE, phase: 'Ship', label: `fixtures down ${task}` },
+    );
+    return decideTeardown(out);
+  } catch (error) {
+    return { stopped: [], detail: error instanceof Error ? error.message : String(error) };
+  }
+};
+
 const outcomes = [];
 for (const task of items) {
-  const out = await runTask(task, items.length === 1 ? input : { risk: input.risk, native: input.native, root: input.root });
-  outcomes.push(out);
-  if (STOP_OUTCOMES.includes(out.outcome)) {
-    log(`Stopping: ${out.outcome} in ${task}`);
+  const out = await withTeardown(() => runTask(task, items.length === 1 ? input : { risk: input.risk, native: input.native, root: input.root }), () => tearDownFixtures(task, input.root));
+  outcomes.push({ task, ...out });
+  log(`${task}: fixture servers: ${out.fixtures.detail}`);
+  if (STOP_OUTCOMES.includes(out.outcome) || (out.fixtures && out.fixtures.denied)) {
+    log(`Stopping: ${out.fixtures.denied ? 'a denied fixture teardown' : out.outcome} in ${task}`);
     break;
   }
 }
