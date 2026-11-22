@@ -1026,10 +1026,10 @@
             "docs/security.md and the rule's comment on both sides state the rule as built, in the same PR; a form is left to a narrowed sentence only where the spec shows it cannot be refused"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire --task T3-05",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 488a3d33 (with a929426e, 606c02da): P3-P7 on both sides, C2 runs RequestPath.holdsRefusedForm. check-red T3-24 green 1-6, T3-16 green 4-8; pnpm check exit 0 (core 2877, scripts 1561 tests); tv:native:test 610/0 failed; tv:wire --task T3-05 on own emulator-5590: 8 pairs passed. Item 4 closing half shown via RequestPolicy.checkClosing, which shares checkBasePath with check. Untested: Shield, physical TVs, other Android versions, real reverse proxy, dogfood servers, Hermes decodeURIComponent."
         },
         {
           "id": "T3-28",
