@@ -419,6 +419,7 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
 | Sign-in, unreachable | n/a | Couldn't reach {address}. Check the address and that the server is running. | n/a |
 | Sign-in, refused plain HTTP | n/a | This address uses plain HTTP on the internet, so Octave will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name. | n/a |
+| Sign-in, HTTPS address with a Unicode host | n/a | This address uses characters Octave can't check. Type the server's plain address instead. | n/a |
 | Sign-in, anything else | n/a | Something went wrong. Try again. | n/a |
 | Series, no episodes | n/a | This series has no episodes yet. | n/a |
 | Next episode error | n/a | Couldn't load your next episode. | Retry |

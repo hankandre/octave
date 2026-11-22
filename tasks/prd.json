@@ -531,6 +531,144 @@
           "owner": "implementer",
           "passes": true,
           "evidence": "commit 1e31040f (implementation) and e2bf1af8 (review lows logged): rebase-only branch sync, readGate result scan, per-worktree fixture teardown. pnpm check green (87 workflow tests), task.test.mjs 83 pass; review had no fixes."
+        },
+        {
+          "id": "T1-15",
+          "title": "Resume a task at Ship and judge the green gate by check-red's own result",
+          "domain": "Process",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "T1-14"
+          ],
+          "acceptance": [
+            "from: \"ship\" (single task only) skips every phase before Ship; unless preFlow is set it runs the frozen-test gate and the green gate first and ships only when both pass; the workflow's argument description and WORKFLOW.md name it",
+            "The green gate decides from check-red's JSON result, not from the relayed exit code: a result with nothing red and no problems passes whatever exit code the relay gives, a red item or a problem blocks and is named, and output with no result object is retried once and then stops as unreadable; a test feeds a relayed exit code of -1 with nothing red (the T3-23 case)",
+            "After an escalation the implement gate passes only a result that lists no failures; a follow-up gate that blocks always says why, also when the result holds only ciOnly items; ciOnly items from an attempt that was not green never reach Ship",
+            "Tests in a new file that pnpm test:workflow runs cover each of the three; the frozen .claude/workflows/task.test.mjs is not changed"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T1-16",
+          "title": "Let the workflow's Product Owner step answer technical and placement questions and log every ruling",
+          "domain": "Process",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "T1-15"
+          ],
+          "acceptance": [
+            "Check and Implement can return technical, placement, dependency and scope questions for the Product Owner in a field of their own, apart from frozenTestProblems; the workflow's inline Product Owner step rules on them and the run goes on with the ruling; a look, wording or direction question is not ruled there and parks the task for the owner",
+            "Implement ends its step on the first such return, with nothing worked around and the question not asked again in the same step; the run resumes it with the ruling",
+            "Every ruling of the inline step, a frozen-test ruling included, is written as a dated section of tasks/product-owner-log.md and committed on the task branch; the run stops when a ruling comes back with no log entry",
+            "On a second return about the same rule in one task, the step is given the first ruling and must probe the fact (run the command or read the file) and quote what it found in the ruling before it rules; a third return blocks the task with its questions",
+            "The limit of one frozen-test ruling per task stays, and the step still never edits tasks/prd.json",
+            "Tests in a new file that pnpm test:workflow runs cover each case, the frozen .claude/workflows/task.test.mjs is not changed, and WORKFLOW.md and .claude/agents/product-owner.md state the step's wider remit in the same PR"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T1-17",
+          "title": "Retry a CI emulator step only when the emulator never ran the test, and skip the device jobs on pull requests that change only tasks or docs",
+          "domain": "Process",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "T1-14"
+          ],
+          "acceptance": [
+            "In the tv and wire jobs an emulator step whose emulator never reached the test script (for example 'adb: device offline' during boot) is retried once; a step whose script started is never retried, whatever its result; the spec shows how the two are told apart, and a case it cannot tell apart is not retried",
+            "A pull request whose changed files all match the spec's list of tasks/ and docs paths skips the tv, wire and tripwire jobs; any other changed path, a diff that cannot be read, a push to main and a merge group run all three; the checks and dependency-review jobs always run; the spec shows that no step of the three jobs reads a listed path",
+            "A test reads .github/workflows/ci.yml and fails when the retry can follow a started script or when a path outside the list can skip a job",
+            "On a pull request that skips them, the required checks tv and tripwire still resolve so that auto-merge completes, shown on a real pull request",
+            "The frozen tests that read ci.yml pass unchanged (scripts/tv-apk-check.test.ts, tv-first-focus.test.ts, tv-native-test.test.ts, tv-e2e.test.ts, tv-cleartext.test.ts, tv-apk-inspector.test.ts, tv-apk-dex.test.ts and the checks-job tests): the line '  tv:', its single-line run steps in their order, 'script: pnpm tv:smoke' in the first emulator step and 'script: pnpm tv:e2e' in the first one after the e2e build; a design that cannot keep them returns to the Product Owner before any test changes",
+            "The change is in .github/workflows/ci.yml and new files only, with no scripts/tv-* file changed; docs/commands.md or WORKFLOW.md states both rules in the same PR, and the PR calls out the CI change for the owner"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T1-18",
+          "title": "Make the review follow-ups step fix small findings in the same pull request",
+          "domain": "Process",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "T1-16"
+          ],
+          "acceptance": [
+            "The follow-ups step fixes critical, high and medium findings and every small low in the task's own pull request, and logs none of those",
+            "A finding it leaves is appended to tasks/backlog.jsonl with its severity in the why, for the phase's hardening task; none becomes a plan line that asks for a task of its own",
+            "A left finding that opens a path into a self-hoster's home network or leaks local information (a LAN address, a serial, a hostname, a credential) is returned in the task's result marked as a real-TV gate, for the Product Owner to place",
+            "Tests in a new file that pnpm test:workflow runs cover the three, the frozen .claude/workflows/task.test.mjs is not changed, and the step's text matches WORKFLOW.md's review follow-ups rule"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T1-19",
+          "title": "Give each task a lane and run each lane without a relaunch",
+          "domain": "Process",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "T1-18"
+          ],
+          "acceptance": [
+            "Each task in tasks/prd.json records one lane from a fixed list the spec sets (for example native-session, apk-checks, tv-scripts, ui, core, player, workflow); pnpm task and scripts/task-owner.mjs read and write it, scripts/prd.test.ts fails a task with no lane or an unknown one, and only a Product Owner pass sets it",
+            "A lane runner takes its lane's next ready task (todo, not human, every dependency passing) when the lane's task finishes, with no relaunch by the coordinator, and stops when the lane has none or a task ends in a stop outcome",
+            "Lanes run side by side, except that at most one lane that does native module, player or on-device work runs at a time (AGENTS.md); the spec lists which lanes those are, and a test shows a second one waits",
+            "Two tasks of one lane never run at once, and a task whose dependency is in another lane waits for it",
+            "A denied command still stops every lane (docs/specs/decisions-T4.md)",
+            "Tests that pnpm test:workflow runs cover each rule, the frozen .claude/workflows/task.test.mjs is not changed, and WORKFLOW.md describes lanes and the runner in the same PR"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T1-20",
+          "title": "Measure what each workflow stage costs per merged task and propose a lighter pipeline for small tasks",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "T1-14"
+          ],
+          "acceptance": [
+            "A script sums, for each merged task, the wall time and the tokens of each stage (Spec, Check, Tests, Implement, Review, Ship and the gates) from the workflow's journals, and prints one line per task and stage; the spec says where the journals are and what they do not record",
+            "It reads no credential, address or prompt text into its output, and a test runs it on a recorded journal",
+            "A report under docs/research/ gives the numbers for the tasks merged so far and proposes a lighter pipeline for small low-risk tasks, with what each option saves and what check it gives up, for the owner to decide",
+            "No stage of the workflow is cut or changed in this task"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
@@ -1032,6 +1170,107 @@
           "evidence": "commit 3c168d4e (review fix: ? and # refused in every round, both sides and C2; with a929426e, 606c02da, 488a3d33). check-red T3-24 green 1-6, T3-16 green 4-8; pnpm check exit 0 (core 2892, scripts 1561); tv:native:test 643/0 failed; tv:wire --task T3-05 on own emulator-5596: 8 pairs passed. Lows in docs/plans/active/011. Untested: Shield, physical TVs, other Android versions, real reverse proxy, dogfood servers, Hermes decodeURIComponent."
         },
         {
+          "id": "T3-06",
+          "title": "Add the design tokens and the base controls",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-01",
+            "T1-08"
+          ],
+          "acceptance": [
+            "Tokens for colour, type, space, radius, duration and focus exist once in TypeScript and match DESIGN.md's token table; a test fails when a value differs",
+            "A lint fails on a hard-coded colour, size, radius or duration in a component",
+            "Button, icon button, text field, switch, dialog, toast, notice, empty state and skeleton exist with a focused, pressed and disabled state each",
+            "A focused control shows the ring and the lift; with reduced motion on, nothing scales or fades",
+            "No text renders under 24 px on the 1920 by 1080 canvas, checked by a test over the type tokens",
+            "Each control has a component test for activation with the select key"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-08",
+          "title": "Build rows and cards whose focus never jumps",
+          "domain": "App Shell & Presentation",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-06"
+          ],
+          "acceptance": [
+            "A horizontal row of cards moves focus exactly one card per Left or Right press, and holding a key for 49 presses ends on the expected card",
+            "Right on a row's last card and Left on its first card inside a screen with no rail keep focus where it is",
+            "Up and Down move to the adjacent row, to the card nearest the same horizontal position",
+            "Each row remembers its own scroll position: a row that was never scrolled opens at its first card after other rows were scrolled",
+            "A focused card is never recycled under the viewer: no blur arrives without a focus",
+            "Poster and thumbnail cards show title, progress and played marks from fixture data, and a missing image shows the title on a plain surface",
+            "Component tests cover each rule, and the scripted on-device run in T3-10 covers them on the emulator"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-09",
+          "title": "Build the app shell with the collapsed side rail",
+          "domain": "App Shell & Presentation",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-08"
+          ],
+          "acceptance": [
+            "A collapsed rail sits on the left of every browse screen and opens when focus enters it with Left from the first column",
+            "Left on the rail stays on the rail; Right returns to the card that had focus before",
+            "The rail's entries are Search, Home, one per library, Settings and the account, in an order that does not change between visits",
+            "Opening a screen puts focus on its primary action, and Back returns to the previous screen with the same card focused",
+            "Back on Home leaves the app without a question, and Back on another root screen goes Home",
+            "The rail is hidden in the player and during sign-in",
+            "Routes are built and parsed in one module, and an unknown route shows the not-found state"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-11",
+          "title": "Load artwork natively through the authenticated client",
+          "domain": "Catalog",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-05",
+            "T3-08"
+          ],
+          "acceptance": [
+            "An image view takes only an item id, an image type, a tag, a size and a session id from React; it accepts no URL, header or token prop",
+            "Every image request goes through the one OkHttp client and carries the header; a request capture against Jellyscale shows no image request without it",
+            "Images are requested at the size they are drawn, not the original size, and a poster on the 1920 canvas is requested no wider than 400 px",
+            "Images are cached by item, type, tag and size; a second visit to a row makes no image request",
+            "A BlurHash or plain surface shows until the image arrives, and a failed image shows the title, never a broken frame",
+            "A canary token appears in no prop, event or log during a scroll through a fixture Home",
+            "Jellyscale wire test: the capture above runs against the pinned Jellyscale and passes"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-28",
           "title": "Test that a release build's inspector cannot fetch a debugger-supplied URL",
           "domain": "Security & Redaction",
@@ -1115,8 +1354,7 @@
           "depends_on": [
             "T3-19",
             "T3-20",
-            "T3-28",
-            "T3-29"
+            "T3-28"
           ],
           "acceptance": [
             "pnpm tv:e2e:build keeps the e2e build's R8 mapping beside the e2e APK, and the release build's mapping is never read for it",
@@ -1149,6 +1387,32 @@
             "docs/security.md states the bound and names its tests in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire --task T3-05",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-33",
+          "title": "Let a development build sign in only to a development server",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-05",
+            "T3-24",
+            "T3-25"
+          ],
+          "acceptance": [
+            "In a development build the native session module refuses, before any request, to sign in to or open a session on a server whose host is not loopback, the emulator host 10.0.2.2, or an entry of the build-time allowlist; the refusal is typed and carries no address; the spec lists which build variants count as development builds",
+            "The allowlist is set on the developer's machine at build time by the mechanism the spec names (an environment variable or an ignored local file); it is never committed: a test fails when a tracked file sets it, and with it unset only loopback and 10.0.2.2 qualify",
+            "A release build holds no allowlist and signs in as before; JVM tests show each case of both variants, and pnpm tv:wire and pnpm tv:e2e still pass",
+            "A development build takes its JavaScript bundle and its inspector connection only from loopback or 10.0.2.2: a test shows that a development-server host set to any other address is refused; if no such test can exist, the spec says why and the task returns to the Product Owner",
+            "The spec records what already keeps the debug Metro and inspector path off a real TV (T3-21 item 4, T3-19's development-server watch, T3-28) and adds only what they leave open",
+            "docs/security.md, Development builds, states the rule and names its tests in the same PR; the PR calls out the change, and the review includes a guardian"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -1336,10 +1600,8 @@
             "T3-23",
             "T3-24",
             "T3-28",
-            "T3-29",
             "T3-30",
-            "T3-31",
-            "T3-32"
+            "T3-31"
           ],
           "acceptance": [
             "Shield check (owner): launched from the TV launcher with the remote, the first screen takes focus with no priming press, and the first Right press moves focus one tile",
@@ -1347,31 +1609,6 @@
             "The result of each run, and any failure, is recorded in the task's evidence with the commit it ran on"
           ],
           "verify": "pnpm tv:smoke && pnpm tv:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T3-06",
-          "title": "Add the design tokens and the base controls",
-          "domain": "App Shell & Presentation",
-          "model": "sonnet",
-          "skill": "change-review",
-          "human": false,
-          "depends_on": [
-            "T3-01",
-            "T1-08"
-          ],
-          "acceptance": [
-            "Tokens for colour, type, space, radius, duration and focus exist once in TypeScript and match DESIGN.md's token table; a test fails when a value differs",
-            "A lint fails on a hard-coded colour, size, radius or duration in a component",
-            "Button, icon button, text field, switch, dialog, toast, notice, empty state and skeleton exist with a focused, pressed and disabled state each",
-            "A focused control shows the ring and the lift; with reduced motion on, nothing scales or fades",
-            "No text renders under 24 px on the 1920 by 1080 canvas, checked by a test over the type tokens",
-            "Each control has a component test for activation with the select key"
-          ],
-          "verify": "pnpm check",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -1394,56 +1631,6 @@
             "Emulator screenshots of real screens are saved as an advisory artifact that does not gate"
           ],
           "verify": "pnpm check && pnpm tv:visual",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T3-08",
-          "title": "Build rows and cards whose focus never jumps",
-          "domain": "App Shell & Presentation",
-          "model": "opus",
-          "skill": "change-review",
-          "human": false,
-          "depends_on": [
-            "T3-06"
-          ],
-          "acceptance": [
-            "A horizontal row of cards moves focus exactly one card per Left or Right press, and holding a key for 49 presses ends on the expected card",
-            "Right on a row's last card and Left on its first card inside a screen with no rail keep focus where it is",
-            "Up and Down move to the adjacent row, to the card nearest the same horizontal position",
-            "Each row remembers its own scroll position: a row that was never scrolled opens at its first card after other rows were scrolled",
-            "A focused card is never recycled under the viewer: no blur arrives without a focus",
-            "Poster and thumbnail cards show title, progress and played marks from fixture data, and a missing image shows the title on a plain surface",
-            "Component tests cover each rule, and the scripted on-device run in T3-10 covers them on the emulator"
-          ],
-          "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T3-09",
-          "title": "Build the app shell with the collapsed side rail",
-          "domain": "App Shell & Presentation",
-          "model": "sonnet",
-          "skill": "change-review",
-          "human": false,
-          "depends_on": [
-            "T3-08"
-          ],
-          "acceptance": [
-            "A collapsed rail sits on the left of every browse screen and opens when focus enters it with Left from the first column",
-            "Left on the rail stays on the rail; Right returns to the card that had focus before",
-            "The rail's entries are Search, Home, one per library, Settings and the account, in an order that does not change between visits",
-            "Opening a screen puts focus on its primary action, and Back returns to the previous screen with the same card focused",
-            "Back on Home leaves the app without a question, and Back on another root screen goes Home",
-            "The rail is hidden in the player and during sign-in",
-            "Routes are built and parsed in one module, and an unknown route shows the not-found state"
-          ],
-          "verify": "pnpm check",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -1474,32 +1661,6 @@
           "evidence": ""
         },
         {
-          "id": "T3-11",
-          "title": "Load artwork natively through the authenticated client",
-          "domain": "Catalog",
-          "model": "opus",
-          "skill": "native-player",
-          "human": false,
-          "depends_on": [
-            "T3-05",
-            "T3-08"
-          ],
-          "acceptance": [
-            "An image view takes only an item id, an image type, a tag, a size and a session id from React; it accepts no URL, header or token prop",
-            "Every image request goes through the one OkHttp client and carries the header; a request capture against Jellyscale shows no image request without it",
-            "Images are requested at the size they are drawn, not the original size, and a poster on the 1920 canvas is requested no wider than 400 px",
-            "Images are cached by item, type, tag and size; a second visit to a row makes no image request",
-            "A BlurHash or plain surface shows until the image arrives, and a failed image shows the title, never a broken frame",
-            "A canary token appears in no prop, event or log during a scroll through a fixture Home",
-            "Jellyscale wire test: the capture above runs against the pinned Jellyscale and passes"
-          ],
-          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
           "id": "T3-12",
           "title": "Set and measure the performance budget",
           "domain": "App Shell & Presentation",
@@ -1516,10 +1677,8 @@
             "T3-23",
             "T3-24",
             "T3-28",
-            "T3-29",
             "T3-30",
-            "T3-31",
-            "T3-32"
+            "T3-31"
           ],
           "acceptance": [
             "Owner decision: the owner sets the budget numbers for cold start to first focusable frame, key press to focus change, and janky frames while a key is held, from the T0 results",
@@ -1555,9 +1714,7 @@
             "T3-23",
             "T3-24",
             "T3-28",
-            "T3-29",
-            "T3-30",
-            "T3-32"
+            "T3-30"
           ],
           "acceptance": [
             "The release build includes a Baseline Profile covering start-up, Home row scrolling and opening a title",
@@ -1586,9 +1743,7 @@
             "T3-23",
             "T3-24",
             "T3-28",
-            "T3-29",
-            "T3-30",
-            "T3-32"
+            "T3-30"
           ],
           "acceptance": [
             "A Perfetto trace of holding Down on Home shows no image-library load start or resource callback over 2 ms on the UI thread",
@@ -1636,30 +1791,6 @@
       ],
       "tasks": [
         {
-          "id": "T4-01",
-          "title": "Find servers on the home network",
-          "domain": "Server Connection & Identity",
-          "model": "opus",
-          "skill": "native-player",
-          "human": false,
-          "depends_on": [
-            "T3-05"
-          ],
-          "acceptance": [
-            "A native method with no arguments sends the one fixed discovery datagram and returns the servers that answered within 2 seconds; adding it is recorded in ARCHITECTURE.md as a new native method",
-            "A reply is dropped when it is over 4 KB, is not JSON with string Address, Id and Name, or has an address the host-class rule refuses; refused replies are counted, never listed or probed",
-            "Names are stripped of control and direction-override characters and capped at 128 characters",
-            "Two replies naming the same id at different addresses are marked as conflicting",
-            "Nothing about a reply is logged",
-            "JVM tests feed crafted datagrams for each rule"
-          ],
-          "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
           "id": "T4-02",
           "title": "Choose a server: found servers first, a typed address second",
           "domain": "Server Connection & Identity",
@@ -1667,7 +1798,6 @@
           "skill": "jellyfin-api",
           "human": false,
           "depends_on": [
-            "T4-01",
             "T3-09",
             "T3-22",
             "T3-23"
@@ -1679,7 +1809,9 @@
             "A private-LAN plain-HTTP server asks once per server and origin with the unencrypted-connection warning, with Cancel focused; a public plain-HTTP address is refused before any request",
             "The exact server origin is shown on every later sign-in step",
             "Each failure shows the copy table's sentence for it: unreachable, refused plain HTTP, redirect, unsupported version, anything else",
-            "Remembered servers are listed first on a later visit"
+            "Remembered servers are listed first on a later visit",
+            "An https address typed with a host that is not plain ASCII is refused before any request with the copy table's sentence \"This address uses characters Octave can't check. Type the server's plain address instead.\"; the same address typed in its punycode (xn--) form is accepted; the core and the native client refuse the same addresses",
+            "The found servers come from a discovery source the screen is given; until T4-01 supplies the native one the app's source finds none, so the address field shows (DESIGN.md section 7.20, step 1)"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -1718,7 +1850,8 @@
           "skill": "jellyfin-api",
           "human": false,
           "depends_on": [
-            "T4-02"
+            "T4-02",
+            "T3-33"
           ],
           "acceptance": [
             "When the server has Quick Connect on, the sign-in step shows the code and a QR code together, and the viewer presses nothing on the TV",
@@ -1754,6 +1887,35 @@
             "The password route is drawn from one sign-in-methods value that defaults to offered, so a server that later says it has no password sign-in can hide it (T10-06)"
           ],
           "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T4-01",
+          "title": "Find servers on the home network",
+          "domain": "Server Connection & Identity",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-05",
+            "T4-02"
+          ],
+          "acceptance": [
+            "A native method with no arguments sends the one fixed discovery datagram and returns the servers that answered within 2 seconds; adding it is recorded in ARCHITECTURE.md as a new native method",
+            "A reply is dropped when it is over 4 KB, is not JSON with string Address, Id and Name, or has an address the host-class rule refuses; of the rest, a reply is listed only when its Address host is a private-LAN IP literal equal to the datagram's source address, or a .local name; a loopback address, a public address, an IP literal that differs from the source and any other name are dropped; dropped replies are counted, never listed or probed",
+            "A server that advertises only an https domain is not listed; it can still be typed by hand (T4-02)",
+            "Names are stripped of control and direction-override characters and capped at 128 characters",
+            "Two replies naming the same id at different addresses are marked as conflicting",
+            "Nothing about a reply is logged",
+            "JVM tests feed crafted datagrams for each rule",
+            "docs/security.md's discovery paragraph states the listing rule and names its tests in the same PR",
+            "docs/security.md section 3, 'What it does not cover' under the resolved-address rule, names that an answer of loopback for a .local or .home.arpa name passes the rule, beside the private-host case",
+            "The app's discovery source calls the native method, so the server-choice screen (T4-02) lists what it returns; a test shows a found server on that screen"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -2486,7 +2648,8 @@
           "human": false,
           "depends_on": [
             "T8-02",
-            "T3-05"
+            "T3-05",
+            "T5-03"
           ],
           "acceptance": [
             "Pressing Play negotiates through the core, launches the module and shows the player screen; no other code builds a media URL",
