@@ -4,7 +4,7 @@
 // (D2), when a row is stale (D3), when Octave's code references a listed class (D4), when an excluded package is back
 // (D5), when a class outside DEV_SUPPORT_CLIENT_CALLERS references DevSupportHttpClient (D6), or when the input is not
 // whole (D0). It checks direct references, not a call graph.
-// Run: node scripts/tv-apk-dex.mjs [apk] [mapping]   (the third step of pnpm tv:apk:check)
+// Run: node scripts/tv-apk-dex.mjs [apk] [mapping]   (the fourth step of pnpm tv:apk:check)
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
