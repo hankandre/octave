@@ -1334,10 +1334,10 @@
             "docs/security.md states D1 and D0 as built in the same PR and the PR calls out the narrowed exemption; the commit citations in docs/specs/T3-19.md and plan 008 name commits on main; scripts/tv-apk-dex-judge.mjs is split along its rules to about 400 lines"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 7f55877d on task/T3-29 (PR not yet open). pnpm check exit 0; pnpm tv:native:test: 689 tests, 0 failed; check-red --expect green: T3-29 items 1-4,6 (5 is ci), T3-19 1-5, T3-04 1-7. Local pnpm tv:build + pnpm tv:apk:check exit 0: \"tv apk dex: ... passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)\". Pending CI: the tv job's tv apk dex line in the PR. No device, emulator, Jellyfin or Jellyscale run (not a playback or app change)."
         },
         {
           "id": "T3-30",
