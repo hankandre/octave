@@ -34,7 +34,12 @@ export const NETWORK_SINKS = [
     what: "a socket, a listening socket, or a socket factory",
     reason: "A raw or listening socket reaches any address; a listening one is a way in, the owner's first worry.",
     methods: [
-      { classes: ["java.net.Socket", "java.net.ServerSocket", "java.net.DatagramSocket", "java.net.MulticastSocket"], names: ["<init>"] },
+      {
+        // A constructor is not inherited, so the javax.net.ssl subclasses' own <init> (which an APK subclass's super call
+        // names) are listed too.
+        classes: ["java.net.Socket", "java.net.ServerSocket", "java.net.DatagramSocket", "java.net.MulticastSocket", "javax.net.ssl.SSLSocket", "javax.net.ssl.SSLServerSocket"],
+        names: ["<init>"],
+      },
       {
         classes: [
           "java.nio.channels.SocketChannel",
@@ -49,6 +54,10 @@ export const NETWORK_SINKS = [
         classes: ["javax.net.SocketFactory", "javax.net.ServerSocketFactory", "javax.net.ssl.SSLSocketFactory", "javax.net.ssl.SSLServerSocketFactory"],
         names: ["createSocket", "createServerSocket"],
       },
+      // The providers behind each channel's open (review fix, T3-19): SelectorProvider.provider().openServerSocketChannel()
+      // opens a listening channel without naming ServerSocketChannel.open (android.jar 37.1, javap).
+      { classes: ["java.nio.channels.spi.SelectorProvider"], names: ["openSocketChannel", "openServerSocketChannel", "openDatagramChannel"] },
+      { classes: ["java.nio.channels.spi.AsynchronousChannelProvider"], names: ["openAsynchronousSocketChannel", "openAsynchronousServerSocketChannel"] },
     ],
   },
   {
@@ -64,12 +73,41 @@ export const NETWORK_SINKS = [
     anyReference: ["android.app.DownloadManager"],
     anyReferencePrefix: ["android.net.http.", "java.net.http.", "android.app.DownloadManager$"],
     methods: [
-      { classes: ["android.media.MediaPlayer"], names: ["setDataSource"] },
+      // MediaPlayer.create(Context, Uri) loads the URI as setDataSource does (review fix, T3-19; name-only, as
+      // setDataSource is, so the resource overloads count too).
+      { classes: ["android.media.MediaPlayer"], names: ["setDataSource", "create"] },
+      // MediaExtractor.setDataSource and MediaMetadataRetriever.setDataSource take an http URL with headers (String, Map),
+      // a path or URL (String), or a Uri (review fix, T3-19). Every overload is a sink except those whose parameters can
+      // name only an open file or the app's own MediaDataSource (android.jar 37.1, javap): the file was opened elsewhere,
+      // where that opener is judged. A new overload is a sink until it is listed here. Fresco's
+      // LocalVideoThumbnailProducer reads a local video's frame with setDataSource(FileDescriptor).
+      {
+        classes: ["android.media.MediaExtractor", "android.media.MediaMetadataRetriever"],
+        names: ["setDataSource"],
+        localOverloads: ["(Ljava/io/FileDescriptor;)", "(Ljava/io/FileDescriptor;JJ)", "(Landroid/media/MediaDataSource;)", "(Landroid/content/res/AssetFileDescriptor;)"],
+      },
       { classes: ["android.widget.VideoView"], names: ["setVideoURI", "setVideoPath"] },
       { classes: ["android.net.Network"], names: ["openConnection", "getSocketFactory", "bindSocket"] },
     ],
   },
 ];
+
+// Framework classes and their framework superclass, for every class in android.jar 37.1 that extends a class a sink
+// method names (found with javap over the jar's java., javax. and android. classes; review fix, T3-19). The APK holds no
+// framework class, so its declarations cannot say that android.net.SSLCertificateSocketFactory.createSocket is
+// SocketFactory.createSocket; this table does. A fact about the platform, not a policy list, so the judge reads it
+// directly and a test's own lists cannot drop it.
+export const FRAMEWORK_SUPERCLASSES = {
+  "android.net.SSLCertificateSocketFactory": "javax.net.ssl.SSLSocketFactory",
+  "javax.net.ssl.SSLSocketFactory": "javax.net.SocketFactory",
+  "javax.net.ssl.SSLServerSocketFactory": "javax.net.ServerSocketFactory",
+  "javax.net.ssl.SSLSocket": "java.net.Socket",
+  "javax.net.ssl.SSLServerSocket": "java.net.ServerSocket",
+  "java.net.MulticastSocket": "java.net.DatagramSocket",
+  "java.net.HttpURLConnection": "java.net.URLConnection",
+  "javax.net.ssl.HttpsURLConnection": "java.net.HttpURLConnection",
+  "java.net.JarURLConnection": "java.net.URLConnection",
+};
 
 // Frames whose holder starts with one of these are dropped: OkHttp's own sockets are reached only through a client,
 // and S1 catches every holder of a client.

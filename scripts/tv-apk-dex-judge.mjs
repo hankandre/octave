@@ -2,6 +2,7 @@
 // read with decision log 14, 15 and 27). The listing is read one line at a time and judged one method at a time.
 import { dexTypeName, framesAt, originalsOf, resolveField, resolveMethod, typeTokens } from "./tv-apk-dex-mapping.mjs";
 import { judgeSet, mixedClasses, referenceSets } from "./tv-apk-dex-merged.mjs";
+import { FRAMEWORK_SUPERCLASSES } from "./tv-apk-dex-lists.mjs";
 
 const OCTAVE = "dev.octave.";
 const DEV_SUPPORT_CLIENT = "com.facebook.react.devsupport.inspector.DevSupportHttpClient";
@@ -172,10 +173,12 @@ export async function judgeDex(lines, mapping, lists) {
   const namesAny = (sink, names) =>
     [...names].some((name) => (sink.anyReference ?? []).includes(name) || (sink.anyReferencePrefix ?? []).some((prefix) => name.startsWith(prefix)));
 
-  function methodSinks(holders) {
+  // `descriptor` is the invoked method's dex descriptor; an overload a methods entry lists as local is not a sink.
+  const localOverload = (m, descriptor) => descriptor !== undefined && descriptor !== null && (m.localOverloads ?? []).includes(descriptor.slice(0, descriptor.lastIndexOf(")") + 1));
+  function methodSinks(holders, descriptor) {
     const out = [];
     for (const sink of sinks) {
-      const hit = (sink.methods ?? []).some((m) => holders.some((h) => m.classes.includes(h.holder) && m.names.includes(h.name)));
+      const hit = (sink.methods ?? []).some((m) => !localOverload(m, descriptor) && holders.some((h) => m.classes.includes(h.holder) && m.names.includes(h.name)));
       if (hit) out.push(sink);
     }
     return out;
@@ -213,7 +216,7 @@ export async function judgeDex(lines, mapping, lists) {
       }
     }
     if (member?.method) {
-      for (const sink of methodSinks(holders)) {
+      for (const sink of methodSinks(holders, member.descriptor)) {
         if (!found.has(sink.id)) {
           found.add(sink.id);
           judgeSink(site, sink);
@@ -226,7 +229,9 @@ export async function judgeDex(lines, mapping, lists) {
         const exempt = holders.every((h) => h.holder === CALL_FACTORY && h.name === NEW_CALL);
         judgeSink(site, sink, { exemptOctaveNewCall: exempt });
       }
-      if (sinkMethodNames.has(member.name) && mapping.sections.has(member.owner)) pending.push({ site, owner: member.owner, name: member.name, found });
+      // A framework owner is walked through FRAMEWORK_SUPERCLASSES (review fix, T3-19); the APK declares no framework class.
+      const walkable = mapping.sections.has(member.owner) || Object.hasOwn(FRAMEWORK_SUPERCLASSES, member.owner);
+      if (sinkMethodNames.has(member.name) && walkable) pending.push({ site, owner: member.owner, name: member.name, descriptor: member.descriptor, found });
     }
 
     // D4 on R8's dispatch outside Octave's code (review fix, T3-19): a method reference R8 folds into a merged lambda
@@ -452,13 +457,16 @@ export async function judgeDex(lines, mapping, lists) {
   }
   finishClass();
 
-  // Sink methods invoked on a subclass the APK declares (WebView subclasses' loadUrl, for example).
-  for (const { site, owner, name, found } of pending) {
+  // Sink methods invoked on a subclass the APK declares (WebView subclasses' loadUrl, for example), or on a framework
+  // subclass (android.net.SSLCertificateSocketFactory.createSocket): past the APK's own declarations, the walk goes on
+  // through FRAMEWORK_SUPERCLASSES.
+  const superOf = (name) => superclass.get(name) ?? (Object.hasOwn(FRAMEWORK_SUPERCLASSES, name) ? FRAMEWORK_SUPERCLASSES[name] : undefined);
+  for (const { site, owner, name, descriptor, found } of pending) {
     const seen = new Set();
-    for (let at = superclass.get(owner); at && !seen.has(at); at = superclass.get(at)) {
+    for (let at = superOf(owner); at && !seen.has(at); at = superOf(at)) {
       seen.add(at);
       const holders = [...originalsOf(mapping, at)].map((holder) => ({ holder, name }));
-      for (const sink of methodSinks(holders)) {
+      for (const sink of methodSinks(holders, descriptor)) {
         if (found.has(sink.id)) continue;
         found.add(sink.id);
         judgeSink(site, sink);
