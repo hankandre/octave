@@ -1028,7 +1028,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Implemented on task/T3-22, head commit 82819ca2 (milestones 25666997, 75cde24d, 9443209c, 82819ca2). Local: pnpm check exit 0; check-red green [1,2,3,5]; tv:build ok; tv:apk:check \"2 permissions, 0 queries, backup off\"; tv:native:test 176/0 failed; tv:smoke and tv:e2e pass on own Android 16 TV emulator. Pending: PR, tv job on head (tv:apk:check + tv:smoke steps). Untested: real TV, Android 9-15, on-device backup/transfer (T4-05, T4-09)."
+          "evidence": "Implemented on task/T3-22 to commit 429d70c4. Local: pnpm check exit 0; check-red green [1,2,3,5]; tv:build ok; tv:apk:check \"2 permissions, 0 queries, backup off\"; tv:native:test 176 tests 0 failed; tv:smoke, tv:e2e pass on own Android 16 TV emulator. Pending: PR, tv job on head (tv:apk:check, tv:smoke). Untested: Android 7-15 (API 24-35), Shield (Android 11), arm64, real TV, on-device backup/transfer (T4-05, T4-09)."
         },
         {
           "id": "T3-21",
