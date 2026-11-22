@@ -2605,10 +2605,10 @@
             "docs/security.md section 2's master-URL row states the host rule and names the T2-06 tests, and the new refusals are listed as tested, in the same PR"
           ],
           "verify": "pnpm --filter @octave/core test && pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 1d925488 on task/T8-22 (launch rules 460009e0, subtitle host rules 9c3c2ec1, stop on refusal 2383fdf3, docs). Blocked: frozen coordinator-play-method.test.ts:134 (static plan with a master.m3u8 URL) fails S1; coordinator-launch-refusal.test.ts:86 fails typecheck TS2493. Both need a ruling."
         },
         {
           "id": "T8-02",
