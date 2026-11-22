@@ -26,8 +26,13 @@ const VALUE = String.raw`[^&\s",}]`;
 // real value.
 const AUTHORIZATION =
   /(authorization"?(?:\s*[:=]\s*|\s+(?=(?:MediaBrowser|Emby|Bearer|Basic|Digest)\b)))[^\n]*/gi;
+// A status code such as "Invalid token (401)" is not a credential: after
+// whitespace, a value that is exactly "(" three digits ")" and then the end,
+// whitespace, or one of . , ; : before whitespace or the end stays readable.
+// The : and = branches are unchanged.
+const STATUS_CODE = String.raw`\(\d{3}\)(?:$|\s|[.,;:](?:\s|$))`;
 const CREDENTIAL = new RegExp(
-  String.raw`(\b${KEY}"?(?:\s*[:=]\s*|\s+(?="?(?:${VALUE}*\d|${VALUE}{20}))))"?${VALUE}+"?`,
+  String.raw`(\b${KEY}"?(?:\s*[:=]\s*|\s+(?!${STATUS_CODE})(?="?(?:${VALUE}*\d|${VALUE}{20}))))"?${VALUE}+"?`,
   "gi",
 );
 
