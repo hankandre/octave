@@ -1,6 +1,7 @@
 // The rows of a browse screen (T3-08): one vertical FlashList of `MediaRow`s, each with the same leading inset so every
-// row's cards share one x frame. Nothing overrides vertical focus, so the native engine picks the adjacent row's card
-// nearest the same horizontal position (the rule is `nearestCardIndex` in ./row-geometry). Empty rows render nothing.
+// row's cards share one x frame. Vertical focus goes to the adjacent row's card nearest the same horizontal position
+// (the rule is `nearestCardIndex` in ./row-geometry; ./row-router tells each row's focus guide which card that is,
+// because the native search alone missed it from a thumb row up to a poster row). Empty rows render nothing.
 // The screen owns the memory: `useRowMemory()`.
 //
 // testIDs, with l the list's testID: l-list and l-row-<rowId> (each row's testID, so l-row-<rowId>-title and so on).
@@ -13,6 +14,7 @@ import { MediaRow } from "./media-row";
 import type { CardItem } from "./media-card";
 import type { CardVariant } from "./row-geometry";
 import type { RowMemory } from "./row-memory";
+import { createRowRouter } from "./row-router";
 
 export type RowSpec = { id: string; title: string; variant: CardVariant; items: CardItem[] };
 
@@ -32,6 +34,8 @@ const typeOf = (row: RowSpec): CardVariant => row.variant;
 
 export function RowList({ rows, memory, leftEdge, header, onCardFocus, onCardBlur, onCardPress, testID }: RowListProps) {
   const shown = useMemo(() => rows.filter((row) => row.items.length > 0), [rows]);
+  const router = useMemo(() => createRowRouter(memory), [memory]);
+  router.update(shown);
   return (
     <FlashList
       testID={`${testID}-list`}
@@ -48,6 +52,7 @@ export function RowList({ rows, memory, leftEdge, header, onCardFocus, onCardBlu
             variant={item.variant}
             items={item.items}
             memory={memory}
+            router={router}
             leftEdge={leftEdge}
             onCardFocus={onCardFocus}
             onCardBlur={onCardBlur}

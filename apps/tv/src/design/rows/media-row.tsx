@@ -13,8 +13,11 @@ import { colors, space } from "../tokens";
 import { MediaCard, type CardItem } from "./media-card";
 import { cardGap, cardTopInset, drawDistanceFor, rowInsetStart, rowListHeight, type CardVariant } from "./row-geometry";
 import type { RowMemory } from "./row-memory";
+import type { RowRouter } from "./row-router";
 
 export type MediaRowProps = {
+  /** Set by `RowList`: points the rows above and below at their nearest card (see ./row-router). */
+  router?: RowRouter;
   rowId: string;
   title: string;
   variant: CardVariant;
@@ -37,23 +40,37 @@ type CellProps = {
   onFocusCard: (rowId: string, index: number) => void;
   onBlurCard: (rowId: string, index: number) => void;
   onPressCard: (rowId: string, index: number) => void;
+  router?: RowRouter;
 };
 
 /** Binds a card's callbacks to the row id and index it shows now, never ones remembered from earlier. */
-const RowCell = memo(function RowCell({ rowId, index, item, variant, testID, onFocusCard, onBlurCard, onPressCard }: CellProps) {
+const RowCell = memo(function RowCell({ rowId, index, item, variant, testID, onFocusCard, onBlurCard, onPressCard, router }: CellProps) {
+  const itemId = item.id;
+  const viewRef = useCallback(
+    (view: unknown) => {
+      router?.registerCard(rowId, itemId, view);
+    },
+    [router, rowId, itemId],
+  );
   const onFocus = useCallback(() => onFocusCard(rowId, index), [onFocusCard, rowId, index]);
   const onBlur = useCallback(() => onBlurCard(rowId, index), [onBlurCard, rowId, index]);
   const onPress = useCallback(() => onPressCard(rowId, index), [onPressCard, rowId, index]);
   return (
     <View style={styles.cell}>
-      <MediaCard testID={testID} item={item} variant={variant} onFocus={onFocus} onBlur={onBlur} onPress={onPress} />
+      <MediaCard testID={testID} item={item} variant={variant} onFocus={onFocus} onBlur={onBlur} onPress={onPress} viewRef={viewRef} />
     </View>
   );
 });
 
 const keyOf = (item: CardItem): string => item.id;
 
-export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "trap", onCardFocus, onCardBlur, onCardPress, testID }: MediaRowProps) {
+export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "trap", onCardFocus, onCardBlur, onCardPress, router, testID }: MediaRowProps) {
+  const guideRef = useCallback(
+    (guide: unknown) => {
+      router?.registerGuide(rowId, guide as Parameters<RowRouter["registerGuide"]>[1]);
+    },
+    [router, rowId],
+  );
   const listRef = useRef<FlashListRef<CardItem>>(null);
   const shownId = useRef(rowId);
   const mounted = useRef(false);
@@ -68,6 +85,16 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "tra
     if (handedOver || (!mounted.current && offset > 0)) listRef.current?.scrollToOffset({ offset, animated: false });
     mounted.current = true;
   }, [rowId, memory]);
+
+  // On a device the layout effect above runs before the list has content to scroll, so a fresh mount stays at 0
+  // (milestone 5, decision log 12): restore once more when the list has laid out.
+  const loaded = useRef(false);
+  const onLoad = useCallback(() => {
+    if (loaded.current) return;
+    loaded.current = true;
+    const offset = memory.get(shownId.current);
+    if (offset > 0) listRef.current?.scrollToOffset({ offset, animated: false });
+  }, [memory]);
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -84,8 +111,9 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "tra
         listRef.current?.scrollToOffset({ offset: 0, animated: false });
         memory.set(id, 0);
       }
+      router?.focused(id, index);
     },
-    [memory],
+    [memory, router],
   );
   const onBlurCard = useCallback((id: string, index: number) => handlers.current.onCardBlur?.(id, index), []);
   const onPressCard = useCallback((id: string, index: number) => handlers.current.onCardPress?.(id, index), []);
@@ -97,7 +125,7 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "tra
       <Text testID={`${testID}-title`} style={styles.title}>
         {title}
       </Text>
-      <TVFocusGuideView testID={`${testID}-guide`} trapFocusRight trapFocusLeft={leftEdge === "trap"}>
+      <TVFocusGuideView {...{ ref: guideRef }} testID={`${testID}-guide`} trapFocusRight trapFocusLeft={leftEdge === "trap"}>
         <FlashList
           ref={listRef}
           testID={`${testID}-list`}
@@ -111,6 +139,7 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "tra
           contentContainerStyle={{ paddingLeft: px(rowInsetStart) }}
           style={{ height: px(rowListHeight(variant)) }}
           onScroll={onScroll}
+          onLoad={onLoad}
           renderItem={({ item, index }) => (
             <RowCell
               rowId={rowId}
@@ -121,6 +150,7 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "tra
               onFocusCard={onFocusCard}
               onBlurCard={onBlurCard}
               onPressCard={onPressCard}
+              router={router}
             />
           )}
         />

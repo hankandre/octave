@@ -8,9 +8,17 @@ export type CardVariant = "poster" | "thumb";
 /** How far ahead of the viewport a row draws, in dp. Decision 0004's addendum measured 0 of 12 bursts lost at 150 on poster rows. */
 export const ROW_DRAW_DISTANCE = 150;
 
-/** The draw distance of a row of this variant, in dp. Both variants use the measured default. */
-export function drawDistanceFor(_variant: CardVariant): number {
-  return ROW_DRAW_DISTANCE;
+/**
+ * How far ahead a thumb row draws, in dp. A thumb's stride is about 220 dp against a poster's 136 dp, so 150 dp can hold
+ * less than one thumb ahead of focus. Milestone 5 (emulator, 12 held 49-press bursts): 150 lost presses in 1 of 12 and
+ * then 4 of 12, 175 in 1 of 12, 200 in 0 then 1 of 12, 243 (the ruled ceiling) in 0 of 12 twice (docs/specs/T3-08.md,
+ * decision log 12). Poster rows stay at ROW_DRAW_DISTANCE.
+ */
+export const THUMB_ROW_DRAW_DISTANCE = 243;
+
+/** The draw distance of a row of this variant, in dp. */
+export function drawDistanceFor(variant: CardVariant): number {
+  return variant === "thumb" ? THUMB_ROW_DRAW_DISTANCE : ROW_DRAW_DISTANCE;
 }
 
 export const cardGap = space.space5;
