@@ -3,5 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "license": "GPL-3.0-only",
-  "description": "Octave's native session module: the one authenticated OkHttp client (T3-03); sign-in and requests follow in T3-05."
+  "description": "Octave's native session module (decision 0005): the one authenticated OkHttp client (T3-03) and its JavaScript surface, signIn, request and endSession (T3-05).",
+  "main": "src/index.ts"
 }
