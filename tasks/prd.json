@@ -686,10 +686,10 @@
             "No stage of the workflow is cut or changed in this task"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 57fe922c: scripts/pipeline-cost.mjs, docs/research/pipeline-cost.md, spec notes resolved. pnpm check passes; check-red --expect green passes items 1-3; item 4 is a review gate. No stage changed."
         }
       ]
     },
