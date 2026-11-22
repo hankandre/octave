@@ -1,0 +1,4 @@
+# T3-19 test fixture (frozen), hand-written mapping section(s) appended to release-mapping.txt for the probe-benign, probe-calls-networking and probe-opens-url dumps. The tests strip these leading # lines.
+dev.octave.tv.Probe -> dev.octave.tv.Probe:
+# {"id":"sourceFile","fileName":"Probe.kt"}
+    1:3:java.lang.Object probe(java.lang.Object):10:10 -> a

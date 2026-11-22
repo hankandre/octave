@@ -1,0 +1,34 @@
+# T3-19 test fixture (frozen), hand-written: an Octave class whose one method opens nothing and references no listed class (the control for the probe-* variants).
+# Modelled on the method blocks of release-dump.txt (dexdump -d, build-tools 37.0.0). The tests strip these # lines.
+Class #9001            -
+  Class descriptor  : 'Ldev/octave/tv/Probe;'
+  Access flags      : 0x0011 (PUBLIC FINAL)
+  Superclass        : 'Ljava/lang/Object;'
+  Interfaces        -
+  Static fields     -
+  Instance fields   -
+  Direct methods    -
+    #0              : (in Ldev/octave/tv/Probe;)
+      name          : 'a'
+      type          : '(Ljava/lang/Object;)Ljava/lang/Object;'
+      access        : 0x0019 (PUBLIC STATIC FINAL)
+      code          -
+      registers     : 2
+      ins           : 1
+      outs          : 2
+      insns size    : 6 16-bit code units
+7f0000:                                        |[7f0000] dev.octave.tv.Probe.a:(Ljava/lang/Object;)Ljava/lang/Object;
+7f0010: 6e10 7459 0100                         |0000: invoke-virtual {v1}, Ljava/lang/Object;.getClass:()Ljava/lang/Class; // method@5974
+7f0016: 0000                                   |0003: nop // spacer
+7f0018: 0000                                   |0004: nop // spacer
+7f001a: 1101                                   |0005: return-object v1
+      catches       : (none)
+      positions     :
+        0x0000 line=1
+        0x0002 line=2
+        0x0005 line=3
+      locals        :
+
+  Virtual methods   -
+  source_file_idx   : 27272 (r8-map-id-c316ccec17af5cb29d9c92451cf5f9f80d95458c0e4ff0c51bcd115f2ee01a1e)
+
