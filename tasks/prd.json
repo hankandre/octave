@@ -980,10 +980,10 @@
             "An answer larger than the cap stated for its endpoint class is refused with a typed error before it is parsed, or the body is streamed; the spec lists the caps, each below 32 MiB, and a test sends an oversized answer"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented on task/T3-16 to commit 976e3ddc (milestones 2ec2396f path rule, cc2339ce caps, 45c9adc1+100a7e1e lint:logs, 6cf80d3c inspector check, 976e3ddc docs). pnpm check passed; pnpm tv:native:test 324 tests, 0 failed; check-red --expect green: items 4-8 green, 1-3 met; tv:build + tv:apk:check pass; inspector check on a debug APK exits 1 (N1, N2, N3). T3-05 wire rerun not run locally (another agent on-device); left to CI wire job. No PR yet."
         },
         {
           "id": "T3-20",
