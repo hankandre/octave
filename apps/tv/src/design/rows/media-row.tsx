@@ -11,7 +11,7 @@ import { px } from "../scale";
 import { textStyle } from "../text";
 import { colors, space } from "../tokens";
 import { MediaCard, type CardItem } from "./media-card";
-import { cardGap, drawDistanceFor, rowInsetStart, rowListHeight, type CardVariant } from "./row-geometry";
+import { cardGap, cardTopInset, drawDistanceFor, rowInsetStart, rowListHeight, type CardVariant } from "./row-geometry";
 import type { RowMemory } from "./row-memory";
 
 export type MediaRowProps = {
@@ -130,6 +130,7 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "tra
 }
 
 const styles = StyleSheet.create({
-  title: { ...textStyle("typeHeading"), color: colors.text1, marginBottom: px(space.space4), paddingLeft: px(rowInsetStart) },
-  cell: { paddingRight: px(cardGap) },
+  title: { ...textStyle("typeHeading"), color: colors.text1, marginBottom: px(space.space4) - px(cardTopInset), paddingLeft: px(rowInsetStart) },
+  // The top space holds the lift and the ring, so the art sits `space4` under the title.
+  cell: { paddingRight: px(cardGap), paddingTop: px(cardTopInset) },
 });
