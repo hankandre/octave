@@ -689,10 +689,10 @@
             "Tests that pnpm test:workflow runs cover each rule, the frozen .claude/workflows/task.test.mjs is not changed, and WORKFLOW.md describes lanes and the runner in the same PR"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit e0c14b92 on task/T1-19 (lanes on every task, Product Owner pass) after 75c35a61: lane field, lane-state gate, runLanes, WORKFLOW.md. pnpm check exit 0 (vitest 3062, workflow 234). PR not opened; concurrency of overlapping agent() calls unverified, record in PR."
+          "passes": true,
+          "evidence": "commit dfa272f1 on task/T1-19 (halt recheck after serial slot wait, plan 014) after 75c35a61 and e0c14b92: lanes, lane-state gate, runLanes, WORKFLOW.md. pnpm check exit 0 (workflow 235). PR not opened; overlap of agent() calls unverified, record in PR."
         },
         {
           "id": "T1-20",
