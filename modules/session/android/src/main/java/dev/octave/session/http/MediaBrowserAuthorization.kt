@@ -15,6 +15,9 @@ class MediaBrowserAuthorization private constructor(private val value: String, p
     // The token as the header writes it (percent-encoded) and decoded, for the token-in-URL refusal.
     internal fun tokenForms(): List<String> = listOf(writtenToken, PercentDecoding.decode(writtenToken)).distinct()
 
+    // The token as the header writes it, for TokenStrip.
+    internal fun writtenToken(): String = writtenToken
+
     override fun toString(): String = "MediaBrowserAuthorization([redacted])"
 
     companion object {

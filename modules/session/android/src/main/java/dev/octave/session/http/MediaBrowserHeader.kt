@@ -8,6 +8,11 @@ object MediaBrowserHeader {
         "MediaBrowser " + listOf("Client" to client, "Device" to device, "DeviceId" to deviceId, "Version" to version, "Token" to token)
             .joinToString(", ") { (name, value) -> "$name=\"${encodeUriComponent(value)}\"" }
 
+    // The tokenless header of decision 0005 ("Before sign-in"): the same five fields with Token="", as
+    // packages/core/tests/fixtures/authorization-header.json's expectedWithoutToken. Sent only on the six tokenless calls.
+    fun buildTokenless(client: String, device: String, deviceId: String, version: String): String =
+        build(client, device, deviceId, version, "")
+
     // encodeURIComponent refuses a lone surrogate (URIError), and so does this.
     internal fun encodeUriComponent(value: String): String {
         val out = StringBuilder(value.length)
