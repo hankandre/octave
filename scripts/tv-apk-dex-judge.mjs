@@ -1,6 +1,6 @@
 // Judges a `dexdump -d` listing against R8's mapping and the lists (T3-19, rules D0 to D6 in docs/specs/T3-19.md,
 // read with decision log 14 and 15). The listing is read one line at a time and judged one method at a time.
-import { dexTypeName, framesAt, originalsOf, resolveField, resolveMethod, typeTokens } from "./tv-apk-dex-mapping.mjs";
+import { dexTypeName, framesAt, memberTypes, originalsOf, resolveField, resolveMethod, typeTokens } from "./tv-apk-dex-mapping.mjs";
 
 const OCTAVE = "dev.octave.";
 const DEV_SUPPORT_CLIENT = "com.facebook.react.devsupport.inspector.DevSupportHttpClient";
@@ -45,6 +45,7 @@ export function readOperand(opcode, operand) {
   return {
     member: { owner, name: m[2], descriptor, method: descriptor.startsWith("(") },
     types: [...typeTokens(descriptor), ...typeTokens(rest)],
+    otherTypes: typeTokens(rest),
   };
 }
 
@@ -184,7 +185,7 @@ export async function judgeDex(lines, mapping, lists) {
   };
 
   function judgeInstruction(site, opcode, operand) {
-    const { member, types } = readOperand(opcode, operand);
+    const { member, types, otherTypes = [] } = readOperand(opcode, operand);
     if (!member && types.length === 0) return;
     const typeNames = typeOriginals(types);
     let holders = [];
@@ -194,6 +195,10 @@ export async function judgeDex(lines, mapping, lists) {
         : resolveField(mapping, member.owner, member.name, member.descriptor).map((holder) => ({ holder, name: member.name }));
     }
     const named = new Set([...typeNames, ...holders.map((h) => h.holder)]);
+    // D4 reads a member reference's descriptor by the member's own signature on its member lines (decision log 26), not
+    // as every original its merged dex types hold; with no member line it keeps the wide reading. Sinks keep it always.
+    const signature = member ? memberTypes(mapping, member.owner, member.name, member.descriptor, member.method) : null;
+    const referenced = signature === null ? named : new Set([...signature, ...typeOriginals(otherTypes), ...holders.map((h) => h.holder)]);
     site.callees = [...new Set(holders.map((h) => h.holder))];
     const octave = site.stacks.some((stack) => stack.some(isOctave));
     if (octave) stats.octaveSeen = true;
@@ -268,7 +273,7 @@ export async function judgeDex(lines, mapping, lists) {
       frames.forEach((frame, i) => {
         if (!frame.octave) return;
         if (i === 0) {
-          if (!dispatchCast) for (const name of named) judgeReference(frame, name);
+          if (!dispatchCast) for (const name of referenced) judgeReference(frame, name);
         } else if (!frames[i - 1].octave) judgeReference(frame, frames[i - 1].holder);
       });
     }

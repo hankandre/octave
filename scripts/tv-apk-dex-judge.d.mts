@@ -4,5 +4,5 @@ export type DexVerdict = { errors: string[]; stats: { opened: number; classes: n
 export function readOperand(
   opcode: string,
   operand: string,
-): { member: { owner: string; name: string; descriptor: string; method: boolean } | null; types: string[] };
+): { member: { owner: string; name: string; descriptor: string; method: boolean } | null; types: string[]; otherTypes?: string[] };
 export function judgeDex(lines: Iterable<string> | AsyncIterable<string>, mapping: Mapping, lists: DexLists): Promise<DexVerdict>;
