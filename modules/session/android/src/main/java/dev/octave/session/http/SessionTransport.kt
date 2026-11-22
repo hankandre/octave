@@ -12,6 +12,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.util.concurrent.TimeUnit
@@ -162,13 +163,17 @@ internal class SessionTransport(private val identity: ClientIdentity) {
             }
             return response.use {
                 if (!readBody) return@use Answer(it.code, null)
-                Answer(it.code, parse(readLimited(call, it.body.source())))
+                Answer(it.code, parse(readLimited(call, it.body, ResponseCaps.of(authority, request.method))))
             }
         }
     }
 
-    private fun readLimited(call: Call, source: okio.BufferedSource): ByteArray = try {
-        if (source.request(MAX_BODY_BYTES + 1)) throw UnusableAnswer()
+    // At most `cap` bytes, else UnusableAnswer: at once when the answer declares a larger length, otherwise after
+    // reading cap + 1 bytes. A 4xx or 5xx answer has the same cap.
+    private fun readLimited(call: Call, body: ResponseBody, cap: Long): ByteArray = try {
+        if (body.contentLength() > cap) throw UnusableAnswer()
+        val source = body.source()
+        if (source.request(cap + 1)) throw UnusableAnswer()
         source.buffer.readByteArray()
     } catch (error: UnusableAnswer) {
         throw error
@@ -237,9 +242,6 @@ internal class SessionTransport(private val identity: ClientIdentity) {
     }
 
     companion object {
-        // Larger answers are unexpected-response.
-        const val MAX_BODY_BYTES: Long = 32L * 1024 * 1024
-
         private val JSON = "application/json".toMediaType()
         private val LITERALS = setOf("true", "false", "null")
         private val JSON_NUMBER = Regex("""-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?""")
