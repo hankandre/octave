@@ -1177,7 +1177,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 072b75fc (frozen test host fix) + 2f8456f1: stand-ins, read-back, clear-first, log streaming, signal restore, CLI test. Items 1-5 vitest green; pnpm check passes. pnpm tv:wire 8 pairs pass earlier. Untested: Ctrl+C on real device. CI wire job: Ship."
+          "evidence": "commit 70314ab2: per-secret span fix, tick tests; items 1-5 vitest green, pnpm check passes. Item 6 open: CI wire job on PR head, summary.txt and device.txt kept-log line not yet quoted; Ctrl+C, killed-stream, bad ANDROID_SERIAL device checks not run. Keep PR draft."
         },
         {
           "id": "T3-27",
