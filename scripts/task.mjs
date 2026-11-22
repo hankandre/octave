@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 export const TASK_FILE = fileURLToPath(new URL("../tasks/prd.json", import.meta.url));
-export const MAX_FILE_BYTES = 250_000;
+export const MAX_FILE_BYTES = 350_000;
 export const MAX_EVIDENCE_CHARS = 600;
 export const EVIDENCE_REFERENCE = /\bPR #\d+\b|\bcommit [0-9a-f]{7,40}\b/i;
 
