@@ -6,7 +6,8 @@ import java.nio.charset.CodingErrorAction
 
 // The path rule of the native request (T3-16, T3-24; docs/specs/T3-24.md, "The rule as built"). Round 0 is the path as
 // written; rounds 1 to 4 are that text percent-decoded once more each time. A path is safe only when all hold:
-//   P1. It starts with / and not with //, and holds no ? or #. Round 0 only.
+//   P1. It starts with / and not with //. No round holds a ? or #, so a proxy that decodes once and then splits off a
+//       query or fragment cannot cut /Items/..%3f/x down to /Items/.. (review fix).
 //   P2. It holds no backslash (OkHttp reads \ as a separator). Round 0 only; a decoded \ still splits segments in P4.
 //   P3. No round holds a control character: U+0000 to U+001F or U+007F to U+009F.
 //   P4. In no round, split on / and \, is a segment . or .., or made only of . and dot-like characters with at least
@@ -19,10 +20,11 @@ import java.nio.charset.CodingErrorAction
 //   P7. Round 4 holds no escape (% and two hex digits): a path still encoded after four rounds is refused.
 // Limits: the dot-like list is a list, so a proxy that folds another character to a dot is not covered, and characters
 // that fold to a separator or a ; (U+FF0F, U+FF3C, U+FF1B, U+FE54, U+037E) pass this rule (tasks/backlog.jsonl). An id
-// holding a literal % and two hex digits that are not UTF-8 (50%ff, sent as %25ff) is refused by P5. The query string
-// is not judged here. The core's reference transport applies the same rule (packages/core/src/adapters/request-path.ts);
-// both pass the vectors of packages/core/tests/fixtures/request-paths.json. Containment beyond this is ServerAddress.url
-// (C1) and RequestPolicy (C2), which runs holdsRefusedForm on the encoded path of every session and closing call.
+// holding a literal % and two hex digits that are not UTF-8 (50%ff, sent as %25ff) is refused by P5, and an id holding
+// a ? or # (sent as %3F or %23) by P1. The query string is not judged here. The core's reference transport applies
+// the same rule (packages/core/src/adapters/request-path.ts); both pass the vectors of
+// packages/core/tests/fixtures/request-paths.json. Containment beyond this is ServerAddress.url (C1) and RequestPolicy
+// (C2), which runs holdsRefusedForm on the encoded path of every session and closing call.
 internal object RequestPath {
     // As many rounds as the token search looks through (RequestPolicy).
     private const val DECODING_ROUNDS = 4
@@ -31,11 +33,11 @@ internal object RequestPath {
     private const val DOT_LIKE = "․‥…。︙︰﹒．｡"
 
     fun isSafe(path: String): Boolean {
-        if (!path.startsWith("/") || path.startsWith("//") || path.contains('?') || path.contains('#')) return false
+        if (!path.startsWith("/") || path.startsWith("//")) return false
         return !holdsRefusedForm(path)
     }
 
-    // P2 to P7: true when the path holds a form the rule refuses.
+    // P1's ? and #, and P2 to P7: true when the path holds a form the rule refuses.
     fun holdsRefusedForm(path: String): Boolean {
         if (path.contains('\\')) return true
         if (!percentsBeginEscapes(path)) return true
@@ -43,6 +45,7 @@ internal object RequestPath {
         for (round in 0..DECODING_ROUNDS) {
             if (text.any { isControl(it) }) return true
             if (text.contains(';')) return true
+            if (text.contains('?') || text.contains('#')) return true
             val decoded = decodeEscapeRuns(text) ?: return true
             if (holdsDotSegment(text)) return true
             if (!text.contains('%')) return false

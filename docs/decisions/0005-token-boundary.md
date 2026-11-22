@@ -297,13 +297,14 @@ T3-16 narrows what `request` accepts (`docs/specs/T3-16.md`). It adds no method,
 
 T3-24 narrows what `request` accepts again (`docs/specs/T3-24.md`, "The rule as built"). It adds no method, no event, no argument key and no error code; every new refusal resolves `{ error: "refused" }`, and C2's is `outside-base-path`. The T3-16 amendment above stays as written; this replaces its P3 to P5 and adds P6 and P7. Round 0 is the path as written and rounds 1 to 4 are that text percent-decoded once more each time.
 
+- P1: the path starts with `/` and not `//`, and no round holds a `?` or `#` (T3-24 review fix: a proxy that decodes once and then splits off a query would read `/jf/Items/..%3f/x` as `/jf/Items/..`).
 - P3: no round holds a control character, U+0000 to U+001F or U+007F to U+009F.
 - P4: in no round, split on `/` and `\`, is a segment `.` or `..`, or made only of `.` and the nine dot-like characters (U+2024, U+2025, U+2026, U+3002, U+FE19, U+FE30, U+FE52, U+FF0E, U+FF61) with at least one of them.
 - P5: in round 0 every `%` begins two hex digits; in every round each run of escapes decodes as UTF-8; in rounds 1 to 4 a `%` that begins no escape is a literal.
 - P6: no round holds a `;`.
 - P7: round 4 holds no escape, so a path encoded deeper than the rule reads is refused.
-- C2 runs P2 to P7 (`RequestPath.holdsRefusedForm`, the function `RequestPath.isSafe` also calls) on the whole encoded path of every `Session` and `Closing` call (`BasePathFormsTest.kt`).
-- Limits: characters that fold to a separator or a `;` (U+FF0F, U+FF3C, U+FF1B, U+FE54, U+037E) are not refused; an id that holds a literal `%` and two hex digits that are not UTF-8 is refused; the query string is not judged by this rule; a base path that fails the rule signs in and then has every session call refused.
+- C2 runs P1's `?` and `#` and P2 to P7 (`RequestPath.holdsRefusedForm`, the function `RequestPath.isSafe` also calls) on the whole encoded path of every `Session` and `Closing` call (`BasePathFormsTest.kt`).
+- Limits: characters that fold to a separator or a `;` (U+FF0F, U+FF3C, U+FF1B, U+FE54, U+037E) are not refused; an id that holds a literal `%` and two hex digits that are not UTF-8 is refused, and so is an id that holds a `?` or `#`; the query string is not judged by this rule; a base path that fails the rule signs in and then has every session call refused.
 
 ## Revisit if
 
