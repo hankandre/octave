@@ -6,8 +6,11 @@
 // cleartext probe runs (T3-15 item 2, scripts/tv-cleartext.mjs), then the probe's resolved-address check (T3-20,
 // scripts/tv-resolved-address.mjs), then the install-id stage (T4-09, scripts/tv-install-id.mjs), which runs only on a
 // device that is positively an emulator and is skipped, with a recorded line, on any other. An explicit [apk] needs its probe APK too: the second
-// argument, or the one pnpm tv:e2e:build wrote; the probe is never skipped.
-// Run: ANDROID_SERIAL=<emulator> node scripts/tv-e2e.mjs [apk [probe-apk]]   (pnpm tv:e2e)
+// argument, or the one pnpm tv:e2e:build wrote; the probe is never skipped. After the network security judgement and
+// before any adb command, the dex, inspector and native inspector checks run on the e2e APK with the R8 mapping of its
+// build (the third argument, or the one pnpm tv:e2e:build kept beside the APK; scripts/tv-e2e-apk.mjs, T3-31); one
+// failing check stops the run before the install.
+// Run: ANDROID_SERIAL=<emulator> node scripts/tv-e2e.mjs [apk [probe-apk [mapping]]]   (pnpm tv:e2e)
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +18,8 @@ import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity
 import { openAdb } from "./tv-adb.mjs";
 import { androidSdk, newestBuildTool, platformTool } from "./tv-android-sdk.mjs";
 import { judgeNetworkSecurity, readNetworkSecurity } from "./tv-apk-check.mjs";
-import { E2E_APK, PROBE_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
+import { E2E_APK, E2E_MAPPING, PROBE_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
+import { checkE2eApk } from "./tv-e2e-apk.mjs";
 import { expectedPublicCount, runCleartextProbe } from "./tv-cleartext.mjs";
 import { runInstallIdStage } from "./tv-install-id.mjs";
 import { runResolvedAddressProbe } from "./tv-resolved-address.mjs";
@@ -141,6 +145,7 @@ async function main(args) {
 
   let apk = args[0];
   const probeApk = args[1] ?? PROBE_APK;
+  const mapping = args[2] ?? E2E_MAPPING;
   if (apk === undefined) {
     apk = E2E_APK;
     if (!e2eApkIsCurrent()) {
@@ -154,6 +159,7 @@ async function main(args) {
   }
   if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:e2e:build first`);
   if (!existsSync(probeApk)) fail(`no cleartext probe APK at ${probeApk}; pass it after the APK or run pnpm tv:e2e:build`);
+  if (!existsSync(mapping)) fail(`no R8 mapping at ${mapping}; pass it after the probe APK or run pnpm tv:e2e:build`);
   let network;
   try {
     network = judgeNetworkSecurity(readNetworkSecurity(aapt2, apk));
@@ -163,6 +169,11 @@ async function main(args) {
   if (network.length > 0) {
     for (const error of network) console.error(error);
     fail("the e2e APK does not carry the network security configuration");
+  }
+  const apkErrors = await checkE2eApk({ apk, mapping });
+  if (apkErrors.length > 0) {
+    for (const error of apkErrors) console.error(error);
+    process.exit(1);
   }
   if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
 
