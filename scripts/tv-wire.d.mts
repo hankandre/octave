@@ -1,4 +1,6 @@
 // Types for tv-wire.mjs.
+import type { CaptureRecord } from "./tv-wire-judge.mjs";
+import type { LogKept } from "./tv-wire-logcat.mjs";
 export interface WireEntry {
   id: string;
   task: string;
@@ -29,3 +31,18 @@ export function adbRestartErrors(state: {
   reversed: number;
 }): string[];
 export function resumedPackage(dumpsys: string): string;
+export function judgeRun(
+  input: {
+    pairs: { test: string; target: string; task: string; devicePort: number; records: CaptureRecord[] }[];
+    counts: { canaryOrigin: number; redirector: number; privateLan: number };
+    lines: string[];
+    logLines: string[];
+    seen: { method: string; target: string; host: string }[];
+    devicePorts: number[];
+    secrets: readonly string[];
+    voids: string[];
+    kept: LogKept;
+    deviceLines: string[];
+  },
+  deps: { write: (evidence: Record<string, unknown>) => string[] },
+): { summary: string[]; errors: string[]; failed: boolean };

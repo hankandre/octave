@@ -2,7 +2,8 @@
 // of one upstream, one per (test, target) pair, reached from the emulator through adb reverse. For every request it
 // keeps what judgeCapture reads and nothing else: method, path, query names, whether Authorization is present, its
 // scheme, whether its Token field is non-empty, the Host, the upstream's status and Retry-After, and whether the URL
-// holds a known secret. It never stores a header value, a query value or a body.
+// holds a known secret (a field that holds one is stored as the stand-in of tv-wire-evidence.mjs). It never stores a
+// header value, a query value or a body.
 //
 // For a real fixture server it swaps the placeholder user and password in POST /Users/AuthenticateByName for the
 // server's own (from tests/integration/.credentials), so the fixture password never reaches the device, and reads
@@ -11,23 +12,9 @@
 // Also here: the global-proxy listener, which records the requests that arrive when the emulator's http_proxy names
 // it, and a health check for the fixture servers.
 import { createServer, request as httpRequest } from "node:http";
-import { findSecret } from "../apps/tv/src/e2e/wire/find-secret.ts";
+import { safeRecord, safeUrlParts } from "./tv-wire-evidence.mjs";
 
 const LOOPBACK = "127.0.0.1";
-
-function decodeRounds(text, rounds = 4) {
-  const out = [text];
-  let current = text;
-  for (let round = 0; round < rounds; round += 1) {
-    try {
-      current = decodeURIComponent(current);
-    } catch {
-      break;
-    }
-    out.push(current);
-  }
-  return out;
-}
 
 function readBody(stream) {
   return new Promise((resolve) => {
@@ -52,17 +39,21 @@ export function startRecorder({ upstream, secrets, swap }) {
   const records = [];
   const server = createServer({ keepAliveTimeout: 120_000 }, async (incoming, outgoing) => {
     const url = new URL(incoming.url ?? "/", "http://recorder.invalid");
+    // The record holds a stand-in for a path, a query name, the Host or the scheme that holds a known secret, so
+    // nothing the recorder keeps can leak one into the evidence; the upstream request still uses the real URL.
     const known = [...secrets];
-    const record = {
-      method: incoming.method ?? "",
-      path: url.pathname,
-      queryNames: [...url.searchParams.keys()],
-      ...describeAuthorization(incoming.headers.authorization),
-      host: incoming.headers.host ?? "",
-      status: null,
-      retryAfter: null,
-      secretInUrl: decodeRounds(incoming.url ?? "").some((text) => findSecret(text, known)),
-    };
+    const parts = safeUrlParts(incoming.url ?? "/", known);
+    const record = safeRecord(
+      {
+        method: incoming.method ?? "",
+        ...parts,
+        ...describeAuthorization(incoming.headers.authorization),
+        host: incoming.headers.host ?? "",
+        status: null,
+        retryAfter: null,
+      },
+      known,
+    );
     records.push(record);
     let body = await readBody(incoming);
     const signIn = record.method === "POST" && url.pathname.endsWith("/Users/AuthenticateByName");

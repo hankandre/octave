@@ -1,27 +1,32 @@
 // pnpm tv:wire (T3-05; docs/specs/T3-05.md, "The wire runner"): runs the tagged wire tests of
 // apps/tv/src/e2e/wire/wire-tests.json in the e2e app on the emulator ANDROID_SERIAL names, against the local mock and
 // the three pinned fixture servers, records every request the app makes through one recorder per (test, target) pair,
-// and judges the record, the app's OCTAVE_WIRE lines and the run's whole logcat dump.
+// and judges the record, the app's OCTAVE_WIRE lines and the run's whole logcat, kept by streaming (T3-26).
 //
 // It sets the emulator's global http_proxy to a listener of its own for the whole run (no request naming a wire target
-// may reach it), clears it at its start and in a finally, and so runs only on the implementer's own emulator, never on
-// a shared device. The serial is never printed. Importing this module runs nothing.
+// may reach it), clears it at its start, in a finally and on SIGINT or SIGTERM (tv-wire-device.mjs), and so runs only
+// on the implementer's own emulator, never on a shared device. It removes release-evidence/wire as the first thing
+// main does and writes it only through tv-wire-evidence.mjs, which keeps every known secret out of it. The serial is
+// never printed. Importing this module runs nothing.
 // Run: ANDROID_SERIAL=<your own emulator> node scripts/tv-wire.mjs [--task <id>] [--list]   (pnpm tv:wire)
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
 import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
 import { E2E_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
+import { clearEvidence, evidenceDir, writeEvidence, writeSummary } from "./tv-wire-evidence.mjs";
+import { openDevice } from "./tv-wire-device.mjs";
 import { judgeCapture, judgeLogcat, judgeRecords, judgeWire } from "./tv-wire-judge.mjs";
+import { describeLogKept, logKeptErrors, startLogKeeper } from "./tv-wire-logcat.mjs";
 import { startMock } from "./tv-wire-mock.mjs";
 import { proxyRequestsNamingTargets, serverAnswers, startProxyListener, startRecorder } from "./tv-wire-proxy.mjs";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
 const LIST = join(repo, "apps", "tv", "src", "e2e", "wire", "wire-tests.json");
 const CREDENTIALS = join(repo, "tests", "integration", ".credentials");
-const EVIDENCE = join(repo, "release-evidence", "wire");
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
 const RUN_MS = 240_000;
 const REAL_TARGETS = ["jellyfin-10-11", "jellyfin-12", "jellyscale"];
@@ -156,7 +161,57 @@ export function resumedPackage(dumpsys) {
   return match === null ? "unknown" : match[1];
 }
 
+// The run's judging, pure but for `write`, the evidence writer (writeEvidence with its directory). Every error of the run
+// fails every pair: a void or failed run, a log that cannot be shown whole, a global-proxy request naming a target, a
+// missing done line, and anything the evidence writer had to replace. Returns the summary lines, the ERROR lines to
+// print and whether any pair failed.
+export function judgeRun(input, { write }) {
+  const { pairs, counts, lines, logLines, seen, devicePorts, secrets, voids, kept, deviceLines } = input;
+  const known = [...secrets];
+  const runErrors = [...voids, ...judgeLogcat(logLines, known), ...logKeptErrors(kept)];
+  const named = proxyRequestsNamingTargets(seen, devicePorts);
+  if (named.length > 0) runErrors.push(`ERROR tv wire: ${named.length} request(s) naming a wire target went to the global proxy`);
+  if (!lines.includes("OCTAVE_WIRE done")) runErrors.push("ERROR tv wire: no OCTAVE_WIRE done line; the app's wire run did not finish");
+  const pairErrors = pairs.map((pair) => {
+    const counted = { test: pair.test, target: pair.target, task: pair.task, requests: pair.records.length };
+    if (pair.target === "mock") counted.canaryOrigin = counts.canaryOrigin;
+    if (pair.test === "transport-redirect") counted.redirector = counts.redirector;
+    if (pair.test === "transport-private-lan-and-proxy") counted.privateLan = counts.privateLan;
+    const host = `127.0.0.1:${pair.devicePort}`;
+    const errors = [...judgeWire({ pairs: [counted], lines })];
+    if (pair.test === "transport-probe-then-signed-in") errors.push(...judgeCapture(pair.records, { expected: PROBE_THEN_SIGNED_IN, host, secrets: known }));
+    // The redirect and canary tests ask for a 3xx on purpose; the app must refuse it (their own judges), not avoid it.
+    else errors.push(...judgeRecords(pair.records, { host, secrets: known, redirects: ["transport-redirect", "transport-canary"].includes(pair.test) }));
+    return errors;
+  });
+  // Judged first, written second: the judges read the recorder's records, the writer replaces what still holds a secret.
+  runErrors.push(
+    ...write({
+      captures: pairs.map((pair) => ({ name: `${pair.test}-${pair.target}`, records: pair.records })),
+      appLines: lines,
+      deviceLines: [...deviceLines, describeLogKept(kept)],
+      proxyLines: [
+        `${seen.length} request(s) reached the global proxy listener; ${named.length} named a wire target`,
+        ...seen.map((entry) => `${entry.method} ${entry.host || "(no Host)"}`),
+      ],
+      secrets: known,
+    }),
+  );
+  const summary = pairs.map((pair, index) => `${pair.test} ${pair.target} ${pair.task} ${pairErrors[index].length === 0 && runErrors.length === 0 ? "pass" : "fail"}`);
+  return { summary, errors: [...pairErrors.flat(), ...runErrors], failed: summary.some((line) => line.endsWith(" fail")) };
+}
+
 async function main(args) {
+  // The first statement: no exit of this CLI that main reaches comes before it (a module that fails to load exits
+  // earlier, and an evidence directory without summary.txt is not a result).
+  let dir;
+  try {
+    dir = evidenceDir();
+  } catch (error) {
+    clearEvidence(evidenceDir({}));
+    fail(error.message);
+  }
+  clearEvidence(dir);
   const options = parseArgs(args);
   const list = readWireList();
   const selectedIds = new Set(selectTests({ task: options.task }, list).map((entry) => entry.id));
@@ -180,8 +235,9 @@ async function main(args) {
   const adb = (...rest) => spawnSync(adbPath, ["-s", serial, ...rest], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
   const shell = (...rest) => adb("shell", ...rest);
   if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
+  const device = openDevice({ adb, appId: ANDROID_APPLICATION_ID });
   // A run that was killed may have left the proxy set.
-  shell("settings", "put", "global", "http_proxy", ":0");
+  device.clearProxy();
 
   const realTargets = [...new Set(selected.map((pair) => pair.target).filter((target) => REAL_TARGETS.includes(target)))];
   if (realTargets.length > 0) await ensureFixtures(realTargets);
@@ -212,12 +268,9 @@ async function main(args) {
     const mock = await startMock({ canary: list.canary, user: list.user, password: list.password, canaryDevicePort: list.canaryPort });
     const proxy = await startProxyListener();
     const recorders = new Map();
-    const reversed = [];
-    const reverse = (devicePort, hostPort) => {
-      const done = adb("reverse", `tcp:${devicePort}`, `tcp:${hostPort}`);
-      if (done.status !== 0) throw new Error(`adb reverse failed for device port ${devicePort}`);
-      reversed.push(devicePort);
-    };
+    let reversed = [];
+    let keeper = null;
+    let kept = null;
     let dump = [];
     let after = null;
     let missing = [];
@@ -240,47 +293,56 @@ async function main(args) {
         }
         const recorder = await startRecorder({ upstream, secrets, swap });
         recorders.set(`${pair.test} ${pair.target}`, recorder);
-        reverse(pair.devicePort, recorder.port);
+        device.reverse(pair.devicePort, recorder.port);
       }
-      reverse(list.canaryPort, mock.ports.canaryOrigin);
-      reverse(list.proxyPort, proxy.port);
-      shell("settings", "put", "global", "http_proxy", `127.0.0.1:${list.proxyPort}`);
+      device.reverse(list.canaryPort, mock.ports.canaryOrigin);
+      device.reverse(list.proxyPort, proxy.port);
+      device.setProxy(list.proxyPort);
 
       shell("am", "force-stop", ANDROID_APPLICATION_ID);
       shell("logcat", "-c");
+      // The stream attaches before the app starts and keeps every line on the host (no -b: the default buffers, as the
+      // final dump reads).
+      keeper = await startLogKeeper({
+        stream: () => spawn(adbPath, ["-s", serial, "logcat", "-v", "threadtime"], { stdio: ["ignore", "pipe", "ignore"] }),
+        mark: (text) => shell("log", "-t", "OctaveWireRun", text),
+        nonce: randomUUID(),
+      });
+      device.onStop(() => keeper.stop());
       const resolved = shell("cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN", "-c", LEANBACK, ANDROID_APPLICATION_ID);
       const component = resolved.stdout.trim().split("\n").pop()?.trim() ?? "";
       if (!component.startsWith(`${ANDROID_APPLICATION_ID}/`)) throw new Error("the leanback launcher category resolves to no activity of the app");
       shell("am", "start", "-a", "android.intent.action.MAIN", "-c", LEANBACK, "-n", component);
-      const read = () => shell("logcat", "-d", "-v", "threadtime").stdout.split("\n");
       for (const deadline = Date.now() + RUN_MS; Date.now() < deadline; await sleep(1_000)) {
-        if (wireLines(read()).includes("OCTAVE_WIRE done")) break;
+        if (wireLines(keeper.lines()).includes("OCTAVE_WIRE done")) break;
       }
       // Let the app's last calls (a dropped stall runs on to its deadline) reach the recorders.
       await sleep(2_000);
-      dump = read();
+      kept = await keeper.finish();
+      // The final dump is one more copy of what the device still holds; the judge reads it beside the kept lines.
+      dump = shell("logcat", "-d", "-v", "threadtime").stdout.split("\n");
       after = adbd();
-      missing = missingReverses(adb("reverse", "--list").stdout ?? "", reversed);
+      reversed = device.reversed();
+      missing = missingReverses(device.listReverses(), reversed);
       foreground = resumedPackage(shell("dumpsys", "activity", "activities").stdout ?? "");
     } catch (error) {
       console.error(`ERROR tv wire: ${error.message}`);
       process.exitCode = 1;
     } finally {
-      shell("settings", "put", "global", "http_proxy", ":0");
-      shell("am", "force-stop", ANDROID_APPLICATION_ID);
-      for (const port of reversed) adb("reverse", "--remove", `tcp:${port}`);
+      keeper?.stop();
+      device.restore();
       await Promise.all([...recorders.values()].map((recorder) => recorder.close()));
       await proxy.close();
       await mock.close();
     }
     if (process.exitCode === 1) process.exit(1);
     const voids = adbRestartErrors({ before, after, missing, reversed: reversed.length });
-    const device = [
+    const state = [
       `adbd up ${before.elapsed} s before the reverses; ${after === null ? "adbd not found after the run" : after.pid === before.pid ? `same adbd after the run (up ${after.elapsed} s)` : "adbd restarted during the run"}`,
       `${reversed.length - missing.length} of ${reversed.length} adb reverse(s) present at the end of the run`,
       `resumed package at the end of the run: ${foreground}`,
     ];
-    return { dump, mock, proxy, recorders, voids, device };
+    return { dump, keptLines: keeper.lines(), kept, mock, proxy, recorders, voids, state };
   };
 
   // A run whose adb connection dropped (its reverses gone) is void, not a transport result: it runs once more, and the
@@ -288,64 +350,38 @@ async function main(args) {
   // The void attempt's logcat and global-proxy traffic are still judged with the second's.
   const deviceLines = [];
   let run = await attempt();
-  let earlier = { dump: [], seen: [], ports: [] };
+  let earlier = { dump: [], keptLines: [], seen: [], ports: [] };
   if (run.voids.length > 0) {
     for (const error of run.voids) console.error(error);
     console.error("tv wire: the adb connection dropped during the run; running it once more");
-    deviceLines.push("attempt 1 (void):", ...run.device, "attempt 2:");
-    earlier = { dump: run.dump, seen: run.proxy.seen, ports: [run.mock.ports.privateLan] };
+    deviceLines.push("attempt 1 (void):", ...run.state, describeLogKept(run.kept), "attempt 2:");
+    earlier = { dump: run.dump, keptLines: run.keptLines, seen: run.proxy.seen, ports: [run.mock.ports.privateLan] };
     run = await attempt();
   }
-  deviceLines.push(...run.device);
-  const { dump, mock, proxy, recorders } = run;
-  const seen = [...earlier.seen, ...proxy.seen];
+  deviceLines.push(...run.state);
+  const { mock, proxy, recorders } = run;
 
-  const lines = wireLines(dump);
-  const counts = mock.counts();
-  const pairs = selected.map((pair) => {
-    const records = recorders.get(`${pair.test} ${pair.target}`).records;
-    const counted = { test: pair.test, target: pair.target, task: pair.task, requests: records.length };
-    if (pair.target === "mock") counted.canaryOrigin = counts.canaryOrigin;
-    if (pair.test === "transport-redirect") counted.redirector = counts.redirector;
-    if (pair.test === "transport-private-lan-and-proxy") counted.privateLan = counts.privateLan;
-    return counted;
-  });
-
-  const known = [...secrets];
-  const runErrors = [...run.voids, ...judgeLogcat([...earlier.dump, ...dump], known)];
-  const devicePorts = [...all.map((pair) => pair.devicePort), list.canaryPort, list.closedPort, mock.ports.privateLan, ...earlier.ports];
-  const named = proxyRequestsNamingTargets(seen, devicePorts);
-  if (named.length > 0) runErrors.push(`ERROR tv wire: ${named.length} request(s) naming a wire target went to the global proxy`);
-  if (!lines.includes("OCTAVE_WIRE done")) runErrors.push("ERROR tv wire: no OCTAVE_WIRE done line; the app's wire run did not finish");
-
-  rmSync(EVIDENCE, { recursive: true, force: true });
-  mkdirSync(EVIDENCE, { recursive: true });
-  const summary = [];
-  for (const [index, pair] of pairs.entries()) {
-    const { devicePort } = selected[index];
-    const records = recorders.get(`${pair.test} ${pair.target}`).records;
-    const host = `127.0.0.1:${devicePort}`;
-    const errors = [...judgeWire({ pairs: [pair], lines })];
-    if (pair.test === "transport-probe-then-signed-in") errors.push(...judgeCapture(records, { expected: PROBE_THEN_SIGNED_IN, host, secrets: known }));
-    // The redirect and canary tests ask for a 3xx on purpose; the app must refuse it (their own judges), not avoid it.
-    else errors.push(...judgeRecords(records, { host, secrets: known, redirects: ["transport-redirect", "transport-canary"].includes(pair.test) }));
-    writeFileSync(join(EVIDENCE, `${pair.test}-${pair.target}.jsonl`), records.map((record) => JSON.stringify(record)).join("\n") + "\n");
-    const pass = errors.length === 0 && runErrors.length === 0;
-    summary.push(`${pair.test} ${pair.target} ${pair.task} ${pass ? "pass" : "fail"}`);
-    for (const error of errors) console.error(error);
-  }
-  for (const error of runErrors) console.error(error);
-  writeFileSync(join(EVIDENCE, "summary.txt"), `${summary.join("\n")}\n`);
-  writeFileSync(join(EVIDENCE, "app-lines.txt"), `${lines.join("\n")}\n`);
-  writeFileSync(join(EVIDENCE, "device.txt"), `${deviceLines.join("\n")}\n`);
-  const proxied = seen.map((entry) => `${entry.method} ${entry.host || "(no Host)"}`);
-  writeFileSync(
-    join(EVIDENCE, "global-proxy.txt"),
-    [`${seen.length} request(s) reached the global proxy listener; ${named.length} named a wire target`, ...proxied].join("\n") + "\n",
+  // The kept lines and the final dump are both judged; only the counting attempt's kept lines are the app's lines.
+  const result = judgeRun(
+    {
+      pairs: selected.map((pair) => ({ ...pair, records: recorders.get(`${pair.test} ${pair.target}`).records })),
+      counts: mock.counts(),
+      lines: wireLines(run.keptLines),
+      logLines: [...earlier.keptLines, ...earlier.dump, ...run.keptLines, ...run.dump],
+      seen: [...earlier.seen, ...proxy.seen],
+      devicePorts: [...all.map((pair) => pair.devicePort), list.canaryPort, list.closedPort, mock.ports.privateLan, ...earlier.ports],
+      secrets: [...secrets],
+      voids: run.voids,
+      kept: run.kept,
+      deviceLines,
+    },
+    { write: (evidence) => writeEvidence(dir, evidence) },
   );
-  console.log(summary.join("\n"));
-  if (summary.some((line) => line.endsWith(" fail"))) process.exit(1);
-  console.log(`tv wire: ${summary.length} pair(s) passed; logcat clean; global proxy saw ${seen.length} request(s), none naming a wire target`);
+  for (const error of result.errors) console.error(error);
+  writeSummary(dir, result.summary, [...secrets]);
+  console.log(result.summary.join("\n"));
+  if (result.failed) process.exit(1);
+  console.log(`tv wire: ${result.summary.length} pair(s) passed; logcat clean, kept whole by streaming; global proxy saw ${[...earlier.seen, ...proxy.seen].length} request(s), none naming a wire target`);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));
+if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1])) await main(process.argv.slice(2));

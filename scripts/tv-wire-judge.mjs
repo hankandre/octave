@@ -44,7 +44,7 @@ function decodeRounds(text, rounds = 4) {
 }
 
 // A method and path for a message, or a stand-in when the path holds a secret, so no message quotes one.
-const holdsSecret = (text, secrets) => decodeRounds(text).some((decoded) => findSecret(decoded, secrets));
+export const holdsSecret = (text, secrets) => decodeRounds(text).some((decoded) => findSecret(decoded, secrets));
 const shown = (text, secrets) => (holdsSecret(text, secrets) ? "a request whose path holds a secret" : text);
 
 // The rules every recorded request keeps. Messages name the request by method and path, never by its values.
