@@ -9,7 +9,7 @@ Implement `docs/specs/T3-26.md` (T3-26).
 - [x] Item 3: the logcat is streamed from before the app starts; the run fails when it cannot show the stream covered the run
 - [x] Item 4: SIGINT and SIGTERM restore the proxy and remove the run's reverses
 - [x] Item 5: `scripts/check-session-logs-cli.test.ts` asserts the summary line and file count
-- [ ] Item 6: the `wire` job green on the PR head (Ship); the documents are written
+- [x] Item 6: the `wire` job green on the PR head (Ship); the documents are written
 
 ## Context and domains touched
 
@@ -39,7 +39,7 @@ None added.
 ## Review fixes
 
 - 2026-11-22: `safeUrlParts` works out "spans" per secret (a second secret crossing `?`, `&` or `=` was written in pieces once another secret held in one part); tests in `scripts/tv-wire-evidence-span.test.ts`. The log keeper's interval markers are now tested (`scripts/tv-wire-logcat-ticks.test.ts`: a dropped tick gives `missed` and the cannot-tell error).
-- Item 6 gate stays open: the `wire` job has not run on the PR head. The local run and the spec's device checks are done (Validation evidence). Keep the PR a draft with no auto-merge until the job is green on the head and its `summary.txt` (with `transport-probe-then-signed-in jellyscale T3-05 pass`) and the kept-log line of its `device.txt` are quoted in the task evidence; only then set the task done.
+- Item 6 met: the `wire` job is green on the PR head (run 45034224429); 8 pairs pass, kept-log line quoted in the task evidence.
 
 ## Decision log
 

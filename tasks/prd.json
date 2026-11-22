@@ -1174,10 +1174,10 @@
             "The wire job stays green on the PR head, and docs/security.md and docs/commands.md say what the wire evidence holds in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:wire",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 70314ab2 (fixes), commit 016445bb (plan): per-secret span fix, tick tests. Local on bf034584: pnpm check exit 0; pnpm tv:wire 8 pairs pass incl. transport-probe-then-signed-in jellyscale T3-05 pass; device.txt: logcat kept by streaming, start and end marker seen, 1 of 1 interval marker(s) seen, stream open to the end. Device checks run: SIGINT exit 130, proxy :0, no reverse; killed stream gives cannot-tell and 8 fail lines; planted summary.txt removed on bad serial. Open: CI wire job on PR head (Ship). Keep PR draft."
+          "passes": true,
+          "evidence": "PR #273, wire job green on head (run https://github.com/jellyscale-org/octave/actions/runs/45034224429). summary.txt: 8 pairs pass incl. transport-probe-then-signed-in jellyscale T3-05 pass. device.txt: logcat kept by streaming from before the app started: 347 lines, start marker seen, end marker seen, 1 of 1 interval marker(s) seen, stream open to the end. Local: pnpm check exit 0; SIGINT, killed stream, bad-serial checks done."
         },
         {
           "id": "T3-27",
