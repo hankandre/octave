@@ -1,0 +1,15 @@
+{
+  "task": "T8-24",
+  "files": [
+    "packages/core/src/jellyfin/hls-master-url-device-vectors.test.ts",
+    "tests/integration/record-device-conversion-av1.mjs",
+    "packages/core/tests/fixtures/jellyfin/10.11.7/device-conversion-av1.json",
+    "packages/core/tests/fixtures/jellyfin/12.4.0/device-conversion-av1.json"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/jellyfin/hls-master-url-device-vectors.test.ts", "-t", "T8-24 item 1:"] },
+    { "item": 2, "gate": "met", "why": "True on main and a test of it cannot be red; kept true by the describe 'T8-24 frozen file:' (SHA-256 and the counts 44 and 64) and checked by the reviewer with git diff origin/main -- packages/core/tests/fixtures/hls-master-urls.json" },
+    { "item": 3, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/jellyfin/hls-master-url-device-vectors.test.ts", "-t", "T8-24 item 3:"] },
+    { "item": 4, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/jellyfin/hls-master-url-device-vectors.test.ts", "-t", "T8-24 item 4:"] }
+  ]
+}
