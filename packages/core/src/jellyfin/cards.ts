@@ -126,6 +126,57 @@ export function toMediaCard(item: BaseItemDto): MediaCard | undefined {
   };
 }
 
+// A loose episode as its series' card (T5-02 D6 rule 3): the series id, name and poster, and the parent's backdrop,
+// logo and thumb. It carries none of the episode's own state, numbers or dates, and no year or unplayed count.
+function seriesCardOfEpisode(item: BaseItemDto): MediaCard | undefined {
+  const seriesId = item.SeriesId;
+  const title = item.SeriesName;
+  if (!seriesId || !title) return undefined;
+  const posterTag = item.SeriesPrimaryImageTag;
+  const parentBackdropTag = item.ParentBackdropImageTags?.[0];
+  // Without its own image tags, so the logo and thumb come from the parent, never the episode's still.
+  const { logo, thumb } = logoAndThumb({ ...item, ImageTags: undefined }, seriesId);
+  return {
+    id: seriesId,
+    kind: "Series",
+    title,
+    ...(posterTag ? { image: imageRef(seriesId, "Primary", posterTag, item.ImageBlurHashes?.Primary?.[posterTag]) } : {}),
+    aspectRatio: POSTER_ASPECT_RATIO,
+    ...(logo ? { logo } : {}),
+    ...(thumb ? { thumb } : {}),
+    ...(item.ParentBackdropItemId && parentBackdropTag
+      ? { parentBackdrop: imageRef(item.ParentBackdropItemId, "Backdrop", parentBackdropTag, item.ImageBlurHashes?.Backdrop?.[parentBackdropTag]) }
+      : {}),
+  };
+}
+
+// Recently added, in the server's order (T5-02 D6): a movie, a series once per id, a loose episode as its series
+// once, an episode that does not name its series left out (Jellyscale today), any other type left out.
+export function toRecentlyAdded(items: BaseItemDto[] | undefined, limit: number): MediaCard[] {
+  const cards: MediaCard[] = [];
+  const seenSeries = new Set<string>();
+  for (const item of Array.isArray(items) ? items : []) {
+    if (cards.length >= limit) break;
+    if (item.Type === "Movie") {
+      const card = toMediaCard(item);
+      if (card) cards.push(card);
+    } else if (item.Type === "Series") {
+      const card = toMediaCard(item);
+      if (card && !seenSeries.has(card.id)) {
+        seenSeries.add(card.id);
+        cards.push(card);
+      }
+    } else if (item.Type === "Episode") {
+      const card = seriesCardOfEpisode(item);
+      if (card && !seenSeries.has(card.id)) {
+        seenSeries.add(card.id);
+        cards.push(card);
+      }
+    }
+  }
+  return cards;
+}
+
 // The recently-played list as plain entries, newest first. `limit` is what the request asked for: a shorter
 // list means the server has no more finished plays.
 export function toRecentPlays(items: BaseItemDto[] | undefined, limit: number): RecentPlays {
