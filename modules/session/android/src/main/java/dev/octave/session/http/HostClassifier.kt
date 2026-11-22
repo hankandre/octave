@@ -25,7 +25,9 @@ internal sealed class ParsedHost {
 
 // The host rules R1 to R3 of packages/core/tests/fixtures/README.md, as packages/core/src/domain/host-class.ts
 // applies them, with a host parser of its own: no HttpUrl (it maps IDNA and rewrites IPv6 literals) and no InetAddress
-// (a DNS answer, which decision 0001 forbids). Every rule here passes packages/core/tests/fixtures/host-classes.json.
+// (a DNS answer, which decision 0001 forbids for accepting a host). Every rule here passes
+// packages/core/tests/fixtures/host-classes.json. ResolvedAddressRule (T3-20) hands classify the bytes of a resolved
+// address as a ParsedHost, only to refuse; nothing here takes an InetAddress.
 object HostClassifier {
     // R1, plain ASCII authority. No case-insensitive or Unicode option; \z, because Java's $ also matches before a
     // final line break.

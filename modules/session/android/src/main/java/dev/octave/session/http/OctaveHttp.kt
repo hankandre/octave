@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit
 // out: Kotlin callers send through callFactory(session), and the session transport through newCall. It adds the
 // header only for the call's origin, follows no redirect, uses no proxy, stores no cookie, and refuses every other
 // origin. Nothing derives a second client from it, and it is never registered with React Native, Expo or a WebView.
+// Its only Dns is ResolvedAddressRule (T3-20): for a plain-HTTP call to a name it dials only resolved addresses that
+// are loopback or private LAN, judged again for every new connection.
 object OctaveHttp {
     // For the module's own tests; never public.
     internal val client: OkHttpClient = OkHttpClient.Builder()
@@ -20,6 +22,7 @@ object OctaveHttp {
         .socketFactory(DirectSocketFactory)
         .cookieJar(CookieJar.NO_COOKIES)
         .cache(null)
+        .dns(ResolvedAddressRule)
         .retryOnConnectionFailure(false)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)

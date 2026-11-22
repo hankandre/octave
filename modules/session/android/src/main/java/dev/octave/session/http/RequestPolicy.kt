@@ -3,8 +3,9 @@ package dev.octave.session.http
 import okhttp3.Request
 
 // The interceptor's checks, in order, as a pure function of the session entry and the request. The first refusal
-// wins; null means the request may be sent with the session's header. Every refusal happens before anything is
-// resolved, connected or sent.
+// wins; null means the request may be sent with the session's header. Every refusal here happens before anything is
+// resolved, connected or sent; the one refusal that comes later, RESOLVED_PUBLIC, is ResolvedAddressRule's, when
+// OkHttp resolves a plain-HTTP name and before any socket exists (T3-20).
 internal object RequestPolicy {
     // Caller headers that carry a credential or name a host. Host, :authority, Forwarded and X-Forwarded-* would let a
     // virtual-host proxy route the session's header to another backend (OkHttp keeps a caller's Host and builds HTTP/2's
@@ -52,7 +53,8 @@ internal object RequestPolicy {
         // 5. A credential query name, or the session's token anywhere in the URL.
         if (CredentialQuery.hasCredentialName(url.encodedQuery)) return HttpRefusal.CREDENTIAL_URL
         if (holdsToken(url.toString(), tokens)) return HttpRefusal.CREDENTIAL_URL
-        // 6. Plain HTTP only to loopback and private LAN. Unreachable through open today; a guard against a later change.
+        // 6. Plain HTTP only to loopback and private LAN, by the literal host (decision 0001). Unreachable through open
+        //    today; a guard against a later change. Where an accepted name resolves is ResolvedAddressRule's to judge.
         if (url.scheme == "http") {
             val parsed = HostClassifier.parseUrlHost(url.host)
             if (parsed == null || HostClassifier.classify(parsed) == HostClass.PUBLIC) return HttpRefusal.PUBLIC_HTTP

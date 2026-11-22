@@ -46,7 +46,8 @@ internal object SessionInterceptor : Interceptor {
             null -> throw OctaveHttpException(HttpRefusal.NO_SESSION)
         }
         val authorised = request.newBuilder().header("Authorization", headerValue).build()
-        val response = chain.proceed(authorised)
+        // The resolved-address rule reads the call's scheme from this mark when OkHttp asks it for addresses (T3-20).
+        val response = ResolvedAddressRule.proceeding(request.url) { chain.proceed(authorised) }
         if (response.code in 300..399) {
             response.close()
             throw OctaveHttpException(HttpRefusal.REDIRECT)
