@@ -1177,7 +1177,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 70314ab2: per-secret span fix, tick tests; items 1-5 vitest green, pnpm check passes. Item 6 open: CI wire job on PR head, summary.txt and device.txt kept-log line not yet quoted; Ctrl+C, killed-stream, bad ANDROID_SERIAL device checks not run. Keep PR draft."
+          "evidence": "commit 70314ab2 (fixes), commit 016445bb (plan): per-secret span fix, tick tests. Local on bf034584: pnpm check exit 0; pnpm tv:wire 8 pairs pass incl. transport-probe-then-signed-in jellyscale T3-05 pass; device.txt: logcat kept by streaming, start and end marker seen, 1 of 1 interval marker(s) seen, stream open to the end. Device checks run: SIGINT exit 130, proxy :0, no reverse; killed stream gives cannot-tell and 8 fail lines; planted summary.txt removed on bad serial. Open: CI wire job on PR head (Ship). Keep PR draft."
         },
         {
           "id": "T3-27",
