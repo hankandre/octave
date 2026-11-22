@@ -1,6 +1,7 @@
-// Judges a `dexdump -d` listing against R8's mapping and the lists (T3-19, rules D0 to D6 in docs/specs/T3-19.md,
-// read with decision log 14 and 15). The listing is read one line at a time and judged one method at a time.
-import { dexTypeName, framesAt, memberTypes, originalsOf, resolveField, resolveMethod, typeTokens } from "./tv-apk-dex-mapping.mjs";
+// Judges a `dexdump -d` listing against R8's mapping and the lists (T3-19, rules D0 to D7 in docs/specs/T3-19.md,
+// read with decision log 14, 15 and 27). The listing is read one line at a time and judged one method at a time.
+import { dexTypeName, framesAt, originalsOf, resolveField, resolveMethod, typeTokens } from "./tv-apk-dex-mapping.mjs";
+import { judgeSet, mixedClasses, referenceSets } from "./tv-apk-dex-merged.mjs";
 
 const OCTAVE = "dev.octave.";
 const DEV_SUPPORT_CLIENT = "com.facebook.react.devsupport.inspector.DevSupportHttpClient";
@@ -73,6 +74,9 @@ export async function judgeDex(lines, mapping, lists) {
   const matchedRows = new Set();
   const matchedCallers = new Set();
   const stats = { opened: 0, classes: 0, sinkReferences: 0, rawSinks: 0, octaveSeen: false };
+  const dexClasses = [];
+  // Octave references to a merged class whose originals are partly listed: D4 cannot attribute them (decision log 27).
+  const leftBeforeR8 = new Set();
   const superclass = new Map();
   const pending = [];
 
@@ -185,7 +189,8 @@ export async function judgeDex(lines, mapping, lists) {
   };
 
   function judgeInstruction(site, opcode, operand) {
-    const { member, types, otherTypes = [] } = readOperand(opcode, operand);
+    const parsed = readOperand(opcode, operand);
+    const { member, types } = parsed;
     if (!member && types.length === 0) return;
     const typeNames = typeOriginals(types);
     let holders = [];
@@ -195,10 +200,6 @@ export async function judgeDex(lines, mapping, lists) {
         : resolveField(mapping, member.owner, member.name, member.descriptor).map((holder) => ({ holder, name: member.name }));
     }
     const named = new Set([...typeNames, ...holders.map((h) => h.holder)]);
-    // D4 reads a member reference's descriptor by the member's own signature on its member lines (decision log 26), not
-    // as every original its merged dex types hold; with no member line it keeps the wide reading. Sinks keep it always.
-    const signature = member ? memberTypes(mapping, member.owner, member.name, member.descriptor, member.method) : null;
-    const referenced = signature === null ? named : new Set([...signature, ...typeOriginals(otherTypes), ...holders.map((h) => h.holder)]);
     site.callees = [...new Set(holders.map((h) => h.holder))];
     const octave = site.stacks.some((stack) => stack.some(isOctave));
     if (octave) stats.octaveSeen = true;
@@ -254,27 +255,38 @@ export async function judgeDex(lines, mapping, lists) {
       return;
     }
 
-    // D4 (decision log 22): each dev.octave. frame makes one reference. The innermost remaining frame references the
-    // operand, resolved by member; an Octave frame further out references the next-inner frame, the callee R8 inlined.
+    // D4 (decision log 22, read with 27): each dev.octave. frame of the whole stack makes one reference. The innermost
+    // frame references the operand; an Octave frame further out references the next-inner frame, the callee R8
+    // inlined. Each thing the operand names is a set of candidate originals, and fails only when every one is listed;
+    // a set that mixes listed and unlisted originals is left to NetworkPathsBytecodeTest, which reads Octave's classes
+    // before R8.
     const octaveHolder = site.stacks.flatMap((s) => s).find(isOctave).holder;
+    const listedEntry = (name) => listed.find((entry) => matchesClass(name, entry));
     const judgeReference = (frame, name) => {
-      const from = frame.holder;
-      const hit = listed.find((entry) => matchesClass(name, entry));
-      if (hit) report(`D4|${from}|${name}`, `D4 ${who(frame)} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
+      const hit = listedEntry(name);
+      if (hit) report(`D4|${frame.holder}|${name}`, `D4 ${who(frame)} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
+    };
+    let operandSets = null;
+    const judgeOperand = (frame) => {
+      operandSets ??= referenceSets(mapping, parsed);
+      for (const set of operandSets) {
+        const verdict = judgeSet(set, (name) => listedEntry(name) !== undefined);
+        for (const name of verdict.listed) judgeReference(frame, name);
+        if (verdict.mixed) leftBeforeR8.add(`${where(site)}|${opcode} ${operand}|${[...set].sort().join(",")}`);
+      }
     };
     for (const stack of site.stacks) {
-      const frames = stack.filter((frame) => !libInternal(frame.holder));
       // R8's dispatch casts a merged lambda's captured value back to its type before the case's code; the cast is R8's,
       // and the dex type is often a merged class, so its originals name classes no lambda in the group uses. The cast
       // alone is not judged by D4; every member reference and other type reference there is, and sinks are judged above.
       // Only where the site is Octave's through the group test: a synthesized class whose own class line is dev.octave.
       // is judged as it was before the review fix, so no cast that failed then passes now.
       const dispatchCast = opcode === "check-cast" && isSyntheticOnly(stack) && !stack[0].holder.startsWith(OCTAVE);
-      frames.forEach((frame, i) => {
+      stack.forEach((frame, i) => {
         if (!frame.octave) return;
         if (i === 0) {
-          if (!dispatchCast) for (const name of referenced) judgeReference(frame, name);
-        } else if (!frames[i - 1].octave) judgeReference(frame, frames[i - 1].holder);
+          if (!dispatchCast) judgeOperand(frame);
+        } else if (!stack[i - 1].octave) judgeReference(frame, stack[i - 1].holder);
       });
     }
     // Decision log 14: Octave takes a call or web socket factory only from Octave's own code.
@@ -393,6 +405,7 @@ export async function judgeDex(lines, mapping, lists) {
       if (name) {
         cls = { name };
         stats.classes += 1;
+        dexClasses.push(name);
         if (sectionIsOctave(name)) stats.octaveSeen = true;
       }
       continue;
@@ -465,6 +478,15 @@ export async function judgeDex(lines, mapping, lists) {
 
   out.push(...[...errors.values()].map(({ text, count }) => (count > 1 ? `${text} (and ${count - 1} more like it)` : text)));
 
+  // D7 (decision log 27): Octave's classes stand alone, so "Octave's code" is exact for every rule above.
+  const mixed = mixedClasses(mapping, dexClasses);
+  if (mixed.length > 0) {
+    const shown = mixed.slice(0, 5).map((m) => `${m.dex} (class line ${m.original}, also ${m.other})`);
+    out.push(
+      `D7 ${mixed.length} dex ${mixed.length === 1 ? "class mixes" : "classes mix"} dev.octave. code with other code: ${shown.join("; ")}${mixed.length > 5 ? ` and ${mixed.length - 5} more` : ""}; R8 merged or inlined Octave's classes, so restore the keep rule for dev.octave.** in apps/tv/app.config.ts (extraProguardRules) and rebuild`,
+    );
+  }
+
   // D3: a row no sink matched.
   for (const row of rows) {
     for (const name of row.classes) {
@@ -493,5 +515,14 @@ export async function judgeDex(lines, mapping, lists) {
     }
   }
 
-  return { errors: out, stats: { opened: stats.opened, classes: stats.classes, sinkReferences: stats.sinkReferences, entryPoints: new Set([...matchedRows].map((key) => key.split("|")[0])).size } };
+  return {
+    errors: out,
+    stats: {
+      opened: stats.opened,
+      classes: stats.classes,
+      sinkReferences: stats.sinkReferences,
+      entryPoints: new Set([...matchedRows].map((key) => key.split("|")[0])).size,
+      leftBeforeR8: leftBeforeR8.size,
+    },
+  };
 }

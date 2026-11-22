@@ -54,6 +54,21 @@ object NetworkPathRules {
         "expo/modules/logbox/",
         "expo/modules/webview/",
         "com/swmansion/worklets/networking/",
+        // The other classes of the dex check's APK_NETWORK_ENTRY_POINTS rows (T3-19 decision log 27): the dex check
+        // cannot attribute a reference to a class R8 merged, so the refusal of each listed class sits here, before R8.
+        // NetworkPathRulesCoverageTest fails when a row class or hook is missing.
+        "com/facebook/react/common/network/OkHttpCallUtil",
+        "com/facebook/react/modules/network/RequestBodyUtil",
+        "com/facebook/imagepipeline/backends/okhttp3/OkHttpNetworkFetcher",
+        "com/facebook/imagepipeline/backends/okhttp3/OkHttpImagePipelineConfigFactory",
+        "com/facebook/imagepipeline/producers/HttpUrlConnectionNetworkFetcher",
+        "com/facebook/react/devsupport/inspector/InspectorNetworkHelper",
+        "com/facebook/react/devsupport/CxxInspectorPackagerConnection\$DelegateImpl",
+        "com/facebook/react/devsupport/DevServerHelper",
+        "com/facebook/react/devsupport/PackagerStatusCheck",
+        "com/facebook/react/devsupport/BundleDownloader",
+        "com/facebook/react/runtime/ReactHostImpl",
+        "kotlin/reflect/jvm/internal/impl/serialization/deserialization/builtins/BuiltInsResourceLoader",
     )
     private val K8 = listOf("expo/modules/kotlin/devtools/", "okhttp3/logging/HttpLoggingInterceptor")
     private val K9 = listOf("android/webkit/WebView")

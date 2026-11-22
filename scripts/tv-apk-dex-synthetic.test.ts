@@ -6,6 +6,8 @@
 //   name, which follows R8's choice of lambda; a type-only sink there fails D2;
 // - a member of a client hook referenced from a synthetic-only site fails D4 whatever the group holds;
 // - R8's own cast of a captured value back to its type is not a D4 reference; sinks are still judged there.
+// Decision log 27 added D7: a group that holds dev.octave. code fails it, so a build with the keep rule never reaches the
+// cases with `run(true, …)`; they stay, because the rules they hold still run.
 import { afterAll, describe, expect, it } from "vitest";
 import { cleanTemps, composeDump, composeMapping, loadFixtureLists, loadProductionLists, runDex, type DexRun, type Lists } from "./fixtures/tv/dex/harness";
 
@@ -155,12 +157,16 @@ describe("T3-19 review fix: code R8 attributes only to a merged lambda group's s
   );
 
   it(
-    "R8's cast of a captured value in a group with dev.octave. code is not a D4 reference; an invoke on the listed class there is",
+    "R8's cast of a captured value in a group with dev.octave. code is not a D4 reference, but the group fails D7; an invoke on the listed class there fails D4",
     async () => {
+      // Decision log 27: a group that holds dev.octave. code mixes Octave's code with other code, so D7 fails it. The
+      // dispatch-cast exemption still keeps the cast itself out of D4.
       const cast = "check-cast v0, Lcom/facebook/react/modules/network/NetworkingModule; // type@0000";
       const passes = await run(true, [[3, cast], [4, NO_SINK]]);
-      expect(errors(passes), passes.out).toEqual([]);
-      expect(passes.code).toBe(0);
+      expect(passes.code, passes.out).toBe(1);
+      expect(errors(passes).filter((line) => line.includes(" D4 ")), passes.out).toEqual([]);
+      expect(errors(passes).map((line) => line.split(" ")[4]), passes.out).toEqual(["D7"]);
+      expect(errors(passes)[0], passes.out).toContain("zg (class line com.example.Group$$ExternalSyntheticLambda0, also dev.octave.tv.MainApplication)");
 
       const invoke = "invoke-virtual {v0}, Lcom/facebook/react/modules/network/NetworkingModule;.clearCookies:(Lcom/facebook/react/bridge/Callback;)V // method@0000";
       const fails = await run(true, [[3, cast], [4, invoke]]);

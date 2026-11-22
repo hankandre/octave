@@ -1,6 +1,6 @@
 export type Frame = { holder: string; name: string; args: string; ret: string; synthesized: boolean };
 export type Stack = { name: string; range: [number, number] | null; frames: Frame[]; residual: string | null };
-export type FieldLine = { name: string; holder: string; originalName: string; type: string; residual: string | null };
+export type FieldLine = { name: string; holder: string; originalName: string; type: string; residual: string | null; synthesized: boolean };
 export type Section = { original: string; dex: string; removed: boolean; synthesized: boolean; stacks: Stack[]; fields: FieldLine[] };
 export type Mapping = {
   pgMapId: string | null;
@@ -18,5 +18,6 @@ export function typeTokens(text: string): string[];
 export function originalsOf(mapping: Mapping, dexClass: string): Set<string>;
 export function resolveMethod(mapping: Mapping, dexClass: string, name: string, descriptor: string | null): { holder: string; name: string }[];
 export function memberTypes(mapping: Mapping, dexClass: string, name: string, descriptor: string | null, method: boolean): Set<string> | null;
+export function memberHolders(mapping: Mapping, dexClass: string, name: string, descriptor: string, method: boolean): Set<string>;
 export function resolveField(mapping: Mapping, dexClass: string, name: string, typeDescriptor: string | null): string[];
 export function framesAt(mapping: Mapping, dexClass: string, name: string, descriptor: string | null, line: number | null): string[][];
