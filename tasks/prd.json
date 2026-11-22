@@ -597,10 +597,10 @@
             "The change is in .github/workflows/ci.yml and new files only, with no scripts/tv-* file changed; docs/commands.md or WORKFLOW.md states both rules in the same PR, and the PR calls out the CI change for the owner"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit b3216465: ci.yml changes job, skip and retry rules, shim and two scripts, docs/commands.md CI section. All new tests pass except frozen ci-device-jobs.test.ts rename case (git mv into missing docs/, test bug). Item 4 open until a docs-only PR merges."
         },
         {
           "id": "T1-18",
