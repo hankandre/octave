@@ -6,12 +6,69 @@
 // it is a control; after runControls() resolves it is the app's.
 //
 // The listener cannot tell emulators apart (every emulator's 10.0.2.2 is the host's loopback), so one smoke run per
-// host at a time.
+// host at a time: the bind of 127.0.0.1:<port> is the host-wide lock, and the holder writes an owner file naming its
+// process, so a second run can say which run holds the port (T3-30 item 4).
+import { lstatSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { openAdb } from "./tv-adb.mjs";
 
 const HOST = "127.0.0.1";
 const CONTROL_WAIT_MS = 5_000;
+
+// The owner file is a hint and never decides a run: every failure to write, read or remove it is swallowed, and the bind
+// stays the lock. Its name is predictable in a shared temporary directory, so it is never written through a link: the
+// path is unlinked, then created exclusively, and it is read and removed only when it is a regular file.
+const ownerPath = (port) => join(tmpdir(), `octave-tv-smoke-port-${port}.json`);
+
+function claimOwner(port) {
+  const path = ownerPath(port);
+  try {
+    rmSync(path, { force: true });
+    writeFileSync(path, JSON.stringify({ pid: process.pid }), { flag: "wx", mode: 0o600 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function readOwner(port) {
+  try {
+    const path = ownerPath(port);
+    if (!lstatSync(path).isFile()) return null;
+    const { pid } = JSON.parse(readFileSync(path, "utf8"));
+    return Number.isInteger(pid) && pid > 0 ? pid : null;
+  } catch {
+    return null;
+  }
+}
+
+function releaseOwner(port) {
+  if (readOwner(port) !== process.pid) return;
+  try {
+    rmSync(ownerPath(port), { force: true });
+  } catch {
+    // Not ours to remove, or already gone.
+  }
+}
+
+// Whether the process is alive: signal 0 succeeds, or is refused for lack of permission.
+function alive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === "EPERM";
+  }
+}
+
+function inUse(port) {
+  const pid = readOwner(port);
+  return pid !== null && alive(pid)
+    ? `another pnpm tv:smoke run on this host (process ${pid}) holds port ${port}; wait for it to finish: the watch cannot tell two emulators' connections apart, so one run per host at a time (if no smoke run is running, the process id was reused: stop whatever holds the port)`
+    : `port ${port} is in use on this host by a program that is not a smoke run this one can see: stop Metro; if another smoke run has just started, wait for it`;
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -41,7 +98,7 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
       reject(
         new Error(
           error.code === "EADDRINUSE"
-            ? `port ${port} is in use on this host: stop Metro, or wait for another smoke run on this host to finish (the watch holds the development server port)`
+            ? inUse(port)
             : `the development server watch cannot listen on ${HOST}:${port}: ${error.message}`,
         ),
       );
@@ -53,11 +110,13 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
     });
   });
 
+  claimOwner(port);
   const closeServer = () => new Promise((resolve) => server.close(() => resolve()));
   const reverse = await runAdb(["reverse", `tcp:${port}`, `tcp:${port}`]);
   if (reverse.code !== 0) {
     await runAdb(["reverse", "--remove", `tcp:${port}`]);
     await closeServer();
+    releaseOwner(port);
     throw new Error(`adb reverse tcp:${port} failed: ${lastOf(reverse)}`);
   }
 
@@ -85,6 +144,7 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
       stopped ??= (async () => {
         await runAdb(["reverse", "--remove", `tcp:${port}`]).catch(() => undefined);
         await closeServer().catch(() => undefined);
+        releaseOwner(port);
       })();
       return stopped;
     },
