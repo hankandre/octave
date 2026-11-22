@@ -59,6 +59,13 @@ export const NETWORK_SINKS = [
       { classes: ["java.nio.channels.spi.SelectorProvider"], names: ["openSocketChannel", "openServerSocketChannel", "openDatagramChannel"] },
       { classes: ["java.nio.channels.spi.AsynchronousChannelProvider"], names: ["openAsynchronousSocketChannel", "openAsynchronousServerSocketChannel"] },
     ],
+    // What a one-client class (ONE_CLIENT_CLASSES.S4) may do of this kind: make a client socket. Everything else in
+    // `methods`, a listening or datagram socket above all, fails D1 there too (T3-29). A method added to `methods` is
+    // not exempt until it is listed here with a reason.
+    oneClientMethods: [
+      { classes: ["java.net.Socket"], names: ["<init>"] },
+      { classes: ["javax.net.SocketFactory"], names: ["createSocket"] },
+    ],
   },
   {
     id: "S5",
@@ -114,7 +121,8 @@ export const FRAMEWORK_SUPERCLASSES = {
 export const LIBRARY_INTERNAL = ["okhttp3.", "okio."];
 
 // Octave's code may hold a sink only in these classes, per sink id (NetworkPathRules.kt's ONE_CLIENT_CLASSES; the
-// socket factory the one client dials with). Matched exactly. They may be absent: R8 removes OctaveHttp until T3-05
+// socket factory the one client dials with). Matched exactly. A sink matched through `methods` is exempt here only for
+// the pairs on its row's `oneClientMethods` (T3-29): DirectSocketFactory may make a client socket, nothing else of S4. They may be absent: R8 removes OctaveHttp until T3-05
 // calls it.
 export const ONE_CLIENT_CLASSES = {
   S1: ["dev.octave.session.http.OctaveHttp", "dev.octave.session.http.SessionCallFactory"],

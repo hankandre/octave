@@ -5,6 +5,7 @@ export type NetworkSink = {
   anyReference?: string[];
   anyReferencePrefix?: string[];
   methods?: { classes: string[]; names: string[]; localOverloads?: string[] }[];
+  oneClientMethods?: { classes: string[]; names: string[] }[];
   factoryInvokes?: string[];
   declarations?: boolean;
 };

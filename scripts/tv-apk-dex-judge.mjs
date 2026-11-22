@@ -99,8 +99,15 @@ export async function judgeDex(lines, mapping, lists) {
     return callees.map((holder) => ({ holder, octave: holder.startsWith(OCTAVE), synthetic: false }));
   }
 
-  // D1 and D2 for one sink reference at a site.
-  function judgeSink(site, sink, { exemptOctaveNewCall = false } = {}) {
+  // What a one-client class may do of a sink matched through `methods` (T3-29): only the pairs on the sink row's
+  // `oneClientMethods`. A row without the list exempts no method match; any other match is exempt as before.
+  const onList = (sink, pair) => (sink.oneClientMethods ?? []).some((m) => m.classes.includes(pair.holder) && m.names.includes(pair.name));
+  const offList = (sink, matched) => (matched ?? []).filter((pair) => !onList(sink, pair));
+  const allowedText = (sink) => (sink.oneClientMethods ?? []).flatMap((m) => m.classes.flatMap((c) => m.names.map((n) => `${c}.${n}`))).join(" and ") || "nothing";
+
+  // D1 and D2 for one sink reference at a site. `matched` holds the class and method pairs of a match through
+  // `methods`; it is undefined for a match by reference, factory or declaration.
+  function judgeSink(site, sink, { exemptOctaveNewCall = false, matched } = {}) {
     stats.rawSinks += 1;
     let counted = false;
     for (const stack of site.stacks) {
@@ -114,6 +121,14 @@ export async function judgeDex(lines, mapping, lists) {
         if (!(inner.octave && (oneClient[sink.id] ?? []).includes(inner.holder))) {
           const octave = frames.find(isOctave);
           report(`D1|${octave.holder}|${sink.id}`, `D1 ${who(octave)} holds ${sink.id} (${sink.what}) at ${where(site)}, outside the one client; ${SEND_THROUGH}`);
+        } else {
+          for (const pair of matched === undefined ? [] : offList(sink, matched)) {
+            const member = `${pair.holder}.${pair.name}`;
+            report(
+              `D1|${inner.holder}|${sink.id}|${member}`,
+              `D1 ${who(inner)} holds ${sink.id} (${sink.what}) at ${where(site)}, outside the one client: ${member} is not what the one client may do of ${sink.id}, and ${inner.holder} may call only ${allowedText(sink)}; ${SEND_THROUGH}`,
+            );
+          }
         }
       }
       for (const frame of frames) {
@@ -136,13 +151,25 @@ export async function judgeDex(lines, mapping, lists) {
 
   // `descriptor` is the invoked method's dex descriptor; an overload a methods entry lists as local is not a sink.
   const localOverload = (m, descriptor) => descriptor !== undefined && descriptor !== null && (m.localOverloads ?? []).includes(descriptor.slice(0, descriptor.lastIndexOf(")") + 1));
+  // Each sink a method reference matches, with every candidate pair that matched it: `{ sink, matched }`.
   function methodSinks(holders, descriptor) {
     const out = [];
     for (const sink of sinks) {
-      const hit = (sink.methods ?? []).some((m) => !localOverload(m, descriptor) && holders.some((h) => m.classes.includes(h.holder) && m.names.includes(h.name)));
-      if (hit) out.push(sink);
+      const entries = (sink.methods ?? []).filter((m) => !localOverload(m, descriptor));
+      const matched = holders.filter((h) => entries.some((m) => m.classes.includes(h.holder) && m.names.includes(h.name)));
+      if (matched.length > 0) out.push({ sink, matched });
     }
     return out;
+  }
+
+  // A method match is judged once per sink at a site, but a match with pairs off `oneClientMethods` is judged even
+  // when the sink was already found there, so an exempt match cannot hide a listening socket beside it.
+  function judgeMethodSinks(site, holders, descriptor, found) {
+    for (const { sink, matched } of methodSinks(holders, descriptor)) {
+      if (found.has(sink.id) && !(sink.oneClientMethods && offList(sink, matched).length > 0)) continue;
+      found.add(sink.id);
+      judgeSink(site, sink, { matched });
+    }
   }
 
   // The original classes a dex type names, for a type-only reference.
@@ -179,12 +206,7 @@ export async function judgeDex(lines, mapping, lists) {
       }
     }
     if (member?.method) {
-      for (const sink of methodSinks(holders, member.descriptor)) {
-        if (!found.has(sink.id)) {
-          found.add(sink.id);
-          judgeSink(site, sink);
-        }
-      }
+      judgeMethodSinks(site, holders, member.descriptor, found);
       for (const sink of sinks) {
         if (found.has(sink.id) || !(sink.factoryInvokes ?? []).some((name) => holders.some((h) => h.holder === name))) continue;
         found.add(sink.id);
@@ -304,12 +326,7 @@ export async function judgeDex(lines, mapping, lists) {
     const seen = new Set();
     for (let at = superOf(owner); at && !seen.has(at); at = superOf(at)) {
       seen.add(at);
-      const holders = [...originalsOf(mapping, at)].map((holder) => ({ holder, name }));
-      for (const sink of methodSinks(holders, descriptor)) {
-        if (found.has(sink.id)) continue;
-        found.add(sink.id);
-        judgeSink(site, sink);
-      }
+      judgeMethodSinks(site, [...originalsOf(mapping, at)].map((holder) => ({ holder, name })), descriptor, found);
     }
   }
 
