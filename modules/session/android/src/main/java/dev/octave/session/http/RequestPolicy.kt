@@ -26,13 +26,14 @@ internal object RequestPolicy {
 
     // 7. The path must be the session's base path or under it (C2, T3-16). OkHttp resolves only plain and %2e dot
     // segments when it builds a URL; it leaves ..%2f, ..%5c and %252e%252e in the encoded path, which a proxy that
-    // decodes before it resolves could still read as a step out of the base path. So the encoded path must also hold
-    // no dot segment after up to four rounds of decoding (P4), and its escapes must be UTF-8 (P5), for every caller of
-    // OctaveHttp.callFactory(session), not only SessionTransport.request.
+    // decodes before it resolves could still read as a step out of the base path; it also keeps ;, %00, a fullwidth dot
+    // and five rounds of encoding as written. So the whole encoded path, the base path included, must pass P2 to P7 of
+    // the path rule (RequestPath.holdsRefusedForm, the one function RequestPath.isSafe also calls; T3-24), for every
+    // caller of OctaveHttp.callFactory(session), not only SessionTransport.request, and for the closing logout.
     private fun checkBasePath(entry: SessionEntry, request: Request): HttpRefusal? {
         val path = request.url.encodedPath
         if (!underBasePath(entry.basePath, path)) return HttpRefusal.OUTSIDE_BASE_PATH
-        if (RequestPath.holdsDotSegment(path) || !RequestPath.escapesAreUtf8(path)) return HttpRefusal.OUTSIDE_BASE_PATH
+        if (RequestPath.holdsRefusedForm(path)) return HttpRefusal.OUTSIDE_BASE_PATH
         return null
     }
 
