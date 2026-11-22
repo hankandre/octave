@@ -874,10 +874,10 @@
             "docs/security.md names this task's tests in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit d794fd42 (review fix 0ed8a3e7, follow-ups 8ac9309e). Local on an API 36 Android TV emulator: pnpm check pass; pnpm tv:native:test 176 tests, 0 failed; pnpm tv:e2e:build pass, no APK left at the release path; pnpm tv:e2e: url 202/202, device-id 13/13, host ok; cleartext private-lan ok, loopback ok, public 60/60 refused. Pending: CI tv job on the PR head. Untested: app-process HTTP and device HTTPS (T3-05), arm64, Android other than 16."
+          "passes": true,
+          "evidence": "PR #264, commit 6b287996. CI tv job green on PR head (run 44988888740): tv apk:check both halves and tv:e2e pass; url 202/202, device-id 13/13, cleartext private-lan ok, loopback ok, public 60/60 refused; HTTPS ok. Untested: app-process HTTP and device HTTPS (T3-05), arm64, Android other than 16."
         },
         {
           "id": "T3-19",
