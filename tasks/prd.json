@@ -573,10 +573,10 @@
             "Tests in a new file that pnpm test:workflow runs cover each case, the frozen .claude/workflows/task.test.mjs is not changed, and WORKFLOW.md and .claude/agents/product-owner.md state the step's wider remit in the same PR"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 86013f7c: ask action, ownerRuling, ruling-log.mjs, history seeding, docs. test:workflow 159/163 pass; 4 frozen item 1(b),1(f),2 round-2,4 matched tests fail on their own harness (rerun label returns null; one answers the wrong rule), reported as frozenTestProblems. pnpm check otherwise green."
         },
         {
           "id": "T1-17",
