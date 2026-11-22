@@ -1339,10 +1339,10 @@
             "docs/security.md and docs/commands.md say that console output and evidence hold no device address, in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:smoke",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 3df15aad (branch task/T3-30; no PR yet). Items 1, 2, 3, 4, 6 green locally: pnpm check exit 0, check-red --expect green. Own emulator: pnpm tv:smoke pass (\"port 8081: 2 of 2 control connections seen, 0 app connections, 0 connections before the controls (not counted)\"); second smoke run failed at once naming the first process; pnpm tv:e2e pass. pnpm tv:wire not run locally (fixture ports held by another worktree); item 5 (tv and wire CI jobs) waits for Ship."
         },
         {
           "id": "T3-31",
