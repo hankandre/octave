@@ -2404,10 +2404,10 @@
             "Contract tests cover Jellyfin 10.11, 12.4 and Jellyscale fixtures"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 8aed759f: latestItems, toRecentlyAdded, domain/home.ts, fixtures, docs, backlog; T2-04 tables given latestItems. pnpm check exit 0 (core 3211 tests, 1876 scripts tests, flow ok 4 frozen changes). Not run: tripwire, tv:wire (no app path)."
+          "passes": true,
+          "evidence": "commits 3f44ef8c, 61999c69 (core: latestItems, toRecentlyAdded, composeHome), faba9e9e (docs), 8aed759f (PO ruling on frozen tables), commit 395d499f (review fixes). pnpm check exit 0 (core, scripts 185, flow ok). Not run: tripwire, tv:wire, no app path. Lows left in backlog."
         },
         {
           "id": "T5-07",
