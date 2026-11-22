@@ -5,38 +5,11 @@
 //
 // The listener cannot tell emulators apart (every emulator's 10.0.2.2 is the host's loopback), so one smoke run per
 // host at a time.
-import { spawn } from "node:child_process";
 import { createServer } from "node:net";
+import { openAdb } from "./tv-adb.mjs";
 
 const HOST = "127.0.0.1";
 const CONTROL_WAIT_MS = 5_000;
-const ADB_TIMEOUT_MS = 15_000;
-
-// Runs adb in a child process (never spawnSync, so the listener keeps accepting while it runs).
-function runAdb(adb, args, timeoutMs = ADB_TIMEOUT_MS) {
-  return new Promise((resolve) => {
-    let stdout = "";
-    let stderr = "";
-    let child;
-    try {
-      child = spawn(adb, args, { stdio: ["ignore", "pipe", "pipe"] });
-    } catch (error) {
-      resolve({ code: -1, stdout, stderr: error.message });
-      return;
-    }
-    const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs);
-    child.stdout.on("data", (chunk) => (stdout += chunk));
-    child.stderr.on("data", (chunk) => (stderr += chunk));
-    child.on("error", (error) => {
-      clearTimeout(timer);
-      resolve({ code: -1, stdout, stderr: error.message });
-    });
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      resolve({ code: code ?? -1, stdout, stderr });
-    });
-  });
-}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -45,6 +18,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * or the reverse fails. `adb` is the path of the adb executable.
  */
 export async function startDevServerWatch({ adb, serial, port = 8081 }) {
+  const runner = openAdb({ adbPath: adb, serial });
+  const runAdb = (args) => runner.runAsync(args);
+  const lastOf = (run) => (run.stdout + run.stderr).trim().split("\n").pop() ?? "";
   let controlPhase = true;
   let controlsSeen = 0;
   let appConnections = 0;
@@ -74,11 +50,11 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
   });
 
   const closeServer = () => new Promise((resolve) => server.close(() => resolve()));
-  const reverse = await runAdb(adb, ["-s", serial, "reverse", `tcp:${port}`, `tcp:${port}`]);
+  const reverse = await runAdb(["reverse", `tcp:${port}`, `tcp:${port}`]);
   if (reverse.code !== 0) {
-    await runAdb(adb, ["-s", serial, "reverse", "--remove", `tcp:${port}`]);
+    await runAdb(["reverse", "--remove", `tcp:${port}`]);
     await closeServer();
-    throw new Error(`adb reverse tcp:${port} failed: ${(reverse.stdout + reverse.stderr).trim().split("\n").pop() ?? ""}`);
+    throw new Error(`adb reverse tcp:${port} failed: ${lastOf(reverse)}`);
   }
 
   let stopped = null;
@@ -87,18 +63,18 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
     // resolves is a control; every one after is the app's.
     async runControls() {
       const runs = await Promise.all(
-        controlHosts.map((host) => runAdb(adb, ["-s", serial, "shell", `toybox nc -w 2 ${host} ${port} </dev/null`])),
+        controlHosts.map((host) => runAdb(["shell", `toybox nc -w 2 ${host} ${port} </dev/null`])),
       );
       for (const deadline = Date.now() + CONTROL_WAIT_MS; controlsSeen < controlHosts.length && Date.now() < deadline; ) await sleep(50);
       controlPhase = false;
-      return runs.flatMap((run, i) => (run.code === 0 ? [] : [`the control to ${controlHosts[i]}:${port} exited ${run.code}: ${(run.stdout + run.stderr).trim().split("\n").pop() ?? ""}`]));
+      return runs.flatMap((run, i) => (run.code === 0 ? [] : [`the control to ${controlHosts[i]}:${port} exited ${run.code}: ${lastOf(run)}`]));
     },
     result() {
       return { controlsExpected: controlHosts.length, controlsSeen, appConnections };
     },
     stop() {
       stopped ??= (async () => {
-        await runAdb(adb, ["-s", serial, "reverse", "--remove", `tcp:${port}`]).catch(() => undefined);
+        await runAdb(["reverse", "--remove", `tcp:${port}`]).catch(() => undefined);
         await closeServer().catch(() => undefined);
       })();
       return stopped;

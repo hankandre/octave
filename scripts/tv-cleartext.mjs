@@ -3,11 +3,11 @@
 // in its test APK, and judge the probe's report and the server's record with judgeCleartext(). The probe sends through
 // the one OkHttp client under the network security configuration modules/session declares, and opens a session for
 // every public vector of host-classes.json, each refused before a request exists (docs/specs/T3-15.md).
-import { execFile } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { openAdb } from "./tv-adb.mjs";
 
 const HOST_CLASSES = fileURLToPath(new URL("../packages/core/tests/fixtures/host-classes.json", import.meta.url));
 
@@ -115,33 +115,25 @@ export function startHostServer() {
   });
 }
 
-// Runs adb asynchronously, so the host server keeps answering while the probe runs.
-export function adbRunner(adbPath, serial) {
-  return (args, timeout = PROBE_MS) =>
-    new Promise((resolve) => {
-      execFile(adbPath, ["-s", serial, ...args], { encoding: "utf8", timeout, maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
-        resolve({ ok: error === null, stdout: stdout ?? "", stderr: stderr ?? "", error });
-      });
-    });
-}
-
 export const lastLine = (result) => (result.stdout + result.stderr).trim().split("\n").pop() ?? "";
 
 // Installs and runs the probe on the device `serial` names, judges it, and writes release-evidence/tv/e2e-cleartext.txt.
 // Returns { errors, report, served }. The reverse rule, the probe package and the server are removed whatever happens.
 export async function runCleartextProbe({ adbPath, serial, apk, evidenceDir }) {
   const { server, served, port } = await startHostServer();
-  const adb = adbRunner(adbPath, serial);
+  // Runs adb asynchronously, so the host server keeps answering while the probe runs; its output holds no serial (T3-30).
+  const runner = openAdb({ adbPath, serial });
+  const adb = (args, timeoutMs = PROBE_MS) => runner.runAsync(args, { timeoutMs });
   const errors = [];
   let report = {};
   try {
     const reverse = await adb(["reverse", `tcp:${port}`, `tcp:${port}`]);
-    if (!reverse.ok) errors.push(`ERROR tv e2e: cleartext adb reverse failed: ${lastLine(reverse)}`);
-    const install = reverse.ok ? await adb(["install", "-r", "-t", apk]) : undefined;
-    if (install !== undefined && !install.ok) errors.push(`ERROR tv e2e: cleartext probe install failed: ${lastLine(install)}`);
-    if (install?.ok) {
+    if (reverse.code !== 0) errors.push(`ERROR tv e2e: cleartext adb reverse failed: ${lastLine(reverse)}`);
+    const install = reverse.code === 0 ? await adb(["install", "-r", "-t", apk]) : undefined;
+    if (install !== undefined && install.code !== 0) errors.push(`ERROR tv e2e: cleartext probe install failed: ${lastLine(install)}`);
+    if (install?.code === 0) {
       const run = await adb(["shell", "am", "instrument", "-w", "-e", "hostPort", String(port), PROBE_COMPONENT]);
-      if (run.error?.killed) errors.push(`ERROR tv e2e: cleartext probe did not finish within ${PROBE_MS / 1000} s`);
+      if (run.killed) errors.push(`ERROR tv e2e: cleartext probe did not finish within ${PROBE_MS / 1000} s`);
       report = parseInstrumentation(run.stdout);
     }
   } finally {

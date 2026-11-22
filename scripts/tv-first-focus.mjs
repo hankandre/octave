@@ -4,11 +4,11 @@
 // first screen go to release-evidence/tv/. The development server watch (T3-19 item 2) runs around the app start and
 // fails the run on any connection from the app to the development server port; see scripts/tv-dev-server-watch.mjs.
 // Run: ANDROID_SERIAL=<emulator> node scripts/tv-first-focus.mjs [apk]   (pnpm tv:smoke)
-import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
+import { openAdb } from "./tv-adb.mjs";
 import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
 import { judgeDevServerWatch, startDevServerWatch } from "./tv-dev-server-watch.mjs";
@@ -90,7 +90,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * server watch starts before the install and is stopped before this returns or throws (T3-19 item 2).
  */
 export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = EVIDENCE, onWatch = () => undefined }) {
-  const adb = (...rest) => spawnSync(adbPath, ["-s", serial, ...rest], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  // Everything adb returns has the serial replaced by `[device]` (T3-30), so nothing below can print or write it.
+  const runner = openAdb({ adbPath, serial });
+  const adb = (...rest) => runner.run(rest);
   const shell = (...rest) => adb("shell", ...rest);
 
   const watch = await startDevServerWatch({ adb: adbPath, serial, port });
@@ -120,7 +122,7 @@ export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = E
     mkdirSync(evidence, { recursive: true });
     // Let the launch transition finish so the screenshot shows the first screen alone.
     await sleep(SETTLE_MS);
-    const screen = spawnSync(adbPath, ["-s", serial, "exec-out", "screencap", "-p"], { maxBuffer: 64 * 1024 * 1024 });
+    const screen = runner.bytes(["exec-out", "screencap", "-p"]);
     if (screen.status === 0) writeFileSync(join(evidence, "first-screen.png"), screen.stdout);
 
     shell("log", "-t", "OCTAVE_PRESS", "1 RIGHT");
@@ -153,20 +155,18 @@ export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = E
   }
 }
 
-async function main(args) {
-  // The serial chooses the device; it is never printed or written.
-  const serial = process.env.ANDROID_SERIAL;
-  if (!serial) fail("set ANDROID_SERIAL to the emulator's serial; this script never picks a device itself");
-  let adbPath;
-  try {
-    adbPath = platformTool(androidSdk(), "adb");
-  } catch (error) {
-    fail(error.message);
+/**
+ * What the CLI does once it has the serial, the adb path and the APK: checks the device, runs the smoke test with a
+ * signal handler that stops the watch, prints the result. Returns the exit code; only the signal handler exits the
+ * process itself. `port` and `evidence` are arguments, not environment overrides, so a run cannot be pointed at the
+ * wrong port and pass.
+ */
+export async function smokeCli({ serial, adbPath, apk, port = 8081, evidence = EVIDENCE }) {
+  const state = openAdb({ adbPath, serial }).run(["get-state"]);
+  if (state.stdout.trim() !== "device") {
+    console.error("ERROR tv focus: no device; ANDROID_SERIAL names no attached, booted device");
+    return 1;
   }
-  const apk = args[0] ?? RELEASE_APK;
-  if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:build first`);
-  const state = spawnSync(adbPath, ["-s", serial, "get-state"], { encoding: "utf8" });
-  if (state.stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
 
   // A signal stops the watch (the reverse and the port) before the script exits.
   let watch = null;
@@ -179,7 +179,7 @@ async function main(args) {
 
   let errors;
   try {
-    errors = await runSmoke({ serial, adbPath, apk, onWatch: (started) => (watch = started) });
+    errors = await runSmoke({ serial, adbPath, apk, port, evidence, onWatch: (started) => (watch = started) });
   } catch (error) {
     errors = [`ERROR tv smoke: ${error.message}`];
   }
@@ -187,11 +187,26 @@ async function main(args) {
   process.off("SIGTERM", onSignal);
   if (errors.length > 0) {
     for (const error of errors) console.error(error);
-    process.exitCode = 1;
-    return;
+    return 1;
   }
   console.log("tv focus: tile-0 took focus with no key, and one Right moved it to tile-1");
   console.log("tv smoke: the release app opened no connection to the development server port while it started");
+  return 0;
+}
+
+async function main(args) {
+  // The serial chooses the device; it is never printed or written.
+  const serial = process.env.ANDROID_SERIAL;
+  if (!serial) fail("set ANDROID_SERIAL to the emulator's serial; this script never picks a device itself");
+  let adbPath;
+  try {
+    adbPath = platformTool(androidSdk(), "adb");
+  } catch (error) {
+    fail(error.message);
+  }
+  const apk = args[0] ?? RELEASE_APK;
+  if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:build first`);
+  process.exitCode = await smokeCli({ serial, adbPath, apk });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));
