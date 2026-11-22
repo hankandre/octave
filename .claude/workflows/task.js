@@ -1,6 +1,6 @@
 export const meta = {
   name: 'task',
-  description: 'Run tasks/prd.json tasks in order: spec, check, failing tests, implement, review, ship; park tasks with open design questions',
+  description: 'Run tasks/prd.json tasks in order: spec, check, failing tests, implement, review, ship; park tasks with open design questions; the inline Product Owner step rules on technical, placement, dependency and scope questions and logs every ruling',
   whenToUse:
     'Build Octave tasks end to end. args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false} or {task: "T3-01", from: "check" | "tests" | "implement" | "review" | "ship", preFlow: true, notes: [...], evidence: "...", ciSteps: [...], approvedFrozen: [paths], models: {spec: {high: "opus"}}, root: "/abs/path/of/the/folder/holding/the/checkout"}',
   phases: [
@@ -28,7 +28,8 @@ export const meta = {
 // (Check issues are appended to specNotes by the check step itself, so a resumed run with from: "implement" must pass them again.)
 // A task whose spec needs a new design call is parked, and the run moves on.
 // A resumed branch is rebased onto origin/main by the sync step before Check (never merged); every task's fixture servers are brought down when it ends.
-// The run stops early only on STOP_OUTCOMES (a denied command, a test that passes before implementation (tests-green), or a changed frozen test (frozen-tests)) or a denied fixture teardown.
+// The run stops early only on STOP_OUTCOMES (a denied command, a test that passes before implementation (tests-green), or a changed frozen test (frozen-tests)), an inline Product Owner ruling with no log entry (ruling-unlogged), or a denied fixture teardown.
+// Check and every guarded work step may return productOwnerQuestions; the inline Product Owner step rules on technical, placement, dependency and scope kinds, writes each ruling to tasks/product-owner-log.md and the run goes on. Look, wording and direction questions park the task.
 // MODELS-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
 const MODELS = {
   spec: { routine: 'opus', high: 'fable' },
@@ -223,16 +224,34 @@ function decideSync(gate, final) {
   if (gate.exitCode !== 0 || json.ok !== true || json.problems.length) return { action: 'blocked', detail: json.problems.join('; ') || `the branch sync exited ${gate.exitCode}` };
   return { action: 'pass', detail: '', rebased: json.rebased };
 }
+// The ruling log script: ruling-log.mjs --commit <sha> checks that a ruling reached tasks/product-owner-log.md on the task branch.
+const RULING_UNLOGGED = 'ruling-unlogged';
+const isRulingLogResult = (json) => typeof json.ok === 'boolean' && Array.isArray(json.problems);
+// Decided from the JSON result only, never from the exit code a gate agent relays. Unreadable output is retried once by the caller (final = false), then stops the run (final = true).
+function decideRulingLog(gate, final) {
+  const json = readGate(gate, isRulingLogResult);
+  if (!json) return final ? { action: 'stop', unreadable: true, detail: 'the ruling log check gave no readable result twice' } : unreadable('the ruling log check');
+  if (json.ok === true && json.problems.length === 0) return { action: 'pass', detail: '', commit: json.commit };
+  return { action: 'stop', detail: json.problems.join('; ') || 'the ruling log check failed' };
+}
+// ruling-log.mjs --history: the task's earlier rulings, so a resumed run keeps counting the same rules. Unreadable output ends as {action: 'none'}: the run goes on with no earlier rulings.
+const isRulingHistory = (json) => typeof json.sections === 'number' && isObject(json.counts) && isObject(json.firstRulings);
+function decideRulingHistory(gate, final) {
+  const json = readGate(gate, isRulingHistory);
+  if (!json) return final ? { action: 'none', detail: 'the ruling history gave no readable result twice' } : unreadable('the ruling history');
+  return { action: 'pass', detail: '', sections: json.sections, counts: json.counts, firstRulings: json.firstRulings };
+}
 // GATE-END
 // STEP-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
 const mergeUnique = (a, b) => (a || []).concat(b || []).filter((item, i, all) => all.indexOf(item) === i);
 // Decide what a work() attempt leads to. A check that fails locally is never CI-only: ciOnly counts only when done and checksPassed are both true.
-//   denied: stop; owner: the work reports frozen tests that look wrong; done: green, ciOnly items (if any) go to Ship as steps; retry: not green, so retry or escalate.
-//   The order is none, denied, owner, done, retry.
+//   denied: stop; owner: the work reports frozen tests that look wrong; ask: the work stops at a question for the Product Owner (no retry, no escalation); done: green, ciOnly items (if any) go to Ship as steps; retry: not green, so retry or escalate.
+//   The order is none, denied, owner, ask, done, retry.
 function decideStep(out, isDenied) {
   if (!out) return { action: 'none', ciOnly: [] };
   if (isDenied) return { action: 'denied', ciOnly: [] };
   if (out.frozenTestProblems && out.frozenTestProblems.length) return { action: 'owner', ciOnly: [] };
+  if (out.productOwnerQuestions && out.productOwnerQuestions.length) return { action: 'ask', ciOnly: [] };
   const problems = (out.blockers || []).concat(out.failures || []);
   const green = out.done === true && out.checksPassed === true && problems.length === 0;
   if (green) return { action: 'done', ciOnly: out.ciOnly || [] };
@@ -246,6 +265,32 @@ function whyNotGreen(out, step) {
   return why;
 }
 // STEP-END
+// RULING-BEGIN (pure; extracted and tested by .claude/workflows/task-rulings.test.mjs)
+const OWNER_KINDS = ['look', 'wording', 'direction'];
+const PO_KINDS = ['technical', 'placement', 'dependency', 'scope'];
+const MAX_RULINGS = 6;
+// The rule a question is about, compared without case, extra spaces or trailing punctuation. ruling-log.mjs keeps the same normalisation by hand.
+const ruleKey = (rule) => String(rule).trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.,;:!?]+$/, '');
+const describeQuestion = (q) => `${q.kind}: ${q.question} (rule: ${ruleKey(q.rule)})`;
+// Splits one return's questions: forOwner (look, wording, direction, or an unknown kind), block (a third return on a rule, or the cap), ask (for the step).
+// counts: returns per key before this one; firstRulings: the first ruling per key; total: inline rulings made so far.
+function planRuling(questions, counts, firstRulings, total) {
+  const has = (map, key) => Object.prototype.hasOwnProperty.call(map, key);
+  const plan = { forOwner: [], block: [], ask: [] };
+  for (const q of questions || []) {
+    const key = ruleKey(q.rule);
+    const count = (has(counts, key) ? counts[key] : 0) + 1;
+    if (!PO_KINDS.includes(q.kind)) plan.forOwner.push(describeQuestion(q));
+    else if (count >= 3) plan.block.push(describeQuestion(q));
+    else plan.ask.push({ kind: q.kind, rule: q.rule, question: q.question, key, count, probe: count === 2, first: count > 1 && has(firstRulings, key) ? firstRulings[key] : undefined });
+  }
+  if (plan.ask.length && total >= MAX_RULINGS) {
+    plan.block = [`more than ${MAX_RULINGS} Product Owner rulings in one run`].concat(plan.block, plan.ask.map(describeQuestion));
+    plan.ask = [];
+  }
+  return plan;
+}
+// RULING-END
 const input = typeof args === 'string' ? { task: args } : args || {};
 const items = Array.isArray(input.tasks) ? input.tasks : input.task ? [input.task] : [];
 const models = resolveModels(MODELS, input.models);
@@ -257,9 +302,17 @@ const SPEC = {
   properties: { summary: { type: 'string' }, openQuestions: strings, deniedCommands: strings, touchesNative: { type: 'boolean' } },
   required: ['summary', 'openQuestions', 'touchesNative'],
 };
+const QUESTIONS = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: { kind: { type: 'string', enum: OWNER_KINDS.concat(PO_KINDS) }, rule: { type: 'string' }, question: { type: 'string' } },
+    required: ['kind', 'rule', 'question'],
+  },
+};
 const CHECK = {
   type: 'object',
-  properties: { approved: { type: 'boolean' }, issues: strings, touchesNative: { type: 'boolean' } },
+  properties: { approved: { type: 'boolean' }, issues: strings, touchesNative: { type: 'boolean' }, productOwnerQuestions: QUESTIONS },
   required: ['approved', 'issues', 'touchesNative'],
 };
 const WORK = {
@@ -275,6 +328,7 @@ const WORK = {
     deniedCommands: strings,
     ciSteps: strings,
     frozenTestProblems: strings,
+    productOwnerQuestions: QUESTIONS,
   },
   required: ['done', 'checksPassed', 'summary', 'evidence'],
 };
@@ -290,8 +344,23 @@ const GATE = {
 };
 const RULING = {
   type: 'object',
-  properties: { rulings: strings, changed: strings, deniedCommands: strings },
-  required: ['rulings', 'changed'],
+  properties: {
+    rulings: strings,
+    changed: strings,
+    answers: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { rule: { type: 'string' }, ruling: { type: 'string' }, probe: { type: 'object', properties: { what: { type: 'string' }, found: { type: 'string' } } } },
+        required: ['rule', 'ruling'],
+      },
+    },
+    forOwner: strings,
+    needsPass: strings,
+    logCommit: { type: 'string' },
+    deniedCommands: strings,
+  },
+  required: ['rulings', 'changed', 'logCommit'],
 };
 const REVIEW = {
   type: 'object',
@@ -405,29 +474,94 @@ async function runTask(task, opts) {
     agent(`Run exactly this command and return its exit code as exitCode and everything it printed, unchanged and in full, as output (the JSON line on standard output must be in it; ERROR lines may follow). The command itself rebases the task branch onto origin/main when the branch is behind, so a changed branch is expected; change nothing else.${where} If a command is denied, report it in deniedCommands and do not work around it: ${command}`, { model: models.gate, schema: GATE, phase, label });
   let pinned;
   let gated = [];
-  let rulingUsed = false;
+  let frozenRulingUsed = false;
   const approved = Array.isArray(opts.approvedFrozen) ? opts.approvedFrozen.slice() : [];
+  // Inline Product Owner state for this run. The counts start from the task's own sections of tasks/product-owner-log.md (read once, before the first ruling), so a resumed run keeps counting.
+  let seeded = false;
+  let totalRulings = 0;
+  const ruleCounts = {};
+  const firstRulings = {};
+  const rulingNotes = [];
+  const usedCommits = [];
+  const kindList = OWNER_KINDS.concat(PO_KINDS).join(', ');
+  const askRule = () =>
+    `If you need a ruling, stop at the first question, change nothing to work around it, and return it in productOwnerQuestions. Each question has a kind (${kindList}; technical, placement, dependency and scope go to the Product Owner step, look, wording and direction park the task for the owner), the rule it is about (<file>:<heading>, acceptance <n>, or the key of an earlier ruling, reused exactly) and the question. Earlier rulings of this task are in the sections headed "## <date>, ${task} ruling" of tasks/product-owner-log.md on the branch; read them before you ask.${rulingNotes.length ? `\nRulings so far in this run (reuse a key when the question is about the same rule):\n${rulingNotes.join('\n')}` : ''}`;
   const frozenRule = `Never change or delete a file listed in docs/specs/${task}.tests.json; add tests in new files. If a frozen test is wrong, change nothing and return it in frozenTestProblems.`;
-  // Every work() call goes through guarded: a wrong frozen test gets one Product Owner ruling, then the frozen-test gate runs.
-  // It returns {out} for the caller, or {stop} holding the task's result (blocked, frozen-tests, denied or failed).
+  const rulingLogCommand = (commit) => `mise exec -- node ${main}/.claude/workflows/ruling-log.mjs --repo ${worktree} --task ${task} --commit ${commit}`;
+  const rulingHistoryCommand = `mise exec -- node ${main}/.claude/workflows/ruling-log.mjs --repo ${worktree} --task ${task} --history`;
+  // One inline Product Owner ruling for a return: frozen-test problems and/or questions. It returns {lines, notes} for the caller, or {stop} holding the task's result.
+  // The order: frozen limit, the split (owner kinds park, a third return or the cap blocks), the step, forOwner and needsPass, the log entry, the probe, then the counts.
+  const ownerRuling = async ({ frozen, questions, phase }) => {
+    if (frozen.length && frozenRulingUsed) return { stop: result('blocked', frozen) };
+    if (!seeded) {
+      seeded = true;
+      const history = await runGate(rulingHistoryCommand, `ruling history ${task}`, phase, decideRulingHistory);
+      if (history.action === 'denied') return { stop: result('denied', history.detail) };
+      if (history.action === 'pass') {
+        totalRulings = history.sections;
+        for (const key of Object.keys(history.counts)) ruleCounts[key] = history.counts[key];
+        for (const key of Object.keys(history.firstRulings)) firstRulings[key] = history.firstRulings[key];
+      } else log(`${task}: no readable ruling history; counting rulings from this run only`);
+    }
+    const plan = planRuling(questions, ruleCounts, firstRulings, totalRulings);
+    if (plan.forOwner.length) return { stop: result('parked', plan.forOwner) };
+    if (plan.block.length) return { stop: result('blocked', plan.block) };
+    const asked = plan.ask.map((entry, i) => `${i + 1}. [${entry.key}] ${entry.kind}: ${entry.question}${entry.probe ? `\nThis rule was ruled before: ${entry.first || 'see the log'}. Before you rule, probe the fact: run the command or read the file, and put what you ran or read and a quote of what you found in probe.` : ''}`);
+    const ruling = await agent(
+      `${common}
+You are the Product Owner. The ${phase} step of a task run reports the following for you.${frozen.length ? `\nFrozen tests that look wrong:\n${numbered(frozen)}\nThe frozen files are listed in docs/specs/${task}.tests.json. Change a test only when it contradicts the acceptance item or the spec; edit it (and the manifest when the file list changes) and commit with one trailer line per changed path: "Frozen-Test-Change: <path> -- <reason>". Otherwise leave it and say why. Return changed (every path you changed) and one line in rulings per reported test.` : ''}${asked.length ? `\nQuestions, each with the rule it is about in brackets:\n${asked.join('\n')}\nRule on technical, placement, dependency and scope questions. Return answers: one {rule, ruling, probe: {what, found}} per question, with rule exactly as written in the brackets.` : ''}
+A question you judge to be a look, wording or direction question is not yours to rule: return it in forOwner. A question that only an acceptance or task-list edit can answer goes in needsPass: append a backlog line for it to tasks/backlog.jsonl in the same commit as your log section. Never touch tasks/prd.json.
+Log every ruling: append a section headed "## <date from date +%F>, ${task} ruling, ${phase}" to tasks/product-owner-log.md, with one line per ruling in the form "- [<rule key>] <ruling> | reason: <why> | probe: <what you ran or read, and a quote of what you found>" (for a frozen test use "- [frozen-test] <path>: <ruling> | reason: <why>"). Never write a server address, a hostname, a LAN address, a credential, a token or the owner's name in it. Commit the log on the task branch (with the Frozen-Test-Change trailers when you changed a frozen test), leave nothing in it uncommitted, and return the commit's sha as logCommit.`,
+      { agentType: 'product-owner', model: models.owner, schema: RULING, phase, label: `owner ruling ${task}` },
+    );
+    if (!ruling) return { stop: result('failed', 'The Product Owner returned nothing.') };
+    if (denied(ruling)) return { stop: result('denied', denied(ruling)) };
+    if (frozen.length) frozenRulingUsed = true;
+    if ((ruling.forOwner || []).length) return { stop: result('parked', ruling.forOwner) };
+    if ((ruling.needsPass || []).length) return { stop: result('blocked', ruling.needsPass) };
+    const commit = typeof ruling.logCommit === 'string' ? ruling.logCommit.trim() : '';
+    if (!/^[0-9a-f]{7,40}$/i.test(commit)) return { stop: result(RULING_UNLOGGED, 'The Product Owner returned no valid logCommit for its ruling.') };
+    if (usedCommits.includes(commit)) return { stop: result(RULING_UNLOGGED, `The ruling returned the logCommit ${commit} of an earlier ruling, so it has no log entry of its own.`) };
+    const logged = await runGate(rulingLogCommand(commit), `ruling log ${task}`, phase, decideRulingLog);
+    if (logged.action === 'denied') return { stop: result('denied', logged.detail) };
+    if (logged.action !== 'pass') return { stop: result(RULING_UNLOGGED, logged.detail) };
+    usedCommits.push(commit);
+    const byKey = {};
+    for (const answer of ruling.answers || []) if (answer && typeof answer.rule === 'string' && !Object.prototype.hasOwnProperty.call(byKey, ruleKey(answer.rule))) byKey[ruleKey(answer.rule)] = answer;
+    const missing = [];
+    for (const entry of plan.ask) {
+      const answer = byKey[entry.key];
+      if (!answer || !String(answer.ruling || '').trim()) missing.push(`the Product Owner gave no answer for the rule ${entry.key}`);
+      else if (entry.probe && !(answer.probe && String(answer.probe.found || '').trim())) missing.push(`the Product Owner gave no probe finding for the rule ${entry.key}, which was ruled on before`);
+    }
+    if (missing.length) return { stop: result('blocked', missing.concat(plan.ask.map(describeQuestion))) };
+    totalRulings += 1;
+    for (const path of ruling.changed || []) if (!approved.includes(path)) approved.push(path);
+    const lines = frozen.length ? (ruling.rulings || []).slice() : [];
+    const notes = [];
+    for (const entry of plan.ask) {
+      const text = String(byKey[entry.key].ruling).trim();
+      ruleCounts[entry.key] = Math.max(ruleCounts[entry.key] || 0, entry.count);
+      if (!Object.prototype.hasOwnProperty.call(firstRulings, entry.key)) firstRulings[entry.key] = text;
+      lines.push(`[${entry.key}] ${text}`);
+      notes.push(`Product Owner ruling (${entry.rule}): ${text}`);
+      rulingNotes.push(`- ${entry.key}: ${text}`);
+    }
+    return { lines, notes };
+  };
+  // Every work() call goes through guarded: a wrong frozen test gets one Product Owner ruling and a question gets a ruling too (each ruling is logged), then the frozen-test gate runs.
+  // It returns {out} for the caller, or {stop} holding the task's result (blocked, parked, frozen-tests, ruling-unlogged, denied or failed).
   const guarded = async (prompt, label, phase) => {
-    const run = (text, name) => work(`${text}\n${frozenRule}`, name, phase);
+    const run = (text, name) => work(`${text}\n${frozenRule}\n${askRule()}`, name, phase);
     let out = await run(prompt, label);
-    if (stepOf(out).action === 'owner') {
-      if (rulingUsed) return { stop: result('blocked', out.frozenTestProblems) };
-      rulingUsed = true;
-      const ruling = await agent(
-        `${common}
-The implementer reports frozen tests that look wrong:
-${numbered(out.frozenTestProblems)}
-You are the Product Owner. Rule on each. The frozen files are listed in docs/specs/${task}.tests.json. Change a test only when it contradicts the acceptance item or the spec; edit it (and the manifest when the file list changes) and commit with one trailer line per changed path: "Frozen-Test-Change: <path> -- <reason>". Otherwise leave it and say why. Never touch tasks/prd.json. Return rulings (one line per reported test) and changed (every path you changed).`,
-        { agentType: 'product-owner', model: models.owner, schema: RULING, phase, label: `rule on frozen tests ${task}` },
-      );
-      if (!ruling) return { stop: result('failed', 'The Product Owner returned nothing.') };
-      if (denied(ruling)) return { stop: result('denied', denied(ruling)) };
-      for (const path of ruling.changed || []) if (!approved.includes(path)) approved.push(path);
-      out = await run(`${prompt}\nThe Product Owner ruled on the frozen tests you reported:\n${numbered(ruling.rulings || [])}`, `${label} (after ruling)`);
-      if (stepOf(out).action === 'owner') return { stop: result('blocked', out.frozenTestProblems) };
+    let round = 0;
+    let ruledLines = [];
+    while (['owner', 'ask'].includes(stepOf(out).action)) {
+      const ruled = await ownerRuling({ frozen: out.frozenTestProblems || [], questions: out.productOwnerQuestions || [], phase });
+      if (ruled.stop) return ruled;
+      round += 1;
+      ruledLines = ruledLines.concat(ruled.lines);
+      out = await run(`${prompt}\nThe Product Owner ruled:\n${numbered(ruledLines)}`, `${label} (after ruling${round > 1 ? ` ${round}` : ''})`);
     }
     if (!out || denied(out)) return { out };
     const flow = await runGate(flowCommand, `frozen gate ${task}`, phase, (gateOut, final) => decideFrozen(gateOut, approved, pinned, final));
@@ -464,24 +598,30 @@ Resolve gaps yourself from the task, the code, the docs, and the settled decisio
   if (!skipCheck) {
     const check = await agent(
       `${common}
-Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Return approved and the numbered issues. Set touchesNative=true if the spec's files to touch include anything under modules/ or apps/tv/android/, or the PlayerEngine port (the engine interface in packages/core/src/domain/playback.ts).`,
+Check the spec and append your "## Spec check" verdict to it. Set approved=true unless an issue is critical or high; list medium and low issues anyway, prefixed with their severity, and the implementer will resolve them. Return approved and the numbered issues. Return a question the spec cannot settle in productOwnerQuestions, not in issues: each has a kind (${kindList}; technical, placement, dependency and scope go to the Product Owner step, look, wording and direction park the task for the owner), the rule it is about (<file>:<heading> or acceptance <n>) and the question. Set touchesNative=true if the spec's files to touch include anything under modules/ or apps/tv/android/, or the PlayerEngine port (the engine interface in packages/core/src/domain/playback.ts).`,
       { agentType: 'spec-checker', model: checkModel, schema: CHECK, phase: 'Check', label: `check ${task}` },
     );
     if (!check) return result('failed', 'The spec-checker returned nothing.');
     goNative(check.touchesNative, 'spec check');
+    let rulingsOfCheck = [];
+    if ((check.productOwnerQuestions || []).length) {
+      const asked = await ownerRuling({ frozen: [], questions: check.productOwnerQuestions, phase: 'Check' });
+      if (asked.stop) return asked.stop;
+      rulingsOfCheck = asked.notes;
+    }
     if (!check.approved) {
       const revised = await agent(
         `${common}
 The spec check found critical or high issues. Revise the spec to fix them and remove the old "## Spec check" section.
-${numbered(check.issues)}
+${numbered(check.issues)}${rulingsOfCheck.length ? `\nThe Product Owner ruled on questions of the check:\n${rulingsOfCheck.join('\n')}` : ''}
 Return as open questions only product or design choices the human must make that no settled decision covers.`,
         { agentType: 'refiner', model: specModel, schema: SPEC, phase: 'Check', label: `revise ${task}` },
       );
       if (!revised) return result('failed', 'The spec revision returned nothing.');
       if (revised.openQuestions.length) return result('parked', revised.openQuestions);
-      specNotes = specNotes.concat(['The spec was revised after a check; re-read it before implementing.']);
+      specNotes = specNotes.concat(['The spec was revised after a check; re-read it before implementing.'], rulingsOfCheck);
     } else {
-      specNotes = specNotes.concat(check.issues);
+      specNotes = specNotes.concat(check.issues, rulingsOfCheck);
     }
   }
 
@@ -644,7 +784,7 @@ for (const task of items) {
   const out = await withTeardown(() => runTask(task, items.length === 1 ? input : { risk: input.risk, native: input.native, root: input.root }), () => tearDownFixtures(task, input.root));
   outcomes.push({ task, ...out });
   log(`${task}: fixture servers: ${out.fixtures.detail}`);
-  if (STOP_OUTCOMES.includes(out.outcome) || (out.fixtures && out.fixtures.denied)) {
+  if (STOP_OUTCOMES.includes(out.outcome) || out.outcome === RULING_UNLOGGED || (out.fixtures && out.fixtures.denied)) {
     log(`Stopping: ${out.fixtures.denied ? 'a denied fixture teardown' : out.outcome} in ${task}`);
     break;
   }

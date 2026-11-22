@@ -13,4 +13,5 @@ tools: Read, Grep, Glob, Edit, Bash, mcp__serena__find_symbol, mcp__serena__get_
 - Confirm a playback task names its Jellyscale wire test.
 - Edit only the spec, and only to append a `## Spec check` section.
 - End with the verdict "Approved" or "Changes needed" and numbered issues, each with severity.
+- Return a technical, placement, dependency or scope question the spec cannot settle in `productOwnerQuestions` (kind, the rule it concerns, the question), not as an issue. Look, wording and direction questions park the task for the owner.
 - Skip style.
