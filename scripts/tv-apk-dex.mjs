@@ -152,9 +152,13 @@ export async function main(args = [], system = {}) {
   }
   errors.push(...verdict.errors);
   if (errors.length > 0) return fail(errors);
-  const { classes, sinkReferences, entryPoints } = verdict.stats;
+  const { classes, sinkReferences, entryPoints, leftBeforeR8 } = verdict.stats;
   stdout.write(
     `tv apk dex: ${apk} passes (${classes} classes in ${apkDex.dex.length} dex files, ${sinkReferences} sink references in ${entryPoints} listed entry points, 0 in Octave's code outside the one client)\n`,
+  );
+  // Decision log 27: a reference to a merged class whose originals are partly listed is refused before R8 instead.
+  stdout.write(
+    `tv apk dex: ${leftBeforeR8} ${leftBeforeR8 === 1 ? "reference" : "references"} from Octave's code named a merged class with listed and unlisted originals; NetworkPathsBytecodeTest (pnpm tv:native:test) refuses a listed class in Octave's classes before R8\n`,
   );
   return 0;
 }

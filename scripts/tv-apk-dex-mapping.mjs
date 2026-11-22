@@ -75,7 +75,11 @@ export function mappingBuilder() {
           data = null;
         }
         if (data?.id === "com.android.tools.r8.residualsignature" && last) last.residual = data.signature;
-        if (data?.id === "com.android.tools.r8.synthesized" && lastFrame) lastFrame.synthesized = true;
+        if (data?.id === "com.android.tools.r8.synthesized") {
+          // A frame of a method, or a field line: R8's own member (a merged constructor, a class-id field).
+          if (lastFrame) lastFrame.synthesized = true;
+          else if (last?.originalName !== undefined) last.synthesized = true;
+        }
         return;
       }
       const method = METHOD_LINE.exec(text);
@@ -101,7 +105,7 @@ export function mappingBuilder() {
       if (field) {
         const [, type, qualified, dexName] = field;
         const { holder, name } = splitHolder(qualified, section.original);
-        last = { name: dexName, holder, originalName: name, type, residual: null };
+        last = { name: dexName, holder, originalName: name, type, residual: null, synthesized: false };
         section.fields.push(last);
         stack = null;
         lastFrame = null;
@@ -239,6 +243,22 @@ export function memberTypes(mapping, dexClass, name, descriptor, method) {
     if (cls) out.add(cls);
   }
   return out;
+}
+
+/**
+ * The original classes a referenced member's holder can be, for D4 (T3-19 decision log 27): the holders on the member
+ * lines R8 did not synthesize whose name and original signature are exactly the reference's (a same-named member with
+ * another descriptor is no such line). With no such line, or when the matching line is R8's own (a merged constructor,
+ * a class-id field), every original the dex class holds. A class with no mapping section is its own original.
+ */
+export function memberHolders(mapping, dexClass, name, descriptor, method) {
+  const section = mapping.sections.get(dexClass);
+  if (!section) return new Set([dexClass]);
+  const lines = method
+    ? section.stacks.filter((s) => s.name === name && stackDescriptor(mapping, s) === descriptor).map((s) => s.frames[s.frames.length - 1])
+    : section.fields.filter((f) => f.name === name && (f.residual ?? toDescriptor(mapping, f.type)) === descriptor);
+  if (lines.length === 0 || lines.some((line) => line.synthesized)) return new Set(originalsOf(mapping, dexClass));
+  return new Set(lines.map((line) => line.holder));
 }
 
 /** The original holders of a referenced dex field, by its member line. */
