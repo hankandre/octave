@@ -6,7 +6,7 @@ Record the T4-09 fresh-context review's findings so the owner and later tasks se
 
 - [x] The medium finding fixed with a test, as far as a local run can go
 - [x] Lows below logged as follow-ups, not fixed
-- [ ] T4-09 set to done with evidence naming the PR, after the PR's `tv` job shows the ran-stage line (milestone 7)
+- [x] T4-09 set to done with evidence naming the PR, after the PR's `tv` job shows the ran-stage line (milestone 7)
 
 ## Context and domains touched
 
@@ -24,7 +24,7 @@ None added.
 ## Progress
 
 - [x] 1
-- [ ] 2
+- [x] 2
 
 ## Decision log
 

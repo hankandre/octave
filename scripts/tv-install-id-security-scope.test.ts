@@ -23,10 +23,11 @@ describe("T4-09 review: the install-id stage's results are scoped to the run tha
     expect(bullet).not.toMatch(/\*\*Tested\*\* on the emulator by/);
   });
 
-  it("marks the CI image as Planned until the pull request's artifact holds the ran-stage line", () => {
+  it("marks the CI image as Tested now that the pull request's artifact holds the ran-stage line", () => {
     const bullet = installIdBullet();
-    expect(bullet).toMatch(/On the CI image both are \*\*Planned \(T4-09\)\*\*/);
-    expect(bullet).toContain("relaunch=same clear=new restore=new transport=selected backup=");
+    expect(bullet).toMatch(/On the CI image both are \*\*Tested\*\* too/);
+    expect(bullet).not.toContain("Planned (T4-09)");
+    expect(bullet).toContain("relaunch=same clear=new restore=new transport=selected backup=refused");
     expect(bullet).toContain("release-evidence/tv/e2e-install-id.txt");
     expect(bullet).toContain("octave-tv-evidence");
   });

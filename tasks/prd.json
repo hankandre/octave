@@ -2155,10 +2155,10 @@
             "The spec records the maintenance check, from primary sources, for the storage dependency it adopts, or uses a platform API"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit eac41834 (branch task/T4-09, not pushed): review medium fixed, security.md scopes clear=new/backup=refused to one local run, CI Planned; lows in plan 014. pnpm check green (vitest 3062+2035, jest 89); check-red T4-09 green [1,2,3], item 4 review gate passed. Earlier, commit 55409913: tv:native:test 707 passed; own fluster_tv API 36 emulator stage relaunch=same clear=new restore=new transport=selected backup=refused. Pending: PR tv job e2e-install-id.txt ran-stage line (milestone 7). Not tested: real TV/Shield, CI image, other Android versions, tvOS, any server."
+          "passes": true,
+          "evidence": "PR #297, run 45072287718 (tv job pass). CI e2e-install-id.txt: relaunch=same clear=new restore=new transport=selected backup=refused. Local: pnpm check green, check-red green, tv:native:test 707 (commit 55409913). Not tested: real TV/Shield, other Android versions, tvOS, any server."
         },
         {
           "id": "T4-03",
