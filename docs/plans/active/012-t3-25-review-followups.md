@@ -5,9 +5,9 @@
 Record the T3-25 fresh-context review's findings, fix its mediums where a local change can, log its lows so the owner, the Product Owner and later tasks see them, and close T3-25 once its CI gate is met (T3-25). The milestones and decision log of the task itself are in `docs/specs/T3-25.md`.
 
 - [x] The first medium fixed: a test raises each error in the answer's read and a scan guards the parse (commit ae04a189)
-- [ ] The second medium: item 4's CI gate (the wire job of `ci.yml` on the PR head, every T3-05 pair `pass`), done in the Ship phase
+- [x] The second medium: item 4's CI gate (the wire job of `ci.yml` on the PR head, every T3-05 pair `pass`), done in the Ship phase (run 45050660481, 8 T3-05 pairs pass, no fail)
 - [x] Lows below logged as follow-ups, not fixed
-- [ ] T3-25 set to done with evidence naming the PR or commit
+- [x] T3-25 set to done with evidence naming the PR or commit
 
 ## Context and domains touched
 
@@ -27,7 +27,7 @@ None added.
 
 - [x] 1
 - [x] 2
-- [ ] 3
+- [x] 3
 
 ## Decision log
 
