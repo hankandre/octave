@@ -10,7 +10,7 @@ The window is 90 days and the row shows at most 20 titles. Where T5-02's accepta
 
 The owner chose Tabler icons, as in the inbox answer 2.
 
-**Pending with the owner:** the stroke weight. The recommendation in the owner's inbox is weight 300. It is not decided until the owner answers; the answer is written under this heading, or in a later `docs/specs/decisions-*.md` file that names T3-34.
+**The stroke weight (owner, 2026-11-22, from the decision inbox):** light. The icons use Tabler's weight-300 font. T3-34 reads the weight from here.
 
 ## 3. The Signal loader's motion (T3-35)
 
@@ -26,4 +26,31 @@ The owner updated the motion of the Signal loader. It replaces "on each pulse on
 
 The reference is the coordinator's logo page, round 7.
 
-**Pending with the owner:** the brass colour as a design token. The recommendation in the owner's inbox is `#E8C48A`. It is not decided until the owner answers; the answer is written under this heading, or in a later `docs/specs/decisions-*.md` file that names T3-35.
+**The brass colour (owner, 2026-11-22, from the decision inbox):** `#E8C48A`, and it becomes a design token. T3-35 reads the colour from here.
+
+The owner's inbox answer "when spelled, hold, dim and spell again" was given for the earlier version, where each pulse lit one more letter. The owner then changed the motion to the wave above, so that answer does not apply. The wave stands.
+
+## 4. The menu on a Continue watching card (T5-05)
+
+Holding select on a Continue watching card opens a menu that holds:
+
+- Remove from Continue watching
+- Mark as watched
+- Go to series (for episodes)
+- Details
+
+This is the owner step of T5-05: what else the menu holds besides Remove, and its labels.
+
+## 5. The Settings sections (T9-08)
+
+The owner accepted the proposal of T9-08: the sections of `DESIGN.md` 7.18, in that list's order, and no Advanced section.
+
+## 6. The pipeline options of T1-20's report (T1-22, T1-23, T1-24)
+
+From the six options of `docs/research/pipeline-cost.md`, the owner took options 1, 2 and 6:
+
+- **Option 1 (T1-22).** Run the mechanical gates (sync, red, frozen, green, fixtures down) as commands inside the coordinator or the next agent, not one agent each.
+- **Option 2 (T1-23).** Hand the CI wait in Ship to a polling loop, or to the cheaper `scout` model.
+- **Option 6 (T1-24).** Run `pnpm check` and the frozen gate locally before Ship.
+
+Options 3, 4 and 5 are declined: the separate spec check stays for small routine tasks, the spec of a small routine task keeps its model, and Tests is not folded into Implement.

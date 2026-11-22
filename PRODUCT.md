@@ -140,9 +140,7 @@ Dolby Vision, passthrough, and frame-rate matching are proven on the owner's Shi
 
 These are the owner's decisions; each has a task.
 
-- **The menu on a Continue watching card (T5-05).** Remove lives in a short menu on a held select (decided, below). What else that menu holds, and its labels, are open: a held select opened the details until now.
 - **A PIN per profile (T12-01).** Whether and when a profile gets a PIN, entered with the D-pad and never shown in clear.
-- **The Settings sections (T9-08).** Their list and order, and what sits under an Advanced section.
 - **Recent searches on a shared TV (T12-05).** They save presses but show one viewer's searches to the next.
 - **One Home across servers.** Servers stay separate for now.
 - **Other TV platforms.** Samsung, LG, and Vidaa owners ask for clients (Fider #1615, 466 votes); no platform beyond Android TV, Fire TV, and Apple TV is planned.
@@ -154,5 +152,7 @@ The owner's decisions of 2026-11-22 from the decision inbox (`docs/specs/decisio
 - **Continue watching (T5-01).** Remove hides the title and keeps its progress; the other option was to reset the progress, which is the only way on a server without Jellyscale #233. Remove lives in a short menu on a held select; the other option was the title's page. A title leaves the row 90 days after it was last played, the row shows at most 20, newest first, and each account can change the window (30, 90, 180 or 365 days, or Never); the other option was to keep everything by default. A title that aged out is only hidden, and the device works the ageing out from the server's last-played date.
 - **Which settings follow the account (T9-01).** Subtitles, auto-play, the skip modes and the Continue watching window follow the account and are stored on the server's display preferences, so another device signed in to the account has them. The streaming limits, and later passthrough and refresh rate, stay on the device. The other option for storage was the device, keyed by account.
 - **Errors.** A screen shows only Octave's own fixed sentence for an error, never the reason text of the player, the system or the server.
+- **The menu on a Continue watching card (T5-05).** Holding select on a Continue watching card opens a menu that holds Remove from Continue watching, Mark as watched, Go to series (for episodes) and Details (`docs/specs/decisions-owner-chat-2026-11-22.md`, 4). A held select opened the details directly until now.
+- **The Settings sections (T9-08).** The sections are Playback, Home, Languages, Subtitles, Accounts, and About & diagnostics, in that order, with no Advanced section (the same file, 5; `DESIGN.md` 7.18).
 - **The application ID** is `cloud.jellyscale.octave` (T3-21).
 - **Discovery** lists a `.home.arpa` name as well as a `.local` name (T4-01).
