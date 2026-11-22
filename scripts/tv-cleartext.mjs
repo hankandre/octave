@@ -101,8 +101,8 @@ export function judgeCleartext(report, served, expected) {
 }
 
 // The host's test server on 127.0.0.1. It records each request's path, Host, and whether Authorization equals the
-// canary, and answers 200 with a fixed body.
-function startHostServer() {
+// canary, and answers 200 with a fixed body. Shared with scripts/tv-resolved-address.mjs (T3-20).
+export function startHostServer() {
   const served = [];
   const server = createServer((request, response) => {
     served.push({ path: request.url ?? "", host: request.headers.host ?? "", header: request.headers.authorization === CANARY_HEADER });
@@ -116,7 +116,7 @@ function startHostServer() {
 }
 
 // Runs adb asynchronously, so the host server keeps answering while the probe runs.
-function adbRunner(adbPath, serial) {
+export function adbRunner(adbPath, serial) {
   return (args, timeout = PROBE_MS) =>
     new Promise((resolve) => {
       execFile(adbPath, ["-s", serial, ...args], { encoding: "utf8", timeout, maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -125,7 +125,7 @@ function adbRunner(adbPath, serial) {
     });
 }
 
-const lastLine = (result) => (result.stdout + result.stderr).trim().split("\n").pop() ?? "";
+export const lastLine = (result) => (result.stdout + result.stderr).trim().split("\n").pop() ?? "";
 
 // Installs and runs the probe on the device `serial` names, judges it, and writes release-evidence/tv/e2e-cleartext.txt.
 // Returns { errors, report, served }. The reverse rule, the probe package and the server are removed whatever happens.

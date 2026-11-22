@@ -14,3 +14,7 @@ export function runCleartextProbe(options: { adbPath: string; serial: string; ap
   report: CleartextReport;
   served: ServedRequest[];
 }>;
+export function startHostServer(): Promise<{ server: import("node:http").Server; served: ServedRequest[]; port: number }>;
+export type AdbResult = { ok: boolean; stdout: string; stderr: string; error: (Error & { killed?: boolean }) | null };
+export function adbRunner(adbPath: string, serial: string): (args: string[], timeout?: number) => Promise<AdbResult>;
+export function lastLine(result: { stdout: string; stderr: string }): string;
