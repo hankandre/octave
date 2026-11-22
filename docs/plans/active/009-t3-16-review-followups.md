@@ -56,6 +56,14 @@ Milestone 1, 2026-11-22, at 717d2062:
 - `mise exec -- pnpm check`: exit 0; vitest 2641 and 1366 passed.
 - `ANDROID_SERIAL=emulator-5590 pnpm tv:wire --task T3-05` on a fresh read-only `fluster_tv` emulator of this agent's own: did not run past `pnpm fixture:setup` (see Surprises).
 
+Re-verify, 2026-11-22, at 47278414 (no code change):
+
+- `mise exec -- pnpm check`: exit 0; vitest 1366 passed (67 files); check-flow tests 60 pass, 0 fail.
+- `mise exec -- pnpm tv:native:test`: tv native: 328 tests, 0 failed, 2 projects.
+- `mise exec -- node scripts/check-red.mjs T3-16 --expect green`: exit 0; green [4,5,6,7,8], items 1 to 3 `met`, problems [].
+- `mise exec -- pnpm lint:flow`: flow ok: 11 commits ahead; frozen T3-16; 0 frozen changes.
+- `pnpm tv:wire --task T3-05`: not rerun; `docker ps` still shows Compose project `octave-8b8377b9f2` on 18096, 18097 and 18098. No on-device run this session; `pnpm tv:e2e` not needed (`git diff --stat origin/main...HEAD -- apps/tv` is empty).
+
 Not run: the Shield, any other Android version or AVD, the dogfood Jellyfin and Jellyscale servers, the pinned Jellyfin and Jellyscale fixtures (wire run blocked).
 
 ## Outcome & retrospective
