@@ -26,7 +26,7 @@ None added.
 ## Progress
 
 - [x] 1 to 5, in one commit (the modules depend on each other: the recorder imports the evidence module, the runner imports all three)
-- [ ] 6 device run: see Validation evidence; Ship runs the `wire` job
+- [x] 6 device run (8 pairs passed on own emulator; Ctrl+C on a real device untested, signal handling covered by tv-wire-device.test.ts): see Validation evidence; Ship runs the `wire` job
 
 ## Decision log
 
@@ -37,7 +37,7 @@ None added.
 
 ## Surprises & discoveries
 
-- Frozen test `scripts/tv-wire-evidence.test.ts`, "a writeEvidence error fails every pair and is printed" (line 396-400): its baseline pushes a second pair with `devicePort: 47301` but the same `PROBE` records, whose `host` is `127.0.0.1:47300`. The Host rule (`judgeRecords`) then fails that pair, so the baseline `every(pass)` cannot hold without weakening the Host check. Left unchanged and reported as a frozen-test problem; the fix is `host: "127.0.0.1:47301"` on the second pair's records.
+- Frozen test `scripts/tv-wire-evidence.test.ts`, "a writeEvidence error fails every pair and is printed" (line 396-400): its baseline pushes a second pair with `devicePort: 47301` but the same `PROBE` records, whose `host` is `127.0.0.1:47300`. The Host rule (`judgeRecords`) then fails that pair, so the baseline `every(pass)` cannot hold without weakening the Host check. Reported as a frozen-test problem; the Product Owner changed it in 072b75fc (second pair gets `host: "127.0.0.1:47301"`). Items 1 to 5 now pass.
 
 ## Validation evidence
 
