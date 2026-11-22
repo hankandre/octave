@@ -1,6 +1,6 @@
 {
   "product": "Octave",
-  "updated": "2026-11-21",
+  "updated": "2026-11-22",
   "rules": [
     "Pick the first task, in file order, whose status is todo and whose depends_on tasks all pass.",
     "Skip tasks with human set to true unless the owner is taking part; set them to blocked and state in evidence what the owner must decide or check.",
@@ -509,6 +509,28 @@
           "owner": "implementer",
           "passes": true,
           "evidence": "Task CLI (pnpm task next/show/list/set), size and evidence check, prompts and docs on the CLI; commit aa02806 on task/T1-13; review fix: list uses strict parseArgs; pnpm check green (1510 tests). Naming rule enforced for in_progress/done only (owner may veto)."
+        },
+        {
+          "id": "T1-14",
+          "title": "Make the task workflow hold up on a resumed branch, a wrapped gate result and leftover fixture servers",
+          "domain": "Process",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [
+            "T1-12"
+          ],
+          "acceptance": [
+            "A resumed task whose branch is behind origin/main is rebased onto it with the freeze commit still the branch's first commit, and the workflow never merges main into a task branch; a branch that already holds such a merge is stopped with a message that names the commit",
+            "The frozen-test gate reads check-flow's --json result when the relayed output holds other text before or after it (log lines, ERROR lines, a code fence), and stops as unreadable only when the output holds no result object; a test feeds each form",
+            "When a task ends, whatever its result, the workflow brings down the fixture servers its own worktree started and says so in the result; it never stops another checkout's Compose project",
+            "node --test .claude/workflows/task.test.mjs covers each of the three, and WORKFLOW.md states the rebase rule and the teardown in the same PR"
+          ],
+          "verify": "pnpm check && node --test .claude/workflows/task.test.mjs",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         }
       ]
     },
@@ -986,6 +1008,102 @@
           "evidence": "PR #268. CI run 45017829422 on the PR head: checks, dependency-review, tripwire, tv (dexdump found, tv inspector passes) and wire (T3-05 pairs) all green. Local: pnpm check exit 0, tv:native:test 328 pass. EchoedToken mutation (forms = emptyList()) fails the test, run in the PR body. Lows in plan 009."
         },
         {
+          "id": "T3-24",
+          "title": "Refuse the path forms the native request's path rule still passes",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-16"
+          ],
+          "acceptance": [
+            "Both sides of the path rule (Kotlin's RequestPath and the core's request-path.ts) refuse a path that holds a ; and a path that holds a NUL or another control character after any round of percent-decoding, so /Items/..;/x, /Items/%2e%2e;/x and /Items/..%00/x are refused",
+            "Both sides refuse a segment made only of characters a server or proxy may fold to a dot, the fullwidth full stop (U+FF0E) at least, as written or after any round, so /Items/%ef%bc%8e%ef%bc%8e/x is refused; the spec lists the characters",
+            "The UTF-8 check runs in every decoding round, so /Items/%25c0%25ae%25c0%25ae/x is refused, and a path that still holds a percent-escape after the last round is refused, so five rounds of encoding (%252525252e) are refused",
+            "The one client applies the same additions to the encoded path of every session and closing call (C2), shown by a test through the client's call factory",
+            "Each form is a refuse vector in packages/core/tests/fixtures/request-paths.json that both sides run; every accept vector there still passes, T3-16's frozen tests pass unchanged, and pnpm tv:wire --task T3-05 still passes; if a path the gateway sends would be refused, the spec says so and the task returns to the Product Owner",
+            "docs/security.md and the rule's comment on both sides state the rule as built, in the same PR; a form is left to a narrowed sentence only where the spec shows it cannot be refused"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire --task T3-05",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-25",
+          "title": "Bound what a server's answer can cost the native parser",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-16",
+            "T3-24"
+          ],
+          "acceptance": [
+            "An answer under its size cap whose JSON nests deeper than a bound the spec sets is refused as unexpected-response before the strict parse, the token strip or the re-serialisation can exhaust the stack; a JVM test sends one through the one client",
+            "A StackOverflowError while an answer is read or parsed reaches JavaScript as unexpected-response, not network, with no native message; the spec says how an OutOfMemoryError is handled, and a test shows what it says",
+            "New tests in files no manifest freezes show: a declared-length answer of exactly the cap is accepted, an oversized body that is not JSON is refused, and an oversized sign-in answer leaves SessionRegistry with no new entry",
+            "T3-16's frozen tests pass unchanged and pnpm tv:wire --task T3-05 still passes",
+            "docs/security.md states the bound and names its tests in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire --task T3-05",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-26",
+          "title": "Keep secrets out of the wire evidence and make a failed wire run plain",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T3-05",
+            "T3-16"
+          ],
+          "acceptance": [
+            "No file under release-evidence/wire holds a known secret (the token or the canary, as written or encoded): the recorder and the runner write a stand-in for a path or a query name that holds one, the judge still fails that request, and a test reads the written record for a secret in a path segment and in a query name",
+            "pnpm tv:wire removes release-evidence/wire before its first possible exit, so a run that fails early leaves no summary.txt from an earlier run; a test shows it",
+            "The logcat judge cannot pass a run whose early lines rotated out of the buffer: the evidence records how the run's whole log was kept, and the run fails when it cannot tell; the spec chooses between a larger buffer and streaming",
+            "A run stopped by SIGINT or SIGTERM restores the device's global http_proxy and removes its adb reverses; a test shows the calls",
+            "A test of the check-session-logs CLI asserts its summary line and file count, so a main that never runs fails pnpm check; it is a new test, and the frozen CLI tests are unchanged",
+            "The wire job stays green on the PR head, and docs/security.md and docs/commands.md say what the wire evidence holds in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-27",
+          "title": "Give each checkout its own fixture ports",
+          "domain": "Process",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T3-05",
+            "T3-26"
+          ],
+          "acceptance": [
+            "Two checkouts run pnpm fixture:up at the same time: each takes host ports of its own and records them where the setup script, the tripwire, the integration tests and the wire runner read them; 18096 to 18098 stay at most a default",
+            "pnpm tv:wire reverses the checkout's own ports to the emulator, and pnpm test:tripwire and pnpm tv:wire pass in CI",
+            "A project left up by a deleted checkout no longer blocks another checkout's run; a test of the port choice shows it",
+            "docs/commands.md describes the ports in the same PR"
+          ],
+          "verify": "pnpm check && pnpm test:tripwire && pnpm tv:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-20",
           "title": "Refuse a plain-HTTP connection whose name resolves outside the home network",
           "domain": "Security & Redaction",
@@ -1093,7 +1211,8 @@
             "T3-19",
             "T3-20",
             "T3-22",
-            "T3-23"
+            "T3-23",
+            "T3-24"
           ],
           "acceptance": [
             "Shield check (owner): launched from the TV launcher with the remote, the first screen takes focus with no priming press, and the first Right press moves focus one tile",
@@ -1267,7 +1386,8 @@
             "T3-20",
             "T3-22",
             "T3-21",
-            "T3-23"
+            "T3-23",
+            "T3-24"
           ],
           "acceptance": [
             "Owner decision: the owner sets the budget numbers for cold start to first focusable frame, key press to focus change, and janky frames while a key is held, from the T0 results",
@@ -1300,7 +1420,8 @@
             "T3-20",
             "T3-22",
             "T3-21",
-            "T3-23"
+            "T3-23",
+            "T3-24"
           ],
           "acceptance": [
             "The release build includes a Baseline Profile covering start-up, Home row scrolling and opening a title",
@@ -1326,7 +1447,8 @@
             "T3-20",
             "T3-22",
             "T3-21",
-            "T3-23"
+            "T3-23",
+            "T3-24"
           ],
           "acceptance": [
             "A Perfetto trace of holding Down on Home shows no image-library load start or resource callback over 2 ms on the UI thread",
