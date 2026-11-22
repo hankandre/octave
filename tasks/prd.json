@@ -983,7 +983,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Review fix at commit 717d2062: C2 runs P4/P5 on every session call's encoded path (BasePathDotSegmentTest red on old code, green now). Lows logged in docs/plans/active/009-t3-16-review-followups.md (commit 17d3c41a). pnpm check exit 0; pnpm tv:native:test 328 tests, 0 failed. Held in_progress: T3-05 wire rerun not passed (local run blocked at fixture:setup by orphaned octave-8b8377b9f2 containers on the shared ports); needs the wire and tv CI jobs green on the PR. No PR yet."
+          "evidence": "Second review fix at commit 1bf7ac60: lint:logs closes the console, regex, template and Timber bypasses (bypass test 6 red on old script). Lows in plan 009 (commit 9959e7f0). pnpm check exit 0; tv:native:test 328, 0 failed; tv:wire --task T3-05 on own emulator-5590: 8 pairs pass; tv:apk:check inspector passes on a local release APK. Held in_progress: the wire and tv CI jobs must be green on the PR head (dexdump on the runner unverified). No PR yet."
         },
         {
           "id": "T3-20",
