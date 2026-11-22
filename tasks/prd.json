@@ -2608,7 +2608,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 1d925488 on task/T8-22 (launch rules 460009e0, subtitle host rules 9c3c2ec1, stop on refusal 2383fdf3, docs). Blocked: frozen coordinator-play-method.test.ts:134 (static plan with a master.m3u8 URL) fails S1; coordinator-launch-refusal.test.ts:86 fails typecheck TS2493. Both need a ruling."
+          "evidence": "commit 3cdfe634 on task/T8-22 (launch rules 460009e0, subtitle host rules 9c3c2ec1, stop on refusal 2383fdf3, docs 1d925488, URL.href typing). pnpm check and core tests (3053) pass; lint:flow ok. Tripwire not run: no fixture servers."
         },
         {
           "id": "T8-02",
