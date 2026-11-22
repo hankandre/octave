@@ -923,7 +923,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 00728fa2 (framework sinks; entry 27 in 77f67909), for PR #267. Keep-rule APK 0e713087: tv:apk:check passes (5301 classes, 219 sinks, 14 entry points), 1 ref left to pre-R8 test; no-keep build 514f8085 fails D7 (19 classes). check green (2596+1457), tv:native:test 215/0 (on 77f67909), smoke and e2e pass on emulator-5620 (API 36 ATV x86_64), frozen 1-5 green. Not pushed; CI tv job not run. Untested: Shield, real TVs, arm64, other Android versions, Jellyfin, Jellyscale, C++ inspector gate."
+          "evidence": "commit 00728fa2 (framework sinks; entry 27 in 77f67909), for PR #267. Keep-rule APK 0e713087: tv:apk:check passes (5301 classes, 219 sinks, 14 entry points), 1 ref left to pre-R8 test; no-keep build 514f8085 fails D7 (19 classes). On 2ae5d1a8: check green (2596+1457), tv:native:test 215/0; smoke and e2e pass on emulator-5620 (API 36 ATV x86_64, 77f67909), frozen 1-5 green. Not pushed; CI tv job not run. Untested: Shield, real TVs, arm64, other Android versions, Jellyfin, Jellyscale, C++ inspector gate."
         },
         {
           "id": "T3-04",
