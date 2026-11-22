@@ -92,6 +92,20 @@ function argumentEnd(code, from) {
   return code.length;
 }
 
+// The index of the `)` that closes the call whose arguments start at `from`, in masked code.
+function callEnd(code, from) {
+  let depth = 0;
+  for (let i = from; i < code.length; i += 1) {
+    const ch = code[i];
+    if ("([{".includes(ch)) depth += 1;
+    else if (")]}".includes(ch)) {
+      if (depth === 0) return i;
+      depth -= 1;
+    }
+  }
+  return code.length;
+}
+
 const lineOf = (code, index) => code.slice(0, index).split("\n").length;
 
 /**
@@ -180,9 +194,15 @@ export function adbOutputFindings(files) {
       const line = lineOf(code, match.index);
       const name = imports.get(match.groups.d) ?? match.groups.n;
       const literal = /^(["'`])((?:(?!\1)[^\\$]|\\.)*)\1$/s.exec(argument);
+      // With a `shell` option the first argument is a command line, whatever its form.
+      if (knowsAdb && /(?<![\w$.])shell(?![\w$])/.test(code.slice(end, callEnd(code, start)))) {
+        add(path, `line ${line}: \`${name ?? "the call"}\` has a \`shell\` option in a file that knows adb, so a shell can start adb unredacted; use openAdb from ./tv-adb.mjs`);
+      }
       if (literal !== null) {
         if (knowsAdb && (name === "exec" || name === "execSync")) {
           add(path, `line ${line}: \`${name}\` runs a command string through a shell, which cannot be read for adb; use openAdb from ./tv-adb.mjs`);
+        } else if (knowsAdb && /\s/.test(literal[2])) {
+          add(path, `line ${line}: the program name holds a space (a command line) in a file that knows adb; use openAdb from ./tv-adb.mjs for adb, or start a literal program`);
         } else if (knowsAdb && WRAPPERS.test(literal[2])) {
           add(path, `line ${line}: starts a wrapper program (\`${literal[2]}\`) in a file that knows adb, which can start adb unredacted; use openAdb from ./tv-adb.mjs`);
         } else if (/(^|[\\/])adb(\.exe)?$/i.test(literal[2])) add(path, `line ${line}: starts adb itself; use openAdb from ./tv-adb.mjs, which redacts the device serial`);
