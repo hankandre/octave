@@ -56,5 +56,5 @@ For the Product Owner (frozen tests that are weak, not wrong; no frozen file cha
 
 Ship checklist (no code):
 
-- tasks/prd.json:1319: the T3-29 evidence named branch hash `7f55877d`, which a rebase merge rewrites, the failure this task fixes for T3-19 (spec, "Citations"). At Ship, replace it with the PR number and the CI run's `tv apk dex:` line.
+- tasks/prd.json:1319: the T3-29 evidence names a branch hash (`7f55877d` at review, `12c70085` now), which a rebase merge rewrites, the failure this task fixes for T3-19 (spec, "Citations"). At Ship, replace it with the PR number and the CI run's `tv apk dex:` line.
 - docs/specs/T3-29.md:46: item 5 (gate: ci) is not met yet. Locally `check-red --expect green` passes for T3-29 (1-4, 6), T3-19 (1-5) and T3-04 (1-7), and no frozen file of T3-19 or T3-04 is in the diff, but the PR is not open, so the CI `tv apk dex:` line and the call-out of the narrowed D1 exemption (items 5 and 6) do not exist yet. Ship must quote both before merge.
