@@ -1025,10 +1025,10 @@
             "docs/security.md states the permissions and the backup rule in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check && pnpm tv:smoke",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "In progress on task/T3-22: commit 25666997 adds the manifest-trim and backup-rules config plugin (milestone 1); the APK check, the real build and the docs follow."
         },
         {
           "id": "T3-21",
