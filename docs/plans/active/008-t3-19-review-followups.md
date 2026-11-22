@@ -8,8 +8,8 @@ Record the T3-19 fresh-context review's medium finding (fixed) and its low findi
 - [x] Lows below logged as follow-ups, not fixed
 - [x] Second review's medium, fixed: framework APIs that open a connection were missing from `NETWORK_SINKS` (`SelectorProvider` channel opens, `MediaPlayer.create`, `MediaExtractor` and `MediaMetadataRetriever` `setDataSource`, and sink methods on a framework subclass such as `SSLCertificateSocketFactory.createSocket`). Added to S4 and S6 with `FRAMEWORK_SUPERCLASSES` (android.jar 37.1, javap); `scripts/tv-apk-dex-framework-sinks.test.ts`; spec Implementation record "review fix: framework APIs missing from `NETWORK_SINKS`"
 - [x] Second review's lows logged below, not fixed
-- [ ] CI gate: the `tv` job green on the PR head; the PR quotes the `tv apk dex:` line, `release-evidence/tv/dev-server-watch.txt`, the first-focus transcript and the run id
-- [ ] T3-19 set to done with evidence naming the PR
+- [x] CI gate (run 45023535907, head 314a33d4, `tv` job green: `tv apk dex: ... passes (5303 classes in 1 dex files, 219 sink references in 14 listed entry points, 0 in Octave's code outside the one client)`, 1 reference left to `NetworkPathsBytecodeTest`; dev-server-watch.txt `port 8081: 2 of 2 control connections seen, 0 app connections`; `tv focus: tile-0 took focus with no key, and one Right moved it to tile-1`): the `tv` job green on the PR head; the PR quotes the `tv apk dex:` line, `release-evidence/tv/dev-server-watch.txt`, the first-focus transcript and the run id
+- [x] T3-19 set to done with evidence naming the PR
 
 ## Context and domains touched
 
@@ -27,7 +27,7 @@ None added.
 ## Progress
 
 - [x] 1
-- [ ] 2
+- [x] 2
 
 ## Decision log
 
