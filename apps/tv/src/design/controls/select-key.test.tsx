@@ -1,6 +1,6 @@
 // T3-06 item 6: each control has a component test for activation with the select key. `pressSelect` delivers focus,
-// pressIn, pressOut and press in the order react-native-tvos documents for Pressable. Real dispatch on a device, the
-// TextField keyboard opening and the scale values are not frozen here.
+// pressIn and pressOut in the order react-native-tvos documents for Pressable; the release calls `onPress`. Real
+// dispatch on a device, the TextField keyboard opening and the scale values are not frozen here.
 import { describe, expect, it, jest } from "@jest/globals";
 import { act, screen } from "@testing-library/react-native";
 import { useState } from "react";
