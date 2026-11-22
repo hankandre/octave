@@ -923,7 +923,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 76d2b7c2 and 6083714d (review fix, decision log 25, a D2+D4 scope edit: synthetic-only lambda-group sites judged; X6 removed; plan 008 logs lows). pnpm check green (2583+1311 tests; 0 frozen changes); tv:apk:check passes (5111 classes, 192 sinks in 14 entry points) on build defa2869. Earlier: tv:native:test 176/0, tv:smoke, tv:e2e on own API 36 ATV emulator. Entries 22, 25 open to owner veto. Untested: Shield/real TVs, arm64, other Android versions, CI tv job, C++ inspector gate, Jellyfin/Jellyscale."
+          "evidence": "commit 76d2b7c2, 6083714d and d8bd9876 (review fix, decision log 25, a D2+D4 scope edit: synthetic-only lambda-group sites judged; X6 removed; cast exemption limited to non-Octave-named groups; plan 008 logs lows). At d8bd9876: pnpm check green (2583+1312 tests; 0 frozen changes); tv:apk:check passes (5111 classes, 192 sinks, 14 entry points) on build defa2869. From 6f945b93: tv:native:test 176/0, tv:smoke, tv:e2e on API 36 ATV emulator. Entries 22, 25 open to veto. Untested: Shield/real TVs, arm64, other Android versions, CI tv job, C++ inspector gate, Jellyfin/Jellyscale"
         },
         {
           "id": "T3-04",
