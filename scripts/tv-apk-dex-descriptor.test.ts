@@ -22,6 +22,8 @@ function mapping(): string {
   return [
     "com.example.Merged -> mg:",
     `    1:1:void ${HOOK_MEMBER}.touch():5:5 -> b`,
+    "com.example.Other -> mh:",
+    `    1:1:void ${HOOK_MEMBER}.poke():6:6 -> b`,
     "com.example.Lib -> lb:",
     "    com.example.Merged com.example.Lib.INSTANCE -> f",
     `    ${HOOK_MEMBER} com.example.Lib.HOLDER -> h`,
@@ -105,6 +107,26 @@ describe("T3-19 decision log 26: D4 reads a member reference's descriptor by the
     "a member with no member line keeps the wide reading and fails D4 on every original its dex types hold",
     async () => {
       const r = await run("invoke-static {}, Llb;.z:()Lmg; // method@0000");
+      expect(r.code, r.out).toBe(1);
+      expect(d4(r).some((line) => line.includes(`D4 dev.octave.tv.Probe references ${HOOK_MEMBER}`)), r.out).toBe(true);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "a same-named method with another descriptor does not lend its signature: the wide reading stays and fails D4",
+    async () => {
+      const r = await run("invoke-static {v0}, Llb;.a:(I)Lmg; // method@0000");
+      expect(r.code, r.out).toBe(1);
+      expect(d4(r).some((line) => line.includes(`D4 dev.octave.tv.Probe references ${HOOK_MEMBER}`)), r.out).toBe(true);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "a same-named field with another type does not lend its type: the wide reading stays and fails D4",
+    async () => {
+      const r = await run("sget-object v0, Llb;.f:Lmh; // field@0000");
       expect(r.code, r.out).toBe(1);
       expect(d4(r).some((line) => line.includes(`D4 dev.octave.tv.Probe references ${HOOK_MEMBER}`)), r.out).toBe(true);
     },

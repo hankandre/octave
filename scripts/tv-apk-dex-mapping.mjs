@@ -210,21 +210,18 @@ function originalClass(type) {
 }
 
 /**
- * The original classes a referenced member's signature names, read from its member lines: a method's parameter and
- * return types (of the outermost frame, narrowed by descriptor as resolveMethod narrows), a field's type. Null when no
- * member line names the member, so the caller falls back to every original the descriptor's dex types hold. Every
- * original a merged dex class holds is not a reference the member's source made (T3-19 decision log 26).
+ * The original classes a referenced member's signature names, read from the member lines whose original signature is
+ * exactly the dex descriptor: a method's parameter and return types (of the outermost frame), a field's type. Null when
+ * no member line of that name has that descriptor, so the caller falls back to every original the descriptor's dex
+ * types hold. Every original a merged dex class holds is not a reference the member's source made (T3-19 decision log
+ * 26); a same-named member with another descriptor never stands in for it.
  */
 export function memberTypes(mapping, dexClass, name, descriptor, method) {
   const section = mapping.sections.get(dexClass);
-  if (!section) return null;
+  if (!section || !descriptor) return null;
   const out = new Set();
   if (method) {
-    const stacks = narrow(
-      mapping,
-      section.stacks.filter((s) => s.name === name),
-      descriptor,
-    );
+    const stacks = section.stacks.filter((s) => s.name === name && stackDescriptor(mapping, s) === descriptor);
     if (stacks.length === 0) return null;
     for (const s of stacks) {
       const outer = s.frames[s.frames.length - 1];
@@ -235,11 +232,7 @@ export function memberTypes(mapping, dexClass, name, descriptor, method) {
     }
     return out;
   }
-  let fields = section.fields.filter((f) => f.name === name);
-  if (fields.length > 1 && descriptor) {
-    const kept = fields.filter((f) => (f.residual ?? toDescriptor(mapping, f.type)) === descriptor);
-    if (kept.length > 0) fields = kept;
-  }
+  const fields = section.fields.filter((f) => f.name === name && (f.residual ?? toDescriptor(mapping, f.type)) === descriptor);
   if (fields.length === 0) return null;
   for (const f of fields) {
     const cls = originalClass(f.type);
