@@ -7,9 +7,9 @@ Fix the T3-16 fresh-context review's medium finding and record its low findings 
 - [x] Medium fixed: C2 runs P4 and P5 on the encoded path of every session and closing call, so a caller of `OctaveHttp.callFactory(session)` cannot send `..%2f`, `..%5c` or `%252e%252e` under the base path (`BasePathDotSegmentTest.kt`, red on the old code)
 - [x] Lows below logged as follow-ups, not fixed
 - [x] Second review, medium 1 fixed: `pnpm lint:logs` fails the `console`, regex-literal, template and `Timber` forms the review found (`scripts/check-session-logs-bypass.test.ts`, 6 of 8 cases red on the old script), so `docs/security.md`'s Tested row for the log check holds for them
-- [x] Regression gate: `pnpm tv:wire --task T3-05` all `pass` on an emulator of the agent's own, or the `wire` job green on the PR head (`docs/specs/T3-16.md`, validation; the native `request` changed) (local run at 342fd255: 8 pairs pass; the second review still wants the `wire` job green on the PR head before done)
-- [ ] CI gate: the `tv` job green on the PR head, which also shows whether `dexdump` is on its runner image (`tv:apk:check` needs it). Local evidence: `newestBuildTool` takes the newest build-tools version that holds the tool, main's green `tv` job already finds `aapt2` there the same way, and both local build-tools packages (36.0.0, 37.0.0) ship `dexdump`; the runner's copy stays unverified until CI
-- [ ] T3-16 set to done with evidence naming the PR
+- [x] Regression gate: `pnpm tv:wire --task T3-05` all `pass` on an emulator of the agent's own, or the `wire` job green on the PR head (`docs/specs/T3-16.md`, validation; the native `request` changed) (local run at 342fd255: 8 pairs pass; the second review still wants the `wire` job green on the PR head before done). `wire` job green on PR #268 (run 45017829422)
+- [x] CI gate: the `tv` job green on the PR head, which also shows whether `dexdump` is on its runner image (`tv:apk:check` needs it). Local evidence: `newestBuildTool` takes the newest build-tools version that holds the tool, main's green `tv` job already finds `aapt2` there the same way, and both local build-tools packages (36.0.0, 37.0.0) ship `dexdump`; the runner's copy stays unverified until CI. Result: `tv` job green on PR #268 (run 45017829422), `tv inspector ... passes` with dexdump on the runner
+- [x] T3-16 set to done with evidence naming the PR
 
 ## Context and domains touched
 
@@ -29,7 +29,7 @@ None added.
 
 - [x] 1
 - [x] 1b
-- [ ] 2
+- [x] 2
 
 ## Decision log
 
