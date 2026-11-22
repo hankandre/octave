@@ -939,7 +939,8 @@
             "T3-03",
             "T2-04",
             "T3-02",
-            "T2-08"
+            "T2-08",
+            "T3-15"
           ],
           "acceptance": [
             "The core's Transport port is implemented in the app as decision 0005 says, and every gateway request leaves the device through the one OkHttp client",
@@ -949,7 +950,8 @@
             "Transport failures reach the UI as the core's typed errors, never as a native exception message",
             "pnpm tv:wire exists from this task: it runs tagged wire tests on the emulator against the pinned Jellyscale and Jellyfin servers and records every request the app makes; each test carries the id of the task it proves",
             "Jellyscale wire test: the capture above runs against the pinned Jellyscale and passes",
-            "Each checkout gets its own Compose project name for the fixture servers, so two worktrees' runs neither collide nor orphan each other's servers"
+            "Each checkout gets its own Compose project name for the fixture servers, so two worktrees' runs neither collide nor orphan each other's servers",
+            "Wire test transport-private-lan-and-proxy sends a plain-HTTP request from the release-type app's own process to 10.0.2.2 on the emulator, and its host judge fails when the mock recorded no such request; a test shows the judge failing on a capture without that request"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
           "status": "todo",
@@ -1031,6 +1033,29 @@
           "evidence": "PR #262: tv job of ci.yml green on head 31e8ef8b (run https://github.com/hankandre/octave/actions/runs/44983380568); its pnpm tv:apk:check (4 permissions, 3 queries gone) and pnpm tv:smoke (First focus emulator step) pass. Local: pnpm check ok; tv:native:test 176/0. Untested: API 24-35, Shield, arm64, real TV, on-device backup (T4-05, T4-09)."
         },
         {
+          "id": "T3-23",
+          "title": "Read the release manifest's attributes by namespace in the APK check",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-22"
+          ],
+          "acceptance": [
+            "The two reproductions from T3-22's review fail the manifest check, each as a test on the recorded dump: a uses-permission whose android:name is off the allowed list followed by a same-named attribute in another namespace or none that is on it, and an application with android:allowBackup true followed by a same-named attribute that says false",
+            "The check reads a manifest attribute only as Android reads it, and no later attribute replaces an earlier one, in the manifest or in the data extraction rules file; an element with two attributes of one local name is an error that names the element and the attribute",
+            "The spec records, from a built release APK, whether the manifest merger and aapt2 keep an attribute in another namespace or none; the fix does not depend on the answer",
+            "pnpm tv:apk:check still passes on the release APK the tv CI job builds, and T3-22's frozen tests pass unchanged",
+            "docs/security.md section 6 says how the check reads attributes, in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:build && pnpm tv:apk:check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-21",
           "title": "Sign every build for a real TV with a private key",
           "domain": "Distribution",
@@ -1067,7 +1092,8 @@
             "T3-21",
             "T3-19",
             "T3-20",
-            "T3-22"
+            "T3-22",
+            "T3-23"
           ],
           "acceptance": [
             "Shield check (owner): launched from the TV launcher with the remote, the first screen takes focus with no priming press, and the first Right press moves focus one tile",
@@ -1240,7 +1266,8 @@
             "T3-19",
             "T3-20",
             "T3-22",
-            "T3-21"
+            "T3-21",
+            "T3-23"
           ],
           "acceptance": [
             "Owner decision: the owner sets the budget numbers for cold start to first focusable frame, key press to focus change, and janky frames while a key is held, from the T0 results",
@@ -1272,7 +1299,8 @@
             "T3-19",
             "T3-20",
             "T3-22",
-            "T3-21"
+            "T3-21",
+            "T3-23"
           ],
           "acceptance": [
             "The release build includes a Baseline Profile covering start-up, Home row scrolling and opening a title",
@@ -1297,7 +1325,8 @@
             "T3-19",
             "T3-20",
             "T3-22",
-            "T3-21"
+            "T3-21",
+            "T3-23"
           ],
           "acceptance": [
             "A Perfetto trace of holding Down on Home shows no image-library load start or resource callback over 2 ms on the UI thread",
@@ -1378,7 +1407,8 @@
           "depends_on": [
             "T4-01",
             "T3-09",
-            "T3-22"
+            "T3-22",
+            "T3-23"
           ],
           "acceptance": [
             "The first screen opens with focus on the first server found; choosing it takes one press",
