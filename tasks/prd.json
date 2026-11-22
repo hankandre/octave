@@ -2072,10 +2072,10 @@
             "T5-05 and T9-03 are updated by the Product Owner if an answer changes their acceptance"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "Owner decided 2026-11-22 (docs/specs/decisions-owner-inbox-2026-11-22.md, 3): Remove hides and keeps progress; it lives in a held-select menu; 90-day window, changeable per account. Written to DESIGN.md 7.4, 7.18, 12 and PRODUCT.md; T5-05 and T9-03 edited. commit ed0eda90. Docs only; lint:flow and the task-list tests pass."
         },
         {
           "id": "T5-02",
@@ -3247,10 +3247,10 @@
             "The answers are written into DESIGN.md and PRODUCT.md"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "Owner accepted the proposal 2026-11-22 (docs/specs/decisions-owner-inbox-2026-11-22.md, 4): per account and per device as proposed; per-account settings on the server's display preferences. Written to DESIGN.md 7.18, 12 and PRODUCT.md. The sections item moved to T9-08. commit ed0eda90. Docs only; lint:flow and the task-list tests pass."
         },
         {
           "id": "T9-08",
