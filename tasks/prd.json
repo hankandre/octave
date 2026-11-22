@@ -923,7 +923,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 3a91767c: milestone 1 (dex check, tv:apk:check chain), not green. On the real release APK D4 fails: MainApplication -> ReactHostImpl at 6 sites of Expo getDefaultReactHost code R8 inlined into its reactHost lambda. Returned to the Product Owner three times; no ruling yet. commit cafbc5ce: options (a) and (b) both pass on that APK and change no frozen sample; (b) narrows D2. Frozen items 1 and 4 green; 2, 3, 5 red (milestones 2-4 not started, AGENTS.md:121). No emulator, device or server tested."
+          "evidence": "commit fddfcb63 (with 160d0a28 D4 per decision log 22, ee63b888 dev-server watch and R5, 1c4fb8ea unlinking; expo-asset kept). pnpm check green; frozen items 1-5 green; tv:native:test 176/0; tv:build+tv:apk:check pass (5111 classes, 192 sinks in 15 entry points); tv:smoke and tv:e2e pass on own emulator-5620 (API 36 ATV x86_64). Entry 22 is a security-rule edit open to owner veto. Untested: Shield/real TVs, other Android versions, CI tv job, C++ inspector gate."
         },
         {
           "id": "T3-04",
