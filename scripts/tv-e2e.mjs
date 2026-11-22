@@ -124,6 +124,11 @@ function fail(message) {
   process.exit(1);
 }
 
+// The mapping the dex and inspector checks read: the third argument, or the e2e build's own. Never the release mapping.
+export function e2eMappingPath(args) {
+  return args[2] ?? E2E_MAPPING;
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main(args) {
@@ -145,7 +150,7 @@ async function main(args) {
 
   let apk = args[0];
   const probeApk = args[1] ?? PROBE_APK;
-  const mapping = args[2] ?? E2E_MAPPING;
+  const mapping = e2eMappingPath(args);
   if (apk === undefined) {
     apk = E2E_APK;
     if (!e2eApkIsCurrent()) {
