@@ -171,7 +171,7 @@ export const APK_NETWORK_ENTRY_POINTS = [
     reason: `${DEV} ReactHostImpl holds one because loadNetworkResource (with InspectorNetworkHelper inlined) reads DevSupportHttpClient's client; it is called from C++ only by the inspector target, whose gate is read from source and not tested (runtime/ReactHostImpl.kt, devsupport/inspector/InspectorNetworkHelper.kt).`,
     linkedPath: "R5",
   },
-  // --- Expo (E1 to E3, E5) ---
+  // --- Expo (E1, E3); expo-file-system (E2) and @expo/dom-webview (E5) are unlinked, so on ABSENT_PACKAGES ---
   {
     id: "X1",
     classes: ["expo.modules.fetch.ExpoFetchModule", "expo.modules.fetch.NativeRequest"],
@@ -189,37 +189,12 @@ export const APK_NETWORK_ENTRY_POINTS = [
     linkedPath: "E1",
   },
   {
-    id: "X3",
-    classes: [
-      "expo.modules.filesystem.FileSystemDownloadKt",
-      "expo.modules.filesystem.FileSystemDownloadTask",
-      "expo.modules.filesystem.FileSystemDownloadTaskKt",
-      "expo.modules.filesystem.FileSystemUploadTask",
-      "expo.modules.filesystem.FileSystemUploadTaskKt",
-      "expo.modules.filesystem.FileSystemModule",
-      "expo.modules.filesystem.legacy.FileSystemLegacyModule",
-      "expo.modules.kotlin.activityresult.DataPersistor",
-    ],
-    sinks: ["S1", "S3"],
-    what: "expo-file-system's downloads and uploads",
-    reason: "expo-file-system builds its own OkHttpClient and uses React Native's for downloads and uploads; its URLConnection use is a MIME guess (android/src/main/java/expo/modules/filesystem/). DataPersistor's dex class holds R8's class-initialisation read of FileSystemUploadTask's client, attributed to DataPersistor's line.",
-    linkedPath: "E2",
-  },
-  {
     id: "X4",
     classes: ["expo.modules.asset.ResourceAssetKt"],
     sinks: ["S1"],
     what: "expo-asset's download of a remote asset",
     reason: "openRemoteStream fetches a remote asset over React Native's client (expo-asset, android/src/main/java/expo/modules/asset/ResourceAsset.kt:65-71); the app loads bundled assets only.",
     linkedPath: "E3",
-  },
-  {
-    id: "X5",
-    classes: ["expo.modules.webview.DomWebView"],
-    sinks: ["S5"],
-    what: 'the WebView behind the "use dom" directive',
-    reason: "@expo/dom-webview creates and loads a WebView (android/src/main/java/expo/modules/webview/DomWebView.kt); the app has no DOM component and I7 refuses a WebView for server content.",
-    linkedPath: "E5",
   },
   {
     id: "X6",
@@ -278,14 +253,50 @@ export const DEV_SUPPORT_CLIENT_CALLERS = [
 ];
 
 // Java packages that must not be in the APK: the excluded Expo modules and T3-04's K4 stacks R8 would rename.
-export const ABSENT_PACKAGES = ["org.chromium.net.", "com.android.volley.", "coil.", "coil3.", "com.bumptech.glide.", "com.squareup.picasso."];
+export const ABSENT_PACKAGES = [
+  // The Java packages of the Expo modules apps/tv/package.json excludes from autolinking (T3-19 item 3).
+  "expo.modules.filesystem.",
+  "expo.modules.logbox.",
+  "expo.modules.webview.",
+  // The stacks T3-04's K4 names, which R8 would rename.
+  "org.chromium.net.",
+  "com.android.volley.",
+  "coil.",
+  "coil3.",
+  "com.bumptech.glide.",
+  "com.squareup.picasso.",
+];
 
 // Of expo-file-system, expo-asset, @expo/log-box and @expo/dom-webview: the ones that stay linked, with the trial's
 // evidence.
-export const KEPT_EXPO_MODULES = [];
+export const KEPT_EXPO_MODULES = [
+  {
+    package: "expo-asset",
+    reason:
+      "expo imports expo-asset at start-up (expo/src/Expo.fx.tsx), and expo-asset calls requireNativeModule('ExpoAsset') (expo-asset/src/ExpoAsset.ts), which throws when the module is not linked, so the app never reaches its first screen. Its one sink is row X4 (E3).",
+    evidence:
+      "T3-19 trial 4, 2026-11-22: with expo-asset excluded, pnpm tv:build and the dex check passed, and pnpm tv:smoke on an API 36 Android TV emulator failed: \"E ReactNativeJS: [runtime not ready]: Error: Cannot find native module 'ExpoAsset'\" then \"ERROR tv focus: no focus line arrived, before or after the press\".",
+  },
+];
 
 // LINKED_NETWORK_PATHS ids whose package is linked but whose client no class holds in the release dex.
-export const SOURCE_ONLY_LINKED_PATHS = [];
+export const SOURCE_ONLY_LINKED_PATHS = [
+  {
+    id: "E7",
+    reason:
+      "R8 removed AppContext's okHttpClient getter and createOkHttpClientBuilder: the release mapping's AppContext section has no member line for either, and no class with a sink is attributed to AppContext. A source row stays because the file names OkHttpClientProvider.",
+  },
+  {
+    id: "E8",
+    reason:
+      "URLTypConverter only builds a java.net.URL from a module argument and opens nothing (expo-modules-core, android/src/main/java/expo/modules/kotlin/types/net/URLTypConverter.kt); constructing a URL is not a sink, so no class stands for it in the dex.",
+  },
+  {
+    id: "R6",
+    reason:
+      "DevSupportManagerBase only parses Metro's bundle URL into a java.net.URL, which is not a sink, and the release mapping names no member of it; a release build uses ReleaseDevSupportManager (devsupport/DefaultDevSupportManagerFactory.kt).",
+  },
+];
 
 export const PRODUCTION_LISTS = {
   sinks: NETWORK_SINKS,

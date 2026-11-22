@@ -40,4 +40,6 @@ export const LINKED_NETWORK_PATHS: LinkedEntry[];
 export function opensConnection(text: string, options?: { templates?: boolean }): boolean;
 export function findLinkedClients(packages: { name: string; dir: string }[]): LinkedClient[];
 export function judgeLinkedClients(found: LinkedClient[], allowlist: LinkedEntry[]): string[];
+export const MAY_BE_UNLINKED: string[];
+export function excludedOnAndroid(manifest: unknown): Set<string>;
 export function linkedPackages(root: string): { packages: { name: string; dir: string }[]; errors: string[] };

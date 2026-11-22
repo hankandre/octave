@@ -22,22 +22,8 @@ export const LINKED_NETWORK_PATHS = [
     },
     ["android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt", "android/src/main/java/expo/modules/fetch/OkHttpFileUrlInterceptor.kt"],
   ),
-  ...entries(
-    {
-      id: "E2",
-      package: "expo-file-system",
-      what: "expo-file-system's own OkHttpClient and its use of React Native's provider (downloads and uploads)",
-      verdict: ALLOWLISTED,
-      reason: "A dependency of expo; no Octave code imports it. Its URLConnection use outside the clients is a MIME-type guess.",
-      refusedBy: ["T4", "K7"],
-    },
-    [
-      "android/src/main/java/expo/modules/filesystem/FileSystemDownload.kt",
-      "android/src/main/java/expo/modules/filesystem/legacy/FileSystemLegacyModule.kt",
-      "android/src/main/java/expo/modules/filesystem/FileSystemDownloadTask.kt",
-      "android/src/main/java/expo/modules/filesystem/FileSystemUploadTask.kt",
-    ],
-  ),
+  // E2, expo-file-system, has no entry: apps/tv/package.json excludes it from autolinking (T3-19 item 3), and
+  // ABSENT_PACKAGES in scripts/tv-apk-dex-lists.mjs fails the dex check if expo.modules.filesystem. comes back.
   ...entries(
     {
       id: "E3",
@@ -49,28 +35,10 @@ export const LINKED_NETWORK_PATHS = [
     },
     ["android/src/main/java/expo/modules/asset/ResourceAsset.kt"],
   ),
-  ...entries(
-    {
-      id: "E4",
-      package: "@expo/log-box",
-      what: "the development error overlay: a WebView, and a fetch over React Native's client",
-      verdict: ALLOWLISTED,
-      reason: "Development tooling. R8 removed ExpoLogBoxSurfaceDelegate from T3-03's release build; no Octave code imports it.",
-      refusedBy: ["T4", "K7", "K9"],
-    },
-    ["android/src/main/expo/modules/logbox/ExpoLogBoxSurfaceDelegate.kt", "android/src/main/expo/modules/logbox/ExpoLogBoxWebViewWrapper.kt"],
-  ),
-  ...entries(
-    {
-      id: "E5",
-      package: "@expo/dom-webview",
-      what: 'the WebView behind the "use dom" directive',
-      verdict: ALLOWLISTED,
-      reason: "A peer of @expo/log-box. A WebView cannot send the header, so app code may not use it (invariant I7).",
-      refusedBy: ["T4", "T5", "K7", "K9"],
-    },
-    ["android/src/main/java/expo/modules/webview/DomWebView.kt"],
-  ),
+  // E4, @expo/log-box, has no entry: apps/tv/package.json excludes it from autolinking (T3-19 item 3), and
+  // ABSENT_PACKAGES in scripts/tv-apk-dex-lists.mjs fails the dex check if expo.modules.logbox. comes back.
+  // E5, @expo/dom-webview, has no entry: apps/tv/package.json excludes it from autolinking (T3-19 item 3), and
+  // ABSENT_PACKAGES in scripts/tv-apk-dex-lists.mjs fails the dex check if expo.modules.webview. comes back.
   // E6, expo-modules-core's network-inspector interceptors, has no entry: their file constructs no client, and K8
   // refuses them on the one client.
   ...entries(
@@ -135,7 +103,7 @@ export const LINKED_NETWORK_PATHS = [
     ["ReactAndroid/src/main/java/com/facebook/react/modules/fresco/FrescoModule.kt"],
   ),
   // R4, a call to OkHttpClientProvider, has no entry of its own: K7 refuses it in Octave's code with no exception, and
-  // every linked caller is listed under E1 to E4, E7, R1 to R3, R5 and W1.
+  // every linked caller is listed under E1, E3, E7, R1 to R3, R5 and W1.
   ...entries(
     {
       id: "R5",

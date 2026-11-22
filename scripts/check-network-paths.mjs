@@ -422,13 +422,34 @@ function findPackage(name, fromDir) {
  * listed, because the K rules read its source, but its dependencies are followed. Returns `{ packages: { name, dir }[], errors }`; a regular dependency that is
  * not installed is an error, never skipped.
  */
+// The packages T3-19 item 3 may unlink from Android. No other package leaves the inventory, whatever the list says.
+export const MAY_BE_UNLINKED = ["expo-file-system", "expo-asset", "@expo/log-box", "@expo/dom-webview"];
+
+const isPlainObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+
+// The names Android autolinking excludes, by Expo's override rule (expo-modules-autolinking 58.1.0,
+// build/commands/autolinkingOptions.js, parsePackageJsonOptions): `expo.autolinking.android` is spread over
+// `expo.autolinking`, so an `exclude` under `android` replaces the top-level one; a value that is not a list excludes
+// nothing. Never a union of the two.
+export function excludedOnAndroid(manifest) {
+  const expo = isPlainObject(manifest) && isPlainObject(manifest.expo) ? manifest.expo : {};
+  const autolinking = isPlainObject(expo.autolinking) ? expo.autolinking : {};
+  const merged = { ...autolinking, ...(isPlainObject(autolinking.android) ? autolinking.android : {}) };
+  const exclude = Array.isArray(merged.exclude) ? merged.exclude : [];
+  return new Set(exclude.filter((name) => typeof name === "string"));
+}
+
 export function linkedPackages(root) {
   const appManifest = join(root, "apps", "tv", "package.json");
   const errors = [];
   if (!existsSync(appManifest)) return { packages: [], errors: [`ERROR network: found no app manifest at apps/tv/package.json`] };
+  const app = JSON.parse(readFileSync(appManifest, "utf8"));
+  const excluded = excludedOnAndroid(app);
+  // An unlinked package's own native code is not in the APK, but its dependencies may be linked through another path.
+  const unlinked = new Set(MAY_BE_UNLINKED.filter((name) => excluded.has(name)));
   const seen = new Set();
   const packages = [];
-  const queue = [{ dir: join(root, "apps", "tv"), manifest: JSON.parse(readFileSync(appManifest, "utf8")), app: true }];
+  const queue = [{ dir: join(root, "apps", "tv"), manifest: app, app: true }];
   while (queue.length > 0) {
     const { dir, manifest, app } = queue.shift();
     const wanted = [
@@ -445,7 +466,7 @@ export function linkedPackages(root) {
       if (seen.has(found)) continue;
       seen.add(found);
       // A workspace package's own source is read by the K rules, but its dependencies are linked into the app too.
-      if (found.split(sep).includes("node_modules")) packages.push({ name, dir: found });
+      if (found.split(sep).includes("node_modules") && !unlinked.has(name)) packages.push({ name, dir: found });
       queue.push({ dir: found, manifest: JSON.parse(readFileSync(join(found, "package.json"), "utf8")), app: false });
     }
   }
