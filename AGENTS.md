@@ -142,7 +142,7 @@ Dependencies
 
 - Run each task as: refine + spec, spec check, failing tests, implement, verify, one review round, ship.
 - Use the model `WORKFLOW.md` assigns to each stage.
-- Fix critical, high, and medium review findings; log lows in the plan.
+- Fix critical, high, and medium review findings and every small low in the same pull request; send what is left to `tasks/backlog.jsonl` (`WORKFLOW.md` §2c).
 - Lower effort before choosing a weaker model; escalate one tier after two failed attempts.
 - Switch models only at task boundaries.
 
