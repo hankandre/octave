@@ -37,7 +37,7 @@ The registry maps a session id to its origin, header and token, and nothing outs
 
 ### The stored credential
 
-A token is persisted only as one encrypted record per session, written and read only by Kotlin: AES-256-GCM under a key generated in the Android Keystore (the key never enters the app process), stored under `getNoBackupFilesDir()`, which Auto Backup always excludes. The key needs no user authentication (a TV has no screen lock to rely on). Users stay signed in by default. A record is removed in three ways:
+A token is persisted only as one encrypted record per session, written and read only by Kotlin: AES-256-GCM under a key generated in the Android Keystore (the key never enters the app process), stored under `getNoBackupFilesDir()`, which Auto Backup always excludes. Backup is also off app-wide (§6). The key needs no user authentication (a TV has no screen lock to rely on). Users stay signed in by default. A record is removed in three ways:
 
 - **Sign-out.** `endSession` removes the registry entry and deletes the record first, then sends `POST /Sessions/Logout` with the token held in a local variable. A failed or refused logout is reported as a code and changes nothing locally.
 - **A confirmed 401.** When an authenticated request gets 401, Kotlin sends `GET /Users/Me`; if that is also 401 it ends the session as sign-out does, without the logout call, stops any player using it, and emits `sessionEnded` with `revoked`. One 401 alone does not sign the viewer out.
@@ -136,4 +136,36 @@ Discovery (T4-01) sends one fixed datagram, `who is JellyfinServer?`, with no to
 - A spoofed discovery reply can relay Quick Connect; the visible origin is the only cue.
 - Code inside the app process, or root, can read the token (§1).
 
-Persisted state is limited to the encrypted credential records (§1, T4-05), the preferences record, and the LAN confirmations. Playback positions, track choices, and play-session ids are not persisted. Authentication secrets must never be added to Query caches, analytics, crash payloads, or diagnostic exports. Octave has no analytics and no third-party services.
+Persisted state is limited to the encrypted credential records (§1, T4-05), the preferences record, and the LAN confirmations. None of it is backed up or carried to another device (§6). Playback positions, track choices, and play-session ids are not persisted. Authentication secrets must never be added to Query caches, analytics, crash payloads, or diagnostic exports. Octave has no analytics and no third-party services.
+
+## 6. The release manifest
+
+The release APK asks Android only for what Octave uses, and none of its data leaves the device through Android backup or a device-to-device transfer (T3-22). `apps/tv/plugins/with-trimmed-manifest.js` trims the manifest and writes the backup rules; `scripts/tv-apk-manifest.mjs` reads both out of the built APK with `aapt2 dump xmltree` and fails on anything else. `pnpm tv:apk:check` runs it after the badging check, and the `tv` job runs `pnpm tv:apk:check` on the release APK it builds.
+
+### Permissions and queries
+
+The release APK holds these permissions and declares no package-visibility query:
+
+| Entry | Kind | Why |
+|---|---|---|
+| `android.permission.INTERNET` | uses-permission | Every server request |
+| `dev.octave.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | uses-permission and declared permission (`protectionLevel="signature"`) | `androidx.core` adds it so receivers registered at run time are not exported; it grants nothing outside the app |
+
+Removed, because Octave does not use them:
+
+- `android.permission.SYSTEM_ALERT_WINDOW` (Expo template): draws over other apps; only React Native's developer overlay reads it.
+- `android.permission.VIBRATE` (Expo template): a TV has no vibrator and nothing calls React Native's `Vibration`.
+- `android.permission.READ_EXTERNAL_STORAGE` and `android.permission.WRITE_EXTERNAL_STORAGE` (template and `expo-file-system`): Octave reads and writes no shared storage.
+- The `VIEW` + `BROWSABLE` + `https` query (template): Octave opens no link in another app.
+- The `OPEN_DOCUMENT_TREE` and the any-MIME `VIEW` queries (`expo-file-system`): Octave picks no folder and hands no file to another app; the second would also make most installed apps visible to Octave.
+
+The rule: every `uses-permission` (any `uses-permission-sdk-*` too), every declared `permission`, `permission-group` and `permission-tree`, and every child of `<queries>` in the release APK must be on the named lists `ALLOWED_PERMISSIONS`, `ALLOWED_DECLARED_PERMISSIONS` and `ALLOWED_QUERIES` in `scripts/tv-apk-manifest.mjs`, or `pnpm tv:apk:check` fails naming the entry. A task that needs a new entry adds it with its reason to the list and to this section in its own PR. **Tested** for the check (`scripts/tv-apk-manifest.test.ts`, T3-22, including the recorded manifest of a build before this task, which fails with one line per removed entry) and for the release APK (`pnpm tv:apk:check` in the `tv` job). A debug build still declares `SYSTEM_ALERT_WINDOW` for the developer menu; the rule covers the release APK only.
+
+### Backup
+
+Backup is off. The application declares `android:allowBackup="false"`, which turns off backup on Android 11 and lower and cloud backup on Android 12 and higher, and `android:dataExtractionRules` naming a rules file whose `<cloud-backup>` and `<device-transfer>` sections each exclude every domain (`root`, `file`, `database`, `sharedpref`, `external` and the four `device_*` domains) and include nothing. Device-to-device transfer needs the second section: on Android 12 and higher some devices run it despite `allowBackup="false"`, and a missing section means the mode is fully on. No preference is backed up, so no credential, LAN confirmation, preference or install id is in a backup or a transfer. The check also refuses a `fullBackupContent` other than `false`, a `backupAgent` and a `fullBackupOnly`.
+
+- The declarations (`allowBackup="false"`, the `dataExtractionRules` reference resolving to one rules file, both sections, every domain excluded, no include): **Tested** (`scripts/tv-apk-manifest.test.ts` and `scripts/tv-manifest-trim-extra.test.ts`, T3-22, on recorded dumps of a release APK; `pnpm tv:apk:check` on the APK the `tv` job builds).
+- That nothing Octave stores leaves the device through a cloud backup or a device-to-device transfer: **Planned (T4-05, T4-09)**. The check reads the manifest and the rules file; it runs no backup or transfer on a device, and that `path="."` excludes a whole domain on a device is unverified.
+- No `cross-platform-transfer` (iOS) section is declared; Octave has no iOS app to match.
+
