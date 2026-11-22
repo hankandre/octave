@@ -1,0 +1,19 @@
+{
+  "task": "T3-31",
+  "files": [
+    "scripts/tv-build-mapping.test.ts",
+    "scripts/tv-e2e-apk.test.ts",
+    "scripts/tv-e2e-stop.test.ts",
+    "scripts/security-doc-t3-31.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-build-mapping.test.ts", "scripts/tv-e2e-apk.test.ts", "-t", "T3-31 item 1:"] },
+    { "item": 2, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-e2e-apk.test.ts", "scripts/tv-e2e-stop.test.ts", "-t", "T3-31 item 2:"] },
+    {
+      "item": 3,
+      "gate": "review",
+      "why": "The reviewer confirms the PR's diff touches no list (scripts/tv-apk-dex-lists.mjs, INSPECTOR_PACKAGES in scripts/tv-apk-inspector.mjs, the constants of scripts/tv-apk-native-inspector.mjs) and that the task evidence quotes the three pass lines pnpm tv:e2e printed for the e2e APK with those lists; a source assertion in scripts/tv-build-mapping.test.ts (T3-31 item 3:) holds that scripts/tv-e2e-apk.mjs passes no lists."
+    },
+    { "item": 4, "run": ["pnpm", "exec", "vitest", "run", "scripts/security-doc-t3-31.test.ts", "-t", "T3-31 item 4:"] }
+  ]
+}
