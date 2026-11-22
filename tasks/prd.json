@@ -2158,7 +2158,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 55409913 (branch task/T4-09, not pushed): pnpm check green (vitest 3062+2033, jest 89); check-red T4-09 green [1,2,3], item 4 review gate; pnpm tv:native:test 707 tests, 0 failed; own fluster_tv API 36 emulator: OCTAVE_INSTALL_ID_STAGE=required pnpm tv:e2e passed, stage line relaunch=same clear=new restore=new transport=selected backup=refused. Frozen marker test kept per PO ruling. Pending: PR tv job must show the ran-stage line in e2e-install-id.txt (milestone 7). Not tested: real TV/Shield, CI image, other Android versions, tvOS."
+          "evidence": "commit eac41834 (branch task/T4-09, not pushed): review medium fixed, security.md scopes clear=new/backup=refused to one local run, CI Planned; lows in plan 014. pnpm check green (vitest 3062+2035, jest 89); check-red T4-09 green [1,2,3], item 4 review gate passed. Earlier, commit 55409913: tv:native:test 707 passed; own fluster_tv API 36 emulator stage relaunch=same clear=new restore=new transport=selected backup=refused. Pending: PR tv job e2e-install-id.txt ran-stage line (milestone 7). Not tested: real TV/Shield, CI image, other Android versions, tvOS, any server."
         },
         {
           "id": "T4-03",
