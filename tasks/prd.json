@@ -954,10 +954,10 @@
             "Wire test transport-private-lan-and-proxy sends a plain-HTTP request from the release-type app's own process to 10.0.2.2 on the emulator, and its host judge fails when the mock recorded no such request; a test shows the judge failing on a capture without that request"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "Commit da8199d3 fixes CI run 45002313854 (adb connection drop voided wire: adbd restarts after boot; tv:wire waits for steady adbd, reruns a void run once). Re-run CI-like: fresh -wipe-data fluster_tv API 36, tv:wire at boot: adbd restart at boot seen, wait held (up 61 s), all 8 T3-05 pairs pass, 10 of 10 reverses kept, no fail. pnpm check pass; tv:native:test 214 tests 0 failed. Pending: CI wire summary on the pushed head (item 7)."
+          "passes": true,
+          "evidence": "PR #266, head bf091135. CI run 45005493542 all green: checks, tv, tripwire (Compose project octave-15c5d2311d in fixture:up), wire. CI wire summary.txt: 8 pass lines (probe-then-signed-in mock, jellyfin-10-11, jellyfin-12, jellyscale T3-05 pass; redirect, canary, errors, private-lan-and-proxy mock T3-05 pass), no fail line. Local runs in the PR body."
         },
         {
           "id": "T3-16",
