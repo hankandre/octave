@@ -16,7 +16,7 @@ const prd = (phases: Record<string, unknown>[] = [{ id: "T9", name: "n", goal: "
   JSON.stringify({ product: "p", updated: "2026-01-01", rules: ["r1"], status_values: ["todo", "in_progress", "blocked", "done"], phases }, null, 2) + "\n";
 const backlogLine = (what: string, extra = "") => `{"what": "${what}", "why": "w", "source": "s", "size": "S", "date": "2026-11-20"${extra}}`;
 const backlog = (...lines: string[]) => lines.join("\n") + "\n";
-const NEW = { id: "T9-04", title: "New", domain: "Process", model: "opus", skill: "exec-plan", human: false, depends_on: ["T9-01"], acceptance: ["a"], verify: "pnpm check" };
+const NEW = { id: "T9-04", title: "New", domain: "Process", lane: "workflow", model: "opus", skill: "exec-plan", human: false, depends_on: ["T9-01"], acceptance: ["a"], verify: "pnpm check" };
 const files = () => ({ prd: prd(), backlog: backlog(backlogLine("Alpha"), backlogLine("Beta", ', "taken_by": "T9-02"')) });
 const opts = { date: "2026-11-21", readApproval: (path: string) => (path === "docs/specs/decisions-t9.md" ? "T9-03 acceptance is settled" : null) };
 const tasks = (text: string) => (JSON.parse(text).phases as { tasks: { id: string }[] }[]).flatMap((p) => p.tasks.map((t) => t.id));
@@ -25,7 +25,7 @@ describe("applyOps", () => {
   it("add writes the keys in file order with the todo defaults, sets taken_by, and sets updated", () => {
     const out = applyOps(files(), [{ op: "add", phase: "T9", after: "T9-03", task: NEW, takes: ["Alpha"] }], opts);
     const added = JSON.parse(out.prd).phases[0].tasks[3];
-    expect(Object.keys(added)).toEqual(["id", "title", "domain", "model", "skill", "human", "depends_on", "acceptance", "verify", "status", "owner", "passes", "evidence"]);
+    expect(Object.keys(added)).toEqual(["id", "title", "domain", "lane", "model", "skill", "human", "depends_on", "acceptance", "verify", "status", "owner", "passes", "evidence"]);
     expect([added.status, added.owner, added.passes, added.evidence]).toEqual(["todo", null, false, ""]);
     expect(JSON.parse(out.prd).updated).toBe("2026-11-21");
     expect(out.prd).toBe(JSON.stringify(JSON.parse(out.prd), null, 2) + "\n");
