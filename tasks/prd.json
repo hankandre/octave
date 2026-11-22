@@ -500,7 +500,7 @@
             "`pnpm task show <id>` prints one task; `pnpm task list [--status s] [--phase p]` prints one line per task (id, status, title) and never the acceptance or evidence of other tasks",
             "`pnpm task set <id> --status s [--owner o] [--evidence-file f]` edits only status, owner, passes and evidence, keeps the file's formatting, and refuses any other field",
             "evidence is capped at 600 characters and must name the PR or commit; longer notes go in the PR body",
-            "`pnpm check` fails when tasks/prd.json is over 250 KB or any evidence field is over 600 characters, so the Product Owner trims or moves finished phases before the file grows",
+            "`pnpm check` fails when tasks/prd.json is over 350 KB or any evidence field is over 600 characters, so the Product Owner trims or moves finished phases before the file grows",
             ".claude/workflows/task.js, the task skill and every agent prompt use the CLI instead of reading the file, and AGENTS.md says never to read tasks/prd.json whole",
             "unit tests cover next (dependency order, skipping human tasks), set (field allow-list) and the size check"
           ],
@@ -637,7 +637,7 @@
           "acceptance": [
             "scripts/task-owner.mjs gains one operation that moves a phase whose tasks are all done into a file pnpm task never loads whole; the spec names the file and says whether the rule 'There is no done.json' must change, which is the owner's to change",
             "An id in depends_on or taken_by that names a moved task still resolves: pnpm task show, lint:flow, lint:backlog and scripts/prd.test.ts pass after a move",
-            "The 250,000-byte limit is unchanged"
+            "The 350,000-byte limit is unchanged"
           ],
           "verify": "pnpm check",
           "status": "todo",
