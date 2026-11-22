@@ -1390,7 +1390,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Branch task/T3-25, commit e40bf264 (not pushed). Items 1,2,5: check-red T3-25 --expect green, green [1,2,5]. Item 3: ResponseCapEdgeTest 3 tests, 0 failed. Item 4: check-red T3-16 green; tv:wire --task T3-05 on own emulator 8 pairs pass incl. transport-probe-then-signed-in jellyscale; CI wire job pending. pnpm check pass; tv:native:test 678 tests, 0 failed; lint:flow ok. Item 2 errors raised in Dns lookup and arg maps, not the read/parse: PO to confirm (PR body)."
+          "evidence": "Branch task/T3-25, commit c8c69ca8 (not pushed; gates run at ae04a189, no main-source change since e40bf264). Items 1,2,5: check-red T3-25 green [1,2,5]. Item 2 review fix: AnswerReadErrorTest 4 tests, 0 failed. Item 3: ResponseCapEdgeTest 3 tests, 0 failed. Item 4: check-red T3-16 green [4..8]; tv:wire --task T3-05 on own emulator at e40bf264 8 pairs pass; CI wire job pending. pnpm check exit 0; tv:native:test 682 tests, 0 failed. Item 2 errors raised in Dns lookup, arg maps, readLimited by reflection; PO to confirm (PR body)."
         },
         {
           "id": "T3-33",
