@@ -8,6 +8,7 @@ Every command an agent or contributor runs in Octave. `AGENTS.md` holds the rule
 - Type-check: `pnpm typecheck`
 - Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:network` (T3-04: no network path around the one client), `pnpm lint:logs` (T3-16: no log call with a value and no `HttpLoggingInterceptor` in the session module or its seam), `pnpm lint:ghost-terms`, `pnpm lint:backlog`, `pnpm lint:flow`
 - Task workflow tests: `pnpm test:workflow`
+- App component tests (Jest and React Native Testing Library, `*.test.tsx` under `apps/tv/src`): `pnpm --filter @octave/tv test`; `pnpm test` includes them
 - All checks: `pnpm check`
 - Fixture servers: `pnpm fixture:up` starts the three pinned servers under this checkout's own Compose project (`octave-<10 hex>`, from `tests/integration/compose-project.mjs`; T3-05) and stops first, naming the holder and the command that removes it, when another project holds port 18096, 18097 or 18098; `pnpm fixture:setup` creates the users and libraries (it waits for the library scans, so run `pnpm samples:generate` first); `pnpm fixture:down` removes this checkout's project only. The ports are fixed, so only one checkout can have servers up at a time.
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
