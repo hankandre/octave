@@ -196,21 +196,13 @@ export const APK_NETWORK_ENTRY_POINTS = [
     reason: "openRemoteStream fetches a remote asset over React Native's client (expo-asset, android/src/main/java/expo/modules/asset/ResourceAsset.kt:65-71); the app loads bundled assets only.",
     linkedPath: "E3",
   },
-  {
-    id: "X6",
-    classes: ["expo.modules.crypto.aes.AesCryptoModule$$ExternalSyntheticLambda0"],
-    sinks: ["S1"],
-    what: "R8's merged lambda class (named after one of its lambdas)",
-    reason: "A synthetic class R8 merged many lambdas into; one case of its invoke() calls worklets' Networking client getter (W1, row W3), attributed to the synthetic frame alone. It builds no client. Its name follows R8's choice and may change with a build.",
-    linkedPath: "W1",
-  },
   // --- react-native-worklets (W1, W2) ---
   {
     id: "W3",
     classes: ["com.swmansion.worklets.networking.Networking"],
     sinks: ["S1"],
     what: "fetch and XMLHttpRequest on a worklet runtime",
-    reason: "Holds React Native's client for worklet runtimes in Bundle Mode (react-native-worklets, android/src/main/java/com/swmansion/worklets/networking/Networking.kt); reached from JavaScript only, which T1 refuses in the app.",
+    reason: "Holds React Native's client for worklet runtimes in Bundle Mode (react-native-worklets, android/src/main/java/com/swmansion/worklets/networking/Networking.kt); reached from JavaScript only, which T1 refuses in the app. It also covers R8's merged lambda dispatch that calls its client getter: a sink at a synthetic-only site outside Octave's code is judged by the referenced member's holder, not by the lambda group's name (T3-19 review fix).",
     linkedPath: "W1",
   },
   {
