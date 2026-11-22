@@ -21,6 +21,7 @@ describe("the aapt2 parsers on a real release APK", () => {
     expect(readManifestNetworkSecurity(fixture("xmltree-manifest-release.txt"))).toEqual({
       configAttribute: "@0x7f130006",
       usesCleartextTraffic: null,
+      problems: [],
     });
   });
 
@@ -50,7 +51,7 @@ describe("the aapt2 parsers on a real release APK", () => {
   });
 
   it("reads the packaged configuration as the one wanted tree, which the judge passes", () => {
-    const tree = parseXmlTree(fixture("xmltree-network-security-config.txt"));
+    const tree = parseXmlTree(fixture("xmltree-network-security-config.txt"), "any-namespace");
     expect(tree).toEqual({
       name: "network-security-config",
       attributes: {},
@@ -61,7 +62,7 @@ describe("the aapt2 parsers on a real release APK", () => {
   });
 
   it("reads the manifest tree with string values unquoted and namespaces dropped", () => {
-    const manifest = parseXmlTree(fixture("xmltree-manifest-release.txt"));
+    const manifest = parseXmlTree(fixture("xmltree-manifest-release.txt"), "manifest");
     expect(manifest?.name).toBe("manifest");
     const application = manifest?.children.find((child) => child.name === "application");
     expect(application?.attributes.name).toBe("dev.octave.tv.MainApplication");
@@ -69,10 +70,10 @@ describe("the aapt2 parsers on a real release APK", () => {
   });
 
   it("fails closed on text it cannot read", () => {
-    expect(parseXmlTree("")).toBeNull();
-    expect(parseXmlTree("ERROR: not an xml file\n")).toBeNull();
-    expect(parseXmlTree("A: cleartextTrafficPermitted=true\n")).toBeNull();
-    expect(parseXmlTree("E: a (line=1)\nE: b (line=2)\n")).toBeNull();
+    expect(parseXmlTree("", "manifest")).toBeNull();
+    expect(parseXmlTree("ERROR: not an xml file\n", "manifest")).toBeNull();
+    expect(parseXmlTree("A: cleartextTrafficPermitted=true\n", "any-namespace")).toBeNull();
+    expect(parseXmlTree("E: a (line=1)\nE: b (line=2)\n", "manifest")).toBeNull();
   });
 });
 

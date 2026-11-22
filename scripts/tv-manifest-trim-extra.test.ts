@@ -84,7 +84,7 @@ describe("the plugin's rules file and the check agree", () => {
   });
 
   it("T3-22 extra: the rules file recorded from the release APK is the plugin's file", () => {
-    expect(parseXmlTree(RULES_AFTER)).toEqual(parseRulesXml(plugin.DATA_EXTRACTION_RULES_XML));
+    expect(parseXmlTree(RULES_AFTER, "no-namespace")).toEqual(parseRulesXml(plugin.DATA_EXTRACTION_RULES_XML));
   });
 });
 

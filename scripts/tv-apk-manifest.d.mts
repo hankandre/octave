@@ -1,12 +1,13 @@
-import type { XmlElement } from "./tv-aapt2-xml.mjs";
-export type { XmlElement };
-export { parseXmlTree, resolveResourceFile } from "./tv-aapt2-xml.mjs";
+import type { ReadingMode, XmlElement } from "./tv-aapt2-xml.mjs";
+export type { ReadingMode, XmlElement };
+export { parseXmlTree, readXmlTree, READING_MODES, resolveResourceFile } from "./tv-aapt2-xml.mjs";
 export type BackupFacts = {
   allowBackup: boolean | string | null;
   fullBackupContent: boolean | string | null;
   rulesAttribute: string | null;
   rulesFile: string | null;
   rulesTree: XmlElement | null;
+  rulesProblems?: string[];
   backupAgent?: string | null;
   fullBackupOnly?: string | null;
 };
