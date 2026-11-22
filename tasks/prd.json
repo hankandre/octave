@@ -957,7 +957,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "In progress on branch task/T3-05: milestone 1 (item 8, per-checkout Compose project) at commit 8285c9ab; item 8 run green, fixture up/setup/down and pnpm test:tripwire green locally. Milestones 2-6 (Kotlin transport, JS surface, pnpm tv:wire, CI, docs) follow."
+          "evidence": "Implemented on task/T3-05 through commit 8838eb17 (milestones 1-6). Local: pnpm check green; pnpm tv:native:test 214 tests, 0 failed; check-red --expect green: items 1-6, 8, 9 green, no problems; pnpm tv:e2e green; pnpm tv:wire on own emulator (fluster_tv API 36): 8/8 pairs pass, incl. transport-probe-then-signed-in jellyscale T3-05 pass. Item 7 still needs the CI wire job green on the PR head."
         },
         {
           "id": "T3-16",
