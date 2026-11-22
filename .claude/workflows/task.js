@@ -544,6 +544,11 @@ async function runTask(task, opts) {
   const holdSlot = async () => {
     if ((native || reviewNative) && opts.holdSerial) await opts.holdSerial();
   };
+  // A lane that waited in the slot queue may have been halted meanwhile (a denial in the lane that held the slot): check again once the slot is held.
+  const holdSlotOrHalt = async (phase) => {
+    await holdSlot();
+    return halted(phase);
+  };
   const problemsOf = (out) => (out.blockers || []).concat(out.failures || []);
   const stepOf = (out) => decideStep(out, !!out && !!denied(out));
   // Implementation step with one retry and an escalation: used for implement, check fixes, and CI fixes.
@@ -751,7 +756,8 @@ Do not push. Return done=true once committed, and put anything that stops you in
   if (!skipTests) {
     const haltedBeforeTests = halted('tests');
     if (haltedBeforeTests) return haltedBeforeTests;
-    await holdSlot();
+    const haltedAtTestsSlot = await holdSlotOrHalt('tests');
+    if (haltedAtTestsSlot) return haltedAtTestsSlot;
     const written = await writeTests(testsPrompt, `tests ${task}`);
     if (!written) return result('failed', 'The test writer returned nothing.');
     if (denied(written)) return result('denied', denied(written));
@@ -777,7 +783,8 @@ Do not push. Return done=true once committed, and put anything that stops you in
   if (!skipImpl) {
   const haltedBeforeImplement = halted('implement');
   if (haltedBeforeImplement) return haltedBeforeImplement;
-  await holdSlot();
+  const haltedAtImplementSlot = await holdSlotOrHalt('implement');
+  if (haltedAtImplementSlot) return haltedAtImplementSlot;
   const implRun = await guarded(
     `Implement the approved spec.${specNotes.length ? `\nAlso resolve these spec-check notes, updating the spec where they change it:\n${specNotes.join('\n')}` : ''}
 Commit the spec with the work, one milestone per commit. Set the task's status to in_progress with \`${taskCli} set ${task} --status in_progress --owner ${implAgent} --evidence-file <file>\`. ${evidenceRule} Do not push or open a PR. If an acceptance item can only be met with a pushed branch, an open PR, or CI runs (for example a throwaway commit that must fail CI, or baselines rendered on the CI host), do everything else, set done=true, and list each such step in ciSteps; the Ship phase does them. Never list a review (guardian, design, or any other agent review) as a ciStep: reviews happen in the Review phase, and the Ship phase cannot start agents. Return done=false with blockers if you cannot finish for any other reason. Use ciOnly only for a step that a local run cannot produce (for example accepting CI-rendered baselines or attaching CI screenshots), and only when every local check passed; a failing local check is never ciOnly.`,
@@ -827,7 +834,8 @@ Adversarially review git diff origin/main...${branch} for token, URL, or session
   blocking = review.findings.filter((finding) => finding.severity !== 'low').map(describe);
   lows = review.findings.filter((finding) => finding.severity === 'low').map(describe);
   log(`${task}: review found ${blocking.length} to fix, ${lows.length} low`);
-  await holdSlot();
+  const haltedAtFollowUpSlot = await holdSlotOrHalt('follow-ups');
+  if (haltedAtFollowUpSlot) return haltedAtFollowUpSlot;
   const followUpRun = await guarded(
     `${blocking.length ? `Fix these review findings and commit, with a test for each behavior change:\n${blocking.join('\n')}` : 'No critical, high or medium review findings.'}
 ${lows.length ? `Also fix in the same pull request each of these low findings that is small, with a test for each behavior change; log none of the findings you fix (no plan line, no backlog line):\n${lows.join('\n')}` : ''}
