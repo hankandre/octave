@@ -6,7 +6,7 @@ Record the T3-24 fresh-context review's low findings so the owner, the Product O
 
 - [x] The review's medium fixed: no decoding round may hold a `?` or `#` (commit 3c168d4e)
 - [x] Lows below logged as follow-ups, not fixed
-- [ ] T3-24 set to done with evidence naming the commit
+- [x] T3-24 set to done with evidence naming the commit (commit 3c168d4e)
 
 ## Context and domains touched
 
@@ -26,7 +26,7 @@ None added.
 
 - [x] 1
 - [x] 2
-- [ ] 3
+- [x] 3
 
 ## Decision log
 
@@ -44,7 +44,15 @@ Follow-ups (low, not fixed in T3-24):
 
 ## Validation evidence
 
-Open.
+Milestones 1 to 3, 2026-11-22, at 5483e155:
+
+- `mise exec -- pnpm check`: exit 0; vitest 2892 and 1561 passed; flow ok: 8 commits ahead; frozen T3-24; 0 frozen changes.
+- `mise exec -- pnpm tv:native:test`: tv native: 643 tests, 0 failed, 2 projects.
+- `node scripts/tv-native-test-only.mjs dev.octave.session.http.EscapedQueryFragmentPathTest`: 33 tests, 0 failed; on the old `RequestPath.kt`: 27 failed (every refusal case).
+- `mise exec -- node scripts/check-red.mjs T3-24 --expect green`: green [1,2,3,4,5,6], problems []; `T3-16`: green [4,5,6,7,8], problems [].
+- `ANDROID_SERIAL=emulator-5596 mise exec -- pnpm tv:wire --task T3-05` on this agent's own read-only `fluster_tv` emulator, stopped after: exit 0; `tv wire: 8 pair(s) passed; logcat clean`.
+
+Not run: the Shield, any physical TV, arm64, other Android versions or AVDs, a real reverse proxy, the dogfood servers, Hermes's `decodeURIComponent` on device.
 
 ## Outcome & retrospective
 
