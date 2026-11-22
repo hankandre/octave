@@ -874,10 +874,10 @@
             "docs/security.md names this task's tests in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit a380b7a7 (milestones 5efdaeb6, f4eee18b, 9653bee2). Local on an API 36 Android TV emulator after the rebase onto T3-22: pnpm check pass; pnpm tv:native:test 176 tests, 0 failed; pnpm tv:apk:check pass (network security one base-config; 2 permissions, 0 queries, backup off); pnpm tv:e2e: url 202/202, device-id 13/13, host ok; cleartext private-lan ok, loopback ok, public 60/60 refused; check-red green [1,2,3,4]. Pending: CI tv job on the PR head. Untested: app-process HTTP and device HTTPS (T3-05), arm64, Android other than 16."
         },
         {
           "id": "T3-19",
