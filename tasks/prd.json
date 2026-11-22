@@ -1339,10 +1339,10 @@
             "docs/security.md and docs/commands.md say that console output and evidence hold no device address, in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:smoke",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 27128dc9 (branch task/T3-30; no PR yet). Review fixes in: install-time connection is a stray; exec/sh/env, a shell option and a command line fail the adb check. pnpm check exit 0, lint:flow 0 frozen changes. Smoke on own emulator at 27128dc9: both pass lines, 2 of 2 controls, 0 app, 0 strays. Item 5 pending Ship: tv job (dev-server-watch.txt, two smoke pass lines) and wire job (pass per pair); tv:wire not run locally."
+          "passes": true,
+          "evidence": "PR #277, head 4ec2ff34. tv job green on re-run (job 137299025818; first run hit the emulator runner's post-boot adb flake, also seen on main). Smoke lines: 'tv focus: tile-0 took focus with no key, and one Right moved it to tile-1'; 'tv smoke: the release app opened no connection to the development server port while it started'. dev-server-watch.txt: 'port 8081: 2 of 2 control connections seen, 0 app connections, 0 connections before the controls (not counted)'. wire job green (run 45049773825): pass for every pair."
         },
         {
           "id": "T3-31",
