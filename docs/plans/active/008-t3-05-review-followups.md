@@ -50,6 +50,16 @@ Follow-ups (low, not fixed in T3-05):
 
 Milestone 1, 2026-11-22: `mise exec -- pnpm check` (see the task's return evidence).
 
+Re-verify, 2026-11-22, at 4665615f on a fresh read-only `fluster_tv` (API 36) emulator-5584:
+
+- `mise exec -- pnpm check`: exit 0; vitest 2596 and 1291 passed, flow tests 60 passed.
+- `pnpm tv:native:test`: tv native: 214 tests, 0 failed, 2 projects.
+- `ANDROID_SERIAL=emulator-5584 pnpm tv:e2e`: url 202/202, device-id 13/13, host ok; cleartext private-lan ok, loopback ok, public 60/60 refused.
+- `ANDROID_SERIAL=emulator-5584 pnpm tv:wire --task T3-05`, with `release-evidence/wire` removed first (so it cannot be a stale file): eight `pass` lines and no `fail` line in `summary.txt`, including `transport-probe-then-signed-in jellyscale T3-05 pass`; logcat clean; global proxy saw 0 requests naming a wire target; `http_proxy` back to `:0`; Compose project `octave-8b8377b9f2`.
+- `pnpm test:tripwire`: Tripwire passed (Jellyfin and Jellyscale 12.4.0; wire jellyscale 502 requests, 0 broke a rule).
+
+Not run: the Shield (192.168.6.189), any other Android version or AVD, the dogfood Jellyfin and Jellyscale servers. The CI `wire`, `tripwire` and `tv` jobs need a pushed head (Ship milestone).
+
 ## Outcome & retrospective
 
 Open.
