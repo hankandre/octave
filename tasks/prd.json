@@ -1032,6 +1032,105 @@
           "evidence": ""
         },
         {
+          "id": "T3-28",
+          "title": "Test that a release build's inspector cannot fetch a debugger-supplied URL",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-19"
+          ],
+          "acceptance": [
+            "A test on the release APK the tv CI job builds fails when the C++ inspector could call ReactHostImpl.loadNetworkResource in a release build; the spec says what it reads (the release .so files for the inspector's compile flag, REACT_NATIVE_DEBUGGER_ENABLED, or another observable) and shows on built APKs, not from React Native's source alone, that the reading tells a build with the inspector on from one with it off",
+            "The test is a step of pnpm tv:apk:check, prints one summary line, and fails closed when it cannot read what it needs",
+            "If the spec finds no test that can tell the two builds apart, it says what was tried and the task returns to the Product Owner before any implementation; no source-read claim is recorded as a test",
+            "A test runs the tv-apk-inspector CLI on a real or recorded APK and asserts its summary line, so N1 to N4 no longer rest on quoted manual runs",
+            "T3-16's, T3-04's and T3-19's frozen tests pass unchanged; if one contradicts an item the task returns to the Product Owner",
+            "docs/security.md section 1's inspector row and R5's reason in scripts/linked-network-paths.mjs say what is now tested and what is still read from source, in the same PR, and the PR calls out the change"
+          ],
+          "verify": "pnpm check && pnpm tv:build && pnpm tv:apk:check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-29",
+          "title": "Narrow the dex check's socket exemption to client sockets and close its D0 gaps",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-19"
+          ],
+          "acceptance": [
+            "Rule D1's one-client exemption for S4 covers client-socket creation only (Socket's constructors and SocketFactory.createSocket): a listening or datagram socket opened in a one-client class (the ServerSocket and DatagramSocket constructors, ServerSocketChannel.open, createServerSocket, and a provider's server or datagram channel open) fails D1; a test shows each, and DirectSocketFactory as built still passes",
+            "D0 fails when a dex has an R8 marker but none carries a pg-map-id, and a truncated or damaged APK ends in one ERROR tv apk dex: line that says to rebuild, not a stack trace; new tests in files no manifest freezes assert the message of each D0 rule, the six that T3-19's frozen file checks only by failure among them",
+            "T3-04's Kotlin source rule K4 (NetworkPathRules) names the socket, socket factory, channel and channel provider classes and MediaExtractor and MediaMetadataRetriever outside the one client, taken from the dex check's S4 and S6 sinks, with a test, so Octave's source is fenced from them before R8",
+            "The dex check and NetworkPathsBytecodeTest either fail when an Octave app module's code sits outside the dev.octave. package or find Octave's code from the app's modules; the spec chooses, and a test shows a module in another package is not judged as a library",
+            "pnpm tv:apk:check still passes on the release APK the tv CI job builds, and the PR quotes its tv apk dex: line; T3-19's and T3-04's frozen tests pass unchanged, and if one contradicts an item the task returns to the Product Owner",
+            "docs/security.md states D1 and D0 as built in the same PR and the PR calls out the narrowed exemption; the commit citations in docs/specs/T3-19.md and plan 008 name commits on main; scripts/tv-apk-dex-judge.mjs is split along its rules to about 400 lines"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-30",
+          "title": "Keep a device's address out of the TV scripts' output and count only the watch's own controls",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T3-19",
+            "T3-20",
+            "T3-26"
+          ],
+          "acceptance": [
+            "No script that runs adb (pnpm tv:smoke, pnpm tv:e2e, the cleartext probe, pnpm tv:wire) passes adb's output on with the device serial in it: the serial, as given and in any host-and-port form, is replaced by a stand-in before a line reaches the console, a thrown error or a file under release-evidence; a test feeds an adb error that names a network-adb serial and reads the console and the written evidence",
+            "The spec lists every place a script passes adb's output on, and says how a new place that skips the redaction is caught; a test or lint does it",
+            "The development-server watch counts a control connection only while its own controls run, and the run fails whenever a control command fails, so a stray connection cannot stand in for a missed control; a test shows a failed control beside a stray connection fails the run",
+            "Two pnpm tv:smoke runs on one host cannot count each other's connections: the watch tells emulators apart or holds a host-wide lock on the port, and the second run's failure names the cause; the spec chooses",
+            "T3-19's frozen tests pass unchanged, scripts/tv-dev-server-watch.test.ts among them; if one contradicts an item the task returns to the Product Owner; pnpm tv:smoke stays green in the tv job",
+            "docs/security.md and docs/commands.md say that console output and evidence hold no device address, in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:smoke",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-31",
+          "title": "Run the dex and inspector checks on the e2e APK before it is installed",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T3-19",
+            "T3-20",
+            "T3-28",
+            "T3-29"
+          ],
+          "acceptance": [
+            "pnpm tv:e2e:build keeps the e2e build's R8 mapping beside the e2e APK, and the release build's mapping is never read for it",
+            "pnpm tv:e2e runs scripts/tv-apk-dex.mjs, the inspector check and T3-28's test on the e2e APK before it installs it, and stops with their ERROR lines when one fails; a test shows the stop",
+            "If the e2e APK needs a row the release APK does not, the spec names it and why, and it is not added to the release lists",
+            "The tv job's pnpm tv:e2e stays green, and docs/security.md and docs/commands.md say which checks the e2e APK gets, in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:e2e:build && pnpm tv:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-25",
           "title": "Bound what a server's answer can cost the native parser",
           "domain": "Security & Redaction",
@@ -1174,6 +1273,29 @@
           "evidence": "PR #265 (head 76efbe03 is stale; merge not pushed). Local commit 817aba6a (fix in fdf8bad2): parseAttribute fails closed on fake namespace lines and on a Raw copy that is not the value; item 3 probe re-run pasted in the spec (app-level allowBackup kept by merger and aapt2). pnpm check exit 0, check-red T3-23 green [1,2,5], tv:build and tv:apk:check pass locally. Pending Ship: push, tv job pnpm tv:apk:check and checks job green on the new head."
         },
         {
+          "id": "T3-32",
+          "title": "Shorten the manifest check's allowed permissions and queries to what the release APK asks for",
+          "domain": "Security & Redaction",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T3-22",
+            "T3-23"
+          ],
+          "acceptance": [
+            "ALLOWED_PERMISSIONS and ALLOWED_QUERIES in scripts/tv-apk-manifest.mjs hold only what the release APK the tv job builds asks for (2 permissions and 0 queries on T3-19's build; the spec reads them again), and a test shows that a storage permission or a query added back fails the check",
+            "The spec says whether the four remove-markers in apps/tv/plugins/with-trimmed-manifest.js that now match nothing stay (the manifest merger only warns, and T3-22's frozen tests pin them) or go",
+            "T3-22's and T3-23's frozen tests pass unchanged; if one pins the longer lists the task returns to the Product Owner",
+            "pnpm tv:apk:check passes on the release APK the tv job builds, and docs/security.md section 6 lists what is allowed, in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:build && pnpm tv:apk:check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-21",
           "title": "Sign every build for a real TV with a private key",
           "domain": "Distribution",
@@ -1212,7 +1334,12 @@
             "T3-20",
             "T3-22",
             "T3-23",
-            "T3-24"
+            "T3-24",
+            "T3-28",
+            "T3-29",
+            "T3-30",
+            "T3-31",
+            "T3-32"
           ],
           "acceptance": [
             "Shield check (owner): launched from the TV launcher with the remote, the first screen takes focus with no priming press, and the first Right press moves focus one tile",
@@ -1387,7 +1514,12 @@
             "T3-22",
             "T3-21",
             "T3-23",
-            "T3-24"
+            "T3-24",
+            "T3-28",
+            "T3-29",
+            "T3-30",
+            "T3-31",
+            "T3-32"
           ],
           "acceptance": [
             "Owner decision: the owner sets the budget numbers for cold start to first focusable frame, key press to focus change, and janky frames while a key is held, from the T0 results",
@@ -1421,7 +1553,11 @@
             "T3-22",
             "T3-21",
             "T3-23",
-            "T3-24"
+            "T3-24",
+            "T3-28",
+            "T3-29",
+            "T3-30",
+            "T3-32"
           ],
           "acceptance": [
             "The release build includes a Baseline Profile covering start-up, Home row scrolling and opening a title",
@@ -1448,7 +1584,11 @@
             "T3-22",
             "T3-21",
             "T3-23",
-            "T3-24"
+            "T3-24",
+            "T3-28",
+            "T3-29",
+            "T3-30",
+            "T3-32"
           ],
           "acceptance": [
             "A Perfetto trace of holding Down on Home shows no image-library load start or resource callback over 2 ms on the UI thread",
