@@ -2,14 +2,19 @@
 // leanback launcher category, read the OCTAVE_E2E lines its root writes (the core's URL and DeviceId conformance
 // suites and the host checks, under Hermes) and judge them. judgeConformance() is the oracle; the lines go to
 // release-evidence/tv/e2e-conformance.txt. The e2e APK is built first when it is missing or older than its sources.
-// Run: ANDROID_SERIAL=<emulator> node scripts/tv-e2e.mjs [apk]   (pnpm tv:e2e)
+// Before installing, the e2e APK's network security is judged (T3-15 item 1); after the conformance run, the module's
+// cleartext probe runs (T3-15 item 2, scripts/tv-cleartext.mjs). An explicit [apk] needs its probe APK too: the second
+// argument, or the one pnpm tv:e2e:build wrote; the probe is never skipped.
+// Run: ANDROID_SERIAL=<emulator> node scripts/tv-e2e.mjs [apk [probe-apk]]   (pnpm tv:e2e)
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
-import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
-import { E2E_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
+import { androidSdk, newestBuildTool, platformTool } from "./tv-android-sdk.mjs";
+import { judgeNetworkSecurity, readNetworkSecurity } from "./tv-apk-check.mjs";
+import { E2E_APK, PROBE_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
+import { expectedPublicCount, runCleartextProbe } from "./tv-cleartext.mjs";
 
 const FIXTURES = fileURLToPath(new URL("../packages/core/tests/fixtures/", import.meta.url));
 const EVIDENCE = fileURLToPath(new URL("../release-evidence/tv/", import.meta.url));
@@ -118,8 +123,10 @@ async function main(args) {
   const serial = process.env.ANDROID_SERIAL;
   if (!serial) fail("set ANDROID_SERIAL to the emulator's serial; this script never picks a device itself");
   let adbPath;
+  let aapt2;
   try {
     adbPath = platformTool(androidSdk(), "adb");
+    aapt2 = newestBuildTool(androidSdk(), "aapt2");
   } catch (error) {
     fail(error.message);
   }
@@ -127,6 +134,7 @@ async function main(args) {
   const shell = (...rest) => adb("shell", ...rest);
 
   let apk = args[0];
+  const probeApk = args[1] ?? PROBE_APK;
   if (apk === undefined) {
     apk = E2E_APK;
     if (!e2eApkIsCurrent()) {
@@ -139,6 +147,17 @@ async function main(args) {
     }
   }
   if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:e2e:build first`);
+  if (!existsSync(probeApk)) fail(`no cleartext probe APK at ${probeApk}; pass it after the APK or run pnpm tv:e2e:build`);
+  let network;
+  try {
+    network = judgeNetworkSecurity(readNetworkSecurity(aapt2, apk));
+  } catch (error) {
+    network = [`ERROR tv apk: ${error.message}`];
+  }
+  if (network.length > 0) {
+    for (const error of network) console.error(error);
+    fail("the e2e APK does not carry the network security configuration");
+  }
   if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
 
   const install = adb("install", "-r", apk);
@@ -170,6 +189,14 @@ async function main(args) {
     process.exit(1);
   }
   console.log(`tv e2e: url ${expected.url}/${expected.url}, device-id ${expected.deviceId}/${expected.deviceId}, host ok`);
+
+  const probe = await runCleartextProbe({ adbPath, serial, apk: probeApk, evidenceDir: EVIDENCE });
+  if (probe.errors.length > 0) {
+    for (const error of probe.errors) console.error(error);
+    process.exit(1);
+  }
+  const publicTotal = expectedPublicCount();
+  console.log(`tv e2e: cleartext private-lan ok, loopback ok, public ${probe.report["public-refused"]}/${publicTotal} refused`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));

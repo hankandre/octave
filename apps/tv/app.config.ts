@@ -18,6 +18,7 @@ const config: ExpoConfig = {
     ["expo-build-properties", { android: { buildArchs: ["arm64-v8a", "x86_64"] } }],
     "./plugins/with-app-jvm-tests.js",
     "./plugins/with-trimmed-manifest.js",
+    "./plugins/with-device-probe.js",
   ],
 };
 

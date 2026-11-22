@@ -2,7 +2,9 @@
 // release build type with a Hermes bundle; the e2e bundle also holds apps/tv/src/e2e/, which Metro empties unless
 // OCTAVE_E2E=1 (apps/tv/e2e-gate.js). The JavaScript bundle task is rerun every time, because Gradle tracks neither the
 // flag nor packages/core, and judgeBundle() proves the flavour of every bundle it packages. The e2e APK is moved to
-// apps/tv/dist/e2e/ with a stamp of e2eSourceHash(), so the release APK path never holds a harness build.
+// apps/tv/dist/e2e/ with a stamp of e2eSourceHash(), so the release APK path never holds a harness build. An e2e build
+// also builds the device probe's test APK (octaveDeviceProbeApk, apps/tv/plugins/with-device-probe.js; T3-15) and moves
+// it beside the e2e APK.
 // Run: node scripts/tv-build.mjs [--e2e]
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -15,6 +17,8 @@ import { ANDROID_DIR, APP_DIR, prebuild, prebuildIsCurrent } from "./tv-prebuild
 const repo = fileURLToPath(new URL("..", import.meta.url));
 export const E2E_APK = join(APP_DIR, "dist", "e2e", "octave-tv-e2e.apk");
 export const E2E_STAMP = join(APP_DIR, "dist", "e2e", "octave-tv-e2e.hash");
+export const PROBE_APK = join(APP_DIR, "dist", "e2e", "octave-session-probe.apk");
+const PROBE_BUILD_DIR = join(repo, "modules", "session", "android", "build", "outputs", "apk", "androidTest", "debug");
 const MARKER = Buffer.from("OCTAVE_E2E", "latin1");
 const BUNDLE_DIR = join(ANDROID_DIR, "app", "build", "generated", "assets");
 const BUNDLE = join(BUNDLE_DIR, "react", "release", "index.android.bundle");
@@ -32,10 +36,13 @@ const FIXTURES = ["host-classes.json", "hls-master-urls.json", "device-ids.json"
 const GENERATED = ["android/", "ios/", "dist/", ".expo/"].map((dir) => `apps/tv/${dir}`);
 
 // The repository paths an e2e bundle is made from: the app outside its generated trees, the core's sources without
-// tests, the three fixture files and the lockfile.
+// tests, the native modules outside their build output and JVM tests (the probe APK is built from them), the three
+// fixture files and the lockfile.
 function isE2eInput(path) {
   if (path === "pnpm-lock.yaml" || FIXTURES.includes(path)) return true;
-  if (path.split("/").includes("node_modules")) return false;
+  const parts = path.split("/");
+  if (parts.includes("node_modules")) return false;
+  if (path.startsWith("modules/")) return !parts.includes("build") && !path.includes("/src/test/");
   if (path.startsWith("packages/core/src/")) return !path.endsWith(".test.ts");
   return path.startsWith("apps/tv/") && !GENERATED.some((dir) => path.startsWith(dir));
 }
@@ -58,7 +65,7 @@ export function e2eSourceHash(root = repo) {
 }
 
 export function e2eApkIsCurrent() {
-  return existsSync(E2E_APK) && existsSync(E2E_STAMP) && readFileSync(E2E_STAMP, "utf8").trim() === e2eSourceHash();
+  return existsSync(E2E_APK) && existsSync(PROBE_APK) && existsSync(E2E_STAMP) && readFileSync(E2E_STAMP, "utf8").trim() === e2eSourceHash();
 }
 
 function findBundle() {
@@ -89,7 +96,9 @@ export function buildTv({ e2e }) {
   delete env.OCTAVE_E2E;
   if (e2e) env.OCTAVE_E2E = "1";
   rmSync(RELEASE_APK, { force: true });
-  const gradle = spawnSync("./gradlew", [":app:createBundleReleaseJsAndAssets", "--rerun", ":app:assembleRelease"], { cwd: ANDROID_DIR, stdio: "inherit", env });
+  if (e2e) rmSync(PROBE_BUILD_DIR, { recursive: true, force: true });
+  const tasks = [":app:createBundleReleaseJsAndAssets", "--rerun", ":app:assembleRelease", ...(e2e ? ["octaveDeviceProbeApk"] : [])];
+  const gradle = spawnSync("./gradlew", tasks, { cwd: ANDROID_DIR, stdio: "inherit", env });
   if (gradle.status !== 0) return [`ERROR tv build: Gradle exited with ${gradle.status ?? gradle.signal}`];
 
   let bundle;
@@ -108,11 +117,14 @@ export function buildTv({ e2e }) {
     console.log(`tv build: release APK at ${relative(repo, RELEASE_APK)}`);
     return [];
   }
+  const probes = existsSync(PROBE_BUILD_DIR) ? readdirSync(PROBE_BUILD_DIR).filter((name) => name.endsWith(".apk")) : [];
+  if (probes.length !== 1) return [`ERROR tv build: expected one probe APK under ${relative(repo, PROBE_BUILD_DIR)}, found ${probes.length}`];
   mkdirSync(join(APP_DIR, "dist", "e2e"), { recursive: true });
   rmSync(E2E_STAMP, { force: true });
   renameSync(RELEASE_APK, E2E_APK);
+  renameSync(join(PROBE_BUILD_DIR, probes[0]), PROBE_APK);
   writeFileSync(E2E_STAMP, `${sourceHash}\n`);
-  console.log(`tv build: e2e APK at ${relative(repo, E2E_APK)}`);
+  console.log(`tv build: e2e APK at ${relative(repo, E2E_APK)}, probe APK at ${relative(repo, PROBE_APK)}`);
   return [];
 }
 
