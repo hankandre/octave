@@ -46,6 +46,7 @@ declare var URLSearchParams: {
 
 interface URL {
   hash: string;
+  readonly href: string;
   readonly hostname: string;
   readonly origin: string;
   password: string;
