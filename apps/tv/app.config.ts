@@ -10,11 +10,14 @@ const config: ExpoConfig = {
   orientation: "landscape",
   android: {
     package: ANDROID_APPLICATION_ID,
+    // Backup is off (T3-22); apps/tv/plugins/with-trimmed-manifest.js adds the data extraction rules.
+    allowBackup: false,
   },
   plugins: [
     ["@react-native-tvos/config-tv", { isTV: true }],
     ["expo-build-properties", { android: { buildArchs: ["arm64-v8a", "x86_64"] } }],
     "./plugins/with-app-jvm-tests.js",
+    "./plugins/with-trimmed-manifest.js",
   ],
 };
 
