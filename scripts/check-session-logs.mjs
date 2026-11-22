@@ -5,7 +5,11 @@
 //   Gradle file.
 // - G2. A log call with an argument that is not constant text. A source check cannot type an argument, so every value
 //   is refused, which covers a request, a header and a URL. Constant text is a string literal with no template ($ in
-//   Kotlin, ${ in TypeScript); an empty argument list passes. printStackTrace() always fails.
+//   Kotlin, ${ in TypeScript); an empty argument list passes. printStackTrace() always fails. Every call chained
+//   after a log call is judged too (`Timber.tag("x").d(url)`), and the code inside a template's `${...}` is read as
+//   code. Any use of `console` or `Timber` other than a direct call fails (`globalThis.console.log` and
+//   `console?.log` are direct calls; an alias, a destructuring, a computed member other than a constant string,
+//   `.call` and `.bind` fail), so a value cannot reach either one by a form the call patterns miss.
 //
 // Scope: Kotlin and Java under modules/session/android/src/main/, TypeScript under modules/session/src/ and
 // apps/tv/src/host/, and modules/session/android/build.gradle. The JVM test AuthorizationValueTest is stricter for the
@@ -22,16 +26,24 @@ const SOURCE_ROOTS = [
 ];
 
 // Each pattern matches the head of a call, up to and including its `(`, in code with comments and strings removed.
+// `console` is not here: sourceViolations judges every use of it and fails one that is not a direct call.
 const LOG_CALLS = [
   /\bLog\s*\.\s*(?:v|d|i|w|e|wtf|println)\s*\(/g,
   /(?<![\w$.])(?:println|print)\s*\(/g,
+  /(?<![\w$.])kotlin\s*\.\s*io\s*\.\s*(?:println|print)\s*\(/g,
   /\bSystem\s*\.\s*(?:out|err)\s*\.\s*\w+\s*\(/g,
-  /\bTimber\s*\.\s*\w+\s*\(/g,
+  /\bTimber(?:\s*\.\s*\w+)+\s*\(/g,
   /(?<![\w$])[lL]ogger\s*\.\s*\w+\s*\(/g,
-  /(?<![\w$.])console\s*\.\s*\w+\s*\(/g,
 ];
 const STACK_TRACE = /\.\s*printStackTrace\s*\(/g;
 const LOGGING_INTERCEPTOR = /\bHttpLoggingInterceptor\b/g;
+// Any reference to console or Timber. A reference that is not a direct call checked above (an alias, a destructuring,
+// a computed member, `.call`, `.bind`) fails, so a value cannot reach either one by a form these patterns miss.
+const CONSOLE = /(?<![\w$])console(?![\w$])/g;
+// A direct console call: `console`, a member (`.name`, `?.name` or `[""]`), then `(` or `?.(`.
+const CONSOLE_CALL = /^console\s*(?:\?\.\s*\w+|\.\s*\w+|(?:\?\.)?\s*\[\s*""\s*\])\s*(?:\?\.)?\s*\(/;
+const TIMBER = /(?<![\w$])Timber(?![\w$])/g;
+const TIMBER_CALL = /^Timber(?:\s*\.\s*\w+)+\s*\(/;
 
 // In stripped code a constant string literal is `""` and a string with a template is `$T`.
 const CONSTANT = '""';
@@ -44,8 +56,9 @@ function languageOf(path) {
 }
 
 /**
- * Returns the source with comments blanked and each string literal replaced by `""` (constant) or `$T` (holds a
- * template), keeping every newline so offsets map to the same lines.
+ * Returns the source with comments blanked, each string literal replaced by `""` (constant) or `$T` (holds a
+ * template) followed by its template expressions as code in parentheses, and in TypeScript each regex literal
+ * replaced by `$R`, keeping every newline so offsets map to the same lines.
  */
 export function stripSource(text, language) {
   let out = "";
@@ -66,9 +79,24 @@ export function stripSource(text, language) {
       i = stop;
       continue;
     }
+    if (ch === "/" && language === "ts" && regexMayStart(out)) {
+      const end = regexEnd(text, i);
+      if (end !== -1) {
+        out += REGEX;
+        i = end;
+        continue;
+      }
+    }
     if (ch === '"' || ch === "'" || (ch === "`" && language === "ts")) {
-      const { end, templated } = readString(text, i, language);
-      out += (templated ? TEMPLATE : CONSTANT) + keepNewlines(text.slice(i, end));
+      const { end, templated, expressions } = readString(text, i, language);
+      // A template's expressions are code: a log call inside `${...}` is still a log call.
+      out += templated ? TEMPLATE : CONSTANT;
+      let from = i;
+      for (const [start, stop] of expressions) {
+        out += `${keepNewlines(text.slice(from, start))}(${stripSource(text.slice(start, stop), language)})`;
+        from = stop;
+      }
+      out += keepNewlines(text.slice(from, end));
       i = end;
       continue;
     }
@@ -78,39 +106,78 @@ export function stripSource(text, language) {
   return out;
 }
 
-// Reads a string literal from its opening quote; returns the index after it and whether it holds a template.
+// In stripped TypeScript a regex literal is `$R`.
+const REGEX = "$R";
+const REGEX_KEYWORDS = new Set(["return", "typeof", "case", "do", "else", "in", "of", "new", "delete", "void", "throw", "instanceof", "yield", "await"]);
+
+// Whether a `/` after `before` (stripped code) starts a regex literal rather than a division: it does after an
+// operator, an opening bracket, a separator or a keyword, and not after a value. `<` and `>` count as values so a
+// TSX closing tag is never read as a regex.
+function regexMayStart(before) {
+  const trimmed = before.trimEnd();
+  if (trimmed === "") return true;
+  const last = trimmed[trimmed.length - 1];
+  if ("(,=:[!&|?{};+-*%~^".includes(last)) return true;
+  const word = /[\w$]+$/.exec(trimmed)?.[0];
+  return word !== undefined && REGEX_KEYWORDS.has(word);
+}
+
+// From a regex literal's opening `/`, the index after its flags, or -1 when no closing `/` comes before the line ends
+// (then the `/` is read as code, so nothing after it is hidden).
+function regexEnd(text, start) {
+  let inClass = false;
+  for (let i = start + 1; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === "\n") return -1;
+    if (ch === "\\") {
+      i += 1;
+      continue;
+    }
+    if (ch === "[") inClass = true;
+    else if (ch === "]") inClass = false;
+    else if (ch === "/" && !inClass) {
+      let end = i + 1;
+      while (/[a-z]/.test(text[end] ?? "")) end += 1;
+      return end;
+    }
+  }
+  return -1;
+}
+
+// Reads a string literal from its opening quote; returns the index after it, whether it holds a template, and the
+// [from, to) range of each `${...}` expression inside it.
 function readString(text, start, language) {
   const quote = text[start];
   const raw = language === "kt" && text.startsWith('"""', start);
   let i = start + (raw ? 3 : 1);
   let templated = false;
+  const expressions = [];
   while (i < text.length) {
     if (raw ? text.startsWith('"""', i) : text[i] === quote) break;
     if (!raw && text[i] === "\\") {
       i += 2;
       continue;
     }
-    if (!raw && quote !== "`" && text[i] === "\n") return { end: i, templated };
-    if (language === "kt" && quote === '"' && text[i] === "$" && /[\w{]/.test(text[i + 1] ?? "")) {
+    if (!raw && quote !== "`" && text[i] === "\n") return { end: i, templated, expressions };
+    const ktTemplate = language === "kt" && quote === '"' && text[i] === "$" && /[\w{]/.test(text[i + 1] ?? "");
+    const tsTemplate = language === "ts" && quote === "`" && text[i] === "$" && text[i + 1] === "{";
+    if (ktTemplate || tsTemplate) {
       templated = true;
       if (text[i + 1] === "{") {
-        i = skipBraces(text, i + 1, language);
+        const close = skipBraces(text, i + 1, language);
+        expressions.push([i + 2, Math.max(i + 2, close - 1)]);
+        i = close;
         continue;
       }
-    }
-    if (language === "ts" && quote === "`" && text[i] === "$" && text[i + 1] === "{") {
-      templated = true;
-      i = skipBraces(text, i + 1, language);
-      continue;
     }
     i += 1;
   }
   if (raw) {
     i += 3;
     while (text[i] === '"') i += 1;
-    return { end: i, templated };
+    return { end: i, templated, expressions };
   }
-  return { end: Math.min(i + 1, text.length), templated };
+  return { end: Math.min(i + 1, text.length), templated, expressions };
 }
 
 // From an opening `{`, returns the index after its closing `}`, skipping nested strings.
@@ -133,11 +200,12 @@ function skipBraces(text, open, language) {
   return text.length;
 }
 
-// The arguments of the call whose `(` is at `open`, split at top-level commas and trimmed.
+// The arguments of the call whose `(` is at `open`, split at top-level commas and trimmed, and the index of its `)`.
 function callArguments(code, open) {
   const args = [];
   let depth = 0;
   let current = "";
+  let close = code.length;
   for (let i = open; i < code.length; i += 1) {
     const ch = code[i];
     if (ch === "(" || ch === "[" || ch === "{") {
@@ -147,6 +215,7 @@ function callArguments(code, open) {
       depth -= 1;
       if (depth === 0) {
         args.push(current.trim());
+        close = i;
         break;
       }
     } else if (ch === "," && depth === 1) {
@@ -156,11 +225,14 @@ function callArguments(code, open) {
     }
     current += ch;
   }
-  return args.length === 1 && args[0] === "" ? [] : args;
+  return { args: args.length === 1 && args[0] === "" ? [] : args, close };
 }
 
 // Constant text: one or more constant literals joined by +.
 const isConstant = (arg) => arg.split("+").every((part) => part.trim() === CONSTANT);
+
+// A member call chained after a call's `)`: `.name(`, `?.name(` or `!!.name(`.
+const CHAINED_CALL = /^\s*(?:\?\.|!!\.|\.)\s*\w+\s*(?:\?\.)?\s*\(/;
 
 const lineAt = (text, index) => text.slice(0, index).split("\n").length;
 
@@ -172,12 +244,35 @@ function sourceViolations(path, text) {
     const key = `${line}:${rule}`;
     if (!found.has(key)) found.set(key, `ERROR logs: ${path}:${line} ${rule} ${what}`);
   };
+  // Checks the call whose head starts at `index` and ends with its `(`, and every call chained after it, so
+  // `Timber.tag("x").d(url)` is judged on `d` too.
+  const checkCall = (index, head) => {
+    let open = index + head.length - 1;
+    for (;;) {
+      const { args, close } = callArguments(code, open);
+      if (!args.every(isConstant)) {
+        add(index, "G2", `passes a value to a log call (${head.replace(/\s+/g, "")}); log only constant text`);
+        return;
+      }
+      const chained = CHAINED_CALL.exec(code.slice(close + 1));
+      if (chained === null) return;
+      open = close + chained[0].length;
+    }
+  };
+  const isImport = (index) => /^\s*import\s/.test(code.slice(code.lastIndexOf("\n", index) + 1));
   for (const match of code.matchAll(LOGGING_INTERCEPTOR)) add(match.index, "G1", "uses HttpLoggingInterceptor, which logs requests and headers");
   for (const match of code.matchAll(STACK_TRACE)) add(match.index, "G2", "calls printStackTrace(), which prints an exception's message");
   for (const pattern of LOG_CALLS) {
-    for (const match of code.matchAll(pattern)) {
-      const args = callArguments(code, match.index + match[0].length - 1);
-      if (!args.every(isConstant)) add(match.index, "G2", `passes a value to a log call (${match[0].replace(/\s+/g, "")}); log only constant text`);
+    for (const match of code.matchAll(pattern)) checkCall(match.index, match[0]);
+  }
+  for (const match of code.matchAll(CONSOLE)) {
+    const call = CONSOLE_CALL.exec(code.slice(match.index));
+    if (call !== null) checkCall(match.index, call[0]);
+    else add(match.index, "G2", "uses console other than as a direct call (console.name(...)); log only constant text that way");
+  }
+  for (const match of code.matchAll(TIMBER)) {
+    if (!isImport(match.index) && !TIMBER_CALL.test(code.slice(match.index))) {
+      add(match.index, "G2", "uses Timber other than as a direct call (Timber.name(...)); log only constant text that way");
     }
   }
   return [...found.values()];
