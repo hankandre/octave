@@ -1,0 +1,4 @@
+# T3-19 test fixture (frozen), hand-written mapping section appended to release-mapping.txt for merged-sneak.dump.txt. The tests strip these leading # lines.
+expo.modules.filesystem.FileSystemDownloadKt$Merged -> mg7:
+# {"id":"sourceFile","fileName":"FileSystemDownload.kt"}
+    1:3:java.lang.Object com.example.Sneak.open(java.lang.Object):5:5 -> a

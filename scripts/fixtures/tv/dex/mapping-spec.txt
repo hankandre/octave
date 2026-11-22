@@ -1,0 +1,2 @@
+# The spec string cut-mapping.awk was run with (dex name = all | class | member-name regex).
+sr1=all;v40=all;com.facebook.react.devsupport.CxxInspectorPackagerConnection$DelegateImpl=all;com.facebook.react.modules.network.NetworkingModule=client|<init>|createDefaultUserAgent;lh0=<clinit>;w63=m0;am1=<init>;dm1=l|<init>|j;em1=class;vr1=class;ur1=class;z60=class;dg3=class;ev=class;ta2=class;k72=class;bt2=class;nz=class;f9=class;bu2=class;ln0=class;fv=class;bq2=class;R8$$REMOVED$$CLASS$$204=class
