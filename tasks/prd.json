@@ -1600,7 +1600,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 35b82c40 (4 commits, T3-31). Local: pnpm check green; tv:e2e:build then tv:e2e on own emulator: dex, inspector, native inspector pass on e2e APK (pg_map_id a005bc06...), tv e2e lines ok; cut-mapping control exits 1, no install; tv:build + tv:apk:check pass after. Item 4 CI half (tv job green) is evidence outside the manifest. No list changed."
+          "evidence": "commit 964dc3b7 (T3-31). pnpm check green; tv:e2e on own emulator. On apps/tv/dist/e2e/octave-tv-e2e.apk: tv apk dex passes (5310 classes, 222 sink refs, 14 entry points, 0 outside client); tv inspector passes (1 dex, R8 release with its mapping); tv native inspector passes (44 libs, 2 ABIs); pg_map_id a005bc06e5db632695193179114b6dc53836e0053a175d5ba50f1afdf97cdaae. Full lines: plan 015. No list changed. Item 4 CI half at Ship."
         },
         {
           "id": "T3-37",
