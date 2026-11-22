@@ -278,7 +278,7 @@ export const DEV_SUPPORT_CLIENT_CALLERS = [
   },
   {
     class: "com.facebook.react.runtime.ReactHostImpl",
-    offInRelease: "loadNetworkResource is @DoNotStrip and called from C++ by the inspector target, which ReactHostImpl creates only when InspectorFlags.getFuseboxEnabled() (runtime/ReactHostImpl.kt:442-445, 1591-1593; jsinspector-modern/InspectorFlags.cpp:66-74, default false). If it ran, a connected debugger could make the app fetch any URL. Tested (T3-28): scripts/tv-apk-native-inspector.mjs fails when a native library of the APK is wired to call the C++ inspector's network dispatcher (NetworkIOAgent::handleRequest), the one C++ caller of loadNetworkResource; that it is the only route, and the run-time flag, are read from source.",
+    offInRelease: "loadNetworkResource is @DoNotStrip and called from C++ by the inspector target, which ReactHostImpl creates only when InspectorFlags.getFuseboxEnabled() (runtime/ReactHostImpl.kt:442-445, 1591-1593; jsinspector-modern/InspectorFlags.cpp:66-74, default false). If it ran, a connected debugger could make the app fetch any URL. Tested (T3-28): scripts/tv-apk-native-inspector.mjs fails when a native library of the APK is wired to call the C++ inspector's network dispatcher (NetworkIOAgent::handleRequest), the one C++ route from a debugger message to loadNetworkResource; that it is the only route, and the run-time flag, are read from source.",
   },
 ];
 
