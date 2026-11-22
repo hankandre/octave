@@ -923,7 +923,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 3a91767c: milestone 1 (dex check, tv:apk:check chain) committed, not green: on the real release APK D4 fails, MainApplication -> ReactHostImpl via Expo getDefaultReactHost code R8 inlined into its reactHost lambda; ReactHostImpl is a row only through inlined InspectorNetworkHelper. Returned to the Product Owner (spec, Open questions for the Product Owner 1). Frozen items 1a and 4 green; 2, 3, 5 red (not reached)."
+          "evidence": "commit 3a91767c: milestone 1 (dex check, tv:apk:check chain), not green. On the real release APK D4 fails: MainApplication -> ReactHostImpl at 6 sites of Expo getDefaultReactHost code R8 inlined into its reactHost lambda. Returned to the Product Owner. commit 56ec2b39 records that options (a) and (b) both pass on that APK in throwaway runs and asks whether milestones 2-4 may proceed. Frozen items 1 and 4 green; 2, 3, 5 red (not reached)."
         },
         {
           "id": "T3-04",
