@@ -1122,10 +1122,10 @@
             "docs/security.md section 3 states the rule and names its tests in the same PR, and the PR calls out the change"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implementation started on task/T3-20 after freeze commit 21f77084 (T3-20)."
         },
         {
           "id": "T3-22",

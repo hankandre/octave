@@ -16,6 +16,9 @@ enum class HttpRefusal(val code: String) {
 
     // T3-16: a session's call whose path is not its base path or under it.
     OUTSIDE_BASE_PATH("outside-base-path"),
+
+    // T3-20: a plain-HTTP call to a name whose answer holds no loopback or private-LAN address (ResolvedAddressRule).
+    RESOLVED_PUBLIC("resolved-public"),
 }
 
 // The message is the code. It never holds a URL, a host, a header or a token, and it has no cause.
