@@ -7,7 +7,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
-import { parseXmlTree, resolveResourceFile } from "./tv-aapt2-xml.mjs";
+import { parseXmlTree, readXmlTree, READING_MODES, resolveResourceFile } from "./tv-aapt2-xml.mjs";
 import { androidSdk, newestBuildTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
 
@@ -33,7 +33,7 @@ const SECTIONS = ["cloud-backup", "device-transfer"];
 // An exclude whose path names the whole domain.
 const WHOLE_DOMAIN_PATHS = [".", "./"];
 
-export { parseXmlTree, resolveResourceFile };
+export { parseXmlTree, readXmlTree, READING_MODES, resolveResourceFile };
 
 const fail = (problem) => `ERROR tv apk: ${problem}`;
 
@@ -60,10 +60,10 @@ const listed = (list, name) => list.some((entry) => entry.name === name);
 
 /** Returns one `ERROR tv apk: …` line per permission, declared permission or query outside the named lists. */
 export function judgeManifestSurface(text) {
-  const tree = parseXmlTree(text);
+  const { tree, problems } = readXmlTree(text, "manifest");
   if (!tree) return [fail("cannot read the manifest dump (aapt2 dump xmltree --file AndroidManifest.xml)")];
   if (tree.name !== "manifest") return [fail(`the manifest dump's root is <${tree.name}>, not <manifest>`)];
-  const errors = [];
+  const errors = problems.map(fail);
   for (const child of tree.children) {
     const name = child.attributes.name ?? "(no name)";
     if (child.name.startsWith("uses-permission")) {
@@ -116,7 +116,7 @@ function findIncludes(element, section, errors) {
 
 /**
  * Returns one `ERROR tv apk: …` line per way the backup setting is not "off". `facts` is
- * `{ allowBackup, fullBackupContent, rulesAttribute, rulesFile, rulesTree, backupAgent?, fullBackupOnly? }`.
+ * `{ allowBackup, fullBackupContent, rulesAttribute, rulesFile, rulesTree, rulesProblems?, backupAgent?, fullBackupOnly? }`.
  */
 export function judgeBackup(facts) {
   const errors = [];
@@ -142,6 +142,7 @@ export function judgeBackup(facts) {
     errors.push(fail(`cannot read the data extraction rules ${facts.rulesFile}`));
     return errors;
   }
+  errors.push(...(facts.rulesProblems ?? []).map((problem) => fail(`the rules file ${facts.rulesFile}: ${problem}`)));
   if (tree.name !== "data-extraction-rules") {
     errors.push(fail(`the rules file ${facts.rulesFile} has root <${tree.name}>, not <data-extraction-rules>`));
     return errors;
@@ -171,6 +172,7 @@ export function readBackup(manifestTree, resources, rules) {
   const attributes = application?.attributes ?? {};
   const rulesAttribute = attributes.dataExtractionRules ?? null;
   const rulesFile = rulesAttribute ? resolveResourceFile(resources(), rulesAttribute) : null;
+  const rulesRead = rulesFile ? readXmlTree(rules(rulesFile), "no-namespace") : { tree: null, problems: [] };
   return {
     allowBackup: booleanOrPrinted(attributes.allowBackup),
     fullBackupContent: booleanOrPrinted(attributes.fullBackupContent),
@@ -178,7 +180,8 @@ export function readBackup(manifestTree, resources, rules) {
     fullBackupOnly: attributes.fullBackupOnly ?? null,
     rulesAttribute,
     rulesFile,
-    rulesTree: rulesFile ? parseXmlTree(rules(rulesFile)) : null,
+    rulesTree: rulesRead.tree,
+    rulesProblems: rulesRead.problems,
   };
 }
 
@@ -186,7 +189,7 @@ export function readBackup(manifestTree, resources, rules) {
 export function checkManifest(dump, apk = RELEASE_APK) {
   const manifestText = dump("xmltree", apk, "--file", "AndroidManifest.xml");
   const errors = judgeManifestSurface(manifestText);
-  const tree = parseXmlTree(manifestText);
+  const tree = parseXmlTree(manifestText, "manifest");
   if (tree?.name !== "manifest") return errors;
   const facts = readBackup(
     tree,
@@ -218,7 +221,7 @@ function main(args) {
   }
   for (const error of errors) console.error(error);
   if (errors.length > 0) process.exit(1);
-  const tree = parseXmlTree(manifestText);
+  const tree = parseXmlTree(manifestText, "manifest");
   const permissions = tree.children.filter((child) => child.name.startsWith("uses-permission")).length;
   const queries = tree.children.filter((child) => child.name === "queries").flatMap((child) => child.children).length;
   console.log(`tv apk: ${apk}: ${permissions} permissions, ${queries} queries, backup off`);

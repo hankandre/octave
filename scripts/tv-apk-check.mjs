@@ -7,10 +7,10 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
-import { parseXmlTree, resolveResourceFile } from "./tv-aapt2-xml.mjs";
+import { parseXmlTree, readXmlTree, resolveResourceFile } from "./tv-aapt2-xml.mjs";
 import { androidSdk, newestBuildTool } from "./tv-android-sdk.mjs";
 
-export { parseXmlTree, resolveResourceFile };
+export { parseXmlTree, readXmlTree, resolveResourceFile };
 
 export const RELEASE_APK = fileURLToPath(new URL("../apps/tv/android/app/build/outputs/apk/release/app-release.apk", import.meta.url));
 
@@ -48,14 +48,17 @@ export function checkBadging(text) {
 
 // The application element's networkSecurityConfig value (a resource reference) and usesCleartextTraffic, from the
 // manifest's xmltree text.
+// The manifest is read in "manifest" mode: Android finds its attributes by framework resource id. `problems` holds the
+// duplicate-attribute lines the reader recorded; judgeNetworkSecurity turns them into errors.
 export function readManifestNetworkSecurity(text) {
-  const manifest = parseXmlTree(text);
+  const { tree: manifest, problems } = readXmlTree(text, "manifest");
   const application = manifest?.children.find((child) => child.name === "application");
   const attributes = application?.attributes ?? {};
   const uses = attributes.usesCleartextTraffic;
   return {
     configAttribute: attributes.networkSecurityConfig ?? null,
     usesCleartextTraffic: uses === undefined ? null : uses === "true",
+    problems,
   };
 }
 
@@ -68,6 +71,8 @@ const NETWORK_SECURITY_ROOT = "network-security-config";
 export function judgeNetworkSecurity(facts) {
   const errors = [];
   const fail = (problem) => errors.push(`ERROR tv apk: ${problem}`);
+  // An element with two attributes of one local name is an error, so a second value cannot hide behind the first.
+  for (const problem of facts.problems ?? []) fail(problem);
   if (facts.configAttribute === null) {
     const only = facts.usesCleartextTraffic === true ? " (usesCleartextTraffic alone is ignored from API 38 and is not the configuration)" : "";
     fail(`the manifest's application has no networkSecurityConfig attribute${only}`);
@@ -110,10 +115,11 @@ export function readNetworkSecurity(aapt2, apk) {
     if (child.status !== 0) throw new Error(`aapt2 dump ${args[0]} failed: ${(child.stderr || child.error?.message || "").trim()}`);
     return child.stdout;
   };
-  const { configAttribute, usesCleartextTraffic } = readManifestNetworkSecurity(dump("xmltree", apk, "--file", "AndroidManifest.xml"));
+  const { configAttribute, usesCleartextTraffic, problems } = readManifestNetworkSecurity(dump("xmltree", apk, "--file", "AndroidManifest.xml"));
   const configFile = configAttribute === null ? null : resolveResourceFile(dump("resources", apk), configAttribute);
-  const tree = configFile === null ? null : parseXmlTree(dump("xmltree", apk, "--file", configFile));
-  return { configAttribute, configFile, usesCleartextTraffic, tree };
+  // Android reads the configuration file by local name, in any namespace: "any-namespace" mode.
+  const configRead = configFile === null ? { tree: null, problems: [] } : readXmlTree(dump("xmltree", apk, "--file", configFile), "any-namespace");
+  return { configAttribute, configFile, usesCleartextTraffic, tree: configRead.tree, problems: [...problems, ...configRead.problems] };
 }
 
 function main(args) {
