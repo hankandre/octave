@@ -14,6 +14,7 @@ import {
   type TransportRequest,
   type TransportResponse,
 } from "../ports/transport";
+import { isSafeRequestPath } from "./request-path";
 
 // The reference Transport, for Node tests and the tripwire. It stands in for Kotlin's OkHttp client (T3-05), so
 // it follows the port's rules (decision 0005): the token stays in this class and never leaves it, the header
@@ -105,7 +106,7 @@ export class FetchTransport implements Transport {
 
   async request(request: TransportRequest): Promise<TransportResponse> {
     const { path, query } = request;
-    if (!path.startsWith("/") || path.startsWith("//") || /[?#]/.test(path)) throw new TransportError("refused");
+    if (!isSafeRequestPath(path)) throw new TransportError("refused");
     if (!(request.timeoutMs > 0)) throw new TransportError("refused");
     const pairs = query ?? [];
     if (pairs.some(([name]) => isCredentialQueryName(name))) throw new TransportError("refused");

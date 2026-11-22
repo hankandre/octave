@@ -74,7 +74,7 @@ internal class SessionTransport(private val identity: ClientIdentity) {
         val method = args["method"] as? String ?: throw Refused()
         if (method !in METHODS) throw Refused()
         val path = string(args, "path")
-        if (!path.startsWith("/") || path.startsWith("//") || path.contains('?') || path.contains('#')) throw Refused()
+        if (!RequestPath.isSafe(path)) throw Refused()
         val timeoutMs = timeoutMs(args)
         val pairs = queryPairs(args["query"])
         if (pairs.any { (name, _) -> HostClassifier.jsTrim(name).lowercase() in CredentialQuery.NAMES }) throw Refused()
