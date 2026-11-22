@@ -182,7 +182,8 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 - **Home, in this order on every visit and for every account:** the hero, **Continue watching**, then one **Recently added** row. There is no row of library tiles and no per-library Latest rows; libraries live in the rail. An empty row is hidden and the others keep their order. Later rows (My list, T12-02) take places their own tasks set.
 - **Continue watching** is one row: in-progress films and episodes together with each series' next episode, most recently played first, at most 20 cards (owner, 2026-11-22; T5-02 builds the row with 16, and T5-07 raises it to 20 and adds the window). Cards play in one press.
 - **The window** (owner, 2026-11-22). A title leaves Continue watching 90 days after it was last played. The account can change the window in Settings: 30, 90, 180 or 365 days, or Never. A title that aged out is only hidden: its progress is kept, its own page still offers Resume, and playing it again brings it back. The device works this out from `UserData.LastPlayedDate`; nothing is asked of the server.
-- **Remove** (owner, 2026-11-22). Holding select on a Continue watching card opens a short menu (`Menu`, 7.10) that holds Remove. Remove hides the title from the row and keeps its progress; its own page still offers Resume, and playing it again brings it back (T5-05, which waits for Jellyscale #233). Until now a held select opened the details (7.5, section 9, and decision D15 B). What else the menu holds, the details among them, and its labels await the owner.
+- **Remove** (owner, 2026-11-22). Holding select on a Continue watching card opens a short menu (`Menu`, 7.10) that holds Remove. Remove hides the title from the row and keeps its progress; its own page still offers Resume, and playing it again brings it back (T5-05, which waits for Jellyscale #233).
+- **The card's menu** (owner, 2026-11-22; `docs/specs/decisions-owner-chat-2026-11-22.md`, 4). The menu a held select opens on a Continue watching card holds, in the owner's order: "Remove from Continue watching", "Mark as watched", "Go to series" (on an episode's card only), and "Details". On these cards a held select no longer opens the details directly, as it did until now (decision D15 B); Details in the menu does. Other cards that play, and the hero, are unchanged (7.5, section 9). T5-05 builds the menu.
 - **Recently added** is one row of movies and shows, newest first. A series with new episodes shows once, as the series, and opens the series page. The row ends with a "See all" tile that opens the newest additions as a grid.
 - A row is a title (`typeHeading`, sentence case) over a horizontal list of cards. Left and Right move within the row. Up and Down move to the adjacent row, to the card nearest by horizontal centre. The focused card keeps 96 px from the edge. Left from the first card opens the rail. Each row remembers its scroll position in app state, so a recycled row never inherits another row's place (decision 0004, condition 6).
 - States: skeleton (cards of the right variant), error (`InlineError` in place of cards), and hidden when empty.
@@ -192,7 +193,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 | Variant | Frame | Under the art | Select |
 |---|---|---|---|
 | `poster` | 2:3, `posterW` | Title (1 line), year | Open detail or series |
-| `thumb` (Continue watching) | 16:9, `thumbW`; Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** in one press. Holding select, or Menu or Info where the remote has one, opens details |
+| `thumb` (Continue watching) | 16:9, `thumbW`; Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** in one press. Holding select opens the card's menu (7.4; until T5-05 builds it, the details). Menu or Info, where the remote has one, opens details |
 | `episode` | 16:9 | "2 · Title", time left | Play the episode |
 
 - Marks (top right, 24 px disc on a scrim): a check for played, a count for unplayed episodes. The progress bar sits at the bottom of the frame: a 4 px track at white .22 with an `artAccent` fill.
@@ -294,7 +295,7 @@ Panels (right-side sheets, a third of the canvas, the video keeps playing; Back 
 - **EmptyState**: a centred column, a 72 px line icon in `text3`, a title (`typeHeading`), one sentence, and at most one action.
 - **Skeleton**: `surface2` blocks shaped like the content, shown only after 150 ms. No shimmer under reduced motion.
 - **Logo** (owner, 2026-11-22): the "D1 bars" mark. The direction is video first, not music.
-- **Loader, "Signal"** (owner, 2026-11-22; the motion as the owner updated it the same day, `docs/specs/decisions-owner-chat-2026-11-22.md`, 3): the D1 bars, where the brass bar is a beacon. Every pulse, about 1.5 s apart, sends a wave across the whole name "octave"; each letter lights as the wave reaches it, o first and e last, and then fades back. The next pulse repeats the sweep. When the film is ready the whole name lights and holds. Where space is tight the bars-only form is used: the pulse and the rings, with no name. It replaces the ring as Octave's loading indicator (section 5 and 7.14). With reduced motion the still mark is shown with "Loading…" (section 5), and the pulse stays within section 11, rule 5. The reference is the coordinator's logo page, round 7. The brass colour is not a token yet: the owner's answer is pending (the recommendation is `#E8C48A`, the value `artAccent` already falls back to in section 3), and T3-35, which builds the loader, reads it from the owner's decision file and adds the tokens.
+- **Loader, "Signal"** (owner, 2026-11-22; the motion as the owner updated it the same day, `docs/specs/decisions-owner-chat-2026-11-22.md`, 3): the D1 bars, where the brass bar is a beacon. Every pulse, about 1.5 s apart, sends a wave across the whole name "octave"; each letter lights as the wave reaches it, o first and e last, and then fades back. The next pulse repeats the sweep. When the film is ready the whole name lights and holds. Where space is tight the bars-only form is used: the pulse and the rings, with no name. It replaces the ring as Octave's loading indicator (section 5 and 7.14). With reduced motion the still mark is shown with "Loading…" (section 5), and the pulse stays within section 11, rule 5. The reference is the coordinator's logo page, round 7. The brass colour is `#E8C48A` and is a design token (owner, 2026-11-22; the same decision file, 3): `brass` in section 8. It is the value `artAccent` already falls back to in section 3. T3-35, which builds the loader, adds the token and the loader's timings to the code.
 
 ### 7.18 Settings
 
@@ -307,7 +308,7 @@ A short surface: a list of sections on the left and the selected section's rows 
 - **Accounts**: every saved account as "name · server", with Switch, Sign out, and Remove, then "Add account".
 - **About & diagnostics**: versions, licences, and "Copy diagnostics" (redacted).
 - **What follows the account and what stays on the device** (owner, 2026-11-22). Per account: subtitles, auto-play, the skip modes, and the Continue watching window. Per device: the streaming limits, and later passthrough and refresh rate. Per-account settings are stored on the server's display preferences, so they follow the account to another device. The countdown is placed with auto-play by the Product Owner, not by the owner.
-- The list and order of these sections, and what sits under an Advanced section, wait for the owner (T9-08). The list above is the proposal, with no Advanced section.
+- **The sections and their order** (owner, 2026-11-22; T9-08; `docs/specs/decisions-owner-chat-2026-11-22.md`, 5). The sections are the six above, in that order: Playback, Home, Languages, Subtitles, Accounts, About & diagnostics. There is no Advanced section.
 - Rows for features not built yet show "Not available yet." and take no focus.
 - **Switch**: a pill track (64×36 px) with a round thumb and the words "On" or "Off" beside it, so the state is never colour alone.
 
@@ -353,6 +354,7 @@ Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here
 |---|---|
 | Colour | `void` `#060708`, `surface0` `#0b0c0e`, `surface1` `#131417`, `surface2` `#1b1c20`, `surface3` `#25262b`, `line` `rgb(242 239 233 / .10)`, `lineStrong` `rgb(242 239 233 / .37)`, `text1` `#f2efe9`, `text2` `#a9a59d`, `text3` `#8a867f`, `onLight` `#0b0c0e`, `focus` `#fff4dc`, `focusEdge` `rgb(0 0 0 / .6)`, `danger` `#ff8a6b`, `notice` `#f0b65a`, `ok` `#8fd1a8`, `fillSecondary` `rgb(242 239 233 / .12)`, `fillIcon` `rgb(242 239 233 / .10)`, `track` `rgb(255 255 255 / .22)`, `trackBuffered` `rgb(255 255 255 / .40)`, `veil` `rgb(0 0 0 / .6)` |
 | Artwork defaults | `artAccent` `#e8c48a`, `artGlow` `rgb(232 196 138 / .22)`, `artShade` `#141210` |
+| Loader | `brass` `#e8c48a` (owner, 2026-11-22; the Signal loader's brass bar, 7.17; T3-35 adds it to the code, and until then the parity test does not read this row) |
 | Type | §4: `typeHero` 72, `typeCode` 72 Mono, `typeTitle` 48, `typeDialogTitle` 36, `typeHeading` 33, `typeBodyLg` 31.5, `typeBody` 28, `typeLabel` 24, `typeMeta` 24, `typeMono` 24 Mono; `measure` 62 characters |
 | Space | `space1` 4, `space2` 8, `space3` 12, `space4` 16, `space5` 24, `space6` 32, `space7` 48, `space8` 64, `space9` 96; `safeX` 96, `safeY` 54 |
 | Sizes | `railCollapsedW` 96, `railOpenW` 400, `posterW` 248, `thumbW` 416, `rowGap` 48, `controlH` 72, `iconButton` 64, `hitMin` 64, `switchW` 64, `switchH` 36, `searchFieldH` 96, `textFieldH` 72, `personDisc` 200, `playerSheetW` 640 (a third of the canvas), `playerPlayDisc` 84, `playerStatusDisc` 64, `upNextW` 560, `scrubTrackH` 4, `scrubTrackHActive` 8, `scrubThumb` 16, `scrubGap` 2, `scrubPreviewW` 384, `scrimPlayerTopH` 360, `scrimPlayerBottomH` 440, `posterRequestMaxW` 400, `dialogMaxW` 840, `toastMaxW` 840, `emptyIcon` 72, `switchThumb` 28, `fieldBorderWidth` 2 |
@@ -383,7 +385,9 @@ Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here
 | Anywhere | D-pad, select, Back | Move, activate, back |
 | A screen's first column | Left | Open the rail |
 | Rail | Right, or select on the current entry | Close the rail, return focus |
-| Card that plays, hero primary | Hold select, or Menu or Info | Open details |
+| Continue watching card | Hold select | Open the card's menu (7.4; from T5-05) |
+| Continue watching card | Menu or Info | Open details |
+| Other card that plays, hero primary | Hold select, or Menu or Info | Open details |
 | Library grid, A to Z | Right from the last column | Enter the letter rail |
 | Library grid | Page keys, where the remote has them | Move a page |
 | Search | Mic button, or the remote's voice key | Voice input |
@@ -513,7 +517,10 @@ The owner's words are in `docs/specs/decisions-owner-inbox-2026-11-22.md`.
 
 - **Continue watching (T5-01).** Remove hides the title and keeps its progress. Remove lives in a short menu opened by holding select. A title leaves the row 90 days after it was last played; the row shows at most 20, newest first; the account can change the window (30, 90, 180 or 365 days, or Never). A title that aged out is only hidden, and the device works the ageing out from `UserData.LastPlayedDate` (7.4).
 - **Settings (T9-01).** Subtitles, auto-play, the skip modes and the Continue watching window follow the account and are stored on the server's display preferences. The streaming limits, and later passthrough and refresh rate, stay on the device (7.18).
-- **Icons.** The icon set is Tabler (MIT), loaded as a font with expo-font, with no native module.
+- **Icons.** The icon set is Tabler (MIT), loaded as a font with expo-font, with no native module. The stroke weight is light: Tabler's weight-300 font (`docs/specs/decisions-owner-chat-2026-11-22.md`, 2; T3-34).
+- **The brass colour.** `#E8C48A` is a design token, `brass` (section 8; the same file, 3; T3-35).
+- **The menu on a Continue watching card (T5-05).** A held select opens a menu that holds "Remove from Continue watching", "Mark as watched", "Go to series" (for episodes) and "Details" (7.4; the same file, 4).
+- **The Settings sections (T9-08).** The list of 7.18 in its order, and no Advanced section (the same file, 5).
 - **Logo and loader.** The logo is the D1 bars. The loader is "Signal": each pulse of the brass bar sends a wave across "octave" that lights each letter in turn, and the whole name holds lit when the film is ready; a bars-only form where space is tight. It replaces the ring (7.17). Video first, not music.
 - **Errors.** A screen shows only Octave's fixed sentence for an error code, never native reason text (section 10, T8-25).
 
@@ -522,7 +529,7 @@ What the evidence says for each option, for the decisions that had options:
 | Decision | Chosen | Not chosen | What the evidence says |
 |---|---|---|---|
 | What Remove means | Hide the title, keep its progress | Reset its progress | Removal is the second most wanted feature on Jellyfin's tracker (1,740 votes, `docs/research/streaming-ux-gripes.md` 2.4). Resetting is the workaround that works today, "at the cost of the resume position" (`docs/research/discovery-api.md:75`). Hiding needs the server: Jellyscale #233 is open, and Jellyfin's "exclude from resume" proposal has no release (`streaming-ux-gripes.md:81`). |
-| Where Remove lives | A short menu on a held select | The title's page | No measurement compares the two. A menu on the card removes a title without leaving the row; Netflix brought removal to every device in 2022 (`streaming-ux-gripes.md:246`), and where its control sits is unverified here. It changes what a held select does on these cards (see "Awaiting the owner"). |
+| Where Remove lives | A short menu on a held select | The title's page | No measurement compares the two. A menu on the card removes a title without leaving the row; Netflix brought removal to every device in 2022 (`streaming-ux-gripes.md:246`), and where its control sits is unverified here. It changes what a held select does on these cards; the owner has since said what the menu holds (7.4). |
 | Whether titles leave by themselves | After 90 days, changeable per account, Never included | Keep everything by default | That Netflix ranks the row by recency supports ageing titles out, and "no data says where the cut should be" (`streaming-ux-gripes.md:246`); the desktop rule of two weeks had no evidence (`PRODUCT.md` before this decision). 90 days is the owner's choice, not a measured value. |
 | Where per-account settings are stored | The server's display preferences | On the device, keyed by account | "Settings that follow the account" has 260 votes on Jellyfin's tracker, and both servers are said to implement the record (`docs/research/streaming-wishlist.md:250`); that the pinned Jellyscale keeps what Octave writes is unverified until the task that builds it checks. |
 
@@ -530,6 +537,5 @@ What the evidence says for each option, for the decisions that had options:
 
 - The rail's look and entries; how many posters show beside it; what Back does on Home; the sign-in screen with its QR code (T1-08).
 - The token values after the TV design pass (T3-06), and the lift and memory choice (decision 0004, choice 2).
-- What the held-select menu on a Continue watching card holds besides Remove, and its labels: a held select opened the details until now (T5-05).
-- The brass colour's value as a token (T3-35); the icons' stroke weight (T3-34).
-- The Settings sections, their order, and Advanced (T9-08); a profile PIN (T12-01); recent searches (T12-05).
+- What Menu or Info does on a Continue watching card now that a held select opens the card's menu: it opens details, as before, until the owner says otherwise (T5-05).
+- A profile PIN (T12-01); recent searches (T12-05).

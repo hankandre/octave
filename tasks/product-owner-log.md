@@ -559,3 +559,60 @@ Files of tasks in flight are not touched (`.claude/workflows`, `scripts/task*.mj
 - Home (T5-03): T5-07. Settings (T9-03): T5-07, T9-09 and T9-08.
 - For the owner: the icons' stroke weight (T3-34) and the brass colour (T3-35), both in the inbox; the gate of T3-37.
 - Checked: `tasks/prd.json` is under the 350,000-byte limit after the operations (`wc -c` in the commit's checks).
+## 2026-11-22 (Product Owner pass, directed: the owner's answers from the decision inbox, second round)
+
+A directed pass, asked by the coordinator, that records five answers the owner gave in the decision inbox on 2026-11-22. The owner's words are in `docs/specs/decisions-owner-chat-2026-11-22.md` (2 and 3 completed, 4 to 6 new). Three tasks are added: T1-22, T1-23 and T1-24. T5-05's acceptance is edited with the owner's approval. T9-08 is closed. `DESIGN.md` and `PRODUCT.md` are edited in this commit. Three backlog lines were appended (263 to 265), since the tool adds a task only against a backlog entry. No task is dropped or moved, and no frozen file changes. The owner can veto any of it.
+
+Files of tasks in flight are not touched (`apps/tv/src/design/rows`, `scripts/tv-apk-*`, `modules/session`, `scripts/task*.mjs`, `.claude/workflows`, `scripts/tv-wire*`, the fixtures).
+
+### 1. The icons' stroke weight (T3-34)
+
+- The owner's answer: light, Tabler's weight-300 font. Written under heading 2 of the decision file, where T3-34's item 5 reads it, and in `DESIGN.md` section 12. The "Pending" paragraph there is replaced.
+- No task edit. Backlog entry: none (lines 237 and 254 are already taken by T3-34). Approval: `docs/specs/decisions-owner-chat-2026-11-22.md`, 2.
+- Unverified by this pass: which files `@tabler/icons-webfont` ships for weight 300 and whether one is a format expo-font loads. No file name is written down; T3-34's item 2 has the spec record the files that ship.
+
+### 2. The brass colour (T3-35)
+
+- The owner's answer: `#E8C48A` becomes a design token. Written under heading 3 of the decision file, where T3-35's item 4 reads it, and in `DESIGN.md` 7.17, section 8 and section 12.
+- The owner's inbox answer "when spelled, hold, dim and spell again" is not applied. It was given for the earlier version, where each pulse lit one more letter; the owner then changed the motion in chat to the wave across the whole name on every pulse, which is already T3-35's items 1 and 2 and `DESIGN.md` 7.17. The decision file says so under heading 3. The wave stands.
+- No task edit. Backlog entry: none (line 252 is already taken by T3-35). Approval: the same file, 3.
+- Derived by this pass, not the owner's: the token's name, `brass`. The owner gave a value, not a name.
+- The token table. Found: `scripts/design-tokens.test.ts` is frozen by T3-06 (`docs/specs/T3-06.tests.json`) and compares the rows it names (Colour, Artwork defaults, Type, Space, Sizes, Shape, Depth, Motion, Focus, Reduced motion) with `apps/tv/src/design/tokens.ts` in both directions. So the token is a row of its own, "Loader", which that test does not read, and the row says T3-35 adds it to the code. No code and no frozen test changes here. T3-35's spec and tests bring the row under the parity test.
+
+### 3. The menu on a Continue watching card (T5-05)
+
+- The owner's answer: the menu a held select opens on a Continue watching card holds Remove from Continue watching, Mark as watched, Go to series (for episodes), and Details. Written under heading 4 of the decision file, and in `DESIGN.md` 7.4, 7.5, section 9 and section 12, and `PRODUCT.md` (moved from the open to the decided questions).
+- Edited T5-05, `acceptance`, with the owner's approval (`docs/specs/decisions-owner-chat-2026-11-22.md`, 4, which names T5-05). The item "Owner step, before the Tests step: what else that menu holds and its labels" is replaced by two items: what the menu holds, in the owner's order and labels, and what the three other entries do. Backlog entry: none.
+- A scope call, open to the owner's veto: T5-05 builds the whole menu. Mark as watched, Go to series and Details need nothing from Jellyscale #233, so they wait for it only because they share the menu with Remove. A menu without Remove could ship earlier as its own task; it was not split, because until T5-05 a held select still opens the details and nothing is lost.
+- Derived by this pass, not the owner's: that the list's order is the menu's order; that "Go to series" shows on an episode's card only and opens the series page; that Back closes the menu and returns focus to the card.
+- Found: "Mark as watched" is already a control name in `DESIGN.md` section 10 ("Controls name the action"), and the toast "Marked as watched." is in the copy table. No wording conflict.
+- For the owner: the answer covers a held select only. `DESIGN.md` 7.5 and section 9 also give Menu or Info, where the remote has one, as a way to the details. This pass leaves those keys opening the details on a Continue watching card and lists the question under "Awaiting the owner".
+
+### 4. The Settings sections (T9-08)
+
+- The owner's answer: the list of `DESIGN.md` 7.18 in its order, and no Advanced section. Written under heading 5 of the decision file, in `DESIGN.md` 7.18 and section 12, and in `PRODUCT.md` (moved from the open to the decided questions).
+- T9-08 is closed with `pnpm task set`, in the commit after this one, with the answer as its evidence. Both of its items are met: the owner decided, and the answer is in 7.18. Backlog entry: none. Approval: the same file, 5.
+- Settings (T9-03) depended on T9-08; that gate is now met.
+
+### 5. The pipeline options (T1-20's report)
+
+- The owner took options 1, 2 and 6 of `docs/research/pipeline-cost.md` and declined options 3, 4 and 5. Written under heading 6 of the decision file. The report said a chosen option becomes its own task, so each is one task.
+- Added T1-22 after T1-20 (run the workflow's mechanical gates as commands, not one agent each). Backlog entry: "Run the task workflow's mechanical gates (sync, red, frozen, green, fixtures down) as commands inside the coordinator or the next agent, not one agent each." (line 263, appended by this pass). Lane `workflow`.
+- Added T1-23 after T1-22 (hand Ship's wait for CI to a polling loop or the scout model). Backlog entry: "Hand the CI wait in Ship to a polling loop or the scout model." (line 264, appended by this pass). Lane `workflow`. The owner left the choice between the two open; the spec picks one and says why.
+- Added T1-24 after T1-23 (run `pnpm check` and the frozen gate locally before Ship). Backlog entry: "Run pnpm check and the frozen gate locally before Ship, so CI is not first to fail." (line 265, appended by this pass). Lane `workflow`.
+- Order: in series, because all three change `.claude/workflows/task.js`. T1-22 depends on T1-21, as the coordinator asked (the same files), and on T1-20, whose report it builds on. T1-23 depends on T1-22, and T1-24 on T1-23.
+- T1-22 also depends on T3-27, by this pass and open to veto. Why: T1-22 moves the fixture teardown step, and T3-27 (per-checkout fixture ports, in flight) may change what that step runs. Unverified: T3-27 has no spec yet, so whether it touches `.claude/workflows/fixtures-down.mjs` is not known. If it does not, the dependency can be dropped by a later pass.
+- Derived by this pass, not the owner's, in each task: no check is given up (the report's own claim for these three options, made an acceptance item); a denied command still halts the run; `pnpm test:workflow` covers the new paths; `WORKFLOW.md` and the ship skill are updated in the same pull request.
+- Derived, T1-22: a gate that judges an agent's work does not take its result from that agent's own account. Why: the option allows a gate to run "inside the next agent", and a frozen-test or green result relayed by the agent it judges would be no check. Also: the spec says whether the ruling-log and lane-state checks, which an agent relays in the same way (`decideRulingLog`, `decideLaneState` in `.claude/workflows/task.js`), move too. The owner's list names five gates; these two are not on it.
+- Derived, T1-23: the wait has a limit. The CI-dependent acceptance steps, the done status and the cleanup after the merge keep an owner; the spec says which agent.
+- Derived, T1-24: the spec first reads which Fix CI failures a local run would have caught. The report says this is unverified ("Whether the failures were avoidable locally is unverified"). Found: the frozen-test gate and the green gate already run before Ship (`WORKFLOW.md`, the task flow, step 6), so the spec adds only what is missing.
+- The declined options change nothing: the spec check, the spec's model and the tests-first step stay as they are. No task, and no backlog line.
+
+### Order and gates after this pass
+
+- T1, lane `workflow`: T1-21, then T1-22, T1-23, T1-24. T1-22 also waits for T3-27.
+- T3-34 and T3-35 no longer park at Spec for an owner answer; they wait only for T3-08 and T3-09 (and T3-35 for T3-34).
+- T5-05 has no owner step left; it waits for Jellyscale #233 and T5-03.
+- T9-03 no longer waits for T9-08.
+- For the owner: what Menu or Info does on a Continue watching card; the token's name `brass`; T5-05 carrying the whole menu; T1-22's dependency on T3-27.
+- Checked: `pnpm check`, `pnpm lint:backlog` and the size of `tasks/prd.json` against the 350,000-byte limit, in the commit's checks.
