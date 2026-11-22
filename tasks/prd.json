@@ -1387,10 +1387,10 @@
             "docs/security.md states the bound and names its tests in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire --task T3-05",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Branch task/T3-25, commit e40bf264 (not pushed). Items 1,2,5: check-red T3-25 --expect green, green [1,2,5]. Item 3: ResponseCapEdgeTest 3 tests, 0 failed. Item 4: check-red T3-16 green; tv:wire --task T3-05 on own emulator 8 pairs pass incl. transport-probe-then-signed-in jellyscale; CI wire job pending. pnpm check pass; tv:native:test 678 tests, 0 failed; lint:flow ok. Item 2 errors raised in Dns lookup and arg maps, not the read/parse: PO to confirm (PR body)."
         },
         {
           "id": "T3-33",
