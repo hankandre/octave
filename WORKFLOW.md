@@ -105,7 +105,7 @@ A pass logs each decision, each scope edit with its reason, in `tasks/product-ow
 3. **Check.** A fresh `spec-checker` appends its verdict; only critical or high issues block.
 4. **Tests.** `test-writer` commits the failing tests and the manifest. Red gate: the run stops with `tests-green` if one already passes.
 5. **Implement.** `implementer` or `native-engineer` makes the tests pass without changing them and runs the verify skill. Frozen-test gate after the step.
-6. **Review.** One review round, with a `guardian` on high-risk paths; the reviewer also judges whether the frozen tests test their items. The follow-ups step fixes and logs, then the frozen-test gate and the green gate (`check-red.mjs --expect green`) run.
+6. **Review.** One review round, with a `guardian` on high-risk paths; the reviewer also judges whether the frozen tests test their items. The follow-ups step fixes and logs, then the frozen-test gate and the green gate (`check-red.mjs --expect green`) run. The green gate decides from check-red's JSON, not from the relayed exit code.
 7. **Ship.** The PR, with a Frozen tests section, auto-merge on green CI (`pnpm lint:flow` runs in CI); the run stops on a denied command, `tests-green` or `frozen-tests`.
 
 ### 3. Pilot before scale
@@ -245,6 +245,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 - The spec check blocks only on critical or high issues; medium and low issues go to the implementer.
 - Native work (Kotlin under `modules/` or `apps/tv/android`, from T3-01) routes to `native-engineer`, and any diff on a high-risk path adds a `guardian` review.
 - The run rebases a task branch that is behind `origin/main` (`.claude/workflows/branch-sync.mjs`, after Spec and before Check), keeps the freeze commit where it was, and never merges main into a task branch. A branch that already holds a merge of main is blocked, and the message names the merge commit. A conflict, uncommitted changes to tracked files, or a rebase that would change a frozen file also block the task, and the branch stays as it was; commit or discard the changes and rerun.
+- `from: "ship"` (one task) resumes at Ship. Use it only for a task whose review round ran in an earlier run: nothing enforces that, and the run does not review again. It skips every phase before Ship, runs the branch sync, then, unless `preFlow`, the frozen-test gate and the green gate, and ships only when both pass. Pass `evidence`, any `ciSteps`, and `approvedFrozen` when a Product Owner ruling changed a frozen file.
 - When a task ends, whatever its outcome, the run brings down the fixture servers its worktree started (`.claude/workflows/fixtures-down.mjs`), reports them in the task's `fixtures` field, and never stops another checkout's Compose project.
 - The run stops early on a denied command (a denied fixture teardown included), on a test that passes before implementation (`tests-green`), and on a changed frozen test (`frozen-tests`). `.claude/workflows/product-owner.js` runs a Product Owner pass.
 
