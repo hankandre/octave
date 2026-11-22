@@ -1,5 +1,6 @@
 // @vitest-environment node
-// T3-15, written during implementation (docs/specs/T3-15.md, Test plan): the aapt2 parsers of scripts/tv-apk-check.mjs
+// T3-15, written during implementation (docs/specs/T3-15.md, Test plan): the aapt2 readers scripts/tv-apk-check.mjs uses
+// (its own and those it shares from scripts/tv-aapt2-xml.mjs)
 // and parseInstrumentation of scripts/tv-cleartext.mjs on output recorded from a real release APK and a real probe run
 // (scripts/fixtures/tv/, aapt2 2.20 from build-tools 37.0.0, an API 36 Android TV emulator); that e2eSourceHash sees
 // modules/ but not their build output or JVM tests; and that with-device-probe appends its Gradle block once.
