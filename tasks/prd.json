@@ -1189,10 +1189,10 @@
             "Each control has a component test for activation with the select key"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 12e6ff32: tokens, octave/design-tokens lint, FocusFrame and 9 controls, fonts, placeholder on tokens; pnpm check, tv:apk:check, tv:smoke, tv:e2e pass. Provisional: PO rulings (Jest setup, container-control reading) open."
         },
         {
           "id": "T3-08",
