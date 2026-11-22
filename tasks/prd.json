@@ -1028,7 +1028,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "In progress on task/T3-22: commit 25666997 adds the manifest-trim and backup-rules config plugin (milestone 1); the APK check, the real build and the docs follow."
+          "evidence": "Implemented on task/T3-22, head commit 82819ca2 (milestones 25666997, 75cde24d, 9443209c, 82819ca2). Local: pnpm check exit 0; check-red green [1,2,3,5]; tv:build ok; tv:apk:check \"2 permissions, 0 queries, backup off\"; tv:native:test 176/0 failed; tv:smoke and tv:e2e pass on own Android 16 TV emulator. Pending: PR, tv job on head (tv:apk:check + tv:smoke steps). Untested: real TV, Android 9-15, on-device backup/transfer (T4-05, T4-09)."
         },
         {
           "id": "T3-21",
