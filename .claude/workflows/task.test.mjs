@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -593,4 +593,422 @@ test('check-flow reads HEAD itself when it is a merge whose first parent is not 
   r.git('merge', '-q', '--no-ff', 'side', '-m', 'merge');
   const out = r.check('--json');
   assert.equal(JSON.parse(out.stdout.trim()).commits, 2);
+});
+
+// ---- T1-14: the task workflow on a resumed branch, a wrapped gate result and leftover fixture servers ----
+// The new pieces are pulled out inside each test, so a missing block or module fails only that item's tests.
+const gateApi = () => {
+  const api = new Function(`${gateBlock}; return { readGate, decideFrozen, decideRed, decideSync };`)();
+  assert.equal(typeof api.decideSync, 'function', 'decideSync is not in the GATE block');
+  return api;
+};
+const teardownApi = () => {
+  const part = src.split('// TEARDOWN-BEGIN')[1];
+  assert.ok(part, 'no // TEARDOWN-BEGIN block in task.js');
+  const text = part.split('\n').slice(1).join('\n').split('// TEARDOWN-END')[0];
+  return new Function(`${text}; return { withTeardown, fixturesDownCommand, decideTeardown };`)();
+};
+const SYNC = join(here, 'branch-sync.mjs');
+const GIT_ENV = {
+  GIT_AUTHOR_NAME: 'test',
+  GIT_AUTHOR_EMAIL: 'test@example.invalid',
+  GIT_COMMITTER_NAME: 'test',
+  GIT_COMMITTER_EMAIL: 'test@example.invalid',
+  GIT_CONFIG_COUNT: '1',
+  GIT_CONFIG_KEY_0: 'commit.gpgsign',
+  GIT_CONFIG_VALUE_0: 'false',
+};
+const runSync = (r, ...extra) => {
+  const out = spawnSync(process.execPath, [SYNC, '--repo', r.dir, '--task', 'T9-01', '--no-fetch', ...extra], { encoding: 'utf8', env: { ...process.env, ...GIT_ENV } });
+  let json = null;
+  try {
+    json = JSON.parse(out.stdout.trim().split('\n').filter(Boolean).pop());
+  } catch (error) {
+    // left null; the assertion on json reports it
+  }
+  return { status: out.status, stdout: out.stdout, stderr: out.stderr, json };
+};
+// A task branch with the freeze commit first, then main moves on by one commit (the branch is behind).
+const branchBehind = (options = {}) => {
+  const r = makeRepo();
+  if (options.baseFiles) r.commit('base: more', options.baseFiles), r.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+  const base = r.git('rev-parse', 'HEAD');
+  r.git('checkout', '-q', '-b', 'task/T9-01');
+  for (const step of options.before || []) step(r);
+  const frozen = options.noFreeze ? null : r.commit('test(T9-01): freeze', { [MANIFEST]: MANIFEST_BODY, 'src/a.test.ts': 'v1\n', ...(options.freezeFiles || {}) });
+  r.commit('feat: impl', { 'src/impl.ts': 'x\n' });
+  r.git('checkout', '-q', 'main');
+  r.commit('main: moves on', options.mainFiles || { 'src/main-only.txt': 'm\n' });
+  r.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+  r.git('checkout', '-q', 'task/T9-01');
+  return { r, base, frozen, tip: r.git('rev-parse', 'HEAD') };
+};
+const subjects = (r) => r.git('log', '--reverse', '--format=%s', 'origin/main..HEAD').split('\n');
+
+test('T1-14 item 1: a branch behind origin/main is rebased with the freeze commit still first and its frozen blobs unchanged', () => {
+  const { r, tip } = branchBehind();
+  const blob = r.git('rev-parse', 'HEAD:src/a.test.ts');
+  const out = runSync(r);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.json.ok, true);
+  assert.equal(out.json.rebased, true);
+  assert.equal(out.json.freezeFirst, true);
+  assert.notEqual(r.git('rev-parse', 'HEAD'), tip);
+  r.git('merge-base', '--is-ancestor', 'origin/main', 'HEAD');
+  assert.equal(r.git('rev-list', '--merges', 'origin/main..HEAD'), '');
+  assert.equal(subjects(r)[0], 'test(T9-01): freeze');
+  assert.equal(r.git('rev-parse', 'HEAD:src/a.test.ts'), blob);
+});
+
+test('T1-14 item 1: a branch already up to date is left alone, dirty tracked files included', () => {
+  const r = makeRepo();
+  r.git('checkout', '-q', '-b', 'task/T9-01');
+  freeze(r);
+  const tip = r.git('rev-parse', 'HEAD');
+  const clean = runSync(r);
+  assert.equal(clean.status, 0, clean.stderr);
+  assert.equal(clean.json.rebased, false);
+  assert.equal(r.git('rev-parse', 'HEAD'), tip);
+  writeFileSync(join(r.dir, 'src/shared.txt'), 'edited\n');
+  const dirty = runSync(r);
+  assert.equal(dirty.status, 0, dirty.stderr);
+  assert.equal(dirty.json.rebased, false);
+  assert.equal(readFileSync(join(r.dir, 'src/shared.txt'), 'utf8'), 'edited\n');
+});
+
+test('T1-14 item 1: a branch that holds a merge of main is stopped with the merge commit named and nothing changed', () => {
+  const r = makeRepo();
+  r.git('checkout', '-q', '-b', 'task/T9-01');
+  freeze(r);
+  r.git('checkout', '-q', 'main');
+  r.commit('main: moves on', { 'src/main-only.txt': 'm\n' });
+  r.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+  r.git('checkout', '-q', 'task/T9-01');
+  r.git('merge', '--no-ff', '-q', '-m', 'merge: origin/main into task', 'origin/main');
+  const merge = r.git('rev-parse', 'HEAD');
+  const out = runSync(r);
+  assert.equal(out.status, 1);
+  assert.equal(out.json.ok, false);
+  assert.ok(out.json.problems.some((p) => p.includes(merge.slice(0, 12))), out.stdout);
+  assert.ok(out.stderr.includes(merge.slice(0, 12)), out.stderr);
+  assert.ok(out.json.merges.some((m) => m.sha === merge));
+  assert.equal(r.git('rev-parse', 'HEAD'), merge);
+});
+
+test('T1-14 item 1: a rebase conflict names the file, leaves HEAD where it was and no rebase in progress', () => {
+  const r = makeRepo();
+  r.git('checkout', '-q', '-b', 'task/T9-01');
+  freeze(r);
+  r.commit('feat: edit shared', { 'src/shared.txt': 'one\ntwo\nBRANCH\nfour\nfive\n' });
+  const tip = r.git('rev-parse', 'HEAD');
+  r.git('checkout', '-q', 'main');
+  r.commit('main: edit shared', { 'src/shared.txt': 'one\ntwo\nMAIN\nfour\nfive\n' });
+  r.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+  r.git('checkout', '-q', 'task/T9-01');
+  const out = runSync(r);
+  assert.equal(out.status, 1);
+  assert.ok(out.json.problems.some((p) => p.includes('src/shared.txt')), out.stdout);
+  assert.equal(r.git('rev-parse', 'HEAD'), tip);
+  assert.equal(r.git('rev-parse', '--abbrev-ref', 'HEAD'), 'task/T9-01');
+  for (const dir of ['rebase-merge', 'rebase-apply']) assert.equal(spawnSync('test', ['-e', join(r.dir, '.git', dir)]).status, 1, dir);
+});
+
+test('T1-14 item 1: a modified tracked file on a branch that is behind blocks the sync, never stashes, and says to commit or discard', () => {
+  const { r, tip } = branchBehind();
+  writeFileSync(join(r.dir, 'src/shared.txt'), 'edited\n');
+  const out = runSync(r);
+  assert.equal(out.status, 1);
+  assert.equal(out.json.rebased, false);
+  assert.ok(out.json.problems.some((p) => /commit or discard/i.test(p)), out.stdout);
+  assert.equal(r.git('rev-parse', 'HEAD'), tip);
+  assert.equal(readFileSync(join(r.dir, 'src/shared.txt'), 'utf8'), 'edited\n');
+  assert.equal(r.git('stash', 'list'), '');
+});
+
+test('T1-14 item 1: a freeze commit that is not first stays where it was and is reported with freezeFirst false', () => {
+  const { r } = branchBehind({ before: [(x) => x.commit('docs: a note first', { 'docs/note.md': 'n\n' })] });
+  const out = runSync(r);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.json.rebased, true);
+  assert.equal(out.json.freezeFirst, false);
+  assert.deepEqual(subjects(r).slice(0, 2), ['docs: a note first', 'test(T9-01): freeze']);
+  r.git('merge-base', '--is-ancestor', 'origin/main', 'HEAD');
+});
+
+test('T1-14 item 1: a pre-flow branch with no manifest is rebased without the freeze check', () => {
+  const { r } = branchBehind({ noFreeze: true });
+  const out = runSync(r);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.json.rebased, true);
+  assert.equal(out.json.freeze, null);
+  r.git('merge-base', '--is-ancestor', 'origin/main', 'HEAD');
+});
+
+test('T1-14 item 1: a clean rebase that moves a frozen blob is reported with the moved path and the old tip restored, no reset --hard', () => {
+  const body = 'l1\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\n';
+  const manifest = JSON.stringify({ task: 'T9-01', files: ['src/b.test.ts'], items: [{ item: 1, run: ['node', '-e', 'process.exit(1)'] }] });
+  const { r, tip } = branchBehind({
+    baseFiles: { 'src/b.test.ts': body },
+    freezeFiles: { [MANIFEST]: manifest, 'src/b.test.ts': body.replace('l1\n', 'FROZEN\n') },
+    mainFiles: { 'src/b.test.ts': body.replace('l9\n', 'MAIN\n') },
+  });
+  const out = runSync(r);
+  assert.equal(out.status, 1);
+  assert.equal(out.json.ok, false);
+  assert.ok(out.json.problems.some((p) => p.includes('src/b.test.ts')), out.stdout);
+  assert.equal(r.git('rev-parse', 'HEAD'), tip);
+  assert.equal(r.git('rev-parse', '--abbrev-ref', 'HEAD'), 'task/T9-01');
+  assert.equal(r.git('status', '--porcelain', '--untracked-files=no'), '');
+  assert.equal(spawnSync('test', ['-e', join(r.dir, '.git', 'rebase-merge')]).status, 1);
+});
+
+test('T1-14 item 1: decideSync passes a clean result, blocks on problems naming the merge commit, and retries unreadable output once', () => {
+  const { decideSync } = gateApi();
+  const ok = { ok: true, rebased: true, problems: [], merges: [] };
+  const pass = decideSync({ exitCode: 0, output: `noise\n${JSON.stringify(ok)}`, deniedCommands: [] }, false);
+  assert.equal(pass.action, 'pass');
+  assert.equal(pass.rebased, true);
+  const bad = { ok: false, rebased: false, problems: ['ERROR branch: merge commit 0123456789ab "merge: main" is not allowed'], merges: [] };
+  const blocked = decideSync({ exitCode: 1, output: `${JSON.stringify(bad)}\nERROR branch: merge commit 0123456789ab`, deniedCommands: [] }, false);
+  assert.equal(blocked.action, 'blocked');
+  assert.match(blocked.detail, /0123456789ab/);
+  const retry = decideSync({ exitCode: 0, output: 'oops' }, false);
+  assert.equal(retry.action, 'retry');
+  assert.equal(retry.unreadable, true);
+  const final = decideSync({ exitCode: 0, output: 'oops' }, true);
+  assert.equal(final.action, 'blocked');
+  assert.match(final.detail, /branch sync gave no readable result twice/);
+});
+
+test('T1-14 item 1: task.js runs the sync between Spec and Check, never merges, and the only pull is --ff-only on main', () => {
+  const spec = src.indexOf('// 1. Spec');
+  const check = src.indexOf('// 2. Check');
+  const at = src.indexOf('branch-sync.mjs');
+  assert.ok(at > spec && at < check, 'the sync command must sit between // 1. Spec and // 2. Check');
+  assert.match(src.slice(at - 300, at + 600), /rebase/i, 'the sync gate says the command may rebase the branch');
+  assert.match(src.slice(src.indexOf('${main}/.claude/workflows/branch-sync.mjs') - 20), /--repo \$\{worktree\} --task \$\{task\}/);
+  assert.match(commonPrompt, /never merge/i);
+  const lines = src.split('\n').filter((line) => !/never|do not|don't/i.test(line));
+  assert.ok(!lines.some((line) => /git merge/.test(line)), 'a prompt tells agents to git merge');
+  assert.ok(!lines.some((line) => /git pull(?! --ff-only)/.test(line)), 'a bare git pull');
+});
+
+// ---- item 2 ----
+const wrapForms = (json) => {
+  const one = JSON.stringify(json);
+  const pretty = JSON.stringify(json, null, 2);
+  return {
+    'the same-line fence': `\`\`\`json ${one} \`\`\``,
+    'text before the JSON on its line': `stdout: ${one}`,
+    'text after the JSON on its line': `${one} (exit 0)`,
+    'pretty-printed over several lines': pretty,
+    'pretty-printed in a fence with prose around it': `Here is the result:\n\`\`\`json\n${pretty}\n\`\`\`\nThat is everything it printed.`,
+    'followed by a nested path/blob line': `${one}\n{"path":"a.test.ts","blob":"b1"}`,
+    'followed by a JSON log line without ok': `${one}\n{"level":"info","msg":"done"}`,
+    'wrapped in a non-result object': JSON.stringify({ stdout: json, extra: 1 }),
+    'log lines before it': `info: start\nwarn: slow\n${one}`,
+    'ERROR lines after it': `${one}\nERROR frozen test: x\nERROR more`,
+    'a fence on its own lines': `\`\`\`\n${one}\n\`\`\``,
+    'a stray quote in a log line before it': `it said "oops and left a quote open\n${one}`,
+  };
+};
+const realFlow = () => {
+  const r = makeRepo();
+  r.git('checkout', '-q', '-b', 'task/T9-01');
+  freeze(r);
+  r.commit('feat: impl', { 'src/a.ts': 'x\n' });
+  const out = r.check('--task', 'T9-01', '--json');
+  assert.equal(out.status, 0, out.stderr);
+  return JSON.parse(out.stdout.trim().split('\n').pop());
+};
+
+test('T1-14 item 2: decideFrozen reads a real check-flow result in every wrapped form', () => {
+  const json = realFlow();
+  assert.equal(json.ok, true);
+  const pinned = Object.fromEntries(json.frozen.map((f) => [f.path, f.blob]));
+  for (const [name, output] of Object.entries(wrapForms(json))) {
+    const got = decideFrozen({ exitCode: 0, output, deniedCommands: [] }, [], pinned, false);
+    assert.equal(got.action, 'pass', `${name}: ${JSON.stringify(got)}`);
+  }
+});
+
+test('T1-14 item 2: a result whose strings hold braces and escaped quotes reads correctly', () => {
+  const json = { ...flow({ ok: false }), problems: ['ERROR frozen test: "a}b" changed {x} \\"q\\"'] };
+  const got = decideFrozen({ exitCode: 1, output: `log "{\n${JSON.stringify(json)}\nERROR tail`, deniedCommands: [] }, [], undefined, false);
+  assert.equal(got.action, 'stop');
+  assert.equal(got.detail, json.problems.join('; '));
+});
+
+test('T1-14 item 2: output with no object, or only non-result objects, is unreadable and then stops', () => {
+  for (const output of ['oops', 'ERROR only\nmore', '{"path":"a.test.ts","blob":"b1"}', '{"level":"info"}\n[1,2]', '{ not json }']) {
+    const first = decideFrozen({ exitCode: 0, output, deniedCommands: [] }, [], {}, false);
+    assert.equal(first.action, 'retry', output);
+    assert.equal(first.unreadable, true, output);
+    assert.equal(decideFrozen({ exitCode: 0, output, deniedCommands: [] }, [], {}, true).action, 'stop', output);
+  }
+});
+
+test('T1-14 item 2: decideRed reads a pretty-printed check-red result and the sync, red and frozen gates share the scanner', () => {
+  const { decideRed: red } = gateApi();
+  const result = { task: 'T9-01', expect: 'red', red: [1, 2], green: [], gates: [], blobs: { 'a.test.ts': 'b1' }, problems: [] };
+  const got = red({ exitCode: 0, output: `Result:\n${JSON.stringify(result, null, 2)}\ndone`, deniedCommands: [] });
+  assert.equal(got.action, 'pass');
+  assert.deepEqual(got.blobs, { 'a.test.ts': 'b1' });
+  assert.equal(red({ exitCode: 0, output: `${JSON.stringify(result)}\n{"level":"info"}`, deniedCommands: [] }).action, 'pass');
+});
+
+// ---- item 3 ----
+const FIXTURES = join(here, 'fixtures-down.mjs');
+const fixturesApi = async () => {
+  const mod = await import(FIXTURES);
+  assert.equal(typeof mod.tearDown, 'function');
+  assert.equal(typeof mod.projectNameFor, 'function');
+  return mod;
+};
+const fakeExec = (psRows) => {
+  const calls = [];
+  const exec = (file, args) => {
+    calls.push([file, ...args]);
+    if (args[0] === 'ps') return { status: 0, stdout: psRows(args), stderr: '' };
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  return { calls, exec };
+};
+const downCalls = (calls) => calls.filter((c) => c[1] === 'compose' && c.includes('down'));
+
+test('T1-14 item 3: projectNameFor gives the same name as composeProjectName for an existing directory', async () => {
+  const { projectNameFor } = await fixturesApi();
+  const { composeProjectName } = await import(join(root, 'tests', 'integration', 'compose-project.mjs'));
+  const dir = mkdtempSync(join(tmpdir(), 'octave-T9-01-'));
+  dirs.push(dir);
+  assert.equal(projectNameFor(dir), composeProjectName(dir));
+  assert.match(projectNameFor(dir), /^octave-[0-9a-f]{10}$/);
+});
+
+test('T1-14 item 3: only this worktree\'s project is brought down, with the main checkout\'s compose file, by docker argv with no shell', async () => {
+  const { tearDown, projectNameFor } = await fixturesApi();
+  const worktree = '/gone/octave-T9-01';
+  const mine = projectNameFor(worktree);
+  const other = projectNameFor('/x/octave-T3-05');
+  const { calls, exec } = fakeExec(() => `${mine}\n${other}\n`);
+  const composeFile = '/main/octave/tests/integration/docker-compose.yml';
+  const report = tearDown({ worktree, composeFile, exec, exists: () => false, realpath: (p) => p });
+  assert.equal(report.ok, true);
+  assert.deepEqual(report.stopped, [mine]);
+  const downs = downCalls(calls);
+  assert.equal(downs.length, 1);
+  assert.deepEqual(downs[0].slice(0, 6), ['docker', 'compose', '-p', mine, '-f', composeFile]);
+  for (const flag of ['down', '-v', '--remove-orphans']) assert.ok(downs[0].includes(flag), flag);
+  assert.ok(!calls.some((c) => c.includes(other) && c[1] === 'compose'), 'another checkout\'s project was passed to compose');
+  for (const call of calls) {
+    assert.equal(call[0], 'docker');
+    assert.ok(!['rm', 'kill', 'stop'].includes(call[1]), call.join(' '));
+  }
+  const ps = calls.find((c) => c[1] === 'ps');
+  assert.ok(ps.includes('-a') && ps.some((a) => a.includes('label=com.docker.compose.project=')), ps.join(' '));
+});
+
+test('T1-14 item 3: a project with no containers is not brought down, and a missing Docker is reported without failing', async () => {
+  const { tearDown } = await fixturesApi();
+  const idle = fakeExec(() => '');
+  const none = tearDown({ worktree: '/gone/octave-T9-01', composeFile: '/m/c.yml', exec: idle.exec, exists: () => false, realpath: (p) => p });
+  assert.equal(none.ok, true);
+  assert.deepEqual(none.stopped, []);
+  assert.equal(downCalls(idle.calls).length, 0);
+  const missing = tearDown({ worktree: '/gone/octave-T9-01', composeFile: '/m/c.yml', exec: () => ({ status: null, stdout: '', stderr: '', error: { code: 'ENOENT' } }), exists: () => false, realpath: (p) => p });
+  assert.equal(missing.ok, true);
+  assert.deepEqual(missing.stopped, []);
+  assert.equal(missing.note, 'docker not found');
+});
+
+test('T1-14 item 3: a failing down is a problem and the exit is not ok', async () => {
+  const { tearDown, projectNameFor } = await fixturesApi();
+  const mine = projectNameFor('/gone/octave-T9-01');
+  const exec = (file, args) => (args[0] === 'ps' ? { status: 0, stdout: `${mine}\n`, stderr: '' } : { status: 1, stdout: '', stderr: 'boom' });
+  const report = tearDown({ worktree: '/gone/octave-T9-01', composeFile: '/m/c.yml', exec, exists: () => false, realpath: (p) => p });
+  assert.equal(report.ok, false);
+  assert.ok(report.problems.length >= 1);
+});
+
+test('T1-14 item 3: the CLI resolves a relative worktree against the current directory, which is the main checkout', async () => {
+  const { projectNameFor } = await fixturesApi();
+  const base = mkdtempSync(join(tmpdir(), 'td-'));
+  dirs.push(base);
+  const main = join(base, 'octave');
+  mkdirSync(join(main, 'tests', 'integration'), { recursive: true });
+  mkdirSync(join(base, 'bin'));
+  const log = join(base, 'docker.log');
+  writeFileSync(join(base, 'bin', 'docker'), `#!/bin/sh\necho "$@" >> "${log}"\nif [ "$1" = ps ]; then for a in "$@"; do case "$a" in label=com.docker.compose.project=*) echo "\${a#label=com.docker.compose.project=}";; esac; done; fi\n`, { mode: 0o755 });
+  const out = spawnSync(process.execPath, [FIXTURES, '--worktree', '../octave-T9-01', '--compose-file', 'tests/integration/docker-compose.yml'], {
+    cwd: main,
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `${join(base, 'bin')}:${process.env.PATH}` },
+  });
+  assert.equal(out.status, 0, out.stderr);
+  const json = JSON.parse(out.stdout.trim().split('\n').pop());
+  const expected = projectNameFor(join(realpathSync(base), 'octave-T9-01'));
+  assert.deepEqual(json.stopped, [expected]);
+  const down = readFileSync(log, 'utf8').split('\n').find((l) => l.startsWith('compose'));
+  assert.ok(down.includes(`-p ${expected}`), down);
+  assert.ok(down.includes(join(realpathSync(base), 'octave', 'tests', 'integration', 'docker-compose.yml')) || down.includes(join(main, 'tests', 'integration', 'docker-compose.yml')), down);
+});
+
+test('T1-14 item 3: withTeardown tears down exactly once for every outcome and when the run throws, and puts fixtures on the result', async () => {
+  const { withTeardown } = teardownApi();
+  for (const outcome of ['merged', 'parked', 'blocked', 'failed', 'denied', 'tests-green', 'frozen-tests', 'ci-red']) {
+    let calls = 0;
+    const fixtures = { stopped: ['octave-8b8377b9f2'], detail: 'stopped octave-8b8377b9f2' };
+    const out = await withTeardown(async () => ({ task: 'T9-01', outcome, detail: 'd' }), async () => (calls += 1, fixtures));
+    assert.equal(calls, 1, outcome);
+    assert.equal(out.outcome, outcome);
+    assert.deepEqual(out.fixtures, fixtures);
+  }
+  let calls = 0;
+  const thrown = await withTeardown(async () => { throw new Error('agent crashed'); }, async () => (calls += 1, { stopped: [], detail: 'none running' }));
+  assert.equal(calls, 1);
+  assert.equal(thrown.outcome, 'failed');
+  assert.match(String(thrown.detail), /agent crashed/);
+  assert.deepEqual(thrown.fixtures, { stopped: [], detail: 'none running' });
+  const broken = await withTeardown(async () => ({ outcome: 'merged' }), async () => { throw new Error('no docker agent'); });
+  assert.equal(broken.outcome, 'merged');
+  assert.deepEqual(broken.fixtures.stopped, []);
+  assert.match(broken.fixtures.detail, /no docker agent/);
+});
+
+test('T1-14 item 3: decideTeardown reads a wrapped result, reports unreadable output without throwing, and passes a denied list through', () => {
+  const { decideTeardown, fixturesDownCommand } = teardownApi();
+  const report = (extra) => ({ ok: true, worktree: '/w', projects: [], stopped: [], problems: [], ...extra });
+  const wrap = (r) => ({ exitCode: 0, output: `log\n\`\`\`json\n${JSON.stringify(r, null, 2)}\n\`\`\`\n`, deniedCommands: [] });
+  assert.deepEqual(decideTeardown(wrap(report({ stopped: ['octave-8b8377b9f2'] }))), { stopped: ['octave-8b8377b9f2'], detail: 'stopped octave-8b8377b9f2' });
+  assert.deepEqual(decideTeardown(wrap(report())), { stopped: [], detail: 'none running' });
+  assert.deepEqual(decideTeardown(wrap(report({ note: 'docker not found' }))), { stopped: [], detail: 'docker not found' });
+  assert.equal(decideTeardown(wrap(report({ ok: false, problems: ['down failed', 'again'] }))).detail, 'down failed; again');
+  assert.deepEqual(decideTeardown({ exitCode: 0, output: 'oops', deniedCommands: [] }), { stopped: [], detail: 'the fixture teardown gave no readable result' });
+  assert.deepEqual(decideTeardown(null), { stopped: [], detail: 'the fixture teardown gave no readable result' });
+  assert.deepEqual(decideTeardown({ exitCode: 1, output: '', deniedCommands: ['mise exec -- node x'] }).denied, ['mise exec -- node x']);
+  assert.equal(
+    fixturesDownCommand({ main: '/m/octave', worktree: '/m/octave-T9-01' }),
+    'mise exec -- node /m/octave/.claude/workflows/fixtures-down.mjs --worktree /m/octave-T9-01 --compose-file /m/octave/tests/integration/docker-compose.yml',
+  );
+});
+
+test('T1-14 item 3: the batch loop tears down through withTeardown on the Ship phase, still tests STOP_OUTCOMES, and stops on a denied teardown', () => {
+  const loop = src.slice(src.indexOf('const outcomes = []'));
+  assert.match(loop, /withTeardown\(/);
+  assert.match(loop, /STOP_OUTCOMES\.includes\(out\.outcome\)/);
+  assert.match(loop, /fixtures\.denied/);
+  const teardown = src.slice(src.indexOf('tearDownFixtures'));
+  assert.match(teardown.slice(0, 1500), /phase: 'Ship'/);
+  assert.match(teardown.slice(0, 1500), /models\.gate/);
+  assert.match(src, /fixtures-down\.mjs/);
+});
+
+// ---- item 4 ----
+test('T1-14 item 4: WORKFLOW.md states the rebase rule and the fixture teardown', () => {
+  const doc = read('WORKFLOW.md');
+  const section = doc.split('### Wiring it up in Claude Code')[1].split('\n## ')[0];
+  const parts = section.split(/\n(?=- |\n)/);
+  assert.ok(parts.some((p) => /rebase/i.test(p) && /freeze commit/i.test(p) && /never merges? (origin\/)?main into a task branch/i.test(p)), 'rebase rule');
+  assert.ok(parts.some((p) => /fixture servers/i.test(p) && /another checkout/i.test(p)), 'teardown');
+  assert.match(read('.claude/skills/ship/SKILL.md'), /Never merge `origin\/main` into a task branch/);
 });
