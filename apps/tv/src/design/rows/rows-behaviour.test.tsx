@@ -10,7 +10,7 @@ import { flat, hasTransform, scaleOf } from "../test-support/harness";
 import { pressSelect } from "../test-support/select-key";
 import { ArtworkProvider } from "./artwork";
 import { MediaCard } from "./media-card";
-import { ROW_DRAW_DISTANCE, cardCentre, cardGap, cardWidth, drawDistanceFor, rowInsetStart } from "./row-geometry";
+import { ROW_DRAW_DISTANCE, THUMB_ROW_DRAW_DISTANCE, cardCentre, cardGap, cardWidth, drawDistanceFor, rowInsetStart } from "./row-geometry";
 import { useRowMemory } from "./row-memory";
 import { FixtureArtwork, artworkCalls, cardPlain, cardPlayed, resetArtworkCalls } from "./test-support/fixtures";
 
@@ -106,8 +106,10 @@ describe("T3-08 row memory and geometry", () => {
     expect(px(rowInsetStart)).toBeGreaterThan(0);
   });
 
-  it("every variant draws ROW_DRAW_DISTANCE dp ahead", () => {
+  it("a poster row draws ROW_DRAW_DISTANCE dp ahead and a thumb row THUMB_ROW_DRAW_DISTANCE, at least as far", () => {
     expect(drawDistanceFor("poster")).toBe(ROW_DRAW_DISTANCE);
-    expect(drawDistanceFor("thumb")).toBe(ROW_DRAW_DISTANCE);
+    expect(drawDistanceFor("thumb")).toBe(THUMB_ROW_DRAW_DISTANCE);
+    expect(THUMB_ROW_DRAW_DISTANCE).toBeGreaterThanOrEqual(ROW_DRAW_DISTANCE);
+    expect(THUMB_ROW_DRAW_DISTANCE).toBeLessThanOrEqual(243);
   });
 });

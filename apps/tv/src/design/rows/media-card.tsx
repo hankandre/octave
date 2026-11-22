@@ -35,6 +35,8 @@ export type MediaCardProps = {
   onBlur?: () => void;
   onPress?: () => void;
   hasTVPreferredFocus?: boolean;
+  /** The card's view, for the row's focus router. */
+  viewRef?: (view: unknown) => void;
   testID: string;
 };
 
@@ -42,7 +44,7 @@ const shadow = depth.shadowLift;
 const fill = { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 } as const;
 const PLAYED_ICON = sizes.markDisc - 2 * space.space1;
 
-function MediaCardView({ item, variant, onFocus, onBlur, onPress, hasTVPreferredFocus, testID }: MediaCardProps) {
+function MediaCardView({ item, variant, onFocus, onBlur, onPress, hasTVPreferredFocus, viewRef, testID }: MediaCardProps) {
   const reduced = useReducedMotion();
   const { component: Artwork, playedIcon: PlayedIcon } = useArtwork();
   const [focused, setFocused] = useState(false);
@@ -64,6 +66,7 @@ function MediaCardView({ item, variant, onFocus, onBlur, onPress, hasTVPreferred
 
   return (
     <Pressable
+      ref={viewRef}
       testID={testID}
       focusable
       accessibilityRole="button"
