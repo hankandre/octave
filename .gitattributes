@@ -1,1 +1,2 @@
 tasks/backlog.jsonl merge=union
+tasks/product-owner-log.md merge=union
