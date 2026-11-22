@@ -549,10 +549,10 @@
             "Tests in a new file that pnpm test:workflow runs cover each of the three; the frozen .claude/workflows/task.test.mjs is not changed"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 2b8fc817: from ship resume with frozen and green gates; decideGreen reads check-red JSON not exit code; implement gate needs a green result; reasons never empty; ciOnly only from green. pnpm check passes, check-red --expect green passes."
         },
         {
           "id": "T1-16",
