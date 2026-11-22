@@ -32,9 +32,6 @@ export type FocusFrameProps = {
   children: ReactNode | ((state: FrameState) => ReactNode);
 };
 
-// A second activation closer than this to the first is the same select, seen twice.
-const ACTIVATION_GAP_MS = 50;
-
 const ringInset = focus.focusOffset + focus.focusRingWidth;
 const edgeInset = ringInset + focus.focusEdgeWidth;
 
@@ -60,7 +57,6 @@ export function FocusFrame({
   const scale = useRef(new Animated.Value(1)).current;
   const liftedRef = useRef(false);
   const lastChange = useRef<"focus" | "press">("focus");
-  const lastActivation = useRef(-Infinity);
 
   const target = reduced ? 1 : (focused ? motion.lift : 1) * (pressed ? motion.pressScale : 1);
 
@@ -105,11 +101,6 @@ export function FocusFrame({
       style={style}
       onPress={(event) => {
         if (disabled) return;
-        // One select can reach us twice in the same instant: Pressability's release and a direct `press` (the test
-        // helper delivers both). A real second select is never within the same millisecond.
-        const now = Date.now();
-        if (now - lastActivation.current < ACTIVATION_GAP_MS) return;
-        lastActivation.current = now;
         onPress?.(event);
       }}
       onFocus={() => {
