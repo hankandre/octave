@@ -31,6 +31,7 @@ None added.
 - [x] 4 the documents; item 6 green
 
 - [x] 5 review fixes: the watch lets the event loop run before the controls window (a connection during `adb install` is a stray); the check fails `exec`/`execSync` command strings and wrapper programs (`sh`, `env`, ...) in a file that knows adb. Tests: `scripts/tv-dev-server-watch-stray-install.test.ts`, `scripts/check-adb-output-wrappers.test.ts`.
+- [x] 7 review fixes, second pass: the check also fails a `shell` option and a command line as the program name in a file that knows adb (`spawnSync("adb devices", { shell: true })` returned no finding after milestone 5). Test: `scripts/check-adb-output-shell-option.test.ts`. The `docs/security.md` row's "Not covered" list now names the forms the check does not read.
 - [ ] 6 Ship: PR, `tv` job (whole dev-server-watch.txt, two `pnpm tv:smoke` pass lines), `wire` job (a `pass` line per pair). If the CI control command exits non-zero though its connection arrived, change the control command, not the judge.
 
 ## Follow-ups (low review findings, not fixed here)
@@ -38,6 +39,10 @@ None added.
 - `scripts/check-adb-output.mjs` `SPECIFIER` matches only `"` and `'`: a template-literal specifier (`` import(`node:child_process`) ``, `` require(`node:child_process`) ``) gets no finding in a file that knows adb.
 - The re-export rule and the used-as-a-value rule apply only to files that know adb: a helper that does not mention adb and re-exports `spawnSync` lets an adb-knowing script call it unchecked.
 - Frozen tests: the item 3 tests make the stray with an awaited socket, so they never exercised the install path (now covered by `tv-dev-server-watch-stray-install.test.ts`); the item 2 synthetic cases miss template-literal specifiers and a re-exporting helper.
+
+- `docs/commands.md:16`: the passage claimed "console output and evidence never hold the device serial or address", and "a connection made before the controls run is counted apart" was false during `adb install`. Milestone 5 reworded the first claim to the serial and its host-and-port forms and made the second true; nothing else in the passage was changed. An address the serial does not contain is backlog work (`tasks/backlog.jsonl`, "Replace the addresses a named adb serial resolves to").
+- Frozen item 2 cases also miss `exec`/`execSync` command strings and the shell and `env` wrappers; those are covered by the unfrozen `check-adb-output-wrappers.test.ts` and `check-adb-output-shell-option.test.ts`.
+- Still open in the check: an interpreter given as a literal program (`spawnSync("node", ["-e", ...])`, `execFileSync("python3", ["-c", adbPath])`) gets no finding in a file that knows adb. Listed as not covered in `docs/security.md`.
 
 ## Decisions
 
@@ -64,6 +69,7 @@ Own emulator (`fluster_tv`, API 36, port 5590, under the device lock, torn down 
 - `ANDROID_SERIAL=emulator-5590 pnpm tv:smoke`: `tv focus: tile-0 took focus with no key, and one Right moved it to tile-1` and `tv smoke: the release app opened no connection to the development server port while it started`; `dev-server-watch.txt`: `port 8081: 2 of 2 control connections seen, 0 app connections, 0 connections before the controls (not counted)`.
 - A second smoke run started 4 s after the first failed at once with `ERROR tv smoke: another pnpm tv:smoke run on this host (process <pid>) holds port 8081; wait for it to finish: ...`; the first run still passed and the owner file was gone afterwards.
 - `ANDROID_SERIAL=emulator-5590 pnpm tv:e2e`: `url 202/202, device-id 13/13, host ok`; `cleartext private-lan ok, loopback ok, public 60/60 refused`; `resolved-address private ok, mixed ok, public refused`.
+- After the review fixes (milestones 5 and 7), own emulator `fluster_tv` on port 5590 under the device lock, torn down after: `pnpm check` exit 0 (`flow ok: 9 commits ahead; frozen T3-30; 0 frozen changes`; root vitest 99 files, 1684 tests). `ANDROID_SERIAL=emulator-5590 pnpm tv:smoke` exit 0 with both pass lines; `dev-server-watch.txt`: `port 8081: 2 of 2 control connections seen, 0 app connections, 0 connections before the controls (not counted)`. `scripts/tv-dev-server-watch-stray-install.test.ts` fails with the two awaited lines of `runControls` removed (`expected +0 to be 1`) and passed 10 runs of 10 with them.
 - `pnpm tv:wire` was not run locally: the three real targets need the fixture servers, which another worktree's agent holds on the fixed ports (project `octave-0b031fb429`), and tearing them down is not this task's to do. The wire logcat path was run on the emulator instead: `startLogKeeper` over `openAdb(...).stream` kept 3589 lines with the start and end markers seen, no line holding the serial, and the serial written into the marker text came back as `[device]`. The CI `wire` job on the PR head is item 5's regression check (Ship).
 - Not run: the Shield or any real TV, network adb against a real device, any Android version but the emulator image's, the dogfood servers.
 
