@@ -15,7 +15,19 @@ const config: ExpoConfig = {
   },
   plugins: [
     ["@react-native-tvos/config-tv", { isTV: true }],
-    ["expo-build-properties", { android: { buildArchs: ["arm64-v8a", "x86_64"] } }],
+    [
+      "expo-build-properties",
+      {
+        android: {
+          buildArchs: ["arm64-v8a", "x86_64"],
+          // Keep R8 from merging Octave's classes with library classes, so each dex class that holds Octave
+          // code holds only Octave's. Without allowoptimization R8 does not merge the class or inline its
+          // methods elsewhere; it may still rename it or remove it when unused. Library classes still merge.
+          // The dex check fails when this stops holding (rule D7, docs/specs/T3-19.md, decision log 27).
+          extraProguardRules: "-keep,allowobfuscation,allowshrinking class dev.octave.** { *; }",
+        },
+      },
+    ],
     "./plugins/with-app-jvm-tests.js",
     "./plugins/with-trimmed-manifest.js",
     "./plugins/with-device-probe.js",
