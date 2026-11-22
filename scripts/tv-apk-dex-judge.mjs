@@ -100,10 +100,17 @@ export async function judgeDex(lines, mapping, lists) {
   }
 
   // What a one-client class may do of a sink matched through `methods` (T3-29): only the pairs on the sink row's
-  // `oneClientMethods`. A row without the list exempts no method match; any other match is exempt as before.
-  const onList = (sink, pair) => (sink.oneClientMethods ?? []).some((m) => m.classes.includes(pair.holder) && m.names.includes(pair.name));
+  // `oneClientMethods`, and of an entry with `descriptors` only those overloads. A pair with no descriptor is off such
+  // an entry (fail closed). A row without the list exempts no method match; any other match is exempt as before.
+  const params = (descriptor) => (typeof descriptor === "string" && descriptor.includes(")") ? descriptor.slice(0, descriptor.lastIndexOf(")") + 1) : null);
+  const onList = (sink, pair) =>
+    (sink.oneClientMethods ?? []).some(
+      (m) => m.classes.includes(pair.holder) && m.names.includes(pair.name) && (m.descriptors === undefined || m.descriptors.includes(params(pair.descriptor))),
+    );
   const offList = (sink, matched) => (matched ?? []).filter((pair) => !onList(sink, pair));
-  const allowedText = (sink) => (sink.oneClientMethods ?? []).flatMap((m) => m.classes.flatMap((c) => m.names.map((n) => `${c}.${n}`))).join(" and ") || "nothing";
+  const pairText = (c, n, m) => (m.descriptors === undefined ? `${c}.${n}` : m.descriptors.map((d) => `${c}.${n}${d}`).join(" and "));
+  const allowedText = (sink) => (sink.oneClientMethods ?? []).flatMap((m) => m.classes.flatMap((c) => m.names.map((n) => pairText(c, n, m)))).join(" and ") || "nothing";
+  const memberText = (pair) => `${pair.holder}.${pair.name}${params(pair.descriptor) && pair.name === "<init>" ? params(pair.descriptor) : ""}`;
 
   // D1 and D2 for one sink reference at a site. `matched` holds the class and method pairs of a match through
   // `methods`; it is undefined for a match by reference, factory or declaration.
@@ -123,7 +130,7 @@ export async function judgeDex(lines, mapping, lists) {
           report(`D1|${octave.holder}|${sink.id}`, `D1 ${who(octave)} holds ${sink.id} (${sink.what}) at ${where(site)}, outside the one client; ${SEND_THROUGH}`);
         } else {
           for (const pair of matched === undefined ? [] : offList(sink, matched)) {
-            const member = `${pair.holder}.${pair.name}`;
+            const member = memberText(pair);
             report(
               `D1|${inner.holder}|${sink.id}|${member}`,
               `D1 ${who(inner)} holds ${sink.id} (${sink.what}) at ${where(site)}, outside the one client: ${member} is not what the one client may do of ${sink.id}, and ${inner.holder} may call only ${allowedText(sink)}; ${SEND_THROUGH}`,
@@ -156,7 +163,9 @@ export async function judgeDex(lines, mapping, lists) {
     const out = [];
     for (const sink of sinks) {
       const entries = (sink.methods ?? []).filter((m) => !localOverload(m, descriptor));
-      const matched = holders.filter((h) => entries.some((m) => m.classes.includes(h.holder) && m.names.includes(h.name)));
+      const matched = holders
+        .filter((h) => entries.some((m) => m.classes.includes(h.holder) && m.names.includes(h.name)))
+        .map((h) => ({ ...h, descriptor }));
       if (matched.length > 0) out.push({ sink, matched });
     }
     return out;
