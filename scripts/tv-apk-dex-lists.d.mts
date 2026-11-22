@@ -4,7 +4,7 @@ export type NetworkSink = {
   reason: string;
   anyReference?: string[];
   anyReferencePrefix?: string[];
-  methods?: { classes: string[]; names: string[] }[];
+  methods?: { classes: string[]; names: string[]; localOverloads?: string[] }[];
   factoryInvokes?: string[];
   declarations?: boolean;
 };
@@ -22,6 +22,7 @@ export type DexLists = {
   absentPackages: string[];
 };
 export const NETWORK_SINKS: NetworkSink[];
+export const FRAMEWORK_SUPERCLASSES: Record<string, string>;
 export const LIBRARY_INTERNAL: string[];
 export const ONE_CLIENT_CLASSES: Record<string, string[]>;
 export const ENTRY_POINT_HOOKS: string[];
