@@ -23,6 +23,7 @@
     "tv:apk:check": "node scripts/tv-apk-check.mjs && node scripts/tv-apk-manifest.mjs",
     "tv:smoke": "node scripts/tv-first-focus.mjs",
     "tv:e2e": "node scripts/tv-e2e.mjs",
+    "tv:wire": "node scripts/tv-wire.mjs",
     "lint": "node --import ./scripts/typescript-6-resolve.mjs node_modules/eslint/bin/eslint.js --max-warnings 0 packages/core/src apps/tv modules",
     "lint:boundaries": "node scripts/lint-boundaries.mjs",
     "lint:backlog": "node scripts/check-backlog.mjs",

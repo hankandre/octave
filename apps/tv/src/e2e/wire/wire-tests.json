@@ -1,0 +1,17 @@
+{
+  "note": "The tagged wire tests of pnpm tv:wire (T3-05), read by the e2e app (run-wire.ts) and the runner (scripts/tv-wire.mjs). Each (test, target) pair, in list order, gets the device port basePort + its index, reversed by adb to that pair's recorder on the host. canaryPort is reversed to the mock's canary origin, proxyPort to the global-proxy listener, and closedPort is never reversed. The user, password and canary are fixed test values, not any server's: the recorder swaps the user and password for a real fixture server's, and the mock issues the canary as its token.",
+  "basePort": 47300,
+  "canaryPort": 47400,
+  "proxyPort": 47401,
+  "closedPort": 47402,
+  "user": "wire-user",
+  "password": "wire-placeholder-pw",
+  "canary": "octave-wire-canary/5e1f+0b7a=9c3d",
+  "tests": [
+    { "id": "transport-probe-then-signed-in", "task": "T3-05", "targets": ["mock", "jellyfin-10-11", "jellyfin-12", "jellyscale"] },
+    { "id": "transport-redirect", "task": "T3-05", "targets": ["mock"] },
+    { "id": "transport-canary", "task": "T3-05", "targets": ["mock"] },
+    { "id": "transport-errors", "task": "T3-05", "targets": ["mock"] },
+    { "id": "transport-private-lan-and-proxy", "task": "T3-05", "targets": ["mock"] }
+  ]
+}
