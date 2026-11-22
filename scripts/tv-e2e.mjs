@@ -7,11 +7,11 @@
 // scripts/tv-resolved-address.mjs). An explicit [apk] needs its probe APK too: the second
 // argument, or the one pnpm tv:e2e:build wrote; the probe is never skipped.
 // Run: ANDROID_SERIAL=<emulator> node scripts/tv-e2e.mjs [apk [probe-apk]]   (pnpm tv:e2e)
-import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
+import { openAdb } from "./tv-adb.mjs";
 import { androidSdk, newestBuildTool, platformTool } from "./tv-android-sdk.mjs";
 import { judgeNetworkSecurity, readNetworkSecurity } from "./tv-apk-check.mjs";
 import { E2E_APK, PROBE_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
@@ -132,7 +132,9 @@ async function main(args) {
   } catch (error) {
     fail(error.message);
   }
-  const adb = (...rest) => spawnSync(adbPath, ["-s", serial, ...rest], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  // Everything adb returns has the serial replaced by `[device]` (T3-30).
+  const runner = openAdb({ adbPath, serial });
+  const adb = (...rest) => runner.run(rest);
   const shell = (...rest) => adb("shell", ...rest);
 
   let apk = args[0];

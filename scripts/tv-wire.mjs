@@ -7,15 +7,17 @@
 // may reach it), clears it at its start, in a finally and on SIGINT or SIGTERM (tv-wire-device.mjs), and so runs only
 // on the implementer's own emulator, never on a shared device. It removes release-evidence/wire as the first thing
 // main does and writes it only through tv-wire-evidence.mjs, which keeps every known secret out of it. The serial is
-// never printed. Importing this module runs nothing.
+// never printed, and adb's output reaches no line of it with the serial in it (tv-adb.mjs). Importing this module runs
+// nothing.
 // Run: ANDROID_SERIAL=<your own emulator> node scripts/tv-wire.mjs [--task <id>] [--list]   (pnpm tv:wire)
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
 import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
+import { openAdb } from "./tv-adb.mjs";
 import { E2E_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { clearEvidence, evidenceDir, writeEvidence, writeSummary } from "./tv-wire-evidence.mjs";
 import { openDevice } from "./tv-wire-device.mjs";
@@ -232,7 +234,9 @@ async function main(args) {
   } catch (error) {
     fail(error.message);
   }
-  const adb = (...rest) => spawnSync(adbPath, ["-s", serial, ...rest], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  // Everything adb returns has the serial replaced by `[device]` (T3-30); `device` is taken by openDevice below.
+  const runner = openAdb({ adbPath, serial });
+  const adb = (...rest) => runner.run(rest, { maxBuffer: 256 * 1024 * 1024 });
   const shell = (...rest) => adb("shell", ...rest);
   if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
   const device = openDevice({ adb, appId: ANDROID_APPLICATION_ID });
@@ -304,7 +308,7 @@ async function main(args) {
       // The stream attaches before the app starts and keeps every line on the host (no -b: the default buffers, as the
       // final dump reads).
       keeper = await startLogKeeper({
-        stream: () => spawn(adbPath, ["-s", serial, "logcat", "-v", "threadtime"], { stdio: ["ignore", "pipe", "ignore"] }),
+        stream: () => runner.stream(["logcat", "-v", "threadtime"]),
         mark: (text) => shell("log", "-t", "OctaveWireRun", text),
         nonce: randomUUID(),
       });

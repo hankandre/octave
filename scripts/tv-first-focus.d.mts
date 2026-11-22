@@ -9,3 +9,4 @@ export function runSmoke(options: {
   evidence?: string;
   onWatch?: (watch: DevServerWatch) => void;
 }): Promise<string[]>;
+export function smokeCli(options: { serial: string; adbPath: string; apk: string; port?: number; evidence?: string }): Promise<number>;
