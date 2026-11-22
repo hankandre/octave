@@ -2605,10 +2605,10 @@
             "docs/security.md section 2's master-URL row states the host rule and names the T2-06 tests, and the new refusals are listed as tested, in the same PR"
           ],
           "verify": "pnpm --filter @octave/core test && pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 3cdfe634 on task/T8-22 (launch rules 460009e0, subtitle host rules 9c3c2ec1, stop on refusal 2383fdf3, docs 1d925488, URL.href typing). pnpm check and core tests (3053) pass; lint:flow ok. Tripwire not run: no fixture servers."
+          "passes": true,
+          "evidence": "PR #288, commit f19a4a88 on task/T8-22. pnpm check exit 0 (core 3062, apps/tv 1616, lint:flow ok, test:workflow 106). Mutation: removing each half of G2 fails subtitle-url-host-g2.test.ts. Tripwire (CI job, run https://github.com/jellyscale-org/octave/actions/runs/45057666194) passed. Item 6 proved on a fake gateway only; Jellyscale gates T8-02, T8-09 untested."
         },
         {
           "id": "T8-02",
