@@ -1,0 +1,12 @@
+{
+  "task": "T1-15",
+  "files": [
+    ".claude/workflows/task-resume.test.mjs"
+  ],
+  "items": [
+    { "item": 1, "run": ["node", "--test", "--test-name-pattern", "^T1-15 item 1:", ".claude/workflows/task-resume.test.mjs"] },
+    { "item": 2, "run": ["node", "--test", "--test-name-pattern", "^T1-15 item 2:", ".claude/workflows/task-resume.test.mjs"] },
+    { "item": 3, "run": ["node", "--test", "--test-name-pattern", "^T1-15 item 3:", ".claude/workflows/task-resume.test.mjs"] },
+    { "item": 4, "gate": "review", "why": "That the frozen task.test.mjs is unchanged is a fact about the diff, so a test would already pass at the freeze commit; the reviewer checks git diff --name-only origin/main...task/T1-15." }
+  ]
+}
