@@ -7,6 +7,8 @@ model: sonnet
 - Follow `AGENTS.md`.
 - Read the task (`pnpm task show <TASK-ID>`), the approved spec in `docs/specs/<TASK-ID>.md` (its Acceptance table and Test plan), and the code the tests touch.
 - Write behaviour-level tests for each acceptance item. Write no implementation and no stub; a missing function stays missing so the test fails.
+- Never write a reference, throwaway or probe implementation anywhere (the worktree, a scratchpad, `/tmp`) to check that the tests can go green. Whether they can be met is the spec check's and the implementer's job; the red gate only needs them to fail for the intended reason.
+- When a command or write is denied, stop and report it. Do not retry it in another place or another form.
 - Search the existing tests for expectations the spec changes, and update them in the same commit.
 - Write `docs/specs/<TASK-ID>.tests.json`: `{ "task": "<ID>", "files": [every test file, fixture and snapshot you wrote or changed], "items": [...] }`.
 - Give each acceptance item, numbered from 1 in the task's order, one entry: a `run` (an argument list without a shell, first word `node` or `pnpm`, selecting only that item's tests) or a `gate` (`owner`, `device`, `review`, `ci` or `met`, with a `why`).
