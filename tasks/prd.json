@@ -957,7 +957,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Implemented on task/T3-05 through commit 8838eb17 (milestones 1-6). Local: pnpm check green; pnpm tv:native:test 214 tests, 0 failed; check-red --expect green: items 1-6, 8, 9 green, no problems; pnpm tv:e2e green; pnpm tv:wire on own emulator (fluster_tv API 36): 8/8 pairs pass, incl. transport-probe-then-signed-in jellyscale T3-05 pass. Item 7 still needs the CI wire job green on the PR head."
+          "evidence": "Commit 415a1559. Local pnpm tv:wire (fluster_tv API 36) summary.txt in full: transport-probe-then-signed-in mock T3-05 pass; transport-probe-then-signed-in jellyfin-10-11 T3-05 pass; transport-probe-then-signed-in jellyfin-12 T3-05 pass; transport-probe-then-signed-in jellyscale T3-05 pass; transport-redirect mock T3-05 pass; transport-canary mock T3-05 pass; transport-errors mock T3-05 pass; transport-private-lan-and-proxy mock T3-05 pass. No fail. Pending: CI wire summary on draft PR head (item 7), tripwire (item 8), tv."
         },
         {
           "id": "T3-16",
