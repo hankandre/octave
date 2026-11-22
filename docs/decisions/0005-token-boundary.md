@@ -251,6 +251,28 @@ This record said both that the session methods live in a session module of their
 
 This supersedes the T8-01 item under "Related wording"; T8-01's acceptance now says the above.
 
+## Amendment, 2026-11-22 (T3-05): the shapes of signIn, request and endSession
+
+T3-05 built three of the five members, as the core's Transport port names them (`docs/specs/T3-05.md`, "The native seam"). It adds no method and no event. Each shape below is a change to the accepted surface, and the T3-05 pull request calls it out as an invariant change.
+
+- **One map in, one map out.** Each function takes one plain map and resolves one plain map; Kotlin reads the map by hand, so Expo's converter never holds a typed value it could quote in an error. A key outside the table below, or a key with the wrong type, resolves `{ error: "refused" }`.
+
+| Method | Argument | Resolves |
+|---|---|---|
+| `signIn` | `{ server, deviceId, kind: "password", username, password, timeoutMs }` or `{ server, deviceId, kind: "quick-connect", secret, timeoutMs }` | `{ session, userId, userName?, serverId? }` or `{ error, status? }` |
+| `request` | `{ session }` or `{ server, deviceId }`, plus `method`, `path`, `query` (a list of two-string lists), `body` (JSON text, or absent), `timeoutMs` | `{ status, body }` (`body` is JSON text, or null when empty or not JSON) or `{ error }` |
+| `endSession` | `{ session, timeoutMs }` | `{}` or `{ error, status? }` |
+
+- **Errors are values.** `error` is one of the core's seven codes (`network`, `timeout`, `redirect`, `cancelled`, `refused`, `unexpected-response`, `status`); `status` comes only with `status`. No function rejects on purpose. The app's adapter builds `TransportError` from the code alone, and turns any rejection or malformed result into `refused`, dropping its message, cause and stack.
+- **`userName` and `serverId` are optional** in a sign-in result, as the port has them; this record's table listed both without a mark.
+- **Cancellation stays in JavaScript.** There is no fourth method. An abort raises `cancelled` at once; the native call runs on to its answer or its deadline and its result is dropped. A sign-in that succeeds after its abort is ended with `endSession`, so the registry keeps no session the core does not know. A dropped call still finishes on the wire, which is the accepted cost; a native cancel would need a decision record.
+- **The deadline** is `timeoutMs`, applied to the whole call (OkHttp's call timeout), not a derived client.
+- **One re-send.** OkHttp's `retryOnConnectionFailure` stays off. `request` sends a `GET` a second time, once, inside the same deadline, when the first attempt fails before any answer with an IOException that is not a timeout or a refusal. No `POST`, `DELETE` or sign-in is sent twice.
+- **The client identity.** `Client` is `Octave`, the core's `APP_NAME`. `Device` is `android.os.Build.MODEL`, or `Android TV` when blank. `Version` is the app's `versionName`. The model name goes into the header only, never into a result, a log or a URL; the header builder encodes it as `encodeURIComponent` does, so a quote or a non-ASCII character cannot break the header.
+- **Threading.** Expo runs a plain `AsyncFunction` body on its modules queue, one thread shared by every Expo module. So each body only hands the call to the module's own IO scope and returns, and the coroutine resolves the promise. A stalled call holds no other call.
+- **Before sign-in and at logout.** The six tokenless calls (the four pre-sign-in routes and the two sign-in posts) go through the one client with the tokenless header (`Token=""`), checked by the same origin, user-info, credential-name and plain-HTTP rules as a session's, and refused for any other method and path. `endSession` removes the registry entry first, then sends `POST /Sessions/Logout` with the removed session's header. An unknown session resolves `{}`.
+- **No base-path containment is claimed.** A path's dot segments are resolved by OkHttp and may leave the session's base path; refusing them is T3-16's.
+
 ## Revisit if
 
 - A crash reporter, over-the-air JavaScript updates or any third-party runtime code is proposed. Under A that is a new reader of the token; under C it is not.

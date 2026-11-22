@@ -28,7 +28,7 @@ description: Run Octave's checks and record evidence before asking for review. U
 
 ## When the app sends a request (from T3-05)
 
-- Run the task's wire test with `pnpm tv:wire` against the pinned Jellyscale.
+- Run the task's wire tests with `ANDROID_SERIAL=<your own emulator> pnpm tv:wire --task <id>` (the mock and the pinned Jellyfin and Jellyscale servers), and quote `release-evidence/wire/summary.txt`. Never run it on the Shield: it sets the device-global `http_proxy`.
 - A playback task passes only when its wire test passes.
 
 ## Evidence
