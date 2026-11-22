@@ -1122,10 +1122,10 @@
             "docs/security.md section 3 states the rule and names its tests in the same PR, and the PR calls out the change"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit e5a5199d (task/T3-20; rule edda87c2, device check 7d2b51a4): pnpm check exit 0; tv:native:test 403 tests 0 failed; check-red --expect green items 1-5 green; tv:e2e on own emulator-5590 (fluster_tv API 36): resolved-address private ok, mixed ok, public refused (https-call failed-SSLException, https-outside unjudged); tv:wire --task T3-05: 8 pairs passed; lint:network 0 violations; lint:flow 0 frozen changes. Untested: Shield, physical TV, arm64, other Android versions, real mDNS/.home.arpa resolvers, device HTTPS with a real cert."
+          "passes": true,
+          "evidence": "commit 31420255 (task/T3-20; rule edda87c2, device check 7d2b51a4; review lows in plan 010): pnpm check exit 0 (vitest 2641+1431 passed; flow ok, 0 frozen changes); tv:native:test 403 tests 0 failed; check-red --expect green items 1-5 green; tv:e2e on own emulator-5592 (fluster_tv API 36): resolved-address private ok, mixed ok, public refused. Earlier: tv:wire --task T3-05 8 pairs passed. Untested: Shield, physical TV, arm64, other Android versions, real mDNS/.home.arpa resolvers, device HTTPS with a real cert."
         },
         {
           "id": "T3-22",

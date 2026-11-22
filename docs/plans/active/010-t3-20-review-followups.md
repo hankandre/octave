@@ -5,7 +5,7 @@
 Record the T3-20 fresh-context review's low findings so the owner and later tasks see them, and close T3-20 (T3-20). The milestones and decision log of the task itself are in `docs/specs/T3-20.md`.
 
 - [x] Lows below logged as follow-ups, not fixed (the review found nothing to fix)
-- [ ] T3-20 set to done with evidence naming the commit
+- [x] T3-20 set to done with evidence naming the commit (commit 31420255)
 
 ## Context and domains touched
 
@@ -23,7 +23,7 @@ None added.
 ## Progress
 
 - [x] 1
-- [ ] 2
+- [x] 2
 
 ## Decision log
 
@@ -39,7 +39,14 @@ Follow-ups (low, not fixed in T3-20):
 
 ## Validation evidence
 
-Milestone 1, 2026-11-22: see the commands below, run on the commit that logs these lows.
+Milestone 1, 2026-11-22, at 31420255:
+
+- `mise exec -- pnpm check`: exit 0; vitest 2641 and 1431 passed; flow ok: 7 commits ahead; frozen T3-20; 0 frozen changes.
+- `mise exec -- pnpm tv:native:test`: tv native: 403 tests, 0 failed, 2 projects.
+- `mise exec -- node scripts/check-red.mjs T3-20 --expect green`: green [1,2,3,4,5], problems [].
+- `ANDROID_SERIAL=emulator-5592 mise exec -- pnpm tv:e2e` on a fresh read-only `fluster_tv` emulator of this agent's own (API 36), stopped after: exit 0; `url 202/202, device-id 13/13, host ok`; `cleartext private-lan ok, loopback ok, public 60/60 refused`; `resolved-address private ok, mixed ok, public refused` (see the second follow-up for what "mixed ok" does not show).
+
+Not run: the Shield, any physical TV, arm64, other Android versions or AVDs, real mDNS or `.home.arpa` resolvers, device HTTPS with a real certificate, the dogfood servers. `pnpm tv:wire --task T3-05` not rerun here (no code change since its 8-pair pass on this branch).
 
 ## Outcome & retrospective
 
