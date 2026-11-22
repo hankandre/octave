@@ -920,10 +920,10 @@
             "docs/security.md names the check and what it cannot see in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check && pnpm tv:smoke",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit 00728fa2 (framework sinks; entry 27 in 77f67909), for PR #267. Keep-rule APK 0e713087: tv:apk:check passes (5301 classes, 219 sinks, 14 entry points), 1 ref left to pre-R8 test; no-keep build 514f8085 fails D7 (19 classes). On 2ae5d1a8: check green (2596+1457), tv:native:test 215/0; smoke and e2e pass on emulator-5620 (API 36 ATV x86_64, 77f67909), frozen 1-5 green. Not pushed; CI tv job not run. Untested: Shield, real TVs, arm64, other Android versions, Jellyfin, Jellyscale, C++ inspector gate."
+          "passes": true,
+          "evidence": "PR #267, commit 314a33d4. CI tv job green, run 45023535907: tv apk dex passes (5303 classes, 219 sink refs, 14 entry points, 0 in Octave code outside the one client), 1 ref left to NetworkPathsBytecodeTest; dev-server-watch 0 app connections; first focus ok. Local: check, tv:native:test 215/0, smoke, e2e green. Untested: Shield, real TVs, arm64, other Androids, Jellyfin, Jellyscale, C++ inspector gate."
         },
         {
           "id": "T3-04",
