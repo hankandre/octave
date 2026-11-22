@@ -6,6 +6,7 @@ Language-neutral vectors that every implementation of a rule must pass, so two i
 | --- | --- | --- |
 | `host-classes.json` | Host classes from decision 0001: loopback, private LAN, public | `packages/core/src/domain/host-class.test.ts`, `packages/core/src/conformance/url-conformance.ts` (also run on the emulator under Hermes by `pnpm tv:e2e`, T3-02); at the tag, `url_policy.rs` and `discovery/tests.rs`; the Kotlin classifier, `modules/session/android/src/test/java/dev/octave/session/http/HostClassTest.kt` (T3-03) |
 | `hls-master-urls.json` | The HLS master URL rules (`ARCHITECTURE.md` "HLS URL rules"): accepted plans and refused URLs | `packages/core/src/jellyfin/hls-master-url-vectors.test.ts` (writes `vectors`), `packages/core/src/jellyfin/hls-url.test.ts` (`refusals`), `packages/core/src/conformance/url-conformance.ts` (all; also run on the emulator under Hermes by `pnpm tv:e2e`, T3-02); at the tag, `player/hls/master_url_tests.rs` (both); next, Kotlin (T8-08) |
+| `hls-master-urls-device-conversion.json` | The same master URL rules, for the plans of a forced conversion (T8-24): accepted plans only | `packages/core/src/jellyfin/hls-master-url-device-vectors.test.ts` (writes and checks `vectors`); next, Kotlin (T8-08). Not read by `runUrlConformance`, so not run under Hermes yet |
 | `device-ids.json` | DeviceId = SHA-256 hex of `installId:serverId:lowercased username` (`ARCHITECTURE.md` section 3); values derived by Node | `packages/core/src/conformance/device-id-conformance.test.ts` (Node, with `node:crypto` and `webCrypto`), `packages/core/src/conformance/device-id-conformance.ts` (run on the emulator under Hermes with `expo-crypto` by `pnpm tv:e2e`, T3-02) |
 | `hls-playlists.json` | The HLS playlist rules: every URI same-origin, unambiguous, and credential-free; only complete, well-formed playlists | `packages/core/src/jellyfin/hls-playlist-vectors.test.ts` (shape); at the tag, `player/hls/playlist_vectors_tests.rs`; next, Kotlin (T8-08) |
 | `authorization-header.json` | The MediaBrowser Authorization value, byte for byte, with and without a token | `packages/core/src/jellyfin/authorization-header.test.ts` (T2-04); Kotlin: `MediaBrowserHeaderTest.kt` (the builder) and `AuthorizationValueTest.kt` (the accepted shape) in `modules/session/android/src/test/java/dev/octave/session/http/` (T3-03) |
@@ -16,10 +17,18 @@ Language-neutral vectors that every implementation of a rule must pass, so two i
 
 ## `hls-master-urls.json`
 
-- `vectors` (44): the plans TypeScript Playback Negotiation builds from every conversion recorded for P10-02 (the list in the test; the T2-07 `device-conversion-*` answers are not vectors), on a server with and without a base path. Every native validator deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm --filter @octave/core exec vitest run hls-master-url-vectors`; that keeps `description` and `refusals` as they are.
+- `vectors` (44): the plans TypeScript Playback Negotiation builds from every conversion recorded for P10-02 (the list in the test; the T2-07 `device-conversion-*` answers are not vectors of this file; they are in `hls-master-urls-device-conversion.json`), on a server with and without a base path. Every native validator deserializes each plan and accepts its master URL. Regenerate with `OCTAVE_WRITE_HLS_VECTORS=1 pnpm --filter @octave/core exec vitest run hls-master-url-vectors`; that keeps `description` and `refusals` as they are.
 - `refusals` (64): master URLs every validator refuses, each with the context it is checked in (`serverUrl`, `mediaKind`, `itemId`, `mediaSourceId`, `playSessionId`) and a `rule` tag. `typescript` says what `rebuildMasterUrl` (`packages/core/src/jellyfin/hls-url.ts`) does with the same input:
   - `{"verdict": "refuse"}`: it refuses too.
   - `{"verdict": "rebuild", "url": "…"}`: it removes the offending part (a credential parameter, `EnableTrickplay`, `EnableSubtitlesInManifest=false`) and returns `url`, which a validator then accepts.
+
+Changing it: this file is frozen by T2-06 and a regeneration needs a Product Owner ruling. Since T8-24 that ruling must also name `hls-master-url-device-vectors.test.ts`, which pins this file's SHA-256 and its counts (44 vectors, 64 refusals) in the describe "T8-24 frozen file:" (three constants to edit).
+
+## `hls-master-urls-device-conversion.json`
+
+- `vectors` (12): the plans TypeScript Playback Negotiation builds when the server offers direct play, the device lacks the sample's video codec, and the second PlaybackInfo is answered with a conversion: H.264, HEVC and AV1, on Jellyfin 10.11.7 and 12.4.0, on a server with and without a base path. Each plan carries `clientConversionReason: "DeviceCannotPlay"`. Every native validator deserializes each plan and accepts its master URL (Kotlin in T8-08). Same shape as the `vectors` of `hls-master-urls.json`; there are no refusals (those are in `hls-master-urls.json`).
+- SHA-256: `469799492afae646422fc1627ea41db27d235f426fbcf126afe3c66852ffbf2a`
+- Regenerate with `OCTAVE_WRITE_DEVICE_HLS_VECTORS=1 pnpm --filter @octave/core exec vitest run src/jellyfin/hls-master-url-device-vectors.test.ts`, only after a deliberate negotiation change, and update the SHA-256 above in the same commit. A change to the `PlaybackPlan` shape also changes `hls-master-urls.json`; see its "Changing it" for the ruling that needs.
 
 ## Host rules
 

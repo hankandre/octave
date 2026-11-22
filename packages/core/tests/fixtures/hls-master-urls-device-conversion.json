@@ -1,0 +1,515 @@
+{
+  "description": "Forced-conversion HLS master URLs (T8-24). `vectors`: the plans packages/core/src/jellyfin/hls-master-url-device-vectors.test.ts builds when the server offers direct play, the device lacks the sample's video codec, and the second PlaybackInfo is answered with a conversion (Jellyfin 10.11.7 and 12.4.0; H.264, HEVC and AV1). Every native validator deserializes each plan and accepts its master URL (Kotlin in T8-08). The refusals are in hls-master-urls.json. See packages/core/tests/fixtures/README.md.",
+  "vectors": [
+    {
+      "name": "10.11.7 device-conversion-h264 http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 683424,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 device-conversion-h264 https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=DirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 683424,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 device-conversion-hevc-hdr10 http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-hevc",
+        "title": "Fixture",
+        "mediaSourceId": "item-hevc",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-hevc/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=DirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 283878,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p HEVC HDR",
+            "codec": "hevc",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 device-conversion-hevc-hdr10 https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-hevc",
+        "title": "Fixture",
+        "mediaSourceId": "item-hevc",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "https://media.test/jellyfin/videos/item-hevc/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=DirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 283878,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p HEVC HDR",
+            "codec": "hevc",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 device-conversion-av1 http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-av1",
+        "title": "Fixture",
+        "mediaSourceId": "item-av1",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-av1/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=DirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 878287,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p AV1 SDR",
+            "codec": "av1",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "10.11.7 device-conversion-av1 https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-av1",
+        "title": "Fixture",
+        "mediaSourceId": "item-av1",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "https://media.test/jellyfin/videos/item-av1/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&BreakOnNonKeyFrames=False&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=DirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 878287,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p AV1 SDR",
+            "codec": "av1",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 device-conversion-h264 http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-h264/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 491424,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 device-conversion-h264 https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-h264",
+        "title": "Fixture",
+        "mediaSourceId": "item-h264",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "https://media.test/jellyfin/videos/item-h264/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-h264&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-2&h264-level=30&h264-videobitdepth=8&h264-profile=high&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 491424,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 device-conversion-hevc-hdr10 http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-hevc",
+        "title": "Fixture",
+        "mediaSourceId": "item-hevc",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-hevc/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 91878,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p HEVC HDR",
+            "codec": "hevc",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 device-conversion-hevc-hdr10 https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-hevc",
+        "title": "Fixture",
+        "mediaSourceId": "item-hevc",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "https://media.test/jellyfin/videos/item-hevc/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-hevc&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&hevc-level=93&hevc-videobitdepth=10&hevc-profile=main10&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 91878,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "720p HEVC HDR",
+            "codec": "hevc",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 device-conversion-av1 http://127.0.0.1:8096",
+      "plan": {
+        "itemId": "item-av1",
+        "title": "Fixture",
+        "mediaSourceId": "item-av1",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "http://127.0.0.1:8096",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "http://127.0.0.1:8096/videos/item-av1/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 686287,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p AV1 SDR",
+            "codec": "av1",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    },
+    {
+      "name": "12.4.0 device-conversion-av1 https://media.test/jellyfin",
+      "plan": {
+        "itemId": "item-av1",
+        "title": "Fixture",
+        "mediaSourceId": "item-av1",
+        "playSessionId": "play-session-1",
+        "startPositionTicks": 0,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported",
+          "DirectPlayError"
+        ],
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "clientConversionReason": "DeviceCannotPlay",
+        "streamUrl": "https://media.test/jellyfin/videos/item-av1/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-av1&VideoCodec=h264%2Chevc%2Cav1%2Cvp9&AudioCodec=aac%2Cac3%2Ceac3%2Copus%2Cflac%2Cmp3&AudioStreamIndex=1&VideoBitrate=999808000&AudioBitrate=192000&MaxFramerate=24&SegmentContainer=mp4&PlaySessionId=play-session-1&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=id-1&av1-level=1&av1-videobitdepth=10&av1-profile=main&TranscodeReasons=AudioCodecNotSupported%2CDirectPlayError&allowVideoStreamCopy=false&EnableTrickplay=false",
+        "hasSegments": false,
+        "sourceBitrate": 686287,
+        "subtitlesBurnedIn": false,
+        "playOriginalAvailable": false,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "360p AV1 SDR",
+            "codec": "av1",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2
+          }
+        ],
+        "defaultAudioStreamIndex": 1
+      }
+    }
+  ]
+}
