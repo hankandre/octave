@@ -49,12 +49,16 @@ Recorded 2026-11-21 by `tests/integration/record-jellyscale-fixtures.ts` against
 | `item-detail-h264.json`, `item-detail-multitrack.json` | `GET /Items/{id}` through `itemDetail()` |
 | `playbackinfo-{h264,multitrack,sidecar}-profile.json` | `POST /Items/{id}/PlaybackInfo` through `createPlaybackPlan()` with the Octave profile; all three answer direct play. The sidecar's `DeliveryUrl` carries `ApiKey=`, scrubbed to `REDACTED` |
 | `device-conversion-h264.json` | T2-07: the answer to the forced request for the H.264 film (`EnableDirectPlay` and `AllowVideoStreamCopy` false, `MediaSourceId` named, same values in body and query; recorded 2026-11-21 with `--device-conversion`). Jellyscale still answers direct play and no `TranscodingUrl`, so the decision gives `device-cannot-play` (T10-08 changes this). Not a `playbackinfo-` file: the T2-08 test replays those as first answers |
+| `home-latest.json`, `home-latest-no-types.json` | T5-02: `GET /Items/Latest` with no `parentId`, with and without `includeItemTypes`. A bare array of 14: 11 films and the show's three episodes as loose `Episode` items with `SeriesId` and no `SeriesName`, first. `groupItems` and `includeItemTypes` change nothing (Jellyscale #234) |
+| `home-resume.json`, `home-nextup.json`, `home-recently-played.json` | T5-02: Resume after a saved position on the H.264 film; Next Up is the stub (#101) and answers 200 with `{"Items":[],"TotalRecordCount":0,"StartIndex":0}`, so `nextUp()` gives no cards; recently played is the same empty 200 |
 | `endpoints.json` | Every endpoint the core calls (`--endpoints`): what Jellyscale declares (`--print-routes`) and the HTTP status each probe got |
 | `endpoint-issues.json` | Kept by hand: the Jellyscale issue for each gap, or `"not yet filed"` |
 
 Commands: `pnpm exec tsx tests/integration/record-jellyscale-fixtures.ts` (fixtures), `... --endpoints` (inventory), `pnpm fixture:check-jellyscale`
 (CI: re-probe and compare), `... --device-conversion` (only `device-conversion-h264.json`). The forced-conversion probe (`EnableDirectPlay` and `EnableDirectStream` off in body and query)
 got no `TranscodingUrl`, so `GET /Videos/{itemId}/master.m3u8` is `not reached` (Jellyscale #224).
+
+The `home-*` files come from `tests/integration/record-home-fixtures.mjs`, which cannot import the TypeScript recorder, so their fake ids are consistent among the five `home-*` files only, not with `latest-*.json`.
 
 Two back-to-back recordings differ only in timestamps (`LastActivityDate`, `LastLoginDate`, `LastPlayedDate`), because the
 recorder writes a position and signs in each run. The endpoint inventory is identical apart from `recorded`.

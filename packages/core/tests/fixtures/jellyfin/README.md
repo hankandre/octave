@@ -11,6 +11,7 @@ Scrubbed answers from the two pinned fixture servers (`tests/integration/docker-
 | `record-discovery-fixtures.mjs` | `discovery-` |
 | `record-account-language-fixtures.mjs` | `account-language-` |
 | `record-rating-fixtures.mjs` | `rating-` |
+| `record-home-fixtures.mjs` | `home-` (T5-02, recorded 2026-11-22 from Jellyfin 10.11.7 and 12.4.0) |
 
 ## Personal ratings (P16-13)
 
@@ -76,3 +77,13 @@ No `GET /Items` request returns exactly the rated films (`userId`, `recursive=tr
 ### Not settled here
 
 Other clients' behaviour; timing and memory on a large library; a different server version than the two above; ratings of series and episodes (films only, R2 B).
+
+## Home (T5-02)
+
+Recorded 2026-11-22 by `record-home-fixtures.mjs`; tested by `packages/core/src/jellyfin/home-fixtures.test.ts`, which holds the full notes.
+
+- `home-latest.json`: `GET /Items/Latest` with no `parentId` (what `latestItems()` sends). Both versions answer a bare array across both libraries: 9 films and the show once, as a `Series` with `ChildCount` 3.
+- `home-latest-no-types.json`: the same without `includeItemTypes`. It is the same answer, so `includeItemTypes=Movie,Episode` stays on the request (D5).
+- `home-latest-ungrouped.json`: `groupItems=false`. The show's three episodes come back as loose `Episode` items with `SeriesId` and `SeriesName`, 12 items in all.
+- The three `home-latest*` files were recorded before the watch scene, on a user with no state. The scene: the H.264 film in progress (1 June 2026), the Multitrack film in progress (2 June), S01E01 finished (3 June). `home-resume.json` holds the two films, `home-nextup.json` S01E02, `home-recently-played.json` S01E01.
+- Order: 10.11.7 answers newest first by `DateCreated`. 12.4.0 does too for the films but places the grouped `Series` second although its own date is newer than the first film's. The client keeps the server's order.
