@@ -23,6 +23,21 @@ object NetworkPathRules {
     private val K2 = listOf("androidx/media3/datasource/DefaultDataSource")
     private val K5 = listOf("java/net/HttpURLConnection", "javax/net/ssl/HttpsURLConnection", "java/net/URLConnection")
     private val K5_URL_METHODS = setOf("openConnection", "openStream", "getContent")
+    private const val URL_TYPE = "Ljava/net/URL;"
+    // Other HTTP stacks, and players and image loaders that fetch a URL themselves, by class name or package. Each is
+    // matched at the start of a name, after `L` in a descriptor, or after `/` (a dotted reflective name read as slashed).
+    private val K4_STACKS = listOf(
+        "java/net/http/",
+        "org/chromium/net/",
+        "com/android/volley/",
+        "android/app/DownloadManager",
+        "android/media/MediaPlayer",
+        "android/widget/VideoView",
+        "coil/",
+        "coil3/",
+        "com/bumptech/glide/",
+        "com/squareup/picasso/",
+    )
     private val K7 = listOf(
         "com/facebook/react/modules/network/OkHttpClientProvider",
         "com/facebook/react/modules/network/OkHttpClientFactory",
@@ -70,13 +85,21 @@ object NetworkPathRules {
         named("K7", K7)
         named("K8", K8)
         named("K9", K9)
+        for (prefix in K4_STACKS) {
+            if (names.any { it.startsWith(prefix) || it.contains("L$prefix") }) found += NetworkViolation("K4", refs.name, prefix)
+        }
 
         if (refs.name !in ONE_CLIENT_CLASSES && names.any { it.contains(ONE_CLIENT) }) {
             found += NetworkViolation("K4", refs.name, ONE_CLIENT)
         }
         for (member in refs.members) {
-            if (member.owner == "java/net/URL" && member.name in K5_URL_METHODS) {
+            if (member.owner == "java/net/URL" && (member.name in K5_URL_METHODS || member.name == "<init>")) {
                 found += NetworkViolation("K5", refs.name, "java/net/URL.${member.name}")
+            }
+            // A member that takes a URL opens it for the caller, as the standard library's `URL.readText()` does
+            // through `TextStreamsKt.readBytes(URL)`.
+            if (member.owner != "java/net/URL" && URL_TYPE in member.descriptor.substringBefore(')')) {
+                found += NetworkViolation("K5", refs.name, "${member.owner}.${member.name}, which takes a java.net.URL")
             }
             if (member.owner == "okhttp3/OkHttpClient\$Builder" && member.name == "addNetworkInterceptor") {
                 found += NetworkViolation("K8", refs.name, "a network interceptor")
