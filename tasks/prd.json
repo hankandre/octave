@@ -1267,10 +1267,10 @@
             "docs/security.md section 6 says how the check reads attributes, in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:build && pnpm tv:apk:check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "PR #265 (head 76efbe03 is stale; merge not pushed). Local commit 817aba6a (fix in fdf8bad2): parseAttribute fails closed on fake namespace lines and on a Raw copy that is not the value; item 3 probe re-run pasted in the spec (app-level allowBackup kept by merger and aapt2). pnpm check exit 0, check-red T3-23 green [1,2,5], tv:build and tv:apk:check pass locally. Pending Ship: push, tv job pnpm tv:apk:check and checks job green on the new head."
+          "passes": true,
+          "evidence": "PR #265 merged 2026-11-22 as c47ccef3 (head ccf1c7c9): checks, dependency-review, tripwire and tv green on the head; tv job ran pnpm tv:apk:check on the release APK. Attributes read by resource id and reading mode; duplicates and Raw copies unequal to the value fail closed. Local: pnpm check exit 0, check-red T3-23 green [1,2,5]. Status was left in_progress by the coordinator's squash of the branch; corrected here. Untested: real TV, other build-tools versions."
         },
         {
           "id": "T3-32",
