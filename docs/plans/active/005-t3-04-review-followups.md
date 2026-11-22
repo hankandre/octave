@@ -9,7 +9,7 @@ Record the T3-04 fresh-context review's high and medium fixes and its low findin
 - [x] Medium, ESLint: React Native's and Expo's networking modules, `self`, aliases of globalThis and Image, and the native modules by name are refused in every app file (`scripts/network-lint-review.test.ts`)
 - [x] Medium, players and loaders: K4 names `MediaPlayer`, `VideoView`, Coil, Glide and Picasso; the inventory follows a workspace package's dependencies
 - [x] Lows below logged as follow-ups, not fixed
-- [ ] T3-04 set to done with evidence naming the commit or PR
+- [x] T3-04 set to done with evidence naming the commit or PR (commit b6d16d12)
 - [x] `pnpm check` and `pnpm tv:native:test` are green
 
 ## Context and domains touched
