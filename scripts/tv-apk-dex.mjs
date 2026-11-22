@@ -2,8 +2,9 @@
 // and R8's mapping, finds every instruction that can open a connection, attributes it to its original class, and fails
 // when Octave's code holds one outside the one client (D1), when a class outside APK_NETWORK_ENTRY_POINTS holds one
 // (D2), when a row is stale (D3), when Octave's code references a listed class (D4), when an excluded package is back
-// (D5), when a class outside DEV_SUPPORT_CLIENT_CALLERS references DevSupportHttpClient (D6), or when the input is not
-// whole (D0). It checks direct references, not a call graph.
+// (D5), when a class outside DEV_SUPPORT_CLIENT_CALLERS references DevSupportHttpClient (D6), when an Octave module's
+// source declares a package outside dev.octave. (D8, T3-29; rule D8 is not the D8 dexer whose ~~D8 marker MARKER
+// reads), or when the input is not whole (D0). It checks direct references, not a call graph.
 // Run: node scripts/tv-apk-dex.mjs [apk] [mapping]   (the fourth step of pnpm tv:apk:check)
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -14,6 +15,7 @@ import { androidSdk, newestBuildTool } from "./tv-android-sdk.mjs";
 import { PRODUCTION_LISTS } from "./tv-apk-dex-lists.mjs";
 import { judgeDex } from "./tv-apk-dex-judge.mjs";
 import { parseMapping, readMapping } from "./tv-apk-dex-mapping.mjs";
+import { REPO_ROOT, foreignPackages, packageProblems } from "./octave-module-packages.mjs";
 
 export { judgeDex, parseMapping };
 
@@ -113,9 +115,18 @@ export function readDexDump(dexdump, apk) {
 
 const defaultDexdump = () => newestBuildTool(androidSdk(), "dexdump");
 
+// Rule D8 on this repository is read once per process: every run of main without a repoRoot reads the same source.
+let repositoryPackages = null;
+function d8Problems(repoRoot) {
+  if (repoRoot !== undefined) return packageProblems(foreignPackages(repoRoot), repoRoot);
+  repositoryPackages ??= packageProblems(foreignPackages(REPO_ROOT), REPO_ROOT);
+  return repositoryPackages;
+}
+
 /**
- * The command. `system` carries what it reads and runs: { dexdump, lists, stdout, stderr }; the command line cannot
- * replace the lists. Resolves to the exit code.
+ * The command. `system` carries what it reads and runs: { dexdump, lists, stdout, stderr, repoRoot }; the command line
+ * cannot replace the lists. `repoRoot` is the root whose module source rule D8 reads (default: this repository).
+ * Resolves to the exit code.
  */
 export async function main(args = [], system = {}) {
   const stdout = system.stdout ?? process.stdout;
@@ -131,6 +142,12 @@ export async function main(args = [], system = {}) {
   if (!existsSync(apk)) missing.push(`no release APK at ${apk}; run pnpm tv:build`);
   if (!existsSync(mappingPath)) missing.push(`no R8 mapping at ${mappingPath}; run pnpm tv:build, which writes it beside the APK`);
   if (missing.length > 0) return fail(missing);
+
+  // D8: the dex check finds Octave's code by the dev.octave. prefix; a module outside it would be judged as a library.
+  const d8 = d8Problems(system.repoRoot);
+  if (d8.length > 0) {
+    return fail(d8.map((problem) => `D8 ${problem}; the check finds Octave's code by that prefix and would judge this module as a library (a row, D2) instead of failing it (D1); move it under dev.octave.`));
+  }
 
   // D0: a cut-short or damaged APK is one line, before any other rule adds to it.
   const damaged = (what) => fail([`${apk} is truncated or damaged (${what}); run pnpm tv:build to rebuild it`]);
