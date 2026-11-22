@@ -244,6 +244,22 @@ jobs:
           disable-linux-hw-accel: false
           script: pnpm tv:smoke
       - run: pnpm tv:e2e:build
+      # The first emulator is shut down by the runner's post step, but adb may
+      # still list it: the second boot's own post-boot call then met `adb:
+      # device offline` (exit 255) before pnpm tv:e2e ran. Wait for the first
+      # emulator process to end, then restart the adb server so the second
+      # boot starts from an empty device list.
+      - name: Reset adb between the two emulator boots
+        run: |
+          for _ in $(seq 1 30); do
+            pgrep -f 'qemu-system|emulator64' > /dev/null || break
+            sleep 2
+          done
+          if pgrep -f 'qemu-system|emulator64' > /dev/null; then
+            echo "ERROR tv: the first emulator is still running"
+            exit 1
+          fi
+          "$ANDROID_HOME/platform-tools/adb" kill-server
       - name: Conformance under Hermes on an Android TV emulator
         id: e2e
         continue-on-error: true
