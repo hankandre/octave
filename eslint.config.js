@@ -4,6 +4,7 @@
 // reference adapters in packages/core/src/adapters/ may touch the host's
 // timers, wall clock and crypto (T2-03), and only they may call fetch (T2-04).
 import parser from "@typescript-eslint/parser";
+import designTokens from "./scripts/eslint-design-tokens.mjs";
 
 const platformImports = ["react", "react-*", "react-native", "react-native-*", "@react-native/*", "expo", "expo-*", "@expo/*"];
 const hostGlobals = ["window", "document", "localStorage", "sessionStorage", "navigator", "location"];
@@ -192,6 +193,14 @@ export default [
     rules: {
       "no-restricted-imports": networkImports([hostOnly]),
     },
+  },
+  // T3-06: app code takes colours, sizes, radii, durations and fonts from apps/tv/src/design/. The rule has its own
+  // name, so the network rules above stay in force on the same files.
+  {
+    files: ["apps/tv/src/**/*.{ts,tsx}"],
+    ignores: ["apps/tv/src/design/tokens.ts", "apps/tv/**/*.test.{ts,tsx}", "apps/tv/src/host/**", "apps/tv/src/e2e/**"],
+    plugins: { octave: designTokens },
+    rules: { "octave/design-tokens": "error" },
   },
   {
     files: ["packages/core/src/**/*.ts"],
