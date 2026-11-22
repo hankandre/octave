@@ -19,6 +19,8 @@ export type FocusFrameProps = {
   onFocus?: () => void;
   onBlur?: () => void;
   disabled?: boolean;
+  /** Keeps the ring and lift while true, whatever the frame's own focus: a text field holds it while its input has focus. */
+  holdFocus?: boolean;
   hasTVPreferredFocus?: boolean;
   accessibilityLabel?: string;
   accessibilityRole?: AccessibilityRole;
@@ -41,6 +43,7 @@ export function FocusFrame({
   onFocus,
   onBlur,
   disabled = false,
+  holdFocus = false,
   hasTVPreferredFocus,
   accessibilityLabel,
   accessibilityRole,
@@ -58,7 +61,8 @@ export function FocusFrame({
   const liftedRef = useRef(false);
   const lastChange = useRef<"focus" | "press">("focus");
 
-  const target = reduced ? 1 : (focused ? motion.lift : 1) * (pressed ? motion.pressScale : 1);
+  const isFocused = focused || holdFocus;
+  const target = reduced ? 1 : (isFocused ? motion.lift : 1) * (pressed ? motion.pressScale : 1);
 
   useEffect(() => {
     if (reduced) {
@@ -87,7 +91,7 @@ export function FocusFrame({
   }, [target, reduced, scale]);
 
   const frameRadius = px(radii[radius]);
-  const showRing = focused && !disabled;
+  const showRing = isFocused && !disabled;
 
   return (
     <Pressable

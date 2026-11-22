@@ -1,7 +1,7 @@
 // Toast (DESIGN.md §7.16): bottom left inside the safe inset, `surface1`, an icon and one sentence. An info toast
 // takes no focus and hides after `toastMs` (it calls `onDismiss`). An error toast stays until its "Dismiss" button,
 // a quiet Button, calls `onDismiss`. `<testID>-fade` is the faded element, `<testID>-dismiss` the button.
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text } from "react-native";
 import { useFade } from "../fade";
 import type { IconComponent } from "../icon";
@@ -22,11 +22,15 @@ export type ToastProps = {
 export function Toast({ visible, kind, message, icon: Icon, onDismiss, testID }: ToastProps) {
   const { show, opacity } = useFade(visible);
 
+  // Kept in a ref so an inline `onDismiss` (a new identity each render) does not restart the timer.
+  const dismiss = useRef(onDismiss);
+  dismiss.current = onDismiss;
+
   useEffect(() => {
     if (!visible || kind !== "info") return undefined;
-    const timer = setTimeout(onDismiss, motion.toastMs);
+    const timer = setTimeout(() => dismiss.current(), motion.toastMs);
     return () => clearTimeout(timer);
-  }, [visible, kind, onDismiss]);
+  }, [visible, kind]);
 
   if (!show) return null;
   return (
