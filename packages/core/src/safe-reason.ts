@@ -4,9 +4,50 @@ const MAX_LENGTH = 300;
 // Each pattern starts only at a token start (a lookbehind, not \b) so matching
 // stays linear on long input.
 const ADDRESS = /(?<![a-z0-9+.-])[a-z][a-z0-9+.-]*:\/\/(?:[^\s"')\[\]]*\[[^\]\s"')]*\])?(?:\[redacted\]|[^\s"')\]])*/gi;
-const UNC_PATH = /\\\\[^\s"'),;]+/g;
-const WINDOWS_PATH = /\b[A-Za-z]:[\\/][^\s"'),;]*/g;
-const HOME_PATH = /~\/[^\s"'),;]*/g;
+// Where a path starts: UNC, Windows drive, ~/, or POSIX. A POSIX path may also
+// follow a colon (R7), unless that is scheme:// text.
+const PATH_START =
+  /\\\\[^\s"'),;]|\b[A-Za-z]:[\\/]|~\/|(?:(?<![\w:.\]\/])|(?<=:)(?=\/[^\s\/"'),;]))\/+[^\s\/"'),;]/g;
+const PATH_BOUND = 260;
+// A path word that ends a spaced path: it holds a separator or ends in a file
+// extension, with at most one : or . after it.
+const PATH_LAST_WORD = /[\\/]|\.[a-z][a-z0-9]{0,4}[:.]?$/i;
+
+function isPathStop(char: string): boolean {
+  return /[\s"'),;]/.test(char);
+}
+
+// R8: a path runs on over words separated by single spaces or tabs, up to its
+// last word that holds a separator or ends in a file extension, within a bound.
+function pathEnd(text: string, from: number, start: number): number {
+  let end = from;
+  while (end < text.length && !isPathStop(text.charAt(end))) end += 1;
+  let best = end;
+  const cap = Math.min(text.length, start + PATH_BOUND + 1);
+  let position = end;
+  while (position < cap && (text[position] === " " || text[position] === "\t")) {
+    let wordEnd = position + 1;
+    while (wordEnd < cap && !isPathStop(text.charAt(wordEnd))) wordEnd += 1;
+    if (wordEnd === position + 1 || wordEnd > start + PATH_BOUND) break;
+    if (PATH_LAST_WORD.test(text.slice(position + 1, wordEnd))) best = wordEnd;
+    position = wordEnd;
+  }
+  return best;
+}
+
+function hidePaths(text: string): string {
+  PATH_START.lastIndex = 0;
+  let result = "";
+  let copied = 0;
+  for (let match = PATH_START.exec(text); match; match = PATH_START.exec(text)) {
+    const end = pathEnd(text, match.index + match[0].length, match.index);
+    result += `${text.slice(copied, match.index)}[path]`;
+    copied = end;
+    PATH_START.lastIndex = end;
+  }
+  return result + text.slice(copied);
+}
+
 // Host forms (R2 to R6). Each alternative has its own token-start lookbehind,
 // so the user info, zone and glued path rules can share one pass.
 const H = String.raw`[0-9a-f]{1,4}`;
@@ -45,19 +86,13 @@ const HOST = new RegExp(
 // user:pass@host, the user info running to the last @ before whitespace.
 const USER_INFO =
   /(?<![\w.:@%\/-])[^\s@:"'()\[\],;]{1,64}:[^\s]{0,256}@[^\s"'),;]+/g;
-const POSIX_PATH = /(?<![\w:.\]\/])\/+[^\s/"'),;]+(?:\/[^\s/"'),;]*)*/g;
 
 // The only way a player failure reason reaches the screen. Native errors carry
 // third-party text, so beyond redaction this hides addresses and file paths.
 export function safeReason(value: string): string {
-  const text = redactText(value)
-    .replace(ADDRESS, "[address]")
-    .replace(UNC_PATH, "[path]")
-    .replace(WINDOWS_PATH, "[path]")
-    .replace(HOME_PATH, "[path]")
+  const text = hidePaths(redactText(value).replace(ADDRESS, "[address]"))
     .replace(USER_INFO, "[address]")
     .replace(HOST, "[address]")
-    .replace(POSIX_PATH, "[path]")
     .trim();
   return text.length > MAX_LENGTH ? `${text.slice(0, MAX_LENGTH)}…` : text;
 }
