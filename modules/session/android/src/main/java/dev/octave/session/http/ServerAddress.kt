@@ -7,15 +7,19 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 // with no trailing slash ("" for none), never user info, a query or a fragment. It is the session's pinned origin and
 // the tokenless calls' origin alike, so both pass the same checks (decision 0001; T3-03's SessionRegistry rules).
 internal class ServerAddress(val scheme: String, val host: String, val port: Int, val basePath: String) {
-    // The URL of a path under the base path, with an encoded query. Dot segments are resolved by OkHttp and are not
-    // refused here (T3-16).
-    fun url(path: String, encodedQuery: String?): HttpUrl = HttpUrl.Builder()
-        .scheme(scheme)
-        .host(host)
-        .port(port)
-        .encodedPath(basePath + path)
-        .encodedQuery(encodedQuery)
-        .build()
+    // The URL of a path under the base path, with an encoded query. C1 (T3-16): the URL's path is the base path plus
+    // the path exactly as written, so a path OkHttp would re-encode or resolve throws IllegalArgumentException.
+    fun url(path: String, encodedQuery: String?): HttpUrl {
+        val url = HttpUrl.Builder()
+            .scheme(scheme)
+            .host(host)
+            .port(port)
+            .encodedPath(basePath + path)
+            .encodedQuery(encodedQuery)
+            .build()
+        require(url.encodedPath == basePath + path)
+        return url
+    }
 
     override fun toString(): String = "ServerAddress([redacted])"
 

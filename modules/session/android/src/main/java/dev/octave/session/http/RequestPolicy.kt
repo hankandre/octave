@@ -19,8 +19,17 @@ internal object RequestPolicy {
     fun check(entry: SessionEntry?, request: Request): HttpRefusal? {
         // 1. No session for the call.
         if (entry == null) return HttpRefusal.NO_SESSION
-        return checkOrigin(entry.scheme, entry.host, entry.port, entry.authorization.tokenForms(), request)
+        checkOrigin(entry.scheme, entry.host, entry.port, entry.authorization.tokenForms(), request)?.let { return it }
+        return checkBasePath(entry, request)
     }
+
+    // 7. The path must be the session's base path or under it (C2, T3-16). OkHttp has resolved dot segments by now.
+    private fun checkBasePath(entry: SessionEntry, request: Request): HttpRefusal? =
+        if (underBasePath(entry.basePath, request.url.encodedPath)) null else HttpRefusal.OUTSIDE_BASE_PATH
+
+    // An empty base path holds every path; otherwise the path is the base path or starts with it and a /.
+    private fun underBasePath(basePath: String, encodedPath: String): Boolean =
+        basePath.isEmpty() || encodedPath == basePath || encodedPath.startsWith("$basePath/")
 
     // Checks 2 to 6 against a pinned origin; tokens are the forms of the token the URL must not hold (none before
     // sign-in).
@@ -69,10 +78,11 @@ internal object RequestPolicy {
     }
 
     // The logout of a removed session: the session's own rules, and only POST /Sessions/Logout under its base path.
+    // The route is checked before C2, which it implies, so a wrong route is named as one.
     fun checkClosing(entry: SessionEntry, request: Request): HttpRefusal? {
-        check(entry, request)?.let { return it }
+        checkOrigin(entry.scheme, entry.host, entry.port, entry.authorization.tokenForms(), request)?.let { return it }
         if (request.method to request.url.encodedPath != LOGOUT.first to entry.basePath + LOGOUT.second) return HttpRefusal.ROUTE_NOT_ALLOWED
-        return null
+        return checkBasePath(entry, request)
     }
 
     private fun refusedHeader(name: String): Boolean {

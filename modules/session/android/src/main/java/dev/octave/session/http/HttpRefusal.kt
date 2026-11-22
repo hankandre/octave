@@ -13,6 +13,9 @@ enum class HttpRefusal(val code: String) {
 
     // T3-05: a call without a session that is not one of the six tokenless calls, or a closing call that is not the logout.
     ROUTE_NOT_ALLOWED("route-not-allowed"),
+
+    // T3-16: a session's call whose path is not its base path or under it.
+    OUTSIDE_BASE_PATH("outside-base-path"),
 }
 
 // The message is the code. It never holds a URL, a host, a header or a token, and it has no cause.

@@ -19,7 +19,10 @@ export type TransportTarget =
 export interface TransportRequest {
   readonly target: TransportTarget;
   readonly method: TransportMethod;
-  readonly path: string; // starts with "/", no "?" and no "#"
+  // Starts with "/", no "?" and no "#"; no dot segment, backslash, control character or malformed escape (T3-16's
+  // path rule, the same in Kotlin and adapters/request-path.ts). Kotlin also refuses a path OkHttp would re-encode
+  // (a raw space or non-ASCII character, for example); the reference transport does not, and fetch encodes and sends it.
+  readonly path: string;
   readonly query?: readonly QueryPair[]; // decoded pairs, in order; the transport encodes them
   readonly body?: unknown; // a JSON value; absent means no body
   readonly timeoutMs: number;
