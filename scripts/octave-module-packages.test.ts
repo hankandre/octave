@@ -59,6 +59,11 @@ describe("octave-module-packages", () => {
     expect(result.err).toContain(`ERROR octave packages: ${SRC}/com/example/A.java declares package com.example, outside dev.octave.`);
   });
 
+  it("reads the declaration, not a package line in a comment above it", () => {
+    const root = tree({ [`${SRC}/com/example/B.kt`]: "/*\n package dev.octave.cover\n*/\n// package dev.octave.cover\npackage com.example\n\nclass B\n" });
+    expect(readOctavePackages(root).files).toEqual([{ path: `${SRC}/com/example/B.kt`, name: "com.example" }]);
+  });
+
   it("fails a build.gradle.kts namespace outside dev.octave", () => {
     const root = tree({
       [`${SRC}/dev/octave/lan/Lan.kt`]: "package dev.octave.lan\n",

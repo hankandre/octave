@@ -15,6 +15,10 @@ export const REPO_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PACKAGE = /^\s*package\s+([A-Za-z_][\w.]*)/m;
 const NAMESPACE = /^\s*namespace\s*=?\s*["']([^"']+)["']/m;
 
+// A file's comments, dropped before its package is read, so a `package` line in a comment is never taken for the real
+// declaration. Only the text before the declaration matters, which holds comments and annotations, not string bodies.
+const withoutComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+
 /** Whether `name` is Octave's package: dev.octave itself or under it. */
 export const isOctavePackage = (name) => name === "dev.octave" || name.startsWith("dev.octave.");
 
@@ -26,7 +30,7 @@ export const isOctavePackage = (name) => name === "dev.octave" || name.startsWit
 export function readOctavePackages(root) {
   const files = readOctaveSource(root)
     .filter((file) => /\.(kt|java)$/.test(file.path))
-    .map((file) => ({ path: file.path, name: PACKAGE.exec(file.text)?.[1] ?? "" }));
+    .map((file) => ({ path: file.path, name: PACKAGE.exec(withoutComments(file.text))?.[1] ?? "" }));
   const namespaces = [];
   const modules = join(root, "modules");
   if (existsSync(modules)) {
