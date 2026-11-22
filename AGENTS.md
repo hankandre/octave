@@ -49,7 +49,7 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Install: `pnpm install`
 - Core unit tests (Vitest, Node environment): `pnpm --filter @octave/core test`; `pnpm test` runs them, then the root scripts and workflow tests
 - Type-check: `pnpm typecheck`
-- Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:ghost-terms`, `pnpm lint:backlog`, `pnpm lint:flow`
+- Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:network` (T3-04: no network path around the one client), `pnpm lint:ghost-terms`, `pnpm lint:backlog`, `pnpm lint:flow`
 - Task workflow tests: `pnpm test:workflow`
 - All checks: `pnpm check`
 - Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`

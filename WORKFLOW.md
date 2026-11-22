@@ -166,7 +166,7 @@ Octave's verifiers, from cheapest to most authoritative. New work should land a 
 | Level | Oracle | Catches | From |
 |---|---|---|---|
 | Type | TypeScript strict; Kotlin types | Shape errors | today |
-| Lint | dependency-cruiser layer rules, ESLint, the ghost-term check; the native network build check | Layering, platform leaks, desktop-era text; default Media3 data sources, stray HTTP clients | today; T3-04 |
+| Lint | dependency-cruiser layer rules, ESLint, the ghost-term check, the network check (`pnpm lint:network`) | Layering, platform leaks, desktop-era text; default Media3 data sources, stray HTTP clients, a JavaScript send or token, an unlisted linked client | today |
 | Unit | Vitest on the core in Node; JVM tests for Kotlin | Logic, policy flags, URL rules, redaction | today |
 | Contract | Recorded Jellyfin 10.11 and 12.4 responses and Jellyscale as fixtures; gateway tests assert request bodies *and* query strings | API drift, silent conversion flags | today |
 | Shared vectors | `packages/core/tests/fixtures/hls-master-urls.json`, `hls-playlists.json`, `host-classes.json`: every validator on every platform passes all three | Drift between the TypeScript rules and each native validator | today (TypeScript; Kotlin `host-classes.json` since T3-03); Kotlin playlists and master URLs T8-08 |
@@ -184,11 +184,11 @@ Rules stated in prose that should become checks:
 
 - **Playback policy.** A test that fails unless body and query carry the policy's flags, and a test that fails if the DeviceProfile gains a codec or container condition or an `Hls` subtitle profile.
 - **No generic player bridge.** The port and module allowlist tests (T2-05, T8-01).
-- **No default network path.** The native build check (T3-04).
+- **No default network path.** `pnpm lint:network` (Octave's Kotlin, Java and config plugins, and the linked libraries against `LINKED_NETWORK_PATHS`), ESLint's network rules for `apps/tv`, and `NetworkPathsBytecodeTest` in `pnpm tv:native:test` (T3-04).
 - **Redaction canaries across the JavaScript and native seam** (T3-05, T10-02).
 - **File size.** Flag source files over ~400 lines.
 
-Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), frozen tests and Product Owner changes to the task list (`pnpm lint:flow`), the task list's shape (`scripts/prd.test.ts`), the task file's size and evidence length (`scripts/task.test.ts`), and the backlog's shape (`scripts/check-backlog.test.ts`).
+Done and enforced today: dependency direction (`pnpm lint:boundaries`, which fails on zero modules read), no desktop-era terms (`pnpm lint:ghost-terms`), no network path around the one client (`pnpm lint:network`, which fails on zero files read), frozen tests and Product Owner changes to the task list (`pnpm lint:flow`), the task list's shape (`scripts/prd.test.ts`), the task file's size and evidence length (`scripts/task.test.ts`), and the backlog's shape (`scripts/check-backlog.test.ts`).
 
 ## Model routing
 
