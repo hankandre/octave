@@ -52,14 +52,15 @@ type Props = {
 };
 
 export const FlashList = forwardRef<unknown, Props>(function FlashListDouble(props, ref) {
-  const { data, renderItem, ListHeaderComponent, keyExtractor, testID, ...rest } = props;
+  // `forwardRef` hands the props over as `PropsWithoutRef<Props>`, which the index signature flattens to `unknown`.
+  const { data, renderItem, ListHeaderComponent, keyExtractor, testID, ...rest } = props as Props;
   const id = testID ?? "flash-list";
   useImperativeHandle(ref, () => methodsFor(id), [id]);
   let header: ReactNode = null;
   if (isValidElement(ListHeaderComponent)) header = ListHeaderComponent;
   else if (ListHeaderComponent) header = createElement(ListHeaderComponent as ComponentType);
   return (
-    <View testID={testID} keyExtractor={keyExtractor} {...(rest as object)}>
+    <View testID={testID} {...({ keyExtractor, ...rest } as object)}>
       {header}
       {(data ?? []).map((item, index) => (
         <Fragment key={keyExtractor ? keyExtractor(item, index) : index}>{renderItem?.({ item, index, target: "Cell" })}</Fragment>
