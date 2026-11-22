@@ -3643,10 +3643,10 @@
             "The answer is written into DESIGN.md 7.18"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "Owner accepted the proposal 2026-11-22 (docs/specs/decisions-owner-chat-2026-11-22.md, 5): the sections of DESIGN.md 7.18 in that order (Playback, Home, Languages, Subtitles, Accounts, About & diagnostics) and no Advanced section. Written to DESIGN.md 7.18 and 12 and PRODUCT.md. PR #304. Docs only; pnpm check and lint:backlog pass."
         },
         {
           "id": "T9-02",
