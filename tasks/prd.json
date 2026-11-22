@@ -1289,10 +1289,10 @@
             "docs/security.md section 1's inspector row and R5's reason in scripts/linked-network-paths.mjs say what is now tested and what is still read from source, in the same PR, and the PR calls out the change"
           ],
           "verify": "pnpm check && pnpm tv:build && pnpm tv:apk:check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit b7647bfb (T3-28, 4 milestone commits e9478cfc..b7647bfb, not pushed). pnpm check: 2892+1667 tests pass; lint:flow ok, 0 frozen changes; check-red T3-16/T3-04/T3-19/T3-28 green. tv:build + tv:apk:check pass with the tv native inspector line (44 libraries, 2 ABIs). The check on a debug APK fails on L2 and L3 only; readElf matches llvm-readelf (docs/specs/T3-28.md, Implementation record). Untested: TV, Shield, arm64 run, other Android versions, Jellyfin, Jellyscale, a debugOptimized APK."
+          "passes": true,
+          "evidence": "PR #280 (T3-28, 8 commits d55f2607..tip). CI run https://github.com/jellyscale-org/octave/actions/runs/45050650360 green on the PR head: tv job ran pnpm tv:apk:check incl. tv-apk-native-inspector (44 libraries, 2 ABIs); checks job ran T3-16/T3-04/T3-19/T3-28 frozen tests (2892 passed). Untested: TV, Shield, arm64 run, other Android versions, Jellyfin, Jellyscale, debugOptimized APK."
         },
         {
           "id": "T3-29",

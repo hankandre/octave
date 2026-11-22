@@ -6,7 +6,7 @@ Record the T3-28 fresh-context review's low findings so the owner, the Product O
 
 - [x] The review found no finding that needs a fix
 - [x] Lows below logged as follow-ups, not fixed
-- [ ] T3-28 set to done with evidence naming the PR (Ship phase)
+- [x] T3-28 set to done with evidence naming the PR (Ship phase)
 
 ## Context and domains touched
 
@@ -24,7 +24,7 @@ None added.
 ## Progress
 
 - [x] 1
-- [ ] 2
+- [x] 2
 
 ## Decision log
 
