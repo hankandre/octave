@@ -13,7 +13,7 @@ function planFor(playSessionId: string): PlaybackPlan {
   return {
     itemId: "one",
     title: "One",
-    streamUrl: "https://media.test/video",
+    streamUrl: "https://media.test/Videos/one/stream?Static=true",
     mediaSourceId: "source",
     playSessionId,
     startPositionTicks: 0,
