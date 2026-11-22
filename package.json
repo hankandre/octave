@@ -9,7 +9,7 @@
     "test": "pnpm --filter @octave/core --fail-if-no-match test && vitest run",
     "test:watch": "vitest",
     "task": "node scripts/task.mjs",
-    "test:workflow": "node --test .claude/workflows/task.test.mjs",
+    "test:workflow": "node --test .claude/workflows/*.test.mjs",
     "test:tripwire": "tsx tests/integration/tripwire.ts",
     "fixture:up": "bash tests/integration/fixture-up.sh",
     "fixture:setup": "bash tests/integration/setup-servers.sh",
