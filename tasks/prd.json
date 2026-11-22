@@ -1758,10 +1758,10 @@
             "docs/commands.md describes the ports in the same PR"
           ],
           "verify": "pnpm check && pnpm test:tripwire && pnpm tv:wire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit c9746cc9 (branch task/T3-27, 4 milestone commits): per-checkout fixture ports, record .fixture-ports, override file, readers and tv:wire use it. pnpm check green; items 1,3,4 and item 2 unit half pass. Live two-worktree up, tripwire and tv:wire not run locally (see PR)."
         },
         {
           "id": "T3-20",
