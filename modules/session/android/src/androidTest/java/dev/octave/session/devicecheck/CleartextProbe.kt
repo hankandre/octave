@@ -19,18 +19,28 @@ import org.json.JSONObject
 // for every public vector of host-classes.json, each of which must be refused before a request exists. It reports
 // fixed words and counts only, never an address, a host, a header or an exception message, and logs nothing.
 // Run by scripts/tv-cleartext.mjs: am instrument -w -e hostPort <port> <test package>/<this class>.
+// With -e check resolved-address it runs T3-20's ResolvedAddressCheck instead and reports only that check's keys
+// (scripts/tv-resolved-address.mjs); without it, it runs exactly what it ran before.
 class CleartextProbe : Instrumentation() {
     private var hostPort: Int? = null
+    private var check: String? = null
 
     override fun onCreate(arguments: Bundle?) {
         super.onCreate(arguments)
         hostPort = arguments?.getString("hostPort")?.toIntOrNull()?.takeIf { it in 1..65535 }
+        check = arguments?.getString("check")
         start()
     }
 
     override fun onStart() {
         super.onStart()
         val results = Bundle()
+        when (check) {
+            null -> Unit
+            RESOLVED_ADDRESS -> return resolvedAddress(results)
+            // A check this probe does not know reports no done, so the run fails.
+            else -> return finish(Activity.RESULT_OK, results)
+        }
         section(results, "policy") { if (NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted) "permitted" else "refused" }
         section(results, "target-sdk") { context.applicationInfo.targetSdkVersion.toString() }
         val port = hostPort
@@ -66,6 +76,22 @@ class CleartextProbe : Instrumentation() {
         } finally {
             SessionRegistry.close(session)
         }
+    }
+
+    // T3-20: the resolved-address check. Without a port, or when the check itself throws, it reports no done.
+    private fun resolvedAddress(results: Bundle) {
+        val port = hostPort
+        if (port == null) {
+            results.putString("resolved-private", "failed-NoPort")
+        } else {
+            try {
+                ResolvedAddressCheck(port, ::canary).run(results)
+                results.putString("done", "yes")
+            } catch (error: Exception) {
+                results.putString("resolved-private", "failed-${error.javaClass.simpleName}")
+            }
+        }
+        finish(Activity.RESULT_OK, results)
     }
 
     private fun publicVectors(results: Bundle) {
@@ -110,4 +136,8 @@ class CleartextProbe : Instrumentation() {
     private fun canary(): MediaBrowserAuthorization =
         MediaBrowserAuthorization.parse(MediaBrowserHeader.build("OctaveProbe", "Emulator", "cleartext-probe", "0.0.0", "canary0123456789"))
             ?: throw IllegalStateException("canary")
+
+    private companion object {
+        const val RESOLVED_ADDRESS = "resolved-address"
+    }
 }

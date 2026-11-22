@@ -3,7 +3,8 @@
 // suites and the host checks, under Hermes) and judge them. judgeConformance() is the oracle; the lines go to
 // release-evidence/tv/e2e-conformance.txt. The e2e APK is built first when it is missing or older than its sources.
 // Before installing, the e2e APK's network security is judged (T3-15 item 1); after the conformance run, the module's
-// cleartext probe runs (T3-15 item 2, scripts/tv-cleartext.mjs). An explicit [apk] needs its probe APK too: the second
+// cleartext probe runs (T3-15 item 2, scripts/tv-cleartext.mjs), then the probe's resolved-address check (T3-20,
+// scripts/tv-resolved-address.mjs). An explicit [apk] needs its probe APK too: the second
 // argument, or the one pnpm tv:e2e:build wrote; the probe is never skipped.
 // Run: ANDROID_SERIAL=<emulator> node scripts/tv-e2e.mjs [apk [probe-apk]]   (pnpm tv:e2e)
 import { spawnSync } from "node:child_process";
@@ -15,6 +16,7 @@ import { androidSdk, newestBuildTool, platformTool } from "./tv-android-sdk.mjs"
 import { judgeNetworkSecurity, readNetworkSecurity } from "./tv-apk-check.mjs";
 import { E2E_APK, PROBE_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { expectedPublicCount, runCleartextProbe } from "./tv-cleartext.mjs";
+import { runResolvedAddressProbe } from "./tv-resolved-address.mjs";
 
 const FIXTURES = fileURLToPath(new URL("../packages/core/tests/fixtures/", import.meta.url));
 const EVIDENCE = fileURLToPath(new URL("../release-evidence/tv/", import.meta.url));
@@ -197,6 +199,13 @@ async function main(args) {
   }
   const publicTotal = expectedPublicCount();
   console.log(`tv e2e: cleartext private-lan ok, loopback ok, public ${probe.report["public-refused"]}/${publicTotal} refused`);
+
+  const resolvedProbe = await runResolvedAddressProbe({ adbPath, serial, apk: probeApk, evidenceDir: EVIDENCE });
+  if (resolvedProbe.errors.length > 0) {
+    for (const error of resolvedProbe.errors) console.error(error);
+    process.exit(1);
+  }
+  console.log("tv e2e: resolved-address private ok, mixed ok, public refused");
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));
