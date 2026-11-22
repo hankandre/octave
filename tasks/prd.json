@@ -1174,10 +1174,10 @@
             "The wire job stays green on the PR head, and docs/security.md and docs/commands.md say what the wire evidence holds in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:wire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 2f8456f1: evidence stand-ins, read-back, clear-first, log streaming with interval markers, signal restore, CLI test. pnpm check: 1 frozen test fails (tv-wire-evidence.test.ts:400, wrong fixture host). pnpm tv:wire on own emulator: 8 pairs pass. CI wire job pending (Ship)."
         },
         {
           "id": "T3-27",
