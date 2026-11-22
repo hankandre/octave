@@ -90,6 +90,12 @@ A Product Owner pass (`.claude/workflows/product-owner.js`, Fable 5.2) triages `
 - **Scope edits.** The Product Owner approves an acceptance edit that changes scope only (a path, a split, a dependency, what a task covers): the edit operation gives `scope`, its reason, and needs no approval file.
 - **Owner edits.** An acceptance edit that changes on-screen wording or copy, look, or product direction needs an owner approval file naming the task (`owner_approval`: a `docs/specs/decisions-*.md` or `docs/decisions/*.md` file), and so does any edit of `human` or `verify`.
 
+**Review follow-ups** (owner, 2026-11-22, `docs/specs/decisions-process.md`; it relaxes the rule of 2026-11-21 that security lows are fixed promptly):
+
+- A reviewer's small findings are fixed in the same pull request, not logged.
+- A finding that is left and gates nothing goes to `tasks/backlog.jsonl`, and a Product Owner pass puts it in one hardening task per phase, not in a task of its own.
+- Only a finding that opens a path into a self-hoster's home network, or leaks local information (a LAN address, a serial, a hostname, a credential), gates an install on a real TV. A pass that adds such a gate logs which of the two holds.
+
 A pass logs each decision, each scope edit with its reason, in `tasks/product-owner-log.md` and commits with a `Product-Owner-Pass:` trailer; `pnpm lint:flow` fails a task list change without both. The PR lists every decision; the owner can veto any of it, and the next pass reverts a veto and logs it.
 
 ## The task flow, in the order it runs
@@ -134,7 +140,7 @@ The PR or plan records the commands run and their results. "Tests pass" without 
 
 ### 6. Independent review (fresh context)
 
-The implementer never reviews its own work. Run one review round. Fix critical, high, and medium findings; log lows in the active plan. A separate agent with a fresh context reviews the diff against the task and plan, looking for:
+The implementer never reviews its own work. Run one review round. Fix critical, high, and medium findings, and fix a small low in the same pull request; what is left follows the review follow-ups rule in §2c. A separate agent with a fresh context reviews the diff against the task and plan, looking for:
 
 - correctness bugs and missed edge cases
 - violations of the invariants in `ARCHITECTURE.md` and the dependency rules in `DOMAINS.md`
