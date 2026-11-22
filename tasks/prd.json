@@ -1600,7 +1600,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 964dc3b7 (T3-31). pnpm check green; tv:e2e on own emulator. On apps/tv/dist/e2e/octave-tv-e2e.apk: tv apk dex passes (5310 classes, 222 sink refs, 14 entry points, 0 outside client); tv inspector passes (1 dex, R8 release with its mapping); tv native inspector passes (44 libs, 2 ABIs); pg_map_id a005bc06e5db632695193179114b6dc53836e0053a175d5ba50f1afdf97cdaae. Full lines: plan 015. No list changed. Item 4 CI half at Ship."
+          "evidence": "commit cfd4c6ef (T3-31). pnpm check green; tv:e2e on own emulator. Printed for apps/tv/dist/e2e/octave-tv-e2e.apk, mapping pg_map_id a005bc06e5db632695193179114b6dc53836e0053a175d5ba50f1afdf97cdaae: \"tv apk dex: apps/tv/dist/e2e/octave-tv-e2e.apk passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)\"; \"tv inspector: ...e2e.apk passes (1 dex, 5310 classes, R8 release with its mapping; ...\"; \"tv native inspector: ...e2e.apk passes (44 libraries in 2 ABIs; ...\". Full lines: plan 015. No list changed."
         },
         {
           "id": "T3-37",
