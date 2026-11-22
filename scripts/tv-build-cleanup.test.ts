@@ -23,14 +23,17 @@ function system({ status = 0, probes = ["session-debug-androidTest.apk"], bundle
     sourceHash: () => "hash",
     gradle: (_tasks, env) => {
       put(s.releaseApk, "apk");
+      put(s.releaseMapping, "# pg_map_id: abc\n");
       if (bundle) put(join(s.bundleDir, "react", "release", "index.android.bundle"), env.OCTAVE_E2E === "1" ? "x OCTAVE_E2E x" : "x");
       for (const name of probes) put(join(s.probeBuildDir, name), "probe");
       return { status };
     },
     releaseApk: join(root, "android/app/build/outputs/apk/release/app-release.apk"),
+    releaseMapping: join(root, "android/app/build/outputs/mapping/release/mapping.txt"),
     bundleDir: join(root, "android/app/build/generated/assets"),
     probeBuildDir: join(root, "modules/session/android/build/outputs/apk/androidTest/debug"),
     e2eApk: join(root, "dist/e2e/octave-tv-e2e.apk"),
+    e2eMapping: join(root, "dist/e2e/octave-tv-e2e.mapping.txt"),
     e2eStamp: join(root, "dist/e2e/octave-tv-e2e.hash"),
     probeApk: join(root, "dist/e2e/octave-session-probe.apk"),
   };
@@ -86,6 +89,8 @@ describe("builds that succeed", () => {
     expect(readFileSync(s.e2eApk, "utf8")).toBe("apk");
     expect(readFileSync(s.probeApk, "utf8")).toBe("probe");
     expect(readFileSync(s.e2eStamp, "utf8")).toBe("hash\n");
+    expect(existsSync(s.releaseMapping)).toBe(false);
+    expect(readFileSync(s.e2eMapping, "utf8")).toBe("# pg_map_id: abc\n");
   });
 
   it("leaves a release build at the release path", () => {
