@@ -33,7 +33,7 @@ Agents read the short map first and load detail only when needed.
 | `tasks/backlog.jsonl` | Deferred and newly found work, one JSON object per line (§2a) | living |
 | `docs/specs/<TASK-ID>.md` | Per-task spec written by `refiner`, with the `spec-checker` verdict appended; the first spec creates the folder | one per task |
 | `docs/specs/<TASK-ID>.tests.json` | The frozen-test manifest the `test-writer` commits with the failing tests (§2b) | one per task |
-| `tasks/product-owner-log.md` | One dated section per Product Owner pass: each decision, its backlog entry, its approval, its reason (§2c) | living |
+| `tasks/product-owner-log.md` | One dated section per Product Owner pass and per inline ruling: each decision, its backlog entry, its approval, its reason (§2c) | living |
 | `docs/plans/active/`, `docs/plans/completed/` | Execution plans for work that needs more than one session; the first plan creates the folder | one per initiative |
 | `docs/decisions/NNNN-slug.md` | Decision records for choices that would otherwise be re-litigated; history, never rewritten (later changes are dated amendments) | ~1 page each |
 
@@ -78,7 +78,7 @@ After the spec check and before implementation, `test-writer` turns each accepta
 
 - The manifest lists the frozen `files` and one entry per acceptance item: a `run` (an argument list starting with `node` or `pnpm` that selects only that item's tests) or a `gate`. A gate is for an item that cannot be a failing test (`owner`, `device`, `review`, `ci`, or `met` for one already true on `main`); the spec's Acceptance row must say `gate: <kind>`, and `scripts/check-red.mjs` refuses any other.
 - The **red gate** (`node scripts/check-red.mjs <ID>`) runs every `run`. If one passes before any implementation exists, the run stops with `tests-green`: either the behavior exists (the refiner marks it a `met` gate) or the test is weak (fix it and rerun from the Tests step, which amends the freeze commit). A broken manifest is retried once, then blocks the task.
-- The implementer, the follow-ups step and the CI fix may not change or delete a frozen file; they add tests in new files. A wrong frozen test is returned in `frozenTestProblems`, and the Product Owner (Fable 5.2) rules once per task: to change a test it commits with `Frozen-Test-Change: <path> -- <reason>`, and the PR's Frozen tests section names the change.
+- The implementer, the follow-ups step and the CI fix may not change or delete a frozen file; they add tests in new files. A wrong frozen test is returned in `frozenTestProblems`, and the Product Owner (Fable 5.2) rules once per task: to change a test it commits with `Frozen-Test-Change: <path> -- <reason>`, and the PR's Frozen tests section names the change. The ruling is also logged in `tasks/product-owner-log.md`.
 - `pnpm lint:flow` (`scripts/check-flow.mjs`) runs after every implementer step and in CI. It fails when a frozen file differs from the test writer's or Product Owner's version. It reads only git history, so it cannot see an amend into the freeze commit; the run pins the frozen blobs from the red gate and stops on a moved one. CI has no such pin.
 - After the follow-ups, `check-red.mjs --expect green` reruns every `run`, so a command that `pnpm check` does not cover cannot ship red.
 - A branch implemented before this flow runs with `preFlow: true`; CI requires no manifest.
@@ -96,15 +96,15 @@ A Product Owner pass (`.claude/workflows/product-owner.js`, Fable 5.2) triages `
 - A finding that is left and gates nothing goes to `tasks/backlog.jsonl`, and a Product Owner pass puts it in one hardening task per phase, not in a task of its own.
 - Only a finding that opens a path into a self-hoster's home network, or leaks local information (a LAN address, a serial, a hostname, a credential), gates an install on a real TV. A pass that adds such a gate logs which of the two holds.
 
-A pass logs each decision, each scope edit with its reason, in `tasks/product-owner-log.md` and commits with a `Product-Owner-Pass:` trailer; `pnpm lint:flow` fails a task list change without both. The PR lists every decision; the owner can veto any of it, and the next pass reverts a veto and logs it.
+An inline ruling of a task run is logged in the same file, but without a `Product-Owner-Pass:` trailer, because it changes no task list. A pass logs each decision, each scope edit with its reason, in `tasks/product-owner-log.md` and commits with a `Product-Owner-Pass:` trailer; `pnpm lint:flow` fails a task list change without both. The PR lists every decision; the owner can veto any of it, and the next pass reverts a veto and logs it.
 
 ## The task flow, in the order it runs
 
 1. **Product Owner pass.** Backlog triage into the task list, with a log line and a veto for the owner. Outside the per-task run; it runs when the backlog has untaken entries.
 2. **Spec.** `refiner` writes `docs/specs/<ID>.md`.
-3. **Check.** A fresh `spec-checker` appends its verdict; only critical or high issues block.
+3. **Check.** A fresh `spec-checker` appends its verdict; only critical or high issues block. Its technical, placement, dependency and scope questions go to the inline Product Owner step.
 4. **Tests.** `test-writer` commits the failing tests and the manifest. Red gate: the run stops with `tests-green` if one already passes.
-5. **Implement.** `implementer` or `native-engineer` makes the tests pass without changing them and runs the verify skill. Frozen-test gate after the step.
+5. **Implement.** `implementer` or `native-engineer` makes the tests pass without changing them and runs the verify skill. It stops at its first technical, placement, dependency or scope question and is rerun with the inline Product Owner step's ruling. Frozen-test gate after the step.
 6. **Review.** One review round, with a `guardian` on high-risk paths; the reviewer also judges whether the frozen tests test their items. The follow-ups step fixes and logs, then the frozen-test gate and the green gate (`check-red.mjs --expect green`) run. The green gate decides from check-red's JSON, not from the relayed exit code.
 7. **Ship.** The PR, with a Frozen tests section, auto-merge on green CI (`pnpm lint:flow` runs in CI); the run stops on a denied command, `tests-green` or `frozen-tests`.
 
@@ -216,7 +216,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 | Codebase search, CI log triage, commit messages, watching PRs, doc-gardening detection | **Haiku 5.5** | `scout`, `ci-triage` |
 | Refine + spec and spec check, routine tasks | **Opus 5.5** | `refiner`, `spec-checker` |
 | Refine + spec and spec check, high-risk tasks (native, security, architecture, decision records) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
-| Backlog triage, priorities, scope-level acceptance edits, and frozen-test rulings (T1-12); never task specs | **Fable 5.2** | `product-owner` |
+| Backlog triage, priorities, scope-level acceptance edits, frozen-test rulings (T1-12), and inline rulings on technical, placement, dependency and scope questions (T1-16); never task specs | **Fable 5.2** | `product-owner` |
 | Failing acceptance tests before implementation | **Sonnet 5.5**; Opus 5.5 for Kotlin | `test-writer` |
 | Kotlin, Expo native modules, Media3, the native HTTP client | **Opus 5.5** | `native-engineer` |
 | TypeScript implementation and tests | **Sonnet 5.5** | `implementer` |
@@ -247,7 +247,8 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 - The run rebases a task branch that is behind `origin/main` (`.claude/workflows/branch-sync.mjs`, after Spec and before Check), keeps the freeze commit where it was, and never merges main into a task branch. A branch that already holds a merge of main is blocked, and the message names the merge commit. A conflict, uncommitted changes to tracked files, or a rebase that would change a frozen file also block the task, and the branch stays as it was; commit or discard the changes and rerun.
 - `from: "ship"` (one task) resumes at Ship. Use it only for a task whose review round ran in an earlier run: nothing enforces that, and the run does not review again. It skips every phase before Ship, runs the branch sync, then, unless `preFlow`, the frozen-test gate and the green gate, and ships only when both pass. Pass `evidence`, any `ciSteps`, and `approvedFrozen` when a Product Owner ruling changed a frozen file.
 - When a task ends, whatever its outcome, the run brings down the fixture servers its worktree started (`.claude/workflows/fixtures-down.mjs`), reports them in the task's `fixtures` field, and never stops another checkout's Compose project.
-- The run stops early on a denied command (a denied fixture teardown included), on a test that passes before implementation (`tests-green`), and on a changed frozen test (`frozen-tests`). `.claude/workflows/product-owner.js` runs a Product Owner pass.
+- Check and every guarded work step (Implement, follow-ups, CI fix) may return `productOwnerQuestions` (kind, the rule it concerns, the question), apart from `frozenTestProblems`. A work step ends at its first question, with no retry and no escalation, and is rerun with the ruling. The inline Product Owner step (`product-owner`, Fable) rules on technical, placement, dependency and scope questions, and the run goes on. A look, wording or direction question parks the task for the owner, and a question only an acceptance or task-list edit can answer (`needsPass`) blocks it with a backlog line. Every ruling, a frozen-test ruling included, is a dated section of `tasks/product-owner-log.md` on the task branch (`## <date>, <ID> ruling, <phase>`); `.claude/workflows/ruling-log.mjs` checks that the commit holds it, and a ruling with no log entry ends `ruling-unlogged`. The log merges with `merge=union` on a rebase. On a second return about the same rule the step is given the first ruling and must probe the fact (run the command or read the file) and quote what it found; a third return blocks the task. The run is also capped at `MAX_RULINGS` (6) inline rulings, counted per task: a run starts from the task's own sections in the log, so a resumed run keeps counting. One frozen-test ruling per task stays. The tests are `.claude/workflows/task-rulings.test.mjs` (`pnpm test:workflow`).
+- The run stops early on a denied command (a denied fixture teardown included), on a test that passes before implementation (`tests-green`), on a changed frozen test (`frozen-tests`), and on an inline ruling with no log entry (`ruling-unlogged`). `.claude/workflows/product-owner.js` runs a Product Owner pass.
 
 Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatter:
 
@@ -263,7 +264,7 @@ Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatte
 | `guardian` | opus | Review of policy, native-method, token, and redaction changes |
 | `planner` | opus | Execution plans and decision records |
 | `test-writer` | sonnet | Failing acceptance tests and the manifest, before implementation |
-| `product-owner` | fable | Backlog triage, priorities, scope-level acceptance edits, and frozen-test rulings |
+| `product-owner` | fable | Backlog triage, priorities, scope-level acceptance edits, frozen-test rulings, and inline rulings on task-run questions |
 
 What the Claude Code docs say (https://code.claude.com/docs/en/sub-agents): the frontmatter `model` field accepts the aliases `sonnet`, `opus`, `haiku`, `fable`, a full model ID, or `inherit`; the spawn-time `model` parameter wins over the frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's model; the spawn-time parameter takes only an alias.
 
