@@ -45,7 +45,8 @@ export async function loadHomeLists(
   signal?: AbortSignal,
 ): Promise<{ lists: HomeLists; failed: HomeListFailure[] }> {
   const settled = await Promise.allSettled(names.map((name) => READ[name](source, signal)));
-  if (signal?.aborted) throw signal.reason;
+  // The host types of the core do not declare `reason`.
+  if (signal?.aborted) throw (signal as { reason?: unknown }).reason;
   const lists: Record<string, unknown> = {};
   const failed: HomeListFailure[] = [];
   settled.forEach((result, index) => {
