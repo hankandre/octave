@@ -1,0 +1,101 @@
+{
+  "task": "T3-08",
+  "files": [
+    "apps/tv/src/design/rows/media-row.test.tsx",
+    "apps/tv/src/design/rows/row-list.test.tsx",
+    "apps/tv/src/design/rows/media-card.test.tsx",
+    "apps/tv/src/design/rows/test-support/flash-list-double.tsx",
+    "apps/tv/src/design/rows/test-support/fixtures.ts"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/rows/media-row.test.tsx",
+        "-t",
+        "T3-08 item 1:"
+      ]
+    },
+    {
+      "item": 2,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/rows/media-row.test.tsx",
+        "-t",
+        "T3-08 item 2:"
+      ]
+    },
+    {
+      "item": 3,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/rows/row-list.test.tsx",
+        "-t",
+        "T3-08 item 3:"
+      ]
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/rows/media-row.test.tsx",
+        "-t",
+        "T3-08 item 4:"
+      ]
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/rows/media-row.test.tsx",
+        "-t",
+        "T3-08 item 5:"
+      ]
+    },
+    {
+      "item": 6,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/rows/media-card.test.tsx",
+        "-t",
+        "T3-08 item 6:"
+      ]
+    },
+    {
+      "item": 7,
+      "gate": "review",
+      "why": "Jest has no focus engine and T3-10's required emulator run comes after T3-09, which depends on this task. The reviewer checks one frozen test per rule (items 1 to 6) and the PR's milestone 5 emulator focus log."
+    }
+  ]
+}
