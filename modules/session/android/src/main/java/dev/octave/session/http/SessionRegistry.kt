@@ -63,4 +63,7 @@ object SessionRegistry {
     internal fun take(session: SessionId): SessionEntry? = sessions.remove(session)
 
     internal fun entry(session: SessionId): SessionEntry? = sessions[session]
+
+    // The number of sessions held; no id and no entry (T3-25, for the cap tests).
+    internal fun count(): Int = sessions.size
 }
