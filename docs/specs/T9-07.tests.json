@@ -1,0 +1,27 @@
+{
+  "task": "T9-07",
+  "files": ["packages/core/src/safe-reason-gaps.test.ts"],
+  "items": [
+    {
+      "item": 1,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/safe-reason-gaps.test.ts", "-t", "T9-07 item 1"]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/safe-reason-gaps.test.ts", "-t", "T9-07 item 2"]
+    },
+    {
+      "item": 3,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/safe-reason-gaps.test.ts", "-t", "T9-07 item 3"]
+    },
+    {
+      "item": 4,
+      "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/safe-reason-gaps.test.ts", "-t", "T9-07 item 4"]
+    },
+    {
+      "item": 5,
+      "gate": "review",
+      "why": "The reviewer checks that each verbatim backlog string (entries 66 to 69) is in safe-reason-gaps.test.ts, that git diff --name-status origin/main...HEAD edits none of redact-canary, redact-performance, safe-reason and redact tests, that the new performance file holds the listed inputs, and the diff of tasks/backlog.jsonl holds the four leftover lines (items 1 and 3 each require one; the single-label line says the R2 label list narrows today's hiding). A performance test is green before the change, so it cannot be red."
+    }
+  ]
+}
