@@ -19,6 +19,7 @@ const PROVIDER = "Lcom/facebook/react/modules/network/OkHttpClientProvider;";
 const SET_FACTORY = `invoke-static {v0}, ${PROVIDER}.setOkHttpClientFactory:(Lcom/facebook/react/modules/network/OkHttpClientFactory;)V // method@0000`;
 const GET_CLIENT = `invoke-static {}, ${PROVIDER}.getOkHttpClient:()Lvr1; // method@0000`;
 const NETWORKING_GET = "invoke-static {}, Lcom/swmansion/worklets/networking/Networking;.a:()Lvr1; // method@0000";
+const CLEAR_COOKIES = "invoke-virtual {v0}, Lcom/facebook/react/modules/network/NetworkingModule;.clearCookies:(Lcom/facebook/react/bridge/Callback;)V // method@0000";
 const NO_SINK = "invoke-static {}, Ljava/lang/System;.nanoTime:()J // method@0000";
 
 // R8's merged lambda group as the release mapping writes it (`z6`, `u3`): a synthesized section, one lambda framed by
@@ -175,6 +176,36 @@ describe("T3-19 review fix: code R8 attributes only to a merged lambda group's s
       const r = await run(true, [[3, "check-cast v0, Lvr1; // type@0000"]]);
       expect(r.code, r.out).toBe(1);
       expect(errors(r).some((line) => line.startsWith(`ERROR tv apk dex: D1 ${GROUP}`)), r.out).toBe(true);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "an instruction in the group that no member line covers follows the same rules (entry 17's class-line fallback)",
+    async () => {
+      const hook = await run(false, [[50, SET_FACTORY]]);
+      expect(hook.code, hook.out).toBe(1);
+      expect(errors(hook).some((line) => line.startsWith(`ERROR tv apk dex: D4 ${GROUP}`) && line.includes("OkHttpClientProvider.setOkHttpClientFactory")), hook.out).toBe(true);
+
+      const listed = await run(true, [[50, CLEAR_COOKIES]]);
+      expect(listed.code, listed.out).toBe(1);
+      expect(errors(listed).some((line) => line.includes(`D4 ${GROUP} (R8's merged lambda class`) && line.includes("references com.facebook.react.modules.network.NetworkingModule")), listed.out).toBe(true);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "an unresolved site in a class whose dev.octave. frame is only an inner frame is judged as Octave's code (D4)",
+    async () => {
+      const merged = [
+        "com.example.Merged -> zm:",
+        "    1:4:void dev.octave.tv.Inlined.run():8:8 -> a",
+        "    1:4:void com.example.Merged.outer():3 -> a",
+      ].join("\n");
+      const dump = composeDump() + groupDump([[20, CLEAR_COOKIES]]).replaceAll("Lzg;", "Lzm;").replaceAll("zg.invoke", "zm.b");
+      const r = await runDex({ dump, mapping: `${composeMapping()}${merged}\n` });
+      expect(r.code, r.out).toBe(1);
+      expect(errors(r).some((line) => line.includes("D4 unresolved:zm.b") && line.includes("references com.facebook.react.modules.network.NetworkingModule")), r.out).toBe(true);
     },
     TIMEOUT,
   );
