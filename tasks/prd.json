@@ -527,10 +527,10 @@
             "node --test .claude/workflows/task.test.mjs covers each of the three, and WORKFLOW.md states the rebase rule and the teardown in the same PR"
           ],
           "verify": "pnpm check && node --test .claude/workflows/task.test.mjs",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 1e31040f: branch-sync.mjs rebases resumed branches (no merge, freeze kept, merge named); readGate scans for result objects; fixtures-down.mjs tears down per-worktree Compose project via withTeardown. pnpm check green (87 workflow tests), check-red green 1-4, real teardown verified."
         }
       ]
     },
