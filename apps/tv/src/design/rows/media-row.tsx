@@ -99,8 +99,9 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "tra
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       memory.set(shownId.current, event.nativeEvent.contentOffset.x);
+      router?.scrolled(shownId.current);
     },
-    [memory],
+    [memory, router],
   );
 
   const onFocusCard = useCallback(

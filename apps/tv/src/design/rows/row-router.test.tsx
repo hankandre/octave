@@ -59,3 +59,24 @@ describe("row router", () => {
     expect(destinations.b).toEqual([]);
   });
 });
+
+describe("row router, scrolled", () => {
+  it("points the neighbours again when the focused row scrolls after its focus event", () => {
+    const { memory, router, destinations, views } = setup();
+    memory.set("a", 0);
+    router.focused("a", 16);
+    memory.set("a", 400);
+    router.scrolled("a");
+    const x = cardCentre("poster", 16, 400 / canvasScale());
+    expect(destinations.b).toEqual([views[`b-${nearestCardIndex("thumb", 50, 0, x)}`]]);
+  });
+
+  it("ignores a scroll of a row that does not hold the focused card", () => {
+    const { memory, router, destinations } = setup();
+    router.focused("a", 5);
+    const before = destinations.b;
+    memory.set("c", 900);
+    router.scrolled("c");
+    expect(destinations.b).toBe(before);
+  });
+});
