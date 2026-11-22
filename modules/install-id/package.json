@@ -1,0 +1,8 @@
+{
+  "name": "@octave/install-id",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "description": "Octave's install id store (T4-09): one function, keep(candidate), which keeps one version 4 UUID in the app's no-backup directory.",
+  "main": "src/index.ts"
+}
