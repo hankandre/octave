@@ -95,6 +95,7 @@ const calls: Record<string, Call> = {
   "itemCollections": (g, s) => g.itemCollections("item-1", s),
   "collectionItems": (g, s) => g.collectionItems("collection-1", s),
   "latestInLibrary": (g, s) => g.latestInLibrary("library-1", s),
+  "latestItems": (g, s) => g.latestItems(s),
   "libraryGenres": (g, s) => g.libraryGenres("library-1", s),
   "libraryItems": (g, s) => g.libraryItems("library-1", BROWSE, s),
   "searchHints": (g, s) => g.searchHints("term", s),

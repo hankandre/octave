@@ -277,6 +277,7 @@ const calls: Record<string, Call> = {
   "itemCollections": (g) => g.itemCollections("item-1"),
   "collectionItems": (g) => g.collectionItems("collection-1"),
   "latestInLibrary": (g) => g.latestInLibrary("library-1"),
+  "latestItems": (g) => g.latestItems(),
   "libraryGenres": (g) => g.libraryGenres("library-1"),
   "libraryItems": (g) => g.libraryItems("library-1", BROWSE),
   "searchHints": (g) => g.searchHints("term"),
