@@ -85,13 +85,15 @@ const HOST = new RegExp(
 );
 // user:pass@host, the user info running to the last @ before whitespace.
 const USER_INFO =
-  /(?<![\w.:@%\/-])[^\s@:"'()\[\],;]{1,64}:[^\s]{0,256}@[^\s"'),;]+/g;
+  /(?<![\w.:@%\/-])[^\s:"'()\[\],;]{1,64}:[^\s]{0,256}@[^\s"'),;]+/g;
 
 // The only way a player failure reason reaches the screen. Native errors carry
 // third-party text, so beyond redaction this hides addresses and file paths.
 export function safeReason(value: string): string {
-  const text = hidePaths(redactText(value).replace(ADDRESS, "[address]"))
-    .replace(USER_INFO, "[address]")
+  // User info goes before paths: a password may hold "/" and would start one.
+  const text = hidePaths(
+    redactText(value).replace(ADDRESS, "[address]").replace(USER_INFO, "[address]"),
+  )
     .replace(HOST, "[address]")
     .trim();
   return text.length > MAX_LENGTH ? `${text.slice(0, MAX_LENGTH)}…` : text;
