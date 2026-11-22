@@ -27,11 +27,11 @@
 ## Surprises & discoveries
 
 - Local e2e dex check: 5310 classes, 222 sink references, same as the release APK; no row was needed for the e2e APK (item 3).
-- Pass lines of the three checks on the e2e APK (`apps/tv/dist/e2e/octave-tv-e2e.apk`, mapping `# pg_map_id: a005bc06e5db632695193179114b6dc53836e0053a175d5ba50f1afdf97cdaae`), exactly as printed:
-  - `tv apk dex: apps/tv/dist/e2e/octave-tv-e2e.apk passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)`
-  - `tv inspector: apps/tv/dist/e2e/octave-tv-e2e.apk passes (1 dex, 5310 classes, R8 release with its mapping; no class of expo.modules.kotlin.devtools, expo.modules.devlauncher, expo.modules.devmenu, expo.modules.networkaddons kept or renamed)`
-  - `tv native inspector: apps/tv/dist/e2e/octave-tv-e2e.apk passes (44 libraries in 2 ABIs; libreactnative.so defines the C++ inspector's network dispatcher in each and nothing calls it; no debugger-only string)`
-  - Re-run on the built APK after the review fix with `node scripts/tv-apk-dex.mjs`, `tv-apk-inspector.mjs` and `tv-apk-native-inspector.mjs` given the e2e APK and mapping (the same arguments `pnpm tv:e2e` passes); the lines match the run of `pnpm tv:e2e`.
+- Pass lines of the three checks on the e2e APK, as `pnpm tv:e2e` printed them on an own emulator at `964dc3b7` (mapping `# pg_map_id: a005bc06e5db632695193179114b6dc53836e0053a175d5ba50f1afdf97cdaae`). `pnpm tv:e2e` prints the APK path absolute; the checkout's directory is written here as `<checkout>`, and nothing else is changed:
+  - `tv apk dex: <checkout>/apps/tv/dist/e2e/octave-tv-e2e.apk passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)`
+  - `tv inspector: <checkout>/apps/tv/dist/e2e/octave-tv-e2e.apk passes (1 dex, 5310 classes, R8 release with its mapping; no class of expo.modules.kotlin.devtools, expo.modules.devlauncher, expo.modules.devmenu, expo.modules.networkaddons kept or renamed)`
+  - `tv native inspector: <checkout>/apps/tv/dist/e2e/octave-tv-e2e.apk passes (44 libraries in 2 ABIs; libreactnative.so defines the C++ inspector's network dispatcher in each and nothing calls it; no debugger-only string)`
+  - The same run then printed `tv e2e: url 202/202, device-id 13/13, host ok`, `tv e2e: cleartext private-lan ok, loopback ok, public 60/60 refused` and `tv e2e: resolved-address private ok, mixed ok, public refused`, exit 0. `node scripts/tv-apk-dex.mjs`, `tv-apk-inspector.mjs` and `tv-apk-native-inspector.mjs`, given the e2e APK and mapping as relative paths, print the same three lines with the relative path.
 - Negative control (mapping cut to 100 lines, dex check on the built e2e APK, 45 `ERROR` lines; the first and last, and one D3 line):
   - `ERROR tv apk dex: D2 unresolved:a5.c holds S6 (another platform HTTP stack, player URL, download manager or network-bound socket) at a5.c line 2, and no APK_NETWORK_ENTRY_POINTS row covers it; add a row with its reason, or remove the dependency (and 2 more like it)`
   - `ERROR tv apk dex: D3 row N1 names com.facebook.react.modules.network.NetworkingModule, which holds none of S1 in the APK; remove it from the row, or correct the row`
