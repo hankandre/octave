@@ -104,6 +104,58 @@ function wireLines(dump) {
   });
 }
 
+// The device's adb connection. Every `adb reverse` lives on it, so when the connection drops (adbd restarts or the
+// host's transport reconnects) every reverse is gone and the app's calls to its pair ports fail as network errors:
+// CI run 45002313854 failed so (timeout=network, cancelled=network, the private-LAN pair unreachable, no request reaching
+// any recorder after the stall), and `adb reconnect device` mid-run reproduces those words locally. What dropped the
+// connection on CI is unverified; its log shows the device "offline" and "not found" seconds before the run. So the
+// runner starts only once adbd has run for ADBD_STEADY_S (a mitigation, not a proven fix), and treats a run whose adbd
+// changed or whose reverses are gone at its end as void: it runs once more, never more.
+export const ADBD_STEADY_S = 60;
+const ADBD_WAIT_MS = 180_000;
+
+// `ps -A -o PID,ELAPSED,NAME` output -> { pid, elapsed } for adbd (elapsed in seconds), or null. ELAPSED is
+// [[dd-]hh:]mm:ss.
+export function adbdOf(psOutput) {
+  for (const line of psOutput.split("\n")) {
+    const fields = line.trim().split(/\s+/);
+    if (fields.length !== 3 || fields[2] !== "adbd" || !/^[0-9]+$/.test(fields[0])) continue;
+    const match = /^(?:(?:([0-9]+)-)?([0-9]+):)?([0-9]+):([0-9]+)$/.exec(fields[1]);
+    if (match === null) continue;
+    const [days, hours, minutes, seconds] = match.slice(1).map((part) => Number(part ?? 0));
+    return { pid: Number(fields[0]), elapsed: ((days * 24 + hours) * 60 + minutes) * 60 + seconds };
+  }
+  return null;
+}
+
+// `adb reverse --list` output and the device ports the runner reversed -> the ports no longer listed.
+export function missingReverses(listOutput, devicePorts) {
+  const listed = new Set();
+  for (const line of listOutput.split("\n")) {
+    const match = /^\S+\s+tcp:([0-9]+)\s/.exec(line.trim() + " ");
+    if (match !== null) listed.add(Number(match[1]));
+  }
+  return devicePorts.filter((port) => !listed.has(port));
+}
+
+// The run-void errors from adbd before and after the run and the reverses missing at its end; empty when steady.
+export function adbRestartErrors({ before, after, missing, reversed }) {
+  const errors = [];
+  if (before === null || after === null || before.pid !== after.pid || after.elapsed < before.elapsed) {
+    errors.push("ERROR tv wire: the device's adb daemon restarted during the run, which drops every adb reverse; the run is void");
+  }
+  if (missing.length > 0) {
+    errors.push(`ERROR tv wire: ${missing.length} of ${reversed} adb reverse(s) were gone at the end of the run (the adb connection dropped); the run is void`);
+  }
+  return errors;
+}
+
+// `dumpsys activity activities` output -> the package of the top resumed activity, or "unknown".
+export function resumedPackage(dumpsys) {
+  const match = /topResumedActivity=ActivityRecord\{\S+ \S+ ([A-Za-z0-9_.]+)\//.exec(dumpsys);
+  return match === null ? "unknown" : match[1];
+}
+
 async function main(args) {
   const options = parseArgs(args);
   const list = readWireList();
@@ -146,67 +198,107 @@ async function main(args) {
   const install = adb("install", "-r", E2E_APK);
   if (install.status !== 0) fail("adb install of the e2e APK failed");
 
+  const adbd = () => adbdOf(shell("ps", "-A", "-o", "PID,ELAPSED,NAME").stdout ?? "");
   const secrets = new Set([list.canary, list.password]);
   for (const target of REAL_TARGETS) if (credentials[`${target}_password`]) secrets.add(credentials[`${target}_password`]);
-  const mock = await startMock({ canary: list.canary, user: list.user, password: list.password, canaryDevicePort: list.canaryPort });
-  const proxy = await startProxyListener();
-  const recorders = new Map();
-  const reversed = [];
-  const reverse = (devicePort, hostPort) => {
-    const done = adb("reverse", `tcp:${devicePort}`, `tcp:${hostPort}`);
-    if (done.status !== 0) throw new Error(`adb reverse failed for device port ${devicePort}`);
-    reversed.push(devicePort);
-  };
-  let dump = [];
-  try {
-    for (const pair of selected) {
-      let upstream;
-      let swap;
-      if (pair.target === "mock") {
-        const port = pair.test === "transport-redirect" ? mock.ports.redirector : pair.test === "transport-private-lan-and-proxy" ? mock.ports.privateLan : mock.ports.main;
-        upstream = { port };
-      } else {
-        const url = credentials[`${pair.target}_url`];
-        if (!url) throw new Error(`no fixture credentials for ${pair.target}; run pnpm fixture:setup`);
-        upstream = { port: Number(new URL(url).port) };
-        swap = {
-          from: { user: list.user, password: list.password },
-          to: { user: credentials[`${pair.target}_username`], password: credentials[`${pair.target}_password`] },
-        };
-      }
-      const recorder = await startRecorder({ upstream, secrets, swap });
-      recorders.set(`${pair.test} ${pair.target}`, recorder);
-      reverse(pair.devicePort, recorder.port);
-    }
-    reverse(list.canaryPort, mock.ports.canaryOrigin);
-    reverse(list.proxyPort, proxy.port);
-    shell("settings", "put", "global", "http_proxy", `127.0.0.1:${list.proxyPort}`);
 
-    shell("am", "force-stop", ANDROID_APPLICATION_ID);
-    shell("logcat", "-c");
-    const resolved = shell("cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN", "-c", LEANBACK, ANDROID_APPLICATION_ID);
-    const component = resolved.stdout.trim().split("\n").pop()?.trim() ?? "";
-    if (!component.startsWith(`${ANDROID_APPLICATION_ID}/`)) throw new Error("the leanback launcher category resolves to no activity of the app");
-    shell("am", "start", "-a", "android.intent.action.MAIN", "-c", LEANBACK, "-n", component);
-    const read = () => shell("logcat", "-d", "-v", "threadtime").stdout.split("\n");
-    for (const deadline = Date.now() + RUN_MS; Date.now() < deadline; await sleep(1_000)) {
-      if (wireLines(read()).includes("OCTAVE_WIRE done")) break;
+  // One whole run with its own mock, recorders, proxy listener and reverses.
+  const attempt = async () => {
+    let before = adbd();
+    for (const deadline = Date.now() + ADBD_WAIT_MS; (before === null || before.elapsed < ADBD_STEADY_S) && Date.now() < deadline; before = adbd()) {
+      await sleep(2_000);
     }
-    // Let the app's last calls (a dropped stall runs on to its deadline) reach the recorders.
-    await sleep(2_000);
-    dump = read();
-  } catch (error) {
-    console.error(`ERROR tv wire: ${error.message}`);
-    process.exitCode = 1;
-  } finally {
-    shell("settings", "put", "global", "http_proxy", ":0");
-    shell("am", "force-stop", ANDROID_APPLICATION_ID);
-    for (const port of reversed) adb("reverse", "--remove", `tcp:${port}`);
-    await Promise.all([...recorders.values()].map((recorder) => recorder.close()));
-    await proxy.close();
-    await mock.close();
+    if (before === null || before.elapsed < ADBD_STEADY_S) fail(`the device's adb daemon did not stay up for ${ADBD_STEADY_S} s within ${ADBD_WAIT_MS / 1000} s`);
+    const mock = await startMock({ canary: list.canary, user: list.user, password: list.password, canaryDevicePort: list.canaryPort });
+    const proxy = await startProxyListener();
+    const recorders = new Map();
+    const reversed = [];
+    const reverse = (devicePort, hostPort) => {
+      const done = adb("reverse", `tcp:${devicePort}`, `tcp:${hostPort}`);
+      if (done.status !== 0) throw new Error(`adb reverse failed for device port ${devicePort}`);
+      reversed.push(devicePort);
+    };
+    let dump = [];
+    let after = null;
+    let missing = [];
+    let foreground = "unknown";
+    try {
+      for (const pair of selected) {
+        let upstream;
+        let swap;
+        if (pair.target === "mock") {
+          const port = pair.test === "transport-redirect" ? mock.ports.redirector : pair.test === "transport-private-lan-and-proxy" ? mock.ports.privateLan : mock.ports.main;
+          upstream = { port };
+        } else {
+          const url = credentials[`${pair.target}_url`];
+          if (!url) throw new Error(`no fixture credentials for ${pair.target}; run pnpm fixture:setup`);
+          upstream = { port: Number(new URL(url).port) };
+          swap = {
+            from: { user: list.user, password: list.password },
+            to: { user: credentials[`${pair.target}_username`], password: credentials[`${pair.target}_password`] },
+          };
+        }
+        const recorder = await startRecorder({ upstream, secrets, swap });
+        recorders.set(`${pair.test} ${pair.target}`, recorder);
+        reverse(pair.devicePort, recorder.port);
+      }
+      reverse(list.canaryPort, mock.ports.canaryOrigin);
+      reverse(list.proxyPort, proxy.port);
+      shell("settings", "put", "global", "http_proxy", `127.0.0.1:${list.proxyPort}`);
+
+      shell("am", "force-stop", ANDROID_APPLICATION_ID);
+      shell("logcat", "-c");
+      const resolved = shell("cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN", "-c", LEANBACK, ANDROID_APPLICATION_ID);
+      const component = resolved.stdout.trim().split("\n").pop()?.trim() ?? "";
+      if (!component.startsWith(`${ANDROID_APPLICATION_ID}/`)) throw new Error("the leanback launcher category resolves to no activity of the app");
+      shell("am", "start", "-a", "android.intent.action.MAIN", "-c", LEANBACK, "-n", component);
+      const read = () => shell("logcat", "-d", "-v", "threadtime").stdout.split("\n");
+      for (const deadline = Date.now() + RUN_MS; Date.now() < deadline; await sleep(1_000)) {
+        if (wireLines(read()).includes("OCTAVE_WIRE done")) break;
+      }
+      // Let the app's last calls (a dropped stall runs on to its deadline) reach the recorders.
+      await sleep(2_000);
+      dump = read();
+      after = adbd();
+      missing = missingReverses(adb("reverse", "--list").stdout ?? "", reversed);
+      foreground = resumedPackage(shell("dumpsys", "activity", "activities").stdout ?? "");
+    } catch (error) {
+      console.error(`ERROR tv wire: ${error.message}`);
+      process.exitCode = 1;
+    } finally {
+      shell("settings", "put", "global", "http_proxy", ":0");
+      shell("am", "force-stop", ANDROID_APPLICATION_ID);
+      for (const port of reversed) adb("reverse", "--remove", `tcp:${port}`);
+      await Promise.all([...recorders.values()].map((recorder) => recorder.close()));
+      await proxy.close();
+      await mock.close();
+    }
+    if (process.exitCode === 1) process.exit(1);
+    const voids = adbRestartErrors({ before, after, missing, reversed: reversed.length });
+    const device = [
+      `adbd up ${before.elapsed} s before the reverses; ${after === null ? "adbd not found after the run" : after.pid === before.pid ? `same adbd after the run (up ${after.elapsed} s)` : "adbd restarted during the run"}`,
+      `${reversed.length - missing.length} of ${reversed.length} adb reverse(s) present at the end of the run`,
+      `resumed package at the end of the run: ${foreground}`,
+    ];
+    return { dump, mock, proxy, recorders, voids, device };
+  };
+
+  // A run whose adb connection dropped (its reverses gone) is void, not a transport result: it runs once more, and the
+  // first attempt stays in device.txt and the output. Any other failure, and a second void run, fails as it is.
+  // The void attempt's logcat and global-proxy traffic are still judged with the second's.
+  const deviceLines = [];
+  let run = await attempt();
+  let earlier = { dump: [], seen: [], ports: [] };
+  if (run.voids.length > 0) {
+    for (const error of run.voids) console.error(error);
+    console.error("tv wire: the adb connection dropped during the run; running it once more");
+    deviceLines.push("attempt 1 (void):", ...run.device, "attempt 2:");
+    earlier = { dump: run.dump, seen: run.proxy.seen, ports: [run.mock.ports.privateLan] };
+    run = await attempt();
   }
-  if (process.exitCode === 1) process.exit(1);
+  deviceLines.push(...run.device);
+  const { dump, mock, proxy, recorders } = run;
+  const seen = [...earlier.seen, ...proxy.seen];
 
   const lines = wireLines(dump);
   const counts = mock.counts();
@@ -220,9 +312,9 @@ async function main(args) {
   });
 
   const known = [...secrets];
-  const runErrors = [...judgeLogcat(dump, known)];
-  const devicePorts = [...all.map((pair) => pair.devicePort), list.canaryPort, list.closedPort, mock.ports.privateLan];
-  const named = proxyRequestsNamingTargets(proxy.seen, devicePorts);
+  const runErrors = [...run.voids, ...judgeLogcat([...earlier.dump, ...dump], known)];
+  const devicePorts = [...all.map((pair) => pair.devicePort), list.canaryPort, list.closedPort, mock.ports.privateLan, ...earlier.ports];
+  const named = proxyRequestsNamingTargets(seen, devicePorts);
   if (named.length > 0) runErrors.push(`ERROR tv wire: ${named.length} request(s) naming a wire target went to the global proxy`);
   if (!lines.includes("OCTAVE_WIRE done")) runErrors.push("ERROR tv wire: no OCTAVE_WIRE done line; the app's wire run did not finish");
 
@@ -245,14 +337,15 @@ async function main(args) {
   for (const error of runErrors) console.error(error);
   writeFileSync(join(EVIDENCE, "summary.txt"), `${summary.join("\n")}\n`);
   writeFileSync(join(EVIDENCE, "app-lines.txt"), `${lines.join("\n")}\n`);
-  const proxied = proxy.seen.map((entry) => `${entry.method} ${entry.host || "(no Host)"}`);
+  writeFileSync(join(EVIDENCE, "device.txt"), `${deviceLines.join("\n")}\n`);
+  const proxied = seen.map((entry) => `${entry.method} ${entry.host || "(no Host)"}`);
   writeFileSync(
     join(EVIDENCE, "global-proxy.txt"),
-    [`${proxy.seen.length} request(s) reached the global proxy listener; ${named.length} named a wire target`, ...proxied].join("\n") + "\n",
+    [`${seen.length} request(s) reached the global proxy listener; ${named.length} named a wire target`, ...proxied].join("\n") + "\n",
   );
   console.log(summary.join("\n"));
   if (summary.some((line) => line.endsWith(" fail"))) process.exit(1);
-  console.log(`tv wire: ${summary.length} pair(s) passed; logcat clean; global proxy saw ${proxy.seen.length} request(s), none naming a wire target`);
+  console.log(`tv wire: ${summary.length} pair(s) passed; logcat clean; global proxy saw ${seen.length} request(s), none naming a wire target`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));
