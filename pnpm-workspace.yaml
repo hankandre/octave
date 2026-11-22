@@ -12,6 +12,9 @@ overrides:
   'minimatch@^10.2.2': 11.0.8
   # @react-native-tvos/config-tv 0.1.7 asks for glob ^11.0.0, which has an open advisory (GHSA-3g3m-2fjr-6pw4, patched in 14.0.2); it calls only globSync.
   'glob@^11.0.0': 14.0.6
+  # Jest's babel-plugin-istanbul > test-exclude and glob 10/13 chains pull in glob and minimatch versions with the same advisories (dev-only coverage globbing; patched in glob 14.0.2 and minimatch 11.0.1).
+  'glob@>=9.0.0 <14.0.2': 14.0.6
+  'minimatch@>=7.0.0 <11.0.1': 11.0.8
   # Every workspace and every transitive react-native resolves to the TV fork (Expo's TV guide: alias all apps).
   react-native: npm:react-native-tvos@0.88.1-0
 
