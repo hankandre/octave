@@ -151,6 +151,7 @@ test('T1-16 item 1: a Check question on a check that is not approved gives the r
 test('T1-16 item 1: a technical implement question runs implement, owner ruling, ruling log, implement (after ruling), and merges', async () => {
   const flow = await runFlow(FROM_IMPLEMENT, {
     implement: (n) => (n === 1 ? asks(question({ question: 'QUESTION-IMPL' })) : work()),
+    'implement (after ruling)': work(),
     'owner ruling': (n) => ruled(n, [answer('AGENTS.md:Tasks', 'RULING-IMPL')]),
   });
   const wanted = flow.keys.filter((key) => /^(implement|owner ruling|ruling log)/.test(key));
@@ -200,6 +201,7 @@ test('T1-16 item 1: a ruling that returns needsPass ends blocked with those ques
 test('T1-16 item 1: a result with frozen-test problems and questions gets one owner ruling whose prompt holds both', async () => {
   const flow = await runFlow(FROM_IMPLEMENT, {
     implement: (n) => (n === 1 ? work({ done: false, checksPassed: false, failures: ['x'], frozenTestProblems: ['FROZEN-PROBLEM-BOTH'], productOwnerQuestions: [question({ question: 'QUESTION-BOTH' })] }) : work()),
+    'implement (after ruling)': work(),
     'owner ruling': (n) => ruled(n, [answer('AGENTS.md:Tasks', 'RULING-BOTH')]),
   });
   assert.equal(count(flow, 'owner ruling'), 1, flow.labels.join(' | '));
@@ -250,7 +252,7 @@ test('T1-16 item 2: a second round is labelled "(after ruling 2)" and a follow-u
     implement: (n) => (n === 1 ? asks(question({ rule: 'rule-a', question: 'QA' })) : null),
     'implement (after ruling)': asks(question({ rule: 'rule-b', question: 'QB' })),
     'implement (after ruling 2)': work(),
-    'owner ruling': (n) => ruled(n, [answer(n === 1 ? 'rule-a' : 'rule-b', `RULING-${n}`)]),
+    'owner ruling': (n) => ruled(n, [answer(['rule-a', 'rule-b', 'rule-c'][n - 1], `RULING-${n}`)]),
     'follow-ups': (n) => (n === 1 ? asks(question({ rule: 'rule-c', question: 'QC' })) : work()),
     'follow-ups (after ruling)': work(),
   });
@@ -572,6 +574,7 @@ test('T1-16 item 4: an asked key with no matching answer ends blocked, naming th
   assert.equal(count(missing, 'implement (after ruling)'), 0);
   const matched = await runFlow(FROM_IMPLEMENT, {
     implement: (n) => (n === 1 ? asks(question({ rule: 'DOMAINS.md:Process', question: 'QUESTION-CASE' })) : work()),
+    'implement (after ruling)': work(),
     'owner ruling': (n) => ruled(n, [answer('  domains.md:process. ', 'RULING-CASE')]),
   });
   assert.equal(final(matched).outcome, 'merged', JSON.stringify(matched.result));

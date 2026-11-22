@@ -339,3 +339,12 @@ Gates after this pass:
 - An install on a real TV: T3-21, T3-23, T3-28 and T3-30, and for the e2e APK also T3-31. T3-29 and T3-32 no longer gate it. T3-24 is done.
 - Sign-in (T4-03 and what follows): T4-02 and T3-33.
 - No drop. T3-25, T3-28 to T3-30, T5-02, T9-07, T8-22 and T8-24 are not edited; T3-06 and T3-08 are only moved.
+
+## 2026-11-22, T1-16 ruling, Implement
+
+Frozen-test ruling on four tests of `.claude/workflows/task-rulings.test.mjs` that the implementer reported as wrong. Scope edit of test fixtures only: no assertion changed, and no acceptance item, spec row or task-list entry is edited. All four are changed, because each contradicts the spec's own contract; `node --test .claude/workflows/task-rulings.test.mjs` gave 45 of 49 passing before and 49 of 49 after.
+
+- [frozen test: item 1, technical implement question merges] Changed: added `'implement (after ruling)': work()` to the answers | reason: the spec (row 2) fixes the rerun label as `${label} (after ruling)`, and this test itself requires that key in the call list; the harness answers by label and returns `null` for a key not in its table, so the run could never end `merged` as the same test and row 1(b) require. The table, not the workflow, was wrong | probe: ran the file; the test failed with outcome `failed` before the edit and passes after.
+- [frozen test: item 1, frozen problems plus a question] Changed: added `'implement (after ruling)': work()` | reason: the same cause; row 1(f) wants one ruling and then the run going on, and the rerun had no answer | probe: as above.
+- [frozen test: item 2, second round and follow-ups] Changed: the third `owner ruling` answer now names `rule-c` (the answers are `rule-a`, `rule-b`, `rule-c` by call) | reason: the follow-ups step asks about `rule-c`, and the fixture answered `rule-b`. The spec (Spec check resolution 3, and the frozen item 4 test) ends a task `blocked` when an asked key has no matching answer, so the fixture contradicted the spec and made `follow-ups (after ruling)` unreachable | probe: as above.
+- [frozen test: item 4, matched answer by ruleKey] Changed: added `'implement (after ruling)': work()` to the matched run | reason: the same cause as the first; the matched half requires `merged` and reads the `implement (after ruling)` prompt, but the table gave that call no answer | probe: as above.
