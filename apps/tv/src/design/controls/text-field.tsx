@@ -1,7 +1,8 @@
 // TextField (DESIGN.md §7.19): a 72 px `surface2` field with a `lineStrong` border, the label above in `typeLabel`
-// and `text2`, helper or error text below. Select focuses the native input, which opens the system keyboard.
+// and `text2`, helper or error text below. Select focuses the native input, which opens the system keyboard;
+// the frame keeps its ring while the input has focus, even if the frame itself blurs.
 // `testID` is the focusable frame, `<testID>-input` the native input.
-import { useRef, type ComponentRef } from "react";
+import { useRef, useState, type ComponentRef } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { FocusFrame } from "../focus-frame";
 import { px } from "../scale";
@@ -22,6 +23,7 @@ export type TextFieldProps = {
 };
 
 export function TextField({ label, value, onChangeText, onFocus, helper, error, secureTextEntry, disabled = false, hasTVPreferredFocus, testID }: TextFieldProps) {
+  const [inputFocused, setInputFocused] = useState(false);
   const input = useRef<ComponentRef<typeof TextInput>>(null);
   return (
     <View style={styles.column}>
@@ -31,6 +33,7 @@ export function TextField({ label, value, onChangeText, onFocus, helper, error, 
         onPress={() => input.current?.focus()}
         onFocus={onFocus}
         disabled={disabled}
+        holdFocus={inputFocused}
         hasTVPreferredFocus={hasTVPreferredFocus}
         accessibilityLabel={label}
         contentStyle={styles.box}
@@ -39,6 +42,8 @@ export function TextField({ label, value, onChangeText, onFocus, helper, error, 
           ref={input}
           testID={testID ? `${testID}-input` : undefined}
           focusable={false}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
           editable={!disabled}
           value={value}
           onChangeText={onChangeText}
