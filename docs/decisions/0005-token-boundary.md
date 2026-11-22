@@ -273,6 +273,26 @@ T3-05 built three of the five members, as the core's Transport port names them (
 - **Before sign-in and at logout.** The six tokenless calls (the four pre-sign-in routes and the two sign-in posts) go through the one client with the tokenless header (`Token=""`), checked by the same origin, user-info, credential-name and plain-HTTP rules as a session's, and refused for any other method and path. `endSession` removes the registry entry first, then sends `POST /Sessions/Logout` with the removed session's header. An unknown session resolves `{}`.
 - **No base-path containment is claimed.** A path's dot segments are resolved by OkHttp and may leave the session's base path; refusing them is T3-16's.
 
+## Amendment, 2026-11-22 (T3-16): base-path containment and answer caps
+
+T3-16 narrows what `request` accepts (`docs/specs/T3-16.md`). It adds no method, no event, no argument key and no error code; every new refusal resolves `{ error: "refused" }` and every oversized answer `{ error: "unexpected-response" }`. The pull request calls it out as an invariant change.
+
+- **Base-path containment is claimed.** This supersedes the T3-05 amendment's "No base-path containment is claimed", which stays above as written. Three layers hold it:
+  - The path rule, before a request is built (`RequestPath.kt`, and `adapters/request-path.ts` for the reference transport, both against `packages/core/tests/fixtures/request-paths.json`): P1 the path starts with `/`, not `//`, and holds no `?` or `#`; P2 no backslash; P3 no character below U+0020 and no U+007F; P4 no `.` or `..` segment as written or after up to four rounds of percent-decoding, split on `/` and `\`; P5 every `%` begins two hex digits and the escapes of the path as written decode to UTF-8.
+  - C1: the URL sent is the base path plus the path exactly as written; a path OkHttp would re-encode or resolve is refused. The reference transport has no C1, so a raw space or non-ASCII character is refused natively and encoded by `fetch`.
+  - C2: the one client refuses a `Session` or `Closing` call whose path is neither the base path nor under it, with the refusal `outside-base-path`, which maps to `refused`. This holds every caller of `OctaveHttp.callFactory(session)`, the player and the image loader to come, to the base path.
+- **Answer caps, by authority and method:**
+
+| Class | Calls | Cap |
+|---|---|---|
+| Tokenless | The four pre-sign-in routes and the two sign-in posts | 1 MiB |
+| Session write | A session's `POST` and `DELETE` | 4 MiB |
+| Session read | A session's `GET` | 8 MiB |
+| Logout | `POST /Sessions/Logout` | body not read |
+
+  A larger answer, 2xx or an error status, is refused before it is parsed: at once when it declares a larger length, otherwise after cap + 1 bytes. These replace T3-05's single 32 MiB limit.
+- **The named tests exist.** `request_refuses_headers_absolute_urls_and_other_origins` (`RequestSeamTest.kt`), `an_echoed_token_is_removed_from_response_bodies` (`EchoedTokenTest.kt`; its filter-off control is the tokenless path, where the filter holds no token, so no switch enters the filter), the control for `kotlin_header_matches_the_recorded_vector` (`HeaderVectorControlTest.kt`), and `release_build_has_no_inspector` (`scripts/tv-apk-inspector.mjs`, a step of `pnpm tv:apk:check`). The last covers both plugins this record names under "Against the Hermes and JavaScript surface" and in its sources, `DevLauncherPlugin.kt` and `NetworkAddonsPlugin.kt`: read at `e88ec73b49`, each injects into `OkHttpClient.Builder.build()` calls into `expo.modules.kotlin.devtools`, and the network-addons plugin also adds its own `expo.modules.networkaddons` interceptor in every variant.
+
 ## Revisit if
 
 - A crash reporter, over-the-air JavaScript updates or any third-party runtime code is proposed. Under A that is a new reader of the token; under C it is not.
