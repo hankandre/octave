@@ -394,7 +394,10 @@ describe("T3-26 item 1: the runner's judging of a run", () => {
   it("T3-26 item 1: a writeEvidence error fails every pair and is printed", async () => {
     const { judgeRun } = await loadRunner();
     const two = input();
-    two.pairs.push({ test: "transport-probe-then-signed-in", target: "jellyscale", task: "T3-05", devicePort: 47301, records: PROBE });
+    // Each pair's records carry its own recorder's Host: the judge compares it to 127.0.0.1:<devicePort>.
+    const second = PROBE.map((entry) => ({ ...entry, host: "127.0.0.1:47301" }));
+    two.pairs.push({ test: "transport-probe-then-signed-in", target: "jellyscale", task: "T3-05", devicePort: 47301, records: second });
+    two.devicePorts.push(47301);
     two.lines.splice(1, 0, "OCTAVE_WIRE result test=transport-probe-then-signed-in target=jellyscale task=T3-05 outcome=ok");
     const baseline = judgeRun(two, { write: () => [] });
     expect(baseline.summary.every((line) => line.endsWith(" pass")), baseline.errors.join("\n")).toBe(true);
