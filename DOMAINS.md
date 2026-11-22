@@ -193,7 +193,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Owns:** the release build and its Baseline Profile; the Play bundle with 16 KB page alignment; signing; licences, notices, and the source offer (GPL-3.0); the Play TV track.
 
-**Today.** `apps/tv`'s build configuration (`apps/tv/app.config.ts`, the config plugins in `apps/tv/plugins/`), the scripts behind `pnpm tv:prebuild`, `tv:build`, `tv:apk:check`, `tv:native:test` and `tv:smoke` (`scripts/tv-*.mjs`), and the `tv` job of `.github/workflows/ci.yml`, which builds and checks a release APK signed with the template's debug key (T3-01).
+**Today.** `apps/tv`'s build configuration (`apps/tv/app.config.ts`, the config plugins in `apps/tv/plugins/`), the scripts behind `pnpm tv:prebuild`, `tv:build`, `tv:apk:check`, `tv:native:test` and `tv:smoke` (`scripts/tv-*.mjs`), and the `tv` job of `.github/workflows/ci.yml`, which builds and checks a release APK signed with the template's debug key (T3-01). `pnpm tv:prebuild` generates `apps/tv/android/`, which is never committed.
 
 **Target.** The same, with real signing and the release workflows of phase T11.
 
