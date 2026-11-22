@@ -664,10 +664,10 @@
             "Tests that pnpm test:workflow runs cover each rule, the frozen .claude/workflows/task.test.mjs is not changed, and WORKFLOW.md describes lanes and the runner in the same PR"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 75c35a61 on task/T1-19: lane field in task CLI and owner tool, lane-state gate, runLanes with serial slot and halt, WORKFLOW.md. Frozen item 1-6 runs green except the real-file lane test, which waits for the Product Owner lane commit (Approach 4). PR not opened."
         },
         {
           "id": "T1-20",
