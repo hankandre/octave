@@ -143,7 +143,7 @@ export const LINKED_NETWORK_PATHS = [
       what: "the dev-server inspector's client (DevSupportHttpClient)",
       verdict: ALLOWLISTED,
       reason:
-        "Development tooling. It ships in the release dex (R8 kept it in T3-03's build); whether release code calls it is unverified, and a backlog line asks.",
+        "Development tooling, tested, not removed (T3-19): it ships in the release dex because ReactHostImpl.loadNetworkResource, entered from C++, keeps it. The dex check (scripts/tv-apk-dex.mjs, rule D6) holds the classes that reference it to DEV_SUPPORT_CLIENT_CALLERS, four dev-support callers, and pnpm tv:smoke shows the release app opens no connection to the development server port while it starts. loadNetworkResource fetches whatever URL a connected debugger passes, a home-network address included; the C++ inspector gate that keeps it from being called in a release build is read from source and not tested (a backlog line asks for the test).",
       refusedBy: ["K7"],
     },
     ["ReactAndroid/src/main/java/com/facebook/react/devsupport/inspector/DevSupportHttpClient.kt"],

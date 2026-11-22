@@ -1,7 +1,8 @@
 // The first-focus smoke test (T3-01 item 4): install the release APK on the emulator ANDROID_SERIAL names, start it
 // through the leanback launcher category, send no key until the first tile reports focus, then send exactly one Right
 // and require the second tile to take focus. judgeFirstFocus() is the oracle; the transcript and a screenshot of the
-// first screen go to release-evidence/tv/.
+// first screen go to release-evidence/tv/. The development server watch (T3-19 item 2) runs around the app start and
+// fails the run on any connection from the app to the development server port; see scripts/tv-dev-server-watch.mjs.
 // Run: ANDROID_SERIAL=<emulator> node scripts/tv-first-focus.mjs [apk]   (pnpm tv:smoke)
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -10,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
 import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
+import { judgeDevServerWatch, startDevServerWatch } from "./tv-dev-server-watch.mjs";
 
 const EVIDENCE = fileURLToPath(new URL("../release-evidence/tv/", import.meta.url));
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
@@ -78,50 +80,48 @@ function fail(message) {
   process.exit(1);
 }
 
+// A failure after the development server watch has started: thrown, so the watch is stopped before the script exits.
+class SmokeFailure extends Error {}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function main(args) {
-  // The serial chooses the device; it is never printed or written.
-  const serial = process.env.ANDROID_SERIAL;
-  if (!serial) fail("set ANDROID_SERIAL to the emulator's serial; this script never picks a device itself");
-  let adbPath;
-  try {
-    adbPath = platformTool(androidSdk(), "adb");
-  } catch (error) {
-    fail(error.message);
-  }
+/**
+ * The smoke run on one device, from install to the judges. Returns the error lines (empty on a pass). The development
+ * server watch starts before the install and is stopped before this returns or throws (T3-19 item 2).
+ */
+export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = EVIDENCE, onWatch = () => undefined }) {
   const adb = (...rest) => spawnSync(adbPath, ["-s", serial, ...rest], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   const shell = (...rest) => adb("shell", ...rest);
 
-  const apk = args[0] ?? RELEASE_APK;
-  if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:build first`);
-  if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
+  const watch = await startDevServerWatch({ adb: adbPath, serial, port });
+  onWatch(watch);
+  try {
+    const install = adb("install", "-r", apk);
+    if (install.status !== 0) throw new SmokeFailure(`ERROR tv focus: adb install failed: ${(install.stdout + install.stderr).trim().split("\n").pop()}`);
+    shell("am", "force-stop", ANDROID_APPLICATION_ID);
+    shell("logcat", "-c");
 
-  const install = adb("install", "-r", apk);
-  if (install.status !== 0) fail(`adb install failed: ${(install.stdout + install.stderr).trim().split("\n").pop()}`);
-  shell("am", "force-stop", ANDROID_APPLICATION_ID);
-  shell("logcat", "-c");
+    const resolved = shell("cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN", "-c", LEANBACK, ANDROID_APPLICATION_ID);
+    const component = resolved.stdout.trim().split("\n").pop()?.trim() ?? "";
+    const resolveLine = `OCTAVE_RESOLVE ${component}`;
+    // The controls run before the app starts, so no control can land late and be counted as the app's.
+    const controlFailures = await watch.runControls();
+    // Start the resolved component, as a launcher does: an implicit start would also need CATEGORY_DEFAULT, which a
+    // launcher's intent filter does not carry (am start answers START_INTENT_NOT_RESOLVED).
+    if (component.startsWith(`${ANDROID_APPLICATION_ID}/`)) {
+      shell("am", "start", "-a", "android.intent.action.MAIN", "-c", LEANBACK, "-n", component);
+    }
 
-  const resolved = shell("cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN", "-c", LEANBACK, ANDROID_APPLICATION_ID);
-  const component = resolved.stdout.trim().split("\n").pop()?.trim() ?? "";
-  const resolveLine = `OCTAVE_RESOLVE ${component}`;
-  // Start the resolved component, as a launcher does: an implicit start would also need CATEGORY_DEFAULT, which a
-  // launcher's intent filter does not carry (am start answers START_INTENT_NOT_RESOLVED).
-  if (component.startsWith(`${ANDROID_APPLICATION_ID}/`)) {
-    shell("am", "start", "-a", "android.intent.action.MAIN", "-c", LEANBACK, "-n", component);
-  }
-
-  const logcat = () => shell("logcat", "-d", "-v", "threadtime", "ReactNativeJS:I", "OCTAVE_PRESS:I", "*:S").stdout.split("\n").filter(Boolean);
-  const run = async () => {
+    const logcat = () => shell("logcat", "-d", "-v", "threadtime", "ReactNativeJS:I", "OCTAVE_PRESS:I", "*:S").stdout.split("\n").filter(Boolean);
     // Send no key until the first tile reports focus, or the wait runs out (the judge then names the failure).
     for (const deadline = Date.now() + FIRST_FOCUS_MS; Date.now() < deadline; await sleep(250)) {
       if (logcat().some((line) => parse(line).kind === "focus")) break;
     }
-    mkdirSync(EVIDENCE, { recursive: true });
+    mkdirSync(evidence, { recursive: true });
     // Let the launch transition finish so the screenshot shows the first screen alone.
     await sleep(SETTLE_MS);
     const screen = spawnSync(adbPath, ["-s", serial, "exec-out", "screencap", "-p"], { maxBuffer: 64 * 1024 * 1024 });
-    if (screen.status === 0) writeFileSync(join(EVIDENCE, "first-screen.png"), screen.stdout);
+    if (screen.status === 0) writeFileSync(join(evidence, "first-screen.png"), screen.stdout);
 
     shell("log", "-t", "OCTAVE_PRESS", "1 RIGHT");
     shell("input", "keyevent", "22");
@@ -131,16 +131,67 @@ function main(args) {
       if (press !== -1 && events.slice(press + 1).some((event) => event.kind === "focus")) break;
     }
     const transcript = [resolveLine, ...logcat()];
-    writeFileSync(join(EVIDENCE, "first-focus.txt"), `${transcript.join("\n")}\n`);
-    const errors = judgeFirstFocus(transcript);
-    if (errors.length > 0) {
-      console.error(transcript.join("\n"));
-      for (const error of errors) console.error(error);
-      process.exit(1);
-    }
-    console.log("tv focus: tile-0 took focus with no key, and one Right moved it to tile-1");
+    writeFileSync(join(evidence, "first-focus.txt"), `${transcript.join("\n")}\n`);
+    // Read the watch only after the event loop has turned since the last spawnSync, so no app connection is still queued.
+    await sleep(SETTLE_MS);
+    const watched = watch.result();
+    const watchErrors = judgeDevServerWatch(watched);
+    writeFileSync(
+      join(evidence, "dev-server-watch.txt"),
+      `${[`port ${port}: ${watched.controlsSeen} of ${watched.controlsExpected} control connections seen, ${watched.appConnections} app connections`, ...controlFailures, ...watchErrors].join("\n")}\n`,
+    );
+    const focusErrors = judgeFirstFocus(transcript);
+    if (focusErrors.length > 0) console.error(transcript.join("\n"));
+    // A failed control command explains a missing control; it is not an error by itself when the control was seen.
+    const missed = watched.controlsSeen < watched.controlsExpected ? controlFailures.map((line) => `ERROR tv smoke: ${line}`) : [];
+    return [...missed, ...watchErrors, ...focusErrors];
+  } catch (error) {
+    if (error instanceof SmokeFailure) return [error.message];
+    throw error;
+  } finally {
+    await watch.stop();
+  }
+}
+
+async function main(args) {
+  // The serial chooses the device; it is never printed or written.
+  const serial = process.env.ANDROID_SERIAL;
+  if (!serial) fail("set ANDROID_SERIAL to the emulator's serial; this script never picks a device itself");
+  let adbPath;
+  try {
+    adbPath = platformTool(androidSdk(), "adb");
+  } catch (error) {
+    fail(error.message);
+  }
+  const apk = args[0] ?? RELEASE_APK;
+  if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:build first`);
+  const state = spawnSync(adbPath, ["-s", serial, "get-state"], { encoding: "utf8" });
+  if (state.stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
+
+  // A signal stops the watch (the reverse and the port) before the script exits.
+  let watch = null;
+  const onSignal = async (signal) => {
+    if (watch) await watch.stop();
+    process.exit(signal === "SIGINT" ? 130 : 143);
   };
-  return run();
+  process.once("SIGINT", onSignal);
+  process.once("SIGTERM", onSignal);
+
+  let errors;
+  try {
+    errors = await runSmoke({ serial, adbPath, apk, onWatch: (started) => (watch = started) });
+  } catch (error) {
+    errors = [`ERROR tv smoke: ${error.message}`];
+  }
+  process.off("SIGINT", onSignal);
+  process.off("SIGTERM", onSignal);
+  if (errors.length > 0) {
+    for (const error of errors) console.error(error);
+    process.exitCode = 1;
+    return;
+  }
+  console.log("tv focus: tile-0 took focus with no key, and one Right moved it to tile-1");
+  console.log("tv smoke: the release app opened no connection to the development server port while it started");
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));
