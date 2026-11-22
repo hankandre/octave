@@ -880,6 +880,30 @@
           "evidence": ""
         },
         {
+          "id": "T3-19",
+          "title": "Check the network fence on the built release APK",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-04",
+            "T3-15"
+          ],
+          "acceptance": [
+            "A check reads the built release APK, not the source: it finds in the dex files the entry points that can open a connection outside the one OkHttp client (React Native's Networking and WebSocket modules, Fresco's network fetcher, expo/fetch, expo-file-system and dom-webview) and fails when Octave's code can reach one, or when an entry point outside a named list appears; it is shown failing on a sample",
+            "React Native's DevSupportHttpClient is removed from the release APK, or a test shows that no release code path calls it; T3-04's allowlist row for it says which",
+            "expo-file-system, expo-asset, @expo/log-box and @expo/dom-webview are excluded from autolinking wherever the app still starts and pnpm tv:smoke passes; a module that must stay is listed with its reason, and LINKED_NETWORK_PATHS names only what the APK still holds",
+            "The check runs in the tv CI job on the release APK that job builds",
+            "docs/security.md names the check and what it cannot see in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check && pnpm tv:smoke",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-04",
           "title": "Fail the build when a default Media3 or unauthenticated network path is used",
           "domain": "Security & Redaction",
@@ -949,9 +973,82 @@
             "Kotlin and the core's reference transport build the same Authorization header, byte for byte, from the fixture T2-04 records; a changed quote or encoding fails the test (kotlin_header_matches_the_recorded_vector)",
             "A source check fails on a log call in the HTTP and session packages that takes a request, header or URL, and on HttpLoggingInterceptor; it has a failing and a passing sample and runs in pnpm check",
             "A build check fails when a release APK contains dev-launcher network inspector wiring, and is shown failing on a debug variant (release_build_has_no_inspector)",
-            "docs/security.md marks each of these tests as tested in the same PR"
+            "docs/security.md marks each of these tests as tested in the same PR",
+            "A request path that holds a . or .. segment, as written or percent-encoded (%2e in either case), is refused before anything is sent, and the resolved URL stays under the session's base path; a test per refused shape",
+            "An answer larger than the cap stated for its endpoint class is refused with a typed error before it is parsed, or the body is streamed; the spec lists the caps, each below 32 MiB, and a test sends an oversized answer"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-20",
+          "title": "Refuse a plain-HTTP connection whose name resolves outside the home network",
+          "domain": "Security & Redaction",
+          "model": "fable",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-15",
+            "T3-05"
+          ],
+          "acceptance": [
+            "For a plain-HTTP session the one OkHttp client connects only to a resolved address that the shared host-class rule calls loopback or private LAN; a .local or .home.arpa name with no such address is refused before a byte is sent, as a typed refusal that carries no address",
+            "Every address in an answer is judged, the connection uses only one that passed, and each new connection is judged again",
+            "Decision 0001's literal-host classification is unchanged and still runs first; an IP-literal host and an HTTPS session behave as before",
+            "JVM tests feed a fake resolver for each case, and an emulator test shows the refusal through the one client",
+            "docs/security.md section 3 states the rule and names its tests in the same PR, and the PR calls out the change"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-22",
+          "title": "Trim the release manifest's permissions and set backup rules",
+          "domain": "Security & Redaction",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-01"
+          ],
+          "acceptance": [
+            "A config plugin removes the Expo template's unused entries from the release manifest: SYSTEM_ALERT_WINDOW, READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE, and the https VIEW, OPEN_DOCUMENT_TREE and any-MIME queries; the spec lists each with the reason it is unused",
+            "A test reads the release APK's permissions and queries and fails when one outside a named list appears",
+            "Backup is off, or data extraction rules (with full-backup content rules for API 30 and below) include only a named list of non-secret preferences; no credential and no LAN confirmation is included; a test reads the setting from the release build",
+            "The app still starts: pnpm tv:smoke passes on the release build",
+            "docs/security.md states the permissions and the backup rule in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check && pnpm tv:smoke",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-21",
+          "title": "Sign every build for a real TV with a private key",
+          "domain": "Distribution",
+          "model": "opus",
+          "skill": "native-player",
+          "human": true,
+          "depends_on": [
+            "T3-01"
+          ],
+          "acceptance": [
+            "Owner step: the owner creates a private signing key and keeps it outside the repository; no key, keystore or password is committed",
+            "A release build meant for a real TV is signed with that key, read from the environment or an ignored local file; without the key the build fails and names what is missing, and never falls back to the template's debug keystore",
+            "A test reads the signing certificate of a built APK and fails when it is the template's public debug certificate; the spec says which key CI's emulator builds use",
+            "Any script or documented command that installs onto a real TV refuses a debuggable build (docs/security.md, Development builds)",
+            "Owner step: a build on the Shield that was signed with the debug key is uninstalled before the first private-key install, and the task's evidence records it",
+            "docs/security.md describes the signing rule in the same PR, and the PR calls out the signing change"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -966,7 +1063,8 @@
           "human": true,
           "depends_on": [
             "T3-01",
-            "T3-02"
+            "T3-02",
+            "T3-21"
           ],
           "acceptance": [
             "Shield check (owner): launched from the TV launcher with the remote, the first screen takes focus with no priming press, and the first Right press moves focus one tile",
@@ -1264,7 +1362,8 @@
           "human": false,
           "depends_on": [
             "T4-01",
-            "T3-09"
+            "T3-09",
+            "T3-22"
           ],
           "acceptance": [
             "The first screen opens with focus on the first server found; choosing it takes one press",
@@ -1362,7 +1461,8 @@
           "human": false,
           "depends_on": [
             "T4-03",
-            "T2-01"
+            "T2-01",
+            "T3-21"
           ],
           "acceptance": [
             "After sign-in the credential is stored encrypted with a key held in the Android Keystore, by native code, as decision 0005 says",
@@ -2060,7 +2160,9 @@
             "Seeking, pausing and stopping work, and stop releases the player and the surface",
             "A redirect on the media request ends in a typed error and the other origin receives nothing",
             "The H.264, HEVC and AV1 samples reach first frame on the CI emulator where it has a decoder, and a sample with no decoder ends in the typed cannot-play code",
-            "Jellyscale wire test: a capture of a play from the pinned Jellyscale shows the header on every request, range requests included, no credential parameter, and only original-file URLs"
+            "Jellyscale wire test: a capture of a play from the pinned Jellyscale shows the header on every request, range requests included, no credential parameter, and only original-file URLs",
+            "Media3's OkHttp data source is proven on the OkHttp version the one client uses: a test plays through it and shows that it reads neither response.networkResponse nor a header from response.request",
+            "apps/tv/native's NetworkPathsBytecodeTest runs compiled Media3 samples in place of the descriptors written by hand, and the ExoPlayer.Builder and DefaultMediaSourceFactory constructors and the UDP, RTSP and RTMP class names are re-read at the Media3 version adopted"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
           "status": "todo",
