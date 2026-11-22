@@ -6,11 +6,11 @@ Record the T3-05 fresh-context review's medium finding (a CI gate, held open) an
 
 - [x] Medium, held: item 7's `gate: ci` is not met until the branch is pushed. T3-05 stays `in_progress`; the task evidence now quotes the whole local `release-evidence/wire/summary.txt` (eight `pass` lines, no `fail` line, written after the last code commit 39b5ca31), not one line of it
 - [x] Lows below logged as follow-ups, not fixed
-- [ ] CI gate: the PR is opened as a draft with no auto-merge until the non-required `wire` job is green on the head commit; its `summary.txt` holds all eight `pass` lines, including `transport-probe-then-signed-in jellyscale T3-05 pass`, and no `fail` line, and is quoted in the task evidence (item 7)
-- [ ] CI gate: the required `tripwire` job green on the PR head, with the `octave-<hex>` Compose project name in its `fixture:up` output (item 8's Docker half)
-- [ ] CI gate: the `tv` job green on the PR head
-- [ ] T3-05 set to done with evidence naming the PR
-- [ ] PR body calls out `apps/tv/babel.config.js` as a release-path build change (see the last low below)
+- [x] CI gate: the PR is opened as a draft with no auto-merge until the non-required `wire` job is green on the head commit; its `summary.txt` holds all eight `pass` lines, including `transport-probe-then-signed-in jellyscale T3-05 pass`, and no `fail` line, and is quoted in the task evidence (item 7)
+- [x] CI gate: the required `tripwire` job green on the PR head, with the `octave-<hex>` Compose project name in its `fixture:up` output (item 8's Docker half)
+- [x] CI gate: the `tv` job green on the PR head
+- [x] T3-05 set to done with evidence naming the PR
+- [x] PR body calls out `apps/tv/babel.config.js` as a release-path build change (see the last low below)
 
 ## Context and domains touched
 
