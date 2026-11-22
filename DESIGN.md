@@ -196,7 +196,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 | `thumb` (Continue watching) | 16:9, `thumbW`; Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** in one press. Holding select opens the card's menu (7.4; until T5-05 builds it, the details). Menu or Info, where the remote has one, opens details |
 | `episode` | 16:9 | "2 · Title", time left | Play the episode |
 
-- Marks (top right, 24 px disc on a scrim): a check for played, a count for unplayed episodes. The progress bar sits at the bottom of the frame: a 4 px track at white .22 with an `artAccent` fill.
+- Marks (top right, 24 px disc on a scrim): a check for played, a count for unplayed episodes. The played disc ships empty until the icon set lands (owner decision, 2026-11-22), and the check glyph comes with it. The progress bar sits at the bottom of the frame: a 4 px track at white .22 with an `artAccent` fill.
 - Focus: the frame lifts by `lift` with `shadowLift`, plus a 3 px `focus` ring at a 3 px offset with a 1 px black .6 outer line so the ring reads on bright posters. The title goes from `text2` to `text1`.
 - Missing image: `surface2` with the title in `typeLabel`, centred. Never a broken image.
 - Images are requested at the drawn size, through the authenticated native client, never wider than 400 px for a poster.
@@ -357,7 +357,7 @@ Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here
 | Loader | `brass` `#e8c48a` (owner, 2026-11-22; the Signal loader's brass bar, 7.17; T3-35 adds it to the code, and until then the parity test does not read this row) |
 | Type | §4: `typeHero` 72, `typeCode` 72 Mono, `typeTitle` 48, `typeDialogTitle` 36, `typeHeading` 33, `typeBodyLg` 31.5, `typeBody` 28, `typeLabel` 24, `typeMeta` 24, `typeMono` 24 Mono; `measure` 62 characters |
 | Space | `space1` 4, `space2` 8, `space3` 12, `space4` 16, `space5` 24, `space6` 32, `space7` 48, `space8` 64, `space9` 96; `safeX` 96, `safeY` 54 |
-| Sizes | `railCollapsedW` 96, `railOpenW` 400, `posterW` 248, `thumbW` 416, `rowGap` 48, `controlH` 72, `iconButton` 64, `hitMin` 64, `switchW` 64, `switchH` 36, `searchFieldH` 96, `textFieldH` 72, `personDisc` 200, `playerSheetW` 640 (a third of the canvas), `playerPlayDisc` 84, `playerStatusDisc` 64, `upNextW` 560, `scrubTrackH` 4, `scrubTrackHActive` 8, `scrubThumb` 16, `scrubGap` 2, `scrubPreviewW` 384, `scrimPlayerTopH` 360, `scrimPlayerBottomH` 440, `posterRequestMaxW` 400, `dialogMaxW` 840, `toastMaxW` 840, `emptyIcon` 72, `switchThumb` 28, `fieldBorderWidth` 2 |
+| Sizes | `railCollapsedW` 96, `railOpenW` 400, `posterW` 248, `thumbW` 416, `rowGap` 48, `controlH` 72, `iconButton` 64, `hitMin` 64, `switchW` 64, `switchH` 36, `searchFieldH` 96, `textFieldH` 72, `personDisc` 200, `playerSheetW` 640 (a third of the canvas), `playerPlayDisc` 84, `playerStatusDisc` 64, `upNextW` 560, `scrubTrackH` 4, `scrubTrackHActive` 8, `scrubThumb` 16, `scrubGap` 2, `scrubPreviewW` 384, `scrimPlayerTopH` 360, `scrimPlayerBottomH` 440, `posterRequestMaxW` 400, `dialogMaxW` 840, `toastMaxW` 840, `emptyIcon` 72, `switchThumb` 28, `fieldBorderWidth` 2, `markDisc` 24, `cardProgressH` 4 |
 | Shape | `radiusXs` 4, `radiusArt` 6, `radiusControl` 10, `radiusSheet` 16, `radiusPill` 999 |
 | Depth | `shadowLift`, `shadowSheet`, `scrimHero`, `scrimFloor`, `scrimPlayerTop`, `scrimPlayerBottom` (§5) |
 | Motion | `durInstant` 80 ms, `durQuick` 160 ms, `durBase` 240 ms, `durSlow` 480 ms, `easeOut`, `easeInOut`, `lift` 1.08, `chromeIdleMs` 3000, `savedMs` 2000, `dwellMs` 300, `bufferingDelayMs` 500, `skeletonDelayMs` 150, `toastMs` 5000, `pressScale` 0.98 |
@@ -510,6 +510,10 @@ The owner accepted these look values for now, to be judged again on the Shield a
 - A disabled label is `text3` on the normal fill.
 - A toast is at most 840 px wide.
 - A skeleton never shimmers.
+- Cards (T3-08): 24 px between cards (`space5`), 24 px from the art to the title, 16 px (`space4`) from a row's title to its cards, and the subtitle and the missing-image title in `text2`.
+- The right edge of a row has a 96 px fading edge, so Android keeps the focused card 96 px in; the same margin applies on the left, with no fade.
+- The played mark's disc ships empty until the icon set is adopted. The owner chose Tabler as the icon set; a later task adopts it and adds the check glyph.
+- A focused card has the ring, the static lift and `shadowLift`, as §7.5 says; T3-12 and T3-18 measure the shadow's cost.
 
 ### Owner decisions, 2026-11-22, from the decision inbox
 

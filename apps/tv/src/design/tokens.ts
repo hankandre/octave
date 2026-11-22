@@ -96,6 +96,8 @@ export const sizes = {
   emptyIcon: 72,
   switchThumb: 28,
   fieldBorderWidth: 2,
+  markDisc: 24,
+  cardProgressH: 4,
 } as const;
 
 export const radii = {
