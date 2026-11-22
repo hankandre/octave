@@ -1390,7 +1390,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Branch task/T3-25, commit c8c69ca8 (not pushed; gates run at ae04a189, no main-source change since e40bf264). Items 1,2,5: check-red T3-25 green [1,2,5]. Item 2 review fix: AnswerReadErrorTest 4 tests, 0 failed. Item 3: ResponseCapEdgeTest 3 tests, 0 failed. Item 4: check-red T3-16 green [4..8]; tv:wire --task T3-05 on own emulator at e40bf264 8 pairs pass; CI wire job pending. pnpm check exit 0; tv:native:test 682 tests, 0 failed. Item 2 errors raised in Dns lookup, arg maps, readLimited by reflection; PO to confirm (PR body)."
+          "evidence": "Branch task/T3-25, commit 140bf417 (not pushed; gates rerun there, no main-source change since e40bf264). Items 1,2,5: check-red T3-25 green [1,2,5]. Item 2 review fix: AnswerReadErrorTest 4 tests, 0 failed. Item 3: ResponseCapEdgeTest 3 tests, 0 failed. Item 4: check-red T3-16 green [4..8], lint:flow ok; tv:wire --task T3-05 on own emulator at e40bf264 8 pairs pass; CI wire job on PR head pending (Ship). pnpm check exit 0; tv:native:test 682 tests, 0 failed. Item 2 errors raised in Dns lookup, arg maps, readLimited by reflection; PO to confirm (PR body)."
         },
         {
           "id": "T3-33",
