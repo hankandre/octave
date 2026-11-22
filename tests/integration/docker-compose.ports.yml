@@ -1,0 +1,16 @@
+# T3-27: this checkout's host ports, from tests/integration/.fixture-ports (pnpm fixture:up writes it and passes it with
+# --env-file). !override needs Docker Compose 2.24.4 or later.
+services:
+  jellyfin-10-11:
+    ports: !override
+      - "${OCTAVE_FIXTURE_PORT_JELLYFIN_10_11:?run pnpm fixture:up}:8096"
+    environment:
+      JELLYFIN_PublishedServerUrl: http://127.0.0.1:${OCTAVE_FIXTURE_PORT_JELLYFIN_10_11:?run pnpm fixture:up}
+  jellyfin-12:
+    ports: !override
+      - "${OCTAVE_FIXTURE_PORT_JELLYFIN_12:?run pnpm fixture:up}:8096"
+    environment:
+      JELLYFIN_PublishedServerUrl: http://127.0.0.1:${OCTAVE_FIXTURE_PORT_JELLYFIN_12:?run pnpm fixture:up}
+  jellyscale:
+    ports: !override
+      - "127.0.0.1:${OCTAVE_FIXTURE_PORT_JELLYSCALE:?run pnpm fixture:up}:8096"

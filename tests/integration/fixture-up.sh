@@ -24,7 +24,19 @@ fi
 # OCTAVE_FIXTURE_DIR, and only after the --env-only exit, so the env step still works when the script is copied alone.
 here="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)"
 project="$(node "$here/compose-project.mjs")"
-# The host ports are fixed: stop, naming the holder, when another project publishes one. Nothing is removed here.
-node "$here/compose-project.mjs" --check-ports
 echo "[fixture-up] Compose project $project"
-exec docker compose -p "$project" -f "$here/docker-compose.yml" up -d --wait
+# T3-27: this checkout's own host ports, chosen and recorded in .fixture-ports, which Compose reads for the override.
+# A port another project or process took since the choice makes `up` fail; the check then tells that apart from any
+# other failure, and the choice is made again (at most three times). Nothing of another project is removed.
+for attempt in 1 2 3; do
+  node "$here/fixture-ports.mjs" --choose
+  if docker compose -p "$project" -f "$here/docker-compose.yml" -f "$here/docker-compose.ports.yml" --env-file "$here/.fixture-ports" up -d --wait; then
+    exit 0
+  fi
+  # Every recorded port is still usable: the failure was not a taken port.
+  if node "$here/fixture-ports.mjs" --check; then
+    exit 1
+  fi
+  echo "[fixture-up] a chosen port was taken meanwhile; choosing again"
+done
+exit 1
