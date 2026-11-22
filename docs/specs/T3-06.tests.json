@@ -1,0 +1,93 @@
+{
+  "task": "T3-06",
+  "files": [
+    "scripts/design-tokens.test.ts",
+    "scripts/design-tokens-lint.test.ts",
+    "apps/tv/src/design/controls/controls-states.test.tsx",
+    "apps/tv/src/design/controls/focus-motion.test.tsx",
+    "apps/tv/src/design/controls/select-key.test.tsx",
+    "apps/tv/src/design/test-support/select-key.ts",
+    "apps/tv/src/design/test-support/harness.tsx",
+    "apps/tv/src/design/test-support/cases.tsx"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/design-tokens.test.ts",
+        "-t",
+        "T3-06 item 1:"
+      ]
+    },
+    {
+      "item": 2,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/design-tokens-lint.test.ts",
+        "-t",
+        "T3-06 item 2:"
+      ]
+    },
+    {
+      "item": 3,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/controls/controls-states.test.tsx",
+        "-t",
+        "T3-06 item 3:"
+      ]
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/controls/focus-motion.test.tsx",
+        "-t",
+        "T3-06 item 4:"
+      ]
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/design-tokens.test.ts",
+        "-t",
+        "T3-06 item 5:"
+      ]
+    },
+    {
+      "item": 6,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/design/controls/select-key.test.tsx",
+        "-t",
+        "T3-06 item 6:"
+      ]
+    }
+  ]
+}
