@@ -38,6 +38,43 @@ object NetworkPathRules {
         "com/bumptech/glide/",
         "com/squareup/picasso/",
     )
+    // K4 by type (T3-29): the dex check's S4 socket, socket factory, channel and provider classes (with the framework
+    // subclass FRAMEWORK_SUPERCLASSES adds) and S6's two media readers, from scripts/tv-apk-dex-lists.mjs. Matched by
+    // exact class name, not by prefix: java/net/Socket must not match java/net/SocketException. Stricter than the dex
+    // check on purpose: the media readers are refused whole, and the one client may not name a server socket at all.
+    // NetworkPathSocketsTest fails when an S4 class is missing.
+    private val K4_SOCKETS_NEVER = listOf(
+        "java/net/ServerSocket",
+        "java/net/DatagramSocket",
+        "java/net/MulticastSocket",
+        "javax/net/ssl/SSLSocket",
+        "javax/net/ssl/SSLServerSocket",
+        "java/nio/channels/SocketChannel",
+        "java/nio/channels/ServerSocketChannel",
+        "java/nio/channels/DatagramChannel",
+        "java/nio/channels/AsynchronousSocketChannel",
+        "java/nio/channels/AsynchronousServerSocketChannel",
+        "javax/net/ServerSocketFactory",
+        "javax/net/ssl/SSLSocketFactory",
+        "javax/net/ssl/SSLServerSocketFactory",
+        "android/net/SSLCertificateSocketFactory",
+        "java/nio/channels/spi/SelectorProvider",
+        "java/nio/channels/spi/AsynchronousChannelProvider",
+        "android/media/MediaExtractor",
+        "android/media/MediaMetadataRetriever",
+    )
+    // What the one client's classes may name to make a client socket (the dex check's S4 oneClientMethods): the socket
+    // factory OkHttp dials with builds java/net/Socket, and OctaveHttp hands it to Builder.socketFactory.
+    private val K4_SOCKETS_ONE_CLIENT = mapOf(
+        "java/net/Socket" to setOf("dev/octave/session/http/DirectSocketFactory"),
+        "javax/net/SocketFactory" to setOf("dev/octave/session/http/DirectSocketFactory", "dev/octave/session/http/OctaveHttp"),
+    )
+
+    // Whether a UTF-8 constant (slashed) names class `type`: the name itself, a nested class, or the type in a
+    // descriptor or signature.
+    private fun namesType(constant: String, type: String): Boolean =
+        constant == type || constant.startsWith("$type\$") || constant.contains("L$type;") || constant.contains("L$type\$")
+
     private val K7 = listOf(
         "com/facebook/react/modules/network/OkHttpClientProvider",
         "com/facebook/react/modules/network/OkHttpClientFactory",
@@ -102,6 +139,13 @@ object NetworkPathRules {
         named("K9", K9)
         for (prefix in K4_STACKS) {
             if (names.any { it.startsWith(prefix) || it.contains("L$prefix") }) found += NetworkViolation("K4", refs.name, prefix)
+        }
+
+        for (type in K4_SOCKETS_NEVER) {
+            if (names.any { namesType(it, type) }) found += NetworkViolation("K4", refs.name, type)
+        }
+        for ((type, allowed) in K4_SOCKETS_ONE_CLIENT) {
+            if (refs.name !in allowed && names.any { namesType(it, type) }) found += NetworkViolation("K4", refs.name, type)
         }
 
         if (refs.name !in ONE_CLIENT_CLASSES && names.any { it.contains(ONE_CLIENT) }) {
