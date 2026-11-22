@@ -16,6 +16,9 @@ const QUOTED = /'([^']*)'/;
 
 const matchesClass = (holder, name) => holder === name || holder.startsWith(`${name}$`);
 const isOctave = (frame) => frame.octave;
+const isSyntheticOnly = (stack) => stack.length > 0 && stack.every((frame) => frame.synthetic);
+// How a message names a frame: a synthetic one is R8's merged lambda class, not an Octave class.
+const who = (frame) => (frame.synthetic && frame.octave ? `${frame.holder} (R8's merged lambda class, which holds dev.octave. code)` : frame.holder);
 
 function slashless(token) {
   return token.startsWith("L") ? token.slice(1, -1).replace(/\//g, ".") : token;
@@ -78,26 +81,63 @@ export async function judgeDex(lines, mapping, lists) {
   const sectionIsOctave = (dexClass) => [...originalsOf(mapping, dexClass)].some((name) => name.startsWith(OCTAVE));
   const libInternal = (holder) => libraryInternal.some((prefix) => holder.startsWith(prefix));
 
-  // The stacks of one site, each frame { holder, octave }. An unattributed site gets one `unresolved:` frame, judged as
-  // Octave's code when its dex class holds an Octave class (spec check issue 2).
-  function stacksOf(dexClass, name, descriptor, line) {
-    const found = framesAt(mapping, dexClass, name, descriptor, line);
-    if (found.length > 0) return found.map((holders) => holders.map((holder) => ({ holder, octave: holder.startsWith(OCTAVE) })));
+  // Whether any frame of any stack, any field, or the class line of the section holds Octave's code. Wider than
+  // sectionIsOctave, which sees only outermost holders: in a merged lambda group those are always R8's synthetic invoke.
+  const holdsOctave = new Map();
+  function sectionHoldsOctave(dexClass) {
+    if (holdsOctave.has(dexClass)) return holdsOctave.get(dexClass);
     const section = mapping.sections.get(dexClass);
+    const found =
+      sectionIsOctave(dexClass) ||
+      (section !== undefined &&
+        (section.stacks.some((s) => s.frames.some((f) => f.holder.startsWith(OCTAVE))) || section.fields.some((f) => f.holder.startsWith(OCTAVE))));
+    holdsOctave.set(dexClass, found);
+    return found;
+  }
+
+  // The stacks of one site, each frame { holder, octave, synthetic }. An unattributed site gets one `unresolved:` frame,
+  // judged as Octave's code when its dex class holds Octave's code (spec check issue 2).
+  //
+  // A synthetic-only stack is one whose every frame is the class line of a section R8 marks synthesized: R8's own
+  // dispatch in a merged lambda group, where R8 keeps no frame of the lambda's source (a method reference, for
+  // example). It is judged as Octave's code when the section holds Octave's code anywhere (review fix, T3-19); D2
+  // judges it by the holder of the member it references (judgeSink), never by the group's class name, which follows
+  // R8's choice of lambda.
+  function stacksOf(dexClass, name, descriptor, line) {
+    const section = mapping.sections.get(dexClass);
+    const syntheticOctave = () => section.original.startsWith(OCTAVE) || sectionHoldsOctave(dexClass);
+    const found = framesAt(mapping, dexClass, name, descriptor, line);
+    if (found.length > 0) {
+      return found.map((holders) => {
+        const synthetic = section.synthesized && holders.every((holder) => holder === section.original);
+        return holders.map((holder) => ({ holder, octave: holder.startsWith(OCTAVE) || (synthetic && syntheticOctave()), synthetic }));
+      });
+    }
     // A class R8 synthesized (a lambda, a bridge) is attributed by its class line (spec, "Attribution", step 4).
-    if (section?.synthesized) return [[{ holder: section.original, octave: section.original.startsWith(OCTAVE) }]];
+    if (section?.synthesized) return [[{ holder: section.original, octave: syntheticOctave(), synthetic: true }]];
     const label = `unresolved:${dexClass}.${name}${section ? ` (class line ${section.original})` : ""}`;
-    return [[{ holder: label, octave: sectionIsOctave(dexClass) }]];
+    return [[{ holder: label, octave: sectionHoldsOctave(dexClass), synthetic: false }]];
   }
 
   const where = (site) => `${site.dexClass}.${site.name}${site.line !== null ? ` line ${site.line}` : ""}`;
+
+  // The frames a sink reference is judged by. A synthetic-only stack outside Octave's code stands for the member it
+  // references: its member-line holders, when one is left after LIBRARY_INTERNAL. A type-only reference, or one to
+  // okhttp3 itself, keeps the synthetic frame, which no row names, so it fails D2.
+  function sinkFrames(site, stack) {
+    const frames = stack.filter((frame) => !libInternal(frame.holder));
+    if (!isSyntheticOnly(stack) || stack.some(isOctave)) return frames;
+    const callees = (site.callees ?? []).filter((holder) => !libInternal(holder));
+    if (callees.length === 0) return frames;
+    return callees.map((holder) => ({ holder, octave: holder.startsWith(OCTAVE), synthetic: false }));
+  }
 
   // D1 and D2 for one sink reference at a site.
   function judgeSink(site, sink, { exemptOctaveNewCall = false } = {}) {
     stats.rawSinks += 1;
     let counted = false;
     for (const stack of site.stacks) {
-      const frames = stack.filter((frame) => !libInternal(frame.holder));
+      const frames = sinkFrames(site, stack);
       if (frames.length === 0) continue;
       if (exemptOctaveNewCall && frames[0].holder.startsWith(OCTAVE)) continue;
       counted = true;
@@ -106,7 +146,7 @@ export async function judgeDex(lines, mapping, lists) {
         const inner = frames[0];
         if (!(inner.octave && (oneClient[sink.id] ?? []).includes(inner.holder))) {
           const octave = frames.find(isOctave);
-          report(`D1|${octave.holder}|${sink.id}`, `D1 ${octave.holder} holds ${sink.id} (${sink.what}) at ${where(site)}, outside the one client; ${SEND_THROUGH}`);
+          report(`D1|${octave.holder}|${sink.id}`, `D1 ${who(octave)} holds ${sink.id} (${sink.what}) at ${where(site)}, outside the one client; ${SEND_THROUGH}`);
         }
       }
       for (const frame of frames) {
@@ -154,6 +194,7 @@ export async function judgeDex(lines, mapping, lists) {
         : resolveField(mapping, member.owner, member.name, member.descriptor).map((holder) => ({ holder, name: member.name }));
     }
     const named = new Set([...typeNames, ...holders.map((h) => h.holder)]);
+    site.callees = [...new Set(holders.map((h) => h.holder))];
     const octave = site.stacks.some((stack) => stack.some(isOctave));
     if (octave) stats.octaveSeen = true;
 
@@ -182,6 +223,25 @@ export async function judgeDex(lines, mapping, lists) {
       if (sinkMethodNames.has(member.name) && mapping.sections.has(member.owner)) pending.push({ site, owner: member.owner, name: member.name, found });
     }
 
+    // D4 on R8's dispatch outside Octave's code (review fix, T3-19): a method reference R8 folds into a merged lambda
+    // group keeps no frame of the source that made it, so a member of a client hook referenced from a synthetic-only
+    // stack fails whatever else the group holds. A listed entry point is not judged here: library lambdas reach their
+    // own classes this way (worklets' Networking getter, W3).
+    if (member) {
+      for (const stack of site.stacks) {
+        if (!isSyntheticOnly(stack) || stack.some(isOctave)) continue;
+        for (const h of holders) {
+          const hook = lists.hooks.find((entry) => matchesClass(h.holder, entry));
+          if (hook) {
+            report(
+              `D4S|${stack[0].holder}|${h.holder}`,
+              `D4 ${stack[0].holder} (R8's merged lambda dispatch, no source frame) references ${h.holder}.${h.name} at ${where(site)}, which is a client hook (ENTRY_POINT_HOOKS); a method reference to a hook is refused wherever R8 puts it; ${SEND_THROUGH}`,
+            );
+          }
+        }
+      }
+    }
+
     if (!octave) {
       // D6.
       const refs = [member?.owner, ...types].filter((t) => t && devSupportDex.has(t));
@@ -192,16 +252,22 @@ export async function judgeDex(lines, mapping, lists) {
     // D4 (decision log 22): each dev.octave. frame makes one reference. The innermost remaining frame references the
     // operand, resolved by member; an Octave frame further out references the next-inner frame, the callee R8 inlined.
     const octaveHolder = site.stacks.flatMap((s) => s).find(isOctave).holder;
-    const judgeReference = (from, name) => {
+    const judgeReference = (frame, name) => {
+      const from = frame.holder;
       const hit = listed.find((entry) => matchesClass(name, entry));
-      if (hit) report(`D4|${from}|${name}`, `D4 ${from} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
+      if (hit) report(`D4|${from}|${name}`, `D4 ${who(frame)} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
     };
     for (const stack of site.stacks) {
       const frames = stack.filter((frame) => !libInternal(frame.holder));
+      // R8's dispatch casts a merged lambda's captured value back to its type before the case's code; the cast is R8's,
+      // and the dex type is often a merged class, so its originals name classes no lambda in the group uses. The cast
+      // alone is not judged by D4; every member reference and other type reference there is, and sinks are judged above.
+      const dispatchCast = opcode === "check-cast" && isSyntheticOnly(stack);
       frames.forEach((frame, i) => {
         if (!frame.octave) return;
-        if (i === 0) for (const name of named) judgeReference(frame.holder, name);
-        else if (!frames[i - 1].octave) judgeReference(frame.holder, frames[i - 1].holder);
+        if (i === 0) {
+          if (!dispatchCast) for (const name of named) judgeReference(frame, name);
+        } else if (!frames[i - 1].octave) judgeReference(frame, frames[i - 1].holder);
       });
     }
     // Decision log 14: Octave takes a call or web socket factory only from Octave's own code.
