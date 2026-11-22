@@ -46,6 +46,7 @@ jobs:
       - run: pnpm lint:boundaries
       - run: pnpm lint
       - run: pnpm lint:network
+      - run: pnpm lint:logs
       - run: pnpm lint:ghost-terms
       - run: pnpm lint:flow
       - run: pnpm test

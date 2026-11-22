@@ -29,9 +29,10 @@
     "lint:backlog": "node scripts/check-backlog.mjs",
     "lint:ghost-terms": "node scripts/check-ghost-terms.mjs",
     "lint:network": "node scripts/check-network-paths.mjs",
+    "lint:logs": "node scripts/check-session-logs.mjs",
     "lint:flow": "node scripts/check-flow.mjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p packages/core/tsconfig.json && tsc -p apps/tv/tsconfig.json",
-    "check": "pnpm lint:boundaries && pnpm lint && pnpm lint:network && pnpm lint:ghost-terms && pnpm lint:flow && pnpm test && pnpm typecheck && pnpm test:workflow"
+    "check": "pnpm lint:boundaries && pnpm lint && pnpm lint:network && pnpm lint:logs && pnpm lint:ghost-terms && pnpm lint:flow && pnpm test && pnpm typecheck && pnpm test:workflow"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
