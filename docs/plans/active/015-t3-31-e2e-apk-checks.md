@@ -27,6 +27,15 @@
 ## Surprises & discoveries
 
 - Local e2e dex check: 5310 classes, 222 sink references, same as the release APK; no row was needed for the e2e APK (item 3).
-- Negative control (mapping cut to 100 lines): the dex check printed its D3 and D6 lines, the other two passed, `ERROR tv e2e: the e2e APK failed scripts/tv-apk-dex.mjs (exit 1); it was not installed; fix it and run pnpm tv:e2e:build`, exit 1, no adb call.
+- Pass lines of the three checks on the e2e APK (`apps/tv/dist/e2e/octave-tv-e2e.apk`, mapping `# pg_map_id: a005bc06e5db632695193179114b6dc53836e0053a175d5ba50f1afdf97cdaae`), exactly as printed:
+  - `tv apk dex: apps/tv/dist/e2e/octave-tv-e2e.apk passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)`
+  - `tv inspector: apps/tv/dist/e2e/octave-tv-e2e.apk passes (1 dex, 5310 classes, R8 release with its mapping; no class of expo.modules.kotlin.devtools, expo.modules.devlauncher, expo.modules.devmenu, expo.modules.networkaddons kept or renamed)`
+  - `tv native inspector: apps/tv/dist/e2e/octave-tv-e2e.apk passes (44 libraries in 2 ABIs; libreactnative.so defines the C++ inspector's network dispatcher in each and nothing calls it; no debugger-only string)`
+  - Re-run on the built APK after the review fix with `node scripts/tv-apk-dex.mjs`, `tv-apk-inspector.mjs` and `tv-apk-native-inspector.mjs` given the e2e APK and mapping (the same arguments `pnpm tv:e2e` passes); the lines match the run of `pnpm tv:e2e`.
+- Negative control (mapping cut to 100 lines, dex check on the built e2e APK, 45 `ERROR` lines; the first and last, and one D3 line):
+  - `ERROR tv apk dex: D2 unresolved:a5.c holds S6 (another platform HTTP stack, player URL, download manager or network-bound socket) at a5.c line 2, and no APK_NETWORK_ENTRY_POINTS row covers it; add a row with its reason, or remove the dependency (and 2 more like it)`
+  - `ERROR tv apk dex: D3 row N1 names com.facebook.react.modules.network.NetworkingModule, which holds none of S1 in the APK; remove it from the row, or correct the row`
+  - `ERROR tv apk dex: D6 DevSupportHttpClient is not in the APK, so DEV_SUPPORT_CLIENT_CALLERS must be empty`
+  - Under `pnpm tv:e2e` the other two checks passed, the run closed with `ERROR tv e2e: the e2e APK failed scripts/tv-apk-dex.mjs (exit 1); it was not installed; fix it and run pnpm tv:e2e:build`, exit 1, no adb call.
 - First `pnpm check` run had five apps/tv jest timeouts (cold cache, machine loaded); rerun alone and the full check passed.
 - The `tv` job step duration before/after is a CI measurement, recorded at Ship.
