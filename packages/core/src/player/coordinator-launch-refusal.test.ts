@@ -50,7 +50,7 @@ function setup(plans: PlaybackPlan[], sessionId: () => string = () => "session-1
     reportProgress: vi.fn(async () => undefined),
     reportStopped: vi.fn(async () => undefined),
     sessionId: vi.fn(sessionId),
-    stopActiveEncoding: vi.fn(async () => undefined),
+    stopActiveEncoding: vi.fn(async (_playSessionId: string, _signal?: AbortSignal) => undefined),
   } satisfies PlaybackGateway;
   const fake = createFakePlayerEngine();
   const subscribe = vi.spyOn(fake.engine, "subscribe");

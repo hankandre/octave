@@ -7,7 +7,8 @@
     "scripts/security-doc-t8-22.test.ts",
     "packages/core/src/player/coordinator.test.ts",
     "packages/core/src/player/coordinator-retry-position.test.ts",
-    "packages/core/src/player/coordinator-audio-pick.test.ts"
+    "packages/core/src/player/coordinator-audio-pick.test.ts",
+    "packages/core/src/player/coordinator-play-method.test.ts"
   ],
   "items": [
     { "item": 1, "run": ["pnpm", "--filter", "@octave/core", "--fail-if-no-match", "exec", "vitest", "run", "src/player/launch-request-hardening.test.ts", "-t", "T8-22 item 1:"] },

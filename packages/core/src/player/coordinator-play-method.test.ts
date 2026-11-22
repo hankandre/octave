@@ -131,7 +131,7 @@ describe("PlaybackCoordinator play-method confirmation", () => {
   });
 
   it("never asks for a direct-play session", async () => {
-    const context = setup({ ...hls, delivery: "static", playMethod: "DirectPlay", conversionReasons: [] } as PlaybackPlan, [async () => copies]);
+    const context = setup({ ...hls, streamUrl: "https://media.test/Videos/one/stream?Static=true", delivery: "static", playMethod: "DirectPlay", conversionReasons: [] } as PlaybackPlan, [async () => copies]);
     await playToFirstFrame(context);
     await context.clock.advance(30_000);
     expect(context.gateway.sessionPlayMethod).not.toHaveBeenCalled();
