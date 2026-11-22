@@ -3,15 +3,13 @@
 // log carries play-session ids, so its authoritative job signal is the transcode_jobs table, read through psql in the
 // fixture's database container. The count is two numbers and no id, so no play-session id reaches the log.
 import { execFile } from "node:child_process";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { composeArgs } from "./compose-project.mjs";
 import { classifyProcess } from "./tripwire-rules";
 import { listProcesses, sleep } from "./tripwire-container";
 import type { ItemDto, MonitorClient } from "./tripwire-server";
 
 const run = promisify(execFile);
-const composeFile = join(dirname(fileURLToPath(import.meta.url)), "docker-compose.yml");
 const SETTLE_TIMEOUT_MS = 120_000;
 const SETTLE_POLL_MS = 2000;
 export const ITEMS_QUERY = "/Items?Recursive=true&Fields=Path,MediaSources&IncludeItemTypes=Movie,Episode,Video";
@@ -25,7 +23,7 @@ export interface JobRowCounts {
 export async function jobRowCounts(): Promise<JobRowCounts> {
   const { stdout } = await run(
     "docker",
-    ["compose", "-f", composeFile, "exec", "-T", "jellyscale-db", "psql", "-U", "postgres", "-At", "-c",
+    ["compose", ...composeArgs(), "exec", "-T", "jellyscale-db", "psql", "-U", "postgres", "-At", "-c",
       "select count(*), count(*) filter (where state in ('queued','running')) from transcode_jobs"],
     { maxBuffer: 1024 * 1024 },
   );

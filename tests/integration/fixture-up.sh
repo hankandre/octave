@@ -20,4 +20,11 @@ if [ "${1:-}" = "--env-only" ]; then
   exit 0
 fi
 
-exec docker compose -f "$script_dir/docker-compose.yml" up -d --wait
+# T3-05 item 8: this checkout's own Compose project. The module is found from this script's real location, not
+# OCTAVE_FIXTURE_DIR, and only after the --env-only exit, so the env step still works when the script is copied alone.
+here="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)"
+project="$(node "$here/compose-project.mjs")"
+# The host ports are fixed: stop, naming the holder, when another project publishes one. Nothing is removed here.
+node "$here/compose-project.mjs" --check-ports
+echo "[fixture-up] Compose project $project"
+exec docker compose -p "$project" -f "$here/docker-compose.yml" up -d --wait
