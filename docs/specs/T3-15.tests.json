@@ -1,0 +1,12 @@
+{
+  "task": "T3-15",
+  "files": [
+    "scripts/tv-cleartext.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-cleartext.test.ts", "-t", "T3-15 item 1:"] },
+    { "item": 2, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-cleartext.test.ts", "-t", "T3-15 item 2:"] },
+    { "item": 3, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-cleartext.test.ts", "-t", "T3-15 item 3:"] },
+    { "item": 4, "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-cleartext.test.ts", "-t", "T3-15 item 4:"] }
+  ]
+}
