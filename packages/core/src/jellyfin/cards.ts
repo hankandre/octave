@@ -157,6 +157,7 @@ export function toRecentlyAdded(items: BaseItemDto[] | undefined, limit: number)
   const seenSeries = new Set<string>();
   for (const item of Array.isArray(items) ? items : []) {
     if (cards.length >= limit) break;
+    if (!item) continue;
     if (item.Type === "Movie") {
       const card = toMediaCard(item);
       if (card) cards.push(card);

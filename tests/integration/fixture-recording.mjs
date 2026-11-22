@@ -103,7 +103,8 @@ export function makeScrubber({ tokens, host, fakeUserIds, fakeServerId, knownIds
     result = result.replace(/([?&]PlaySessionId=)[^&"\s]*/gi, "$1play-session-1");
     result = result.split(host).join("jellyfin.test");
     for (const name of serverNames) result = result.split(name).join("Fixture Server");
-    result = result.replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, (m) => fake(m.replace(/-/g, "").toLowerCase()));
+    // No trailing boundary: a dashed id with more hex after it (a UserData.Key) is still that id.
+    result = result.replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, (m) => fake(m.replace(/-/g, "").toLowerCase()));
     return result.replace(/\b[0-9a-f]{32}\b/gi, (m) => fake(m.toLowerCase()));
   };
   // Object keys can hold ids too (ImageBlurHashes is keyed by image tag).
