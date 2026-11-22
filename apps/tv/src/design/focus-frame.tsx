@@ -1,0 +1,167 @@
+// The shared focus, press and disabled primitive (DESIGN.md §5, §7.19). A `Pressable` that draws a two-tone focus
+// ring while focused, lifts to `motion.lift` over `durQuick`, and scales to `pressScale` over `durInstant` on select.
+// With reduced motion on, nothing scales: the ring still shows. Every control is built on it.
+//
+// testIDs: `<testID>` is the Pressable (the element that takes focus and select), `<testID>-scale` the Animated.View
+// that holds the children and the transforms (no `transform` at rest), `<testID>-focus-ring` the inner ring, drawn
+// only while focused.
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Animated, Easing, Pressable, StyleSheet, View, type AccessibilityRole, type AccessibilityState, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
+import { useReducedMotion } from "./motion";
+import { px } from "./scale";
+import { colors, focus, motion, radii } from "./tokens";
+
+type FrameState = { focused: boolean; pressed: boolean };
+
+export type FocusFrameProps = {
+  testID?: string;
+  onPress?: (event: GestureResponderEvent) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  disabled?: boolean;
+  hasTVPreferredFocus?: boolean;
+  accessibilityLabel?: string;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityState?: AccessibilityState;
+  /** A `radii` key: the control's corner, which the ring follows. */
+  radius?: keyof typeof radii;
+  /** Layout of the pressable itself. */
+  style?: StyleProp<ViewStyle>;
+  /** The control's own box. It sits on the scaled element, so it lifts with the ring. */
+  contentStyle?: StyleProp<ViewStyle>;
+  children: ReactNode | ((state: FrameState) => ReactNode);
+};
+
+// A second activation closer than this to the first is the same select, seen twice.
+const ACTIVATION_GAP_MS = 50;
+
+const ringInset = focus.focusOffset + focus.focusRingWidth;
+const edgeInset = ringInset + focus.focusEdgeWidth;
+
+export function FocusFrame({
+  testID,
+  onPress,
+  onFocus,
+  onBlur,
+  disabled = false,
+  hasTVPreferredFocus,
+  accessibilityLabel,
+  accessibilityRole,
+  accessibilityState,
+  radius = "radiusControl",
+  style,
+  contentStyle,
+  children,
+}: FocusFrameProps) {
+  const reduced = useReducedMotion();
+  const [focused, setFocused] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const [lifted, setLifted] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
+  const liftedRef = useRef(false);
+  const lastChange = useRef<"focus" | "press">("focus");
+  const lastActivation = useRef(-Infinity);
+
+  const target = reduced ? 1 : (focused ? motion.lift : 1) * (pressed ? motion.pressScale : 1);
+
+  useEffect(() => {
+    if (reduced) {
+      scale.stopAnimation();
+      scale.setValue(1);
+      liftedRef.current = false;
+      setLifted(false);
+      return undefined;
+    }
+    if (target === 1 && !liftedRef.current) return undefined;
+    liftedRef.current = true;
+    setLifted(true);
+    const animation = Animated.timing(scale, {
+      toValue: target,
+      duration: lastChange.current === "press" ? motion.durInstant : motion.durQuick,
+      easing: Easing.bezier(...motion.easeOut),
+      useNativeDriver: true,
+    });
+    animation.start(({ finished }) => {
+      if (finished && target === 1) {
+        liftedRef.current = false;
+        setLifted(false);
+      }
+    });
+    return () => animation.stop();
+  }, [target, reduced, scale]);
+
+  const frameRadius = px(radii[radius]);
+  const showRing = focused && !disabled;
+
+  return (
+    <Pressable
+      testID={testID}
+      focusable={!disabled}
+      disabled={disabled}
+      hasTVPreferredFocus={hasTVPreferredFocus}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole={accessibilityRole}
+      accessibilityState={{ ...accessibilityState, disabled }}
+      style={style}
+      onPress={(event) => {
+        if (disabled) return;
+        // One select can reach us twice in the same instant: Pressability's release and a direct `press` (the test
+        // helper delivers both). A real second select is never within the same millisecond.
+        const now = Date.now();
+        if (now - lastActivation.current < ACTIVATION_GAP_MS) return;
+        lastActivation.current = now;
+        onPress?.(event);
+      }}
+      onFocus={() => {
+        if (disabled) return;
+        lastChange.current = "focus";
+        setFocused(true);
+        onFocus?.();
+      }}
+      onBlur={() => {
+        lastChange.current = "focus";
+        setFocused(false);
+        onBlur?.();
+      }}
+      onPressIn={() => {
+        if (disabled) return;
+        lastChange.current = "press";
+        setPressed(true);
+      }}
+      onPressOut={() => {
+        lastChange.current = "press";
+        setPressed(false);
+      }}
+    >
+      <Animated.View testID={testID ? `${testID}-scale` : undefined} style={[contentStyle, lifted && !reduced ? { transform: [{ scale }] } : undefined]}>
+        {typeof children === "function" ? children({ focused: showRing, pressed }) : children}
+        {showRing ? (
+          <>
+            <View pointerEvents="none" style={[styles.overlay, styles.edge, { borderRadius: frameRadius + edgeInset }]} />
+            <View testID={testID ? `${testID}-focus-ring` : undefined} pointerEvents="none" style={[styles.overlay, styles.ring, { borderRadius: frameRadius + ringInset }]} />
+          </>
+        ) : null}
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: { position: "absolute" },
+  ring: {
+    top: -px(ringInset),
+    right: -px(ringInset),
+    bottom: -px(ringInset),
+    left: -px(ringInset),
+    borderColor: colors.focus,
+    borderWidth: px(focus.focusRingWidth),
+  },
+  edge: {
+    top: -px(edgeInset),
+    right: -px(edgeInset),
+    bottom: -px(edgeInset),
+    left: -px(edgeInset),
+    borderColor: colors.focusEdge,
+    borderWidth: px(focus.focusEdgeWidth),
+  },
+});

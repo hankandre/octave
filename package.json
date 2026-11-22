@@ -6,7 +6,7 @@
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
-    "test": "pnpm --filter @octave/core --fail-if-no-match test && vitest run",
+    "test": "pnpm --filter @octave/core --fail-if-no-match test && pnpm --filter @octave/tv --fail-if-no-match test && vitest run",
     "test:watch": "vitest",
     "task": "node scripts/task.mjs",
     "test:workflow": "node --test .claude/workflows/*.test.mjs",
