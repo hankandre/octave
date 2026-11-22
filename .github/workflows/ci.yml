@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # edited: a changed base branch reruns the device-job skip decision against the new base (T1-17 review).
+    types: [opened, synchronize, reopened, edited]
   merge_group:
 
 concurrency:
