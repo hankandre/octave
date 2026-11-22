@@ -210,6 +210,28 @@ describe("T3-19 review fix: code R8 attributes only to a merged lambda group's s
     TIMEOUT,
   );
 
+  it(
+    "a cast to a listed class in a synthesized class whose own class line is dev.octave. still fails D4, as before the review fix",
+    async () => {
+      const own = "dev.octave.tv.Foo$$ExternalSyntheticLambda0";
+      const mapping = [
+        `${own} -> zh:`,
+        '# {"id":"sourceFile","fileName":"R8$$SyntheticClass"}',
+        '# {"id":"com.android.tools.r8.synthesized"}',
+        `    1:9:java.lang.Object ${own}.invoke():0:0 -> invoke`,
+      ].join("\n");
+      const cast = "check-cast v0, Lcom/facebook/react/modules/network/NetworkingModule; // type@0000";
+      const dump = composeDump() + groupDump([[3, cast]]).replaceAll("Lzg;", "Lzh;").replaceAll("zg.invoke", "zh.invoke");
+      const r = await runDex({ dump, mapping: `${composeMapping()}${mapping}\n` });
+      expect(r.code, r.out).toBe(1);
+      expect(
+        errors(r).some((line) => line.startsWith(`ERROR tv apk dex: D4 ${own}`) && line.includes("references com.facebook.react.modules.network.NetworkingModule")),
+        r.out,
+      ).toBe(true);
+    },
+    TIMEOUT,
+  );
+
   it("no production row names an R8 merged lambda class, whose name follows R8's choice", async () => {
     const lists = await loadProductionLists();
     const rows = lists.APK_NETWORK_ENTRY_POINTS as { id: string; classes: string[] }[];
