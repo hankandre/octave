@@ -1189,10 +1189,10 @@
             "Each control has a component test for activation with the select key"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit becdfe43: removed FocusFrame repeat guard per PO ruling; earlier commit 12e6ff32 holds tokens, lint, controls, fonts. pnpm check, tv:e2e, tv:smoke pass. Provisional: PO rulings (Jest setup, container-control reading) open."
+          "passes": true,
+          "evidence": "commit c51f5260: review fixes (Toast timer ref, TextField holdFocus) with new tests; earlier commits 12e6ff32 and becdfe43 hold tokens, lint, controls, fonts. pnpm check exit 0; jest src/design 6 suites pass. Not run: emulator D-pad checks (spec milestone 5), tv:smoke. Lows logged in docs/plans/active/012-t3-06-review-followups.md."
         },
         {
           "id": "T3-08",
