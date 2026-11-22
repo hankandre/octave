@@ -61,9 +61,12 @@ export const NETWORK_SINKS = [
     ],
     // What a one-client class (ONE_CLIENT_CLASSES.S4) may do of this kind: make a client socket. Everything else in
     // `methods`, a listening or datagram socket above all, fails D1 there too (T3-29). A method added to `methods` is
-    // not exempt until it is listed here with a reason.
+    // not exempt until it is listed here with a reason. `descriptors`, when present, names the only overloads (their
+    // parameter list, as `localOverloads` does) that are exempt: java.net.Socket also has Socket(String, int, boolean)
+    // and Socket(InetAddress, int, boolean), which make a datagram socket when the flag is false, and the protected
+    // Socket(SocketImpl) (android.jar 37.1, javap). DirectSocketFactory builds only Socket(Proxy) (review fix, T3-29).
     oneClientMethods: [
-      { classes: ["java.net.Socket"], names: ["<init>"] },
+      { classes: ["java.net.Socket"], names: ["<init>"], descriptors: ["(Ljava/net/Proxy;)"] },
       { classes: ["javax.net.SocketFactory"], names: ["createSocket"] },
     ],
   },
