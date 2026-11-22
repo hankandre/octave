@@ -1337,7 +1337,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 7f55877d on task/T3-29 (PR not yet open). pnpm check exit 0; pnpm tv:native:test: 689 tests, 0 failed; check-red --expect green: T3-29 items 1-4,6 (5 is ci), T3-19 1-5, T3-04 1-7. Local pnpm tv:build + pnpm tv:apk:check exit 0: \"tv apk dex: ... passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)\". Pending CI: the tv job's tv apk dex line in the PR. No device, emulator, Jellyfin or Jellyscale run (not a playback or app change)."
+          "evidence": "commit 12c70085 on task/T3-29 (PR not yet open; cite the PR at Ship). pnpm check exit 0; check-red --expect green: T3-29 items 1-4,6 (5 is ci), T3-19 1-5, T3-04 1-7. pnpm tv:apk:check on the local release APK exit 0: \"tv apk dex: ... passes (5310 classes in 1 dex files, 222 sink references in 14 listed entry points, 0 in Octave's code outside the one client)\". tv:native:test not re-run (no Kotlin change since its 689-test pass). Pending CI: the tv job's tv apk dex line in the PR. No device, emulator, Jellyfin or Jellyscale run."
         },
         {
           "id": "T3-30",
