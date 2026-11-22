@@ -600,7 +600,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit b3216465: ci.yml changes job, skip and retry rules, shim and two scripts, docs/commands.md CI section. All new tests pass except frozen ci-device-jobs.test.ts rename case (git mv into missing docs/, test bug). Item 4 open until a docs-only PR merges."
+          "evidence": "commit cb656cdb on task/T1-17: ci.yml changes job, skip and retry rules, shim, two scripts, docs/commands.md CI section. pnpm check passes (exit 0); items 1,2,3,6 green by check-red. Item 4 (ci gate) open until a docs/tasks-only PR merges; that PR sets done. PR number comes at Ship."
         },
         {
           "id": "T1-18",
