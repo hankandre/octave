@@ -620,10 +620,10 @@
             "The change is in .github/workflows/ci.yml and new files only, with no scripts/tv-* file changed; docs/commands.md or WORKFLOW.md states both rules in the same PR, and the PR calls out the CI change for the owner"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "PR #283: items 1,2,3,6 by frozen tests (pnpm check green). Item 4 on PR #283 run 45051904361: changes printed 'ci device jobs: run'; tripwire, tv, wire passed, retry steps skipped. Docs-only probe PR #284 (run 45053077005, closed): tripwire, tv, wire skipped. Open: first docs/tasks-only PR after merge, number to add."
+          "passes": true,
+          "evidence": "PR #283 merged 2026-11-22 with checks, dependency-review, tripwire, tv and wire green on its head: CI retries the tv/wire emulator step only when the emulator never reached the test script, and skips tv, wire and tripwire on pull requests that change only docs/ or tasks/ (fail-closed). Follow-up #290 reruns CI when a pull request's base changes. The task's status was left in_progress at merge; corrected here."
         },
         {
           "id": "T1-18",
