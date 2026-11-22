@@ -920,10 +920,10 @@
             "docs/security.md names the check and what it cannot see in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check && pnpm tv:smoke",
-          "status": "in_progress",
+          "status": "blocked",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit 76d2b7c2, 6083714d and d8bd9876 (review fix, decision log 25, a D2+D4 scope edit: synthetic-only lambda-group sites judged; X6 removed; cast exemption limited to non-Octave-named groups; plan 008 logs lows). At d8bd9876: pnpm check green (2583+1312 tests; 0 frozen changes); tv:apk:check passes (5111 classes, 192 sinks, 14 entry points) on build defa2869. From 6f945b93: tv:native:test 176/0, tv:smoke, tv:e2e on API 36 ATV emulator. Entries 22, 25 open to veto. Untested: Shield/real TVs, arm64, other Android versions, CI tv job, C++ inspector gate, Jellyfin/Jellyscale"
+          "evidence": "commit 52e832f1 (decision log 26: D4 reads a member's descriptor by its own signature). CI run 45013256258 reproduced locally on 0bf8d980+main bb6b2364 (same 29 D4 lines). After the fix pnpm check green (2596+1411 tests, frozen items 1-5 pass), but tv:apk:check still exits 1 on 10 D4 lines in R8's horizontally merged class wd0; open question 3 returns to the Product Owner. Not run: tv:smoke, tv:e2e, tv:native:test, dev-server watch, toybox nc. Untested: Shield/real TVs, other Android versions, CI tv job, Jellyfin/Jellyscale"
         },
         {
           "id": "T3-04",
