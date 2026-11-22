@@ -293,6 +293,18 @@ T3-16 narrows what `request` accepts (`docs/specs/T3-16.md`). It adds no method,
   A larger answer, 2xx or an error status, is refused before it is parsed: at once when it declares a larger length, otherwise after cap + 1 bytes. These replace T3-05's single 32 MiB limit.
 - **The named tests exist.** `request_refuses_headers_absolute_urls_and_other_origins` (`RequestSeamTest.kt`), `an_echoed_token_is_removed_from_response_bodies` (`EchoedTokenTest.kt`; its filter-off control is the tokenless path, where the filter holds no token, so no switch enters the filter), the control for `kotlin_header_matches_the_recorded_vector` (`HeaderVectorControlTest.kt`), and `release_build_has_no_inspector` (`scripts/tv-apk-inspector.mjs`, a step of `pnpm tv:apk:check`). The last covers both plugins this record names under "Against the Hermes and JavaScript surface" and in its sources, `DevLauncherPlugin.kt` and `NetworkAddonsPlugin.kt`: read at `e88ec73b49`, each injects into `OkHttpClient.Builder.build()` calls into `expo.modules.kotlin.devtools`, and the network-addons plugin also adds its own `expo.modules.networkaddons` interceptor in every variant.
 
+## Amendment, 2026-11-22 (T3-24): the path forms the T3-16 rule still passed
+
+T3-24 narrows what `request` accepts again (`docs/specs/T3-24.md`, "The rule as built"). It adds no method, no event, no argument key and no error code; every new refusal resolves `{ error: "refused" }`, and C2's is `outside-base-path`. The T3-16 amendment above stays as written; this replaces its P3 to P5 and adds P6 and P7. Round 0 is the path as written and rounds 1 to 4 are that text percent-decoded once more each time.
+
+- P3: no round holds a control character, U+0000 to U+001F or U+007F to U+009F.
+- P4: in no round, split on `/` and `\`, is a segment `.` or `..`, or made only of `.` and the nine dot-like characters (U+2024, U+2025, U+2026, U+3002, U+FE19, U+FE30, U+FE52, U+FF0E, U+FF61) with at least one of them.
+- P5: in round 0 every `%` begins two hex digits; in every round each run of escapes decodes as UTF-8; in rounds 1 to 4 a `%` that begins no escape is a literal.
+- P6: no round holds a `;`.
+- P7: round 4 holds no escape, so a path encoded deeper than the rule reads is refused.
+- C2 runs P2 to P7 (`RequestPath.holdsRefusedForm`, the function `RequestPath.isSafe` also calls) on the whole encoded path of every `Session` and `Closing` call (`BasePathFormsTest.kt`).
+- Limits: characters that fold to a separator or a `;` (U+FF0F, U+FF3C, U+FF1B, U+FE54, U+037E) are not refused; an id that holds a literal `%` and two hex digits that are not UTF-8 is refused; the query string is not judged by this rule; a base path that fails the rule signs in and then has every session call refused.
+
 ## Revisit if
 
 - A crash reporter, over-the-air JavaScript updates or any third-party runtime code is proposed. Under A that is a new reader of the token; under C it is not.
