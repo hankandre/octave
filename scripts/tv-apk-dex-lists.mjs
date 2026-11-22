@@ -93,7 +93,7 @@ export const NETWORK_SINKS = [
 ];
 
 // Framework classes and their framework superclass, for every class in android.jar 37.1 that extends a class a sink
-// method names (found with javap over the jar's java., javax. and android. classes; review fix, T3-19). The APK holds no
+// method names (found with javap over every class in the jar; review fix, T3-19). The APK holds no
 // framework class, so its declarations cannot say that android.net.SSLCertificateSocketFactory.createSocket is
 // SocketFactory.createSocket; this table does. A fact about the platform, not a policy list, so the judge reads it
 // directly and a test's own lists cannot drop it.
