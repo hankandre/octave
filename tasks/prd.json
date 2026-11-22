@@ -920,10 +920,10 @@
             "docs/security.md names the check and what it cannot see in the same PR"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check && pnpm tv:smoke",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 3a91767c: milestone 1 (dex check, tv:apk:check chain) committed, not green: on the real release APK D4 fails, MainApplication -> ReactHostImpl via Expo getDefaultReactHost code R8 inlined into its reactHost lambda; ReactHostImpl is a row only through inlined InspectorNetworkHelper. Returned to the Product Owner (spec, Open questions for the Product Owner 1). Frozen items 1a and 4 green; 2, 3, 5 red (not reached)."
         },
         {
           "id": "T3-04",
