@@ -42,7 +42,7 @@ None added.
 
 - `docs/commands.md:16`: the passage claimed "console output and evidence never hold the device serial or address", and "a connection made before the controls run is counted apart" was false during `adb install`. Milestone 5 reworded the first claim to the serial and its host-and-port forms and made the second true; nothing else in the passage was changed. An address the serial does not contain is backlog work (`tasks/backlog.jsonl`, "Replace the addresses a named adb serial resolves to").
 - Frozen item 2 cases also miss `exec`/`execSync` command strings and the shell and `env` wrappers; those are covered by the unfrozen `check-adb-output-wrappers.test.ts` and `check-adb-output-shell-option.test.ts`.
-- Still open in the check: an interpreter given as a literal program (`spawnSync("node", ["-e", ...])`, `execFileSync("python3", ["-c", adbPath])`) gets no finding in a file that knows adb. Listed as not covered in `docs/security.md`.
+- Still open in the check: an interpreter given as a literal program (`spawnSync("node", ["-e", ...])`, `execFileSync("python3", ["-c", adbPath])`) gets no finding in a file that knows adb. Listed as not covered in `docs/security.md`. The same holds for a `shell` option under a quoted key (`{ "shell": true }`) or inside an options variable: the check reads only the name `shell` written in the call.
 
 ## Decisions
 
