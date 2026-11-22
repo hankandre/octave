@@ -1,6 +1,6 @@
 # Octave agent rules
 
-Octave is a Jellyfin and Jellyscale client for the TV that plays the original file whenever the device can and shows every server conversion: React Native (Expo, react-native-tvos) over a shared TypeScript core, with native Kotlin for networking and playback (Media3 first, libmpv later for originals only).
+Octave is a Jellyfin and Jellyscale client for the TV that plays the original file whenever the device can and shows every server conversion. These are the rules every agent follows. Where code lives is in `DOMAINS.md`; commands are in `docs/commands.md`; agents, models, and the task flow are in `WORKFLOW.md`.
 
 ## Read first
 
@@ -9,101 +9,65 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Read `DOMAINS.md` before adding or moving code.
 - Read `WORKFLOW.md` before planning multi-step work.
 - Read `docs/security.md` before touching tokens, the network, or redaction.
-
-## Layout
-
-- The core is the pnpm workspace package `@octave/core` in `packages/core` (`packages/core/src/domain/`, `packages/core/src/jellyfin/`, `packages/core/src/player/`, `packages/core/src/`) with its fixtures in `packages/core/tests/fixtures/`.
-- The TV app is the workspace package `@octave/tv` in `apps/tv` (T3-01): Expo SDK 58 on react-native-tvos. `pnpm tv:prebuild` generates `apps/tv/android/`, which is never committed; change native settings only through `apps/tv/app.config.ts` and the config plugins in `apps/tv/plugins/`. The app's JVM tests live in `apps/tv/native/`.
-- The native session module is the workspace package `@octave/session` in `modules/session` (T3-03): an Expo module with no JavaScript surface yet, holding the one authenticated OkHttp client in `dev.octave.session.http`, with its JVM tests beside it. `pnpm tv:native:test` runs them; `node scripts/tv-native-test-only.mjs <filter>` runs one class.
-- Planned: `modules/player` (T8-01). Until a task creates a path, do not write rules or code that assume it.
+- Read `docs/commands.md` before running checks, builds, or device tests.
 
 ## Tasks
 
-- Read and update tasks only through `pnpm task` (`next`, `show`, `list`, `set`); never load `tasks/prd.json` whole.
+- Read and update tasks only through `pnpm task`; never load `tasks/prd.json` whole.
 - Follow the `rules` array at the top of `tasks/prd.json`.
 - Change only a task's `status`, `owner`, `passes`, and `evidence` fields.
 - Keep evidence to 600 characters and name the PR or commit.
 - Append deferred or newly found work to `tasks/backlog.jsonl` as one JSON line (fields in `WORKFLOW.md` §2a); any agent or pull request may.
-- Only a Product Owner pass (Fable 5.2) adds, splits, reorders, or drops tasks, after triaging the backlog, through `scripts/task-owner.mjs` and a line in `tasks/product-owner-log.md`; the owner can veto any of it. `pnpm lint:flow` fails any other change.
-- Edit acceptance items only in a Product Owner pass: a scope-only edit needs the Product Owner's logged reason; an edit to on-screen wording, look or product direction needs an owner approval file. The owner can veto either.
+- Leave adding, splitting, reordering, and dropping tasks to a Product Owner pass; `pnpm lint:flow` fails any other change.
+- Edit acceptance items only in a Product Owner pass. Scope edits need its logged reason; on-screen wording, look, and product direction need an owner approval file.
+- Send technical, placement, dependency, and scope questions to the Product Owner; send only look, wording, and direction questions to the owner.
 - Link the task id in commits, plans, and PRs.
-- Read the dogfood server URL from `OCTAVE_DOGFOOD_SERVER`; never commit a server address, a credential, or the owner's name.
-
-## Subagents
-
-- `scout` (Haiku): read-only search.
-- `ci-triage` (Haiku): failing check output.
-- `refiner` (Opus; Fable for high-risk tasks): task refinement and `docs/specs/<TASK-ID>.md`.
-- `spec-checker` (Opus; Fable for high-risk tasks): fresh-context spec check.
-- `implementer` (Sonnet): one specified TypeScript milestone.
-- `reviewer` (Sonnet): routine diff review.
-- `native-engineer` (Opus): Kotlin, Expo native modules, Media3, and the native HTTP client.
-- `guardian` (Opus): high-risk diff review.
-- `planner` (Opus): plans and decision records.
-- `test-writer` (Sonnet; Opus for Kotlin): failing tests and `docs/specs/<TASK-ID>.tests.json` before implementation.
-- `product-owner` (Fable): backlog triage, priorities, and frozen-test rulings.
-
-## Commands
-
-- Use the Node version in `.node-version` (mise reads it via `mise.toml`; run `mise exec --` in non-interactive shells).
-- Install: `pnpm install`
-- Core unit tests (Vitest, Node environment): `pnpm --filter @octave/core test`; `pnpm test` runs them, then the root scripts and workflow tests
-- Type-check: `pnpm typecheck`
-- Lint: `pnpm lint`, `pnpm lint:boundaries`, `pnpm lint:network` (T3-04: no network path around the one client), `pnpm lint:ghost-terms`, `pnpm lint:backlog`, `pnpm lint:flow`
-- Task workflow tests: `pnpm test:workflow`
-- All checks: `pnpm check`
-- Server tripwire (needs `pnpm samples:generate`, `pnpm fixture:up`, `pnpm fixture:setup`): `pnpm test:tripwire`
-- Jellyscale fixture check (needs the fixture servers up and set up): `pnpm fixture:check-jellyscale` re-probes the pinned Jellyscale and fails if its endpoint inventory changed.
-- Task CLI: `pnpm task next`, `pnpm task show <id>`, `pnpm task list [--status s] [--phase p]`, `pnpm task set <id> --status s [--owner o] [--evidence-file f]`.
-- TV app (needs the Android SDK in `ANDROID_HOME` and the JDK `mise.toml` names): `pnpm tv:prebuild` (generate `apps/tv/android`), `pnpm tv:build` (release APK), `pnpm tv:apk:check` (its badging), `pnpm tv:native:test` (the app's and modules' JVM tests), `ANDROID_SERIAL=<your own emulator> pnpm tv:smoke` (first focus on an Android TV emulator), `pnpm tv:e2e:build` (the e2e APK), and `ANDROID_SERIAL=<your own emulator> pnpm tv:e2e` (the core's conformance suites under Hermes on the emulator; builds the e2e APK when it is missing or stale)
-- Not yet built: `pnpm tv:wire` (T3-05), `pnpm tv:visual` (T3-07).
+- Never commit a server address, a credential, or the owner's name; read the dogfood server from `OCTAVE_DOGFOOD_SERVER`.
 
 ## Hard rules
 
 Playback
 
 - Prefer direct play; fall back to direct stream, then transcode, only through Playback Negotiation.
-- Never request a conversion for a source that an engine on this device can play under the direct-play rules in `ARCHITECTURE.md` §3.
+- Never request a conversion for a source an engine on this device can play under the direct-play rules in `ARCHITECTURE.md` §3.
 - Show every server conversion and its reason in the player.
 - Send the same PlaybackInfo flags in the request body and the query string.
-- Send the Octave DeviceProfile with every PlaybackInfo request.
-- Never add codec or container conditions to the DeviceProfile.
+- Send the Octave DeviceProfile with every PlaybackInfo request; never add codec or container conditions to it.
 - Use a `TranscodingUrl` only after Playback Negotiation validates and rebuilds it.
 - Never let an HLS master playlist list subtitle or trickplay renditions.
-- Validate every HLS playlist natively before the player reads it (Media3's playlist parser hook on Android); refuse any URI that is not same-origin and credential-free. Every validator passes `packages/core/tests/fixtures/hls-playlists.json` and `packages/core/tests/fixtures/hls-master-urls.json`.
+- Validate every HLS playlist natively before the player reads it; refuse any URI that is not same-origin and credential-free. Every validator passes the shared HLS vectors.
 - Refuse media sources that `ARCHITECTURE.md` §3 can neither play nor convert.
 - Never add a generic player command, property, option, or header bridge.
 - Treat every new native module method or event as an architecture change.
-- Never fall back to a player or image path that cannot send the header (a web video element, Media3's default data sources).
+- Never fall back to a player or image path that cannot send the header.
 
 Tokens and network
 
-- Keep the token in native memory only (decision 0005): Kotlin's session registry holds it, and JavaScript holds an opaque session id and never sees the token. Kotlin alone sends and parses the sign-in calls.
-- Send every server request (sign-in, catalog, artwork, playlists, segments, media, subtitles) through the one authenticated OkHttp client; it adds the header only for the session's origin, follows no redirect, uses no proxy, stores no cookie, and refuses any other origin.
-- Strip the session's token value, as written and percent-encoded, from every response body before it crosses to JavaScript.
-- Keep the native session surface to `signIn`, `request`, `restoreSessions`, `endSession`, and the `sessionEnded` event; `request` takes no header and no absolute URL. Adding a method or event needs a decision record.
-- Load artwork natively: the image view takes an item id, image type, tag, size, and session id, never a URL, header, or token (T3-11).
-- Never use `DefaultHttpDataSource`, `DefaultDataSource.Factory`, or an ExoPlayer built without Octave's media source factory.
-- Treat a 3xx answer and a status of 0 as errors everywhere. A host with no native transport (Node tests, the tripwire) sets `redirect: "manual"` in one place, the core's transport adapter.
-- Never put a token in a URL, a React prop, an event, or a log; authenticate media, playlists, segments, and images with the header.
+- Keep the token in native memory only (decision 0005); JavaScript holds an opaque session id and never sees the token.
+- Send every server request through the one authenticated client; never open a network path around it.
+- Add the header only for the session's origin; follow no redirect, use no proxy, store no cookie, and refuse any other origin.
+- Strip the session's token, as written and percent-encoded, from every response body before it crosses to JavaScript.
+- Keep the native session surface to the methods decision 0005 lists; adding a method or event needs a decision record.
+- Load artwork natively by item id, image type, tag, size, and session id; never pass a URL, header, or token to an image view.
+- Treat a 3xx answer and a status of 0 as errors everywhere.
+- Never put a token in a URL, a React prop, an event, JavaScript storage, a cache, React state, or a log.
 - Never log or display tokens, passwords, authenticated URLs, or play-session IDs.
-- Never persist a token, except as the one encrypted record native code writes under an Android Keystore key in the no-backup directory (decision 0005); users stay signed in by default.
-- Never let a token reach JavaScript storage, Query caches, React state, a prop, an event, or a log.
-- Sign in from a development build only to a development server, never to a server holding a real library.
-- A playback task passes only when its wire test passes against Jellyscale: the header on every request, no token in any URL, no redirect followed, no other origin contacted.
+- Never persist a token except as decision 0005's one Keystore-encrypted record.
+- Sign in from a development build only to a development server.
+- Pass a playback task only when its wire test passes against Jellyscale.
 - Never work around a missing Jellyscale feature with a token in a URL.
 
 Code boundaries
 
-- Talk to Jellyfin and Jellyscale only through `packages/core/src/jellyfin/gateway.ts`.
+- Talk to Jellyfin and Jellyscale only through the core's gateway.
 - Build media URLs only in Playback Negotiation.
-- Keep `packages/core/src/domain/` free of React, React Native, Expo, SDK, and HTTP imports.
+- Keep the domain layer free of React, React Native, Expo, SDK, and HTTP imports.
 - Keep the core free of platform APIs; take them through ports.
 - Never introduce Flutter.
 
 Dependencies
 
-- Before adopting a dependency, verify from primary sources that it is actively maintained: recent releases and commits, not archived, and no maintainer statement of maintenance mode or supersession. Record the check in the task's spec.
+- Before adopting a dependency, verify from primary sources that it is actively maintained, and record the check in the task's spec.
 - Re-check every dependency when a phase starts.
 
 ## Code style
@@ -119,7 +83,7 @@ Dependencies
 ## Design
 
 - Follow `DESIGN.md` for every UI change.
-- Use the design tokens (T3-06 adds them in TypeScript); never hard-code colours, sizes, radii, or durations.
+- Use the design tokens; never hard-code colours, sizes, radii, or durations.
 - Build screens from the shared controls; never use a platform picker or dialog the D-pad cannot style or focus.
 - Make every screen work with the D-pad, select, and Back alone, and honour reduced motion.
 - Map errors to plain copy; never show a transport error message.
@@ -128,10 +92,9 @@ Dependencies
 ## Tests
 
 - Add a focused test with every behavior change.
-- Place unit tests beside modules as `*.test.ts`.
-- Use Vitest for the core, JVM tests for Kotlin, and the emulator tests for the app (`pnpm tv:e2e`, T3-02; the focus test, T3-10).
 - Never skip, weaken, or delete a test to pass a check.
-- Never change or delete a frozen test (a file listed in `docs/specs/<TASK-ID>.tests.json`); report a wrong one and the Product Owner step rules.
+- Never change or delete a frozen test (a file listed in `docs/specs/<TASK-ID>.tests.json`); report a wrong one and the Product Owner rules.
+- Never write an implementation, stub, or probe to prove a test can pass before the implement step.
 - Never stub a function to make a build pass.
 - Use fixtures; never commit credentials or copyrighted media.
 
@@ -161,6 +124,7 @@ Dependencies
 - Record decisions in the active plan's decision log.
 - Propose a test, lint, or rule after the second correction for the same mistake.
 - Never claim a check passed without showing its output.
+- When a command is denied, stop and report it; never retry it in another place or form.
 
 ## Parallel work
 
@@ -169,29 +133,23 @@ Dependencies
 - Never run `git stash` or `git reset --hard`.
 - Never force-push `main` or another agent's branch.
 - Rebase your own unmerged PR branch, then `git push --force-with-lease`.
-- Resolve PR conflicts by rebasing, as the `ship` skill describes.
 - Never edit another agent's claimed milestone.
-- Keep native module, player, and on-device work serial.
+- Keep native module, player, and on-device work serial; use only your own emulator.
 
 ## Models
 
 - Run each task as: refine + spec, spec check, failing tests, implement, verify, one review round, ship.
-- Use Haiku for search, log triage, commit messages, and watching PRs.
-- Use Sonnet for the coordinator, TypeScript implementation, tests, verify, and routine review.
-- Use Opus for specs and spec checks on routine tasks, native Kotlin, `guardian` review, and plans.
-- Use Fable for specs and spec checks on high-risk tasks (native, security, architecture, ADRs), and after Opus fails twice on the same problem.
-- Run one review round; fix critical, high, and medium findings; log lows in the plan.
-- Lower effort before choosing a weaker model.
-- Escalate one tier after two failed attempts.
+- Use the model `WORKFLOW.md` assigns to each stage.
+- Fix critical, high, and medium review findings; log lows in the plan.
+- Lower effort before choosing a weaker model; escalate one tier after two failed attempts.
 - Switch models only at task boundaries.
-- The task workflow's model choices live in MODELS in `.claude/workflows/task.js`; override per run with args.models.
 
 ## Pull requests
 
 - Ship every finished branch with the `ship` skill.
 - Never commit directly to `main`.
 - Merge only with green CI.
-- Call out changes to invariants, `docs/security.md`, release signing, or CI in the PR; merge on green.
+- Call out changes to invariants, `docs/security.md`, release signing, or CI in the PR.
 - Explain user impact, testing performed, and direct-play, conversion, and security implications.
 - List every untested device, Jellyfin, and Jellyscale gate.
 - Include screenshots for visible UI changes.
