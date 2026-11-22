@@ -2155,10 +2155,10 @@
             "The spec records the maintenance check, from primary sources, for the storage dependency it adopts, or uses a platform API"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:e2e",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit f7dd7a27 (branch task/T4-09, not pushed): pnpm check green; check-red T4-09 green [1,2,3], item 4 review gate; pnpm tv:native:test 707 tests, 0 failed; own fluster_tv API 36 emulator: OCTAVE_INSTALL_ID_STAGE=required pnpm tv:e2e passed, stage line relaunch=same clear=new restore=new transport=selected backup=refused; pnpm tv:wire --task T3-05 8 pairs passed. Pending: the PR's tv job must show the ran-stage line in e2e-install-id.txt (milestone 7). Not tested: real TV/Shield, CI image, other Android versions, tvOS."
         },
         {
           "id": "T4-03",
