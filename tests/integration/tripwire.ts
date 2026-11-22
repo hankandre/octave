@@ -35,6 +35,7 @@ import { fileURLToPath } from "node:url";
 import type { JellyfinGateway } from "../../packages/core/src/jellyfin/gateway";
 import { MemoryLanHttpConfirmations } from "../../packages/core/src/lan-http-confirmations";
 import { MemoryStreamingLimits, type StreamingLimitStore } from "../../packages/core/src/streaming-limits";
+import { withFixtureOrigins } from "./fixture-ports.mjs";
 import { checkPrecondition, classifyProcess, findTranscodeLogFiles, findTranscodeLogLines, type ServerKind } from "./tripwire-rules";
 import { LogWatcher, ProcessMonitor, countFfmpeg, listProcesses, sleep } from "./tripwire-container";
 import { SAMPLES, SERVERS, capabilitiesOf, runPlan, type CapabilitySetName, type SampleDef } from "./tripwire-expectations";
@@ -67,7 +68,8 @@ function readCredentials(): Record<string, string> {
     const at = line.indexOf("=");
     if (at > 0) values[line.slice(0, at)] = line.slice(at + 1);
   }
-  return values;
+  // T3-27: each <name>_url is this checkout's recorded origin, not a stale one in .credentials.
+  return withFixtureOrigins(values);
 }
 
 // After the last sample on a Jellyfin server: one more log read after a flush delay, the log liveness check, and a

@@ -16,10 +16,20 @@ restricted_user_name="octave-noconv"
 # mixes with octave-test, whose positions the tripwire leaves behind.
 discovery_user_name="octave-discovery"
 
+# T3-27: this checkout's host ports, written by pnpm fixture:up to .fixture-ports beside this script; the given
+# default is used when there is no record.
+port_of() {
+  local key="$1" default="$2" value=""
+  if [ -f "$script_dir/.fixture-ports" ]; then
+    value="$(grep "^${key}=" "$script_dir/.fixture-ports" | head -n 1 | cut -d= -f2- || true)"
+  fi
+  echo "${value:-$default}"
+}
+
 # Name and URL of each fixture server.
 servers=(
-  "jellyfin-10-11 http://127.0.0.1:18096"
-  "jellyfin-12 http://127.0.0.1:18097"
+  "jellyfin-10-11 http://127.0.0.1:$(port_of OCTAVE_FIXTURE_PORT_JELLYFIN_10_11 18096)"
+  "jellyfin-12 http://127.0.0.1:$(port_of OCTAVE_FIXTURE_PORT_JELLYFIN_12 18097)"
 )
 
 header_file="$(mktemp)"
@@ -205,7 +215,7 @@ done
 
 # Jellyscale (T2-08). It has no startup wizard and no user API: it created octave-test at its first start, from
 # the password pnpm fixture:up generated into .jellyscale.env. Setup signs in as that user and records it.
-jellyscale_url="http://127.0.0.1:18098"
+jellyscale_url="http://127.0.0.1:$(port_of OCTAVE_FIXTURE_PORT_JELLYSCALE 18098)"
 jellyscale_env_file="$script_dir/.jellyscale.env"
 
 wait_for_readyz() {

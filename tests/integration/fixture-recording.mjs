@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { withFixtureOrigins } from "./fixture-ports.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -13,7 +14,8 @@ export function readCredentials() {
     const at = line.indexOf("=");
     if (at > 0) values[line.slice(0, at)] = line.slice(at + 1);
   }
-  return values;
+  // T3-27: each <name>_url is this checkout's recorded origin, not a stale one in .credentials.
+  return withFixtureOrigins(values);
 }
 
 export const CLIENT = 'MediaBrowser Client="Octave Tests", Device="ci", DeviceId="octave-fixtures", Version="0"';
