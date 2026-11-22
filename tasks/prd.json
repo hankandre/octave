@@ -983,7 +983,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Implemented on task/T3-16 to commit 976e3ddc (milestones 2ec2396f path rule, cc2339ce caps, 45c9adc1+100a7e1e lint:logs, 6cf80d3c inspector check, 976e3ddc docs). pnpm check passed; pnpm tv:native:test 324 tests, 0 failed; check-red --expect green: items 4-8 green, 1-3 met; tv:build + tv:apk:check pass; inspector check on a debug APK exits 1 (N1, N2, N3). T3-05 wire rerun not run locally (another agent on-device); left to CI wire job. No PR yet."
+          "evidence": "Review fix at commit 717d2062: C2 runs P4/P5 on every session call's encoded path (BasePathDotSegmentTest red on old code, green now). Lows logged in docs/plans/active/009-t3-16-review-followups.md (commit 17d3c41a). pnpm check exit 0; pnpm tv:native:test 328 tests, 0 failed. Held in_progress: T3-05 wire rerun not passed (local run blocked at fixture:setup by orphaned octave-8b8377b9f2 containers on the shared ports); needs the wire and tv CI jobs green on the PR. No PR yet."
         },
         {
           "id": "T3-20",
