@@ -4,12 +4,12 @@
 
 Implement `docs/specs/T3-30.md` (T3-30).
 
-- [ ] Item 1: adb's output reaches no console line, thrown error or evidence file with the serial in it (`scripts/tv-adb.mjs`)
-- [ ] Item 2: `pnpm check` fails a script that starts adb itself (`scripts/check-adb-output.mjs`)
-- [ ] Item 3: the watch counts a control only while its own controls run, and a failed control fails the run
-- [ ] Item 4: two smoke runs on one host: the host-wide lock, an owner file, a message that names the other run
+- [x] Item 1: adb's output reaches no console line, thrown error or evidence file with the serial in it (`scripts/tv-adb.mjs`)
+- [x] Item 2: `pnpm check` fails a script that starts adb itself (`scripts/check-adb-output.mjs`)
+- [x] Item 3: the watch counts a control only while its own controls run, and a failed control fails the run
+- [x] Item 4: two smoke runs on one host: the host-wide lock, an owner file, a message that names the other run
 - [ ] Item 5: gate ci: the `tv` and `wire` jobs on the PR head (Ship)
-- [ ] Item 6: `docs/security.md` and `docs/commands.md`
+- [x] Item 6: `docs/security.md` and `docs/commands.md`
 
 ## Context and domains touched
 
@@ -48,4 +48,13 @@ Observed on the implementer's own emulator (AVD `fluster_tv`, API 36, 2026-11-22
 
 ## Validation evidence
 
-(Filled in per milestone.)
+Own emulator (`fluster_tv`, API 36, port 5590, under the device lock, torn down after), 2026-11-22:
+
+- `pnpm check`: exit 0 (root vitest 96 files, 1671 tests; workflow tests 87; typecheck; lint:flow `0 frozen changes`).
+- `node scripts/check-red.mjs T3-30 --expect green`: red [], green [1,2,3,4,6], gate item 5 (ci).
+- `ANDROID_SERIAL=emulator-5590 pnpm tv:smoke`: `tv focus: tile-0 took focus with no key, and one Right moved it to tile-1` and `tv smoke: the release app opened no connection to the development server port while it started`; `dev-server-watch.txt`: `port 8081: 2 of 2 control connections seen, 0 app connections, 0 connections before the controls (not counted)`.
+- A second smoke run started 4 s after the first failed at once with `ERROR tv smoke: another pnpm tv:smoke run on this host (process <pid>) holds port 8081; wait for it to finish: ...`; the first run still passed and the owner file was gone afterwards.
+- `ANDROID_SERIAL=emulator-5590 pnpm tv:e2e`: `url 202/202, device-id 13/13, host ok`; `cleartext private-lan ok, loopback ok, public 60/60 refused`; `resolved-address private ok, mixed ok, public refused`.
+- `pnpm tv:wire` was not run locally: the three real targets need the fixture servers, which another worktree's agent holds on the fixed ports (project `octave-0b031fb429`), and tearing them down is not this task's to do. The wire logcat path was run on the emulator instead: `startLogKeeper` over `openAdb(...).stream` kept 3589 lines with the start and end markers seen, no line holding the serial, and the serial written into the marker text came back as `[device]`. The CI `wire` job on the PR head is item 5's regression check (Ship).
+- Not run: the Shield or any real TV, network adb against a real device, any Android version but the emulator image's, the dogfood servers.
+
