@@ -54,8 +54,12 @@ export function safeUrlParts(rawUrl, secrets) {
   const secretInUrl = partHolds(rawUrl, secrets);
   const pathHolds = partHolds(rawPath, secrets) || partHolds(url.pathname, secrets);
   const nameHolds = names.map((name) => partHolds(name, secrets));
-  const valueHolds = values.some((value) => partHolds(value, secrets));
-  const spans = secretInUrl && !pathHolds && !nameHolds.some(Boolean) && !valueHolds;
+  // Per secret: one that is in the URL and in no single part spans "?", "&" or "=", whatever the other secrets do.
+  const spans = [...secrets].some(
+    (secret) =>
+      partHolds(rawUrl, [secret]) &&
+      ![rawPath, url.pathname, ...names, ...values].some((part) => partHolds(part, [secret])),
+  );
   return {
     path: pathHolds || spans ? STAND_IN : url.pathname,
     queryNames: names.map((name, index) => (nameHolds[index] || spans ? STAND_IN : parsed(name))),
