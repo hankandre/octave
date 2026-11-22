@@ -2,9 +2,11 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { LANES } from "./task.mjs";
 
 interface PrdTask {
   id: string;
+  lane?: string;
   depends_on: string[];
   status: string;
   passes: boolean;
@@ -95,6 +97,19 @@ function statusAndPassesDisagree(prd: Prd): string[] {
   return problems;
 }
 
+function laneProblems(prd: Prd): string[] {
+  const known: readonly string[] = LANES;
+  const problems: string[] = [];
+  for (const task of allTasks(prd)) {
+    if (task.lane === undefined || task.lane === null || task.lane === "") {
+      problems.push(`${task.id} has no lane`);
+    } else if (!known.includes(task.lane)) {
+      problems.push(`${task.id} has unknown lane ${task.lane}`);
+    }
+  }
+  return problems;
+}
+
 function findPrdProblems(prd: Prd): string[] {
   return [
     ...duplicateTaskIds(prd),
@@ -103,6 +118,7 @@ function findPrdProblems(prd: Prd): string[] {
     ...invalidStatuses(prd),
     ...passesWithoutEvidence(prd),
     ...statusAndPassesDisagree(prd),
+    ...laneProblems(prd),
   ];
 }
 
@@ -140,9 +156,21 @@ describe("tasks/prd.json", () => {
   });
 });
 
+describe("lanes", () => {
+  it("T1-19 item 1: scripts/task.mjs exports the lane list the real file is checked against", () => {
+    expect(Array.isArray(LANES)).toBe(true);
+    expect(LANES).toContain("workflow");
+  });
+
+  it("T1-19 item 1: the real file has no lane problem", () => {
+    expect(laneProblems(realPrd)).toEqual([]);
+  });
+});
+
 function makePrd(tasks: Partial<PrdTask>[], phaseIds: string[] = ["P0"]): Prd {
   const filled: PrdTask[] = tasks.map((task, index) => ({
     id: `P0-0${index + 1}`,
+    lane: "workflow",
     depends_on: [],
     status: "todo",
     passes: false,
@@ -202,5 +230,22 @@ describe("findPrdProblems", () => {
   it("reports passes without done", () => {
     const prd = makePrd([{ status: "todo", passes: true, evidence: "ran it" }]);
     expect(findPrdProblems(prd)).toContain("P0-01 has passes=true but status is todo");
+  });
+});
+
+describe("laneProblems", () => {
+  it("T1-19 item 1: reports a task with no lane", () => {
+    const prd = makePrd([{ lane: undefined }]);
+    expect(findPrdProblems(prd)).toContain("P0-01 has no lane");
+  });
+
+  it("T1-19 item 1: reports a task with an unknown lane", () => {
+    const prd = makePrd([{ lane: "x" }]);
+    expect(findPrdProblems(prd)).toContain("P0-01 has unknown lane x");
+  });
+
+  it("T1-19 item 1: reports nothing when every task has a lane from the list", () => {
+    const prd = makePrd([{ lane: "ui" }, { lane: "native-session" }, { lane: "device" }]);
+    expect(laneProblems(prd)).toEqual([]);
   });
 });
