@@ -1,0 +1,48 @@
+{
+  "runId": "wf_fixture-other",
+  "taskId": "fixturewf_fixture-other",
+  "workflowName": "build",
+  "status": "completed",
+  "durationMs": 100000,
+  "args": {
+    "task": "T9-93",
+    "root": "/home/canary-user/Code",
+    "notes": [
+      "CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret"
+    ]
+  },
+  "result": {
+    "merged": [
+      {
+        "task": "T9-93",
+        "outcome": "merged"
+      }
+    ]
+  },
+  "logs": [
+    "CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret"
+  ],
+  "summary": "CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret",
+  "workflowProgress": [
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "implement T9-93",
+      "phaseIndex": 4,
+      "phaseTitle": "Implement",
+      "agentId": "a001fixture1",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "attempt": 1,
+      "queuedAt": 1795400000000,
+      "startedAt": 1795400000000,
+      "durationMs": 7000,
+      "tokens": 9000,
+      "toolCalls": 1,
+      "promptPreview": "CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret",
+      "promptFramed": "CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret",
+      "resultPreview": "CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret",
+      "lastToolSummary": "CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret"
+    }
+  ]
+}
