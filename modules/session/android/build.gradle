@@ -13,13 +13,30 @@ def okhttpVersion = '5.5.1'
 def kotlinxSerializationJsonVersion = '1.9.0'
 def junitBom = 'org.junit:junit-bom:6.1.3'
 
+// The probe reads the shared host-class vectors from its test APK's assets; only that one fixture is copied.
+def octaveProbeAssets = layout.buildDirectory.dir("generated/octave-probe-assets").get().asFile
+def copyOctaveProbeAssets = tasks.register("copyOctaveProbeAssets", Sync) {
+  from(file("../../../packages/core/tests/fixtures/host-classes.json"))
+  into(octaveProbeAssets)
+}
+tasks.matching { it.name.endsWith("AndroidTestAssets") }.configureEach { dependsOn(copyOctaveProbeAssets) }
+
 android {
   namespace "dev.octave.session"
   defaultConfig {
     versionCode 1
     versionName "0.1.0"
+    // The device probe of T3-15 is a bare Instrumentation in src/androidTest: no test runner dependency.
+    testInstrumentationRunner "dev.octave.session.devicecheck.CleartextProbe"
+  }
+  sourceSets {
+    androidTest.assets.srcDir(octaveProbeAssets)
   }
   testOptions {
+    // The probe's test APK targets what the app targets: expo-root-project sets rootProject.ext.targetSdkVersion, and
+    // the app's build.gradle reads the same property. No default: below API 28 Android permits cleartext anyway, and
+    // the probe would prove nothing (docs/specs/T3-15.md).
+    targetSdk rootProject.ext.targetSdkVersion
     unitTests.all {
       useJUnitPlatform()
       // modules/session/android is three levels below the repository; canonicalPath resolves a node_modules symlink.
