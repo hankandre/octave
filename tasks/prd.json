@@ -2813,10 +2813,10 @@
             "The new vectors hold only synthetic media names and no token, host or address of a real server"
           ],
           "verify": "pnpm --filter @octave/core test && pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit c737f79a on task/T8-24: 12 forced-conversion vectors in hls-master-urls-device-conversion.json, README SHA, I2 cell, 3 backlog lines. pnpm check green (2903 + 1613 tests); check-red --expect green. Not run: device, tv:e2e, Jellyscale, tripwire."
+          "passes": true,
+          "evidence": "commit c737f79a on task/T8-24: 12 forced-conversion vectors in hls-master-urls-device-conversion.json, README SHA, I2 cell, 3 backlog lines. pnpm check green (2903 + 1613 tests). Frozen hls-master-urls.json diff empty. Not run: device, tv:e2e, Jellyscale, tripwire."
         },
         {
           "id": "T8-08",
