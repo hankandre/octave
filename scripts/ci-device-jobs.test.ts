@@ -137,6 +137,7 @@ describe("T1-17 item 2: changedPaths", () => {
   it("T1-17 item 2: a rename from apps/ into docs/ lists the old path too", async () => {
     const { changedPaths, deviceJobsDecision } = await load();
     const { dir, headSha } = mergeRepo({ "apps/tv/moved.ts": "export const x = 1;\n" }, (d) => {
+      mkdirSync(join(d, "docs"), { recursive: true });
       git(d, "mv", "apps/tv/moved.ts", "docs/moved.ts");
     });
     const result = changedPaths({ repo: dir, headSha });
