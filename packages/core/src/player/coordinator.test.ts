@@ -15,7 +15,7 @@ const item: LibraryItem = {
 const plan: PlaybackPlan = {
   itemId: "one",
   title: "One",
-  streamUrl: "https://media.test/video",
+  streamUrl: "https://media.test/Videos/one/stream?Static=true",
   mediaSourceId: "source",
   playSessionId: "session",
   startPositionTicks: 0,
@@ -100,7 +100,7 @@ describe("PlaybackCoordinator", () => {
   it("renegotiates PlaybackInfo and replaces the authenticated session on retry", async () => {
     const replacementPlan = {
       ...plan,
-      streamUrl: "https://media.test/video?other=1",
+      streamUrl: "https://media.test/Videos/one/stream?Static=true&PlaySessionId=session-2",
       playSessionId: "session-2",
     };
     const gateway = {

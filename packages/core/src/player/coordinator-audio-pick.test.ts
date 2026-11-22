@@ -14,7 +14,7 @@ function planFor(playSessionId: string, delivery: "static" | "hls" = "static"): 
   return {
     itemId: "one",
     title: "One",
-    streamUrl: "https://media.test/video",
+    streamUrl: delivery === "static" ? "https://media.test/Videos/one/stream?Static=true" : "https://media.test/videos/one/master.m3u8",
     mediaSourceId: "source",
     playSessionId,
     startPositionTicks: 0,

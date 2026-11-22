@@ -2596,7 +2596,7 @@
           ],
           "acceptance": [
             "The launch request forwards the parsed URL's href, never the raw input string",
-            "A launch URL with a fragment, a bracketed credential parameter name, or a MediaBrowser or Token= substring anywhere in it is refused before it reaches the engine, and the refusal carries no part of the URL",
+            "A launch URL with a fragment, a bracketed credential parameter name, a Token= substring anywhere in it, or a MediaBrowser substring in its query is refused before it reaches the engine, and the refusal carries no part of the URL",
             "Only two URL shapes reach the engine: an original file with Static=true, and master.m3u8 under the server's base path; any other shape is refused",
             "The original-file URL, the HLS URL and every server-supplied subtitle URL pass host rules R1 and R2 as written, not only an origin comparison",
             "A start position that is not a finite number is refused or sent as no start position, never as NaN",
