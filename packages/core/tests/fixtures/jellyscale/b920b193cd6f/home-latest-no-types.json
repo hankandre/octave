@@ -1,0 +1,417 @@
+[
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-1",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-2"
+    },
+    "IndexNumber": 1,
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Episode 1",
+    "ParentId": "id-3",
+    "ParentIndexNumber": 0,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "RunTimeTicks": 100210000,
+    "SeasonId": "id-3",
+    "SeriesId": "id-4",
+    "ServerId": "server-jellyscale",
+    "Type": "Episode",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-1",
+      "Key": "id-1",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-5",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-2"
+    },
+    "IndexNumber": 2,
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Episode 2",
+    "ParentId": "id-6",
+    "ParentIndexNumber": 1,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "RunTimeTicks": 100210000,
+    "SeasonId": "id-6",
+    "SeriesId": "id-4",
+    "ServerId": "server-jellyscale",
+    "Type": "Episode",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-5",
+      "Key": "id-5",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-7",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-2"
+    },
+    "IndexNumber": 1,
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Episode 1",
+    "ParentId": "id-6",
+    "ParentIndexNumber": 1,
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "RunTimeTicks": 100210000,
+    "SeasonId": "id-6",
+    "SeriesId": "id-4",
+    "ServerId": "server-jellyscale",
+    "Type": "Episode",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-7",
+      "Key": "id-7",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-8",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-9"
+    },
+    "IsFolder": false,
+    "IsHD": true,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic Versions",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-8",
+      "Key": "id-8",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-10",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-11"
+    },
+    "IsFolder": false,
+    "IsHD": true,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic Versions",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-10",
+      "Key": "id-10",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-12",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-13"
+    },
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic Sidecar",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-12",
+      "Key": "id-12",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-14",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-15"
+    },
+    "IsFolder": false,
+    "IsHD": true,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic HEVC HDR10",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-14",
+      "Key": "id-14",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "item-multitrack",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-13"
+    },
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic Multitrack",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "item-multitrack",
+      "Key": "item-multitrack",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "item-h264",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-13"
+    },
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic H264",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "item-h264",
+      "Key": "item-h264",
+      "LastPlayedDate": "2026-11-22T20:38:56.650213Z",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 30000000,
+      "Played": false,
+      "PlayedPercentage": 29.937132022752223
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-16",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-2"
+    },
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic Extras Featurette",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-16",
+      "Key": "id-16",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-17",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-13"
+    },
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic ASS",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-17",
+      "Key": "id-17",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-18",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-19"
+    },
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic AV1",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-18",
+      "Key": "id-18",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "mkv",
+    "Id": "id-20",
+    "ImageBlurHashes": {},
+    "ImageTags": {
+      "Primary": "id-2"
+    },
+    "IsFolder": false,
+    "IsHD": false,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "Synthetic Extras",
+    "PrimaryImageAspectRatio": 1.7777777777777777,
+    "ProductionYear": 2024,
+    "RunTimeTicks": 100210000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-20",
+      "Key": "id-20",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  },
+  {
+    "BackdropImageTags": [],
+    "ChannelId": null,
+    "Container": "ts",
+    "Id": "id-21",
+    "ImageBlurHashes": {},
+    "ImageTags": {},
+    "IsFolder": false,
+    "IsHD": true,
+    "LocationType": "FileSystem",
+    "MediaType": "Video",
+    "Name": "00000",
+    "RunTimeTicks": 100160000,
+    "ServerId": "server-jellyscale",
+    "Type": "Movie",
+    "UserData": {
+      "IsFavorite": false,
+      "ItemId": "id-21",
+      "Key": "id-21",
+      "PlayCount": 0,
+      "PlaybackPositionTicks": 0,
+      "Played": false
+    },
+    "VideoType": "VideoFile"
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "Items": [
+    {
+      "Name": "Synthetic Show S01E01",
+      "ServerId": "server-124",
+      "Id": "item-episode-1",
+      "Container": "mkv",
+      "ChannelId": null,
+      "RunTimeTicks": 100210000,
+      "IndexNumber": 1,
+      "ParentIndexNumber": 1,
+      "IsFolder": false,
+      "Type": "Episode",
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 1,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-06-03T12:00:00.0000000Z",
+        "Played": true,
+        "Key": "item-episode-1",
+        "ItemId": "item-episode-1"
+      },
+      "SeriesName": "Synthetic Show",
+      "SeriesId": "series-synthetic",
+      "SeasonId": "id-20",
+      "SeasonName": "Season 1",
+      "VideoType": "VideoFile",
+      "ImageBlurHashes": {},
+      "LocationType": "FileSystem",
+      "MediaType": "Video"
+    }
+  ],
+  "TotalRecordCount": 1,
+  "StartIndex": 0
+}
