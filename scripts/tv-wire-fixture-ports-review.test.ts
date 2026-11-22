@@ -42,3 +42,10 @@ describe("T3-27 review: wiring", () => {
     expect(source).toContain("upstream = { port: upstreamPort(pair.target, credentials) };");
   });
 });
+
+describe("T3-27 review: docs", () => {
+  it("docs/commands.md says tv:wire starts the fixtures when the checkout has no port record", () => {
+    const docs = readFileSync(new URL("../docs/commands.md", import.meta.url), "utf8");
+    expect(docs).toContain("starts the fixture servers when this checkout has no `tests/integration/.fixture-ports` record");
+  });
+});
