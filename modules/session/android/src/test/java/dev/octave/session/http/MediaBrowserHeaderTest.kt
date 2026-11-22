@@ -39,6 +39,20 @@ class MediaBrowserHeaderTest {
         assertNotNull(MediaBrowserAuthorization.parse(MediaBrowserHeader.build("", "", "", "", "t")), "empty fields with a token")
     }
 
+    // T3-05: the tokenless header of the six pre-sign-in calls is the fixture's expectedWithoutToken, byte for byte.
+    @Test
+    fun the_tokenless_header_matches_the_recorded_vector() {
+        assertEquals(5, vectors.size, "vectors")
+        for (vector in vectors) {
+            fun field(key: String) = vector[key]!!.jsonPrimitive.content
+            assertEquals(
+                field("expectedWithoutToken"),
+                MediaBrowserHeader.buildTokenless(field("client"), field("device"), field("deviceId"), field("version")),
+                field("name"),
+            )
+        }
+    }
+
     @Test
     fun a_lone_surrogate_is_refused() {
         for (text in listOf("a\uD83Db", "a\uDE00b", "end\uD83D")) {

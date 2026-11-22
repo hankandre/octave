@@ -3,11 +3,22 @@ package dev.octave.session.http
 import okhttp3.Interceptor
 import okhttp3.Response
 
-// Who a call is made for, carried as a private request tag. It names the session and never holds the header.
-// T3-05 adds the pre-sign-in authority as a second case.
+// Who a call is made for, carried as a private request tag.
+// - Session names a session; the header is the registry's.
+// - Tokenless carries a server address and the tokenless header (Token="") for the six calls decision 0005 allows
+//   before sign-in: the four PRE_SIGN_IN_ROUTES and the two sign-in posts (T3-05).
+// - Closing carries a session's entry after the registry removed it, for the one logout call (T3-05).
 internal sealed class CallAuthority {
     class Session(val id: SessionId) : CallAuthority() {
         override fun toString(): String = "CallAuthority.Session([redacted])"
+    }
+
+    class Tokenless(val address: ServerAddress, val headerValue: String) : CallAuthority() {
+        override fun toString(): String = "CallAuthority.Tokenless([redacted])"
+    }
+
+    class Closing(val entry: SessionEntry) : CallAuthority() {
+        override fun toString(): String = "CallAuthority.Closing([redacted])"
     }
 }
 
@@ -18,12 +29,23 @@ internal object SessionInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val authority = request.tag(CallAuthority::class.java)
-        val entry = when (authority) {
-            is CallAuthority.Session -> SessionRegistry.entry(authority.id)
-            null -> null
+        val headerValue = when (authority) {
+            is CallAuthority.Session -> {
+                val entry = SessionRegistry.entry(authority.id)
+                RequestPolicy.check(entry, request)?.let { throw OctaveHttpException(it) }
+                entry!!.authorization.headerValue()
+            }
+            is CallAuthority.Tokenless -> {
+                RequestPolicy.checkTokenless(authority.address, request)?.let { throw OctaveHttpException(it) }
+                authority.headerValue
+            }
+            is CallAuthority.Closing -> {
+                RequestPolicy.checkClosing(authority.entry, request)?.let { throw OctaveHttpException(it) }
+                authority.entry.authorization.headerValue()
+            }
+            null -> throw OctaveHttpException(HttpRefusal.NO_SESSION)
         }
-        RequestPolicy.check(entry, request)?.let { throw OctaveHttpException(it) }
-        val authorised = request.newBuilder().header("Authorization", entry!!.authorization.headerValue()).build()
+        val authorised = request.newBuilder().header("Authorization", headerValue).build()
         val response = chain.proceed(authorised)
         if (response.code in 300..399) {
             response.close()

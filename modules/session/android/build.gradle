@@ -50,9 +50,10 @@ dependencies {
   // jar) is 5.5.1 beside okhttp 5.5.1; at 4.9.2 it calls a class OkHttp 5 removed (apps/tv/native CookieJarLinkTest).
   implementation platform("com.squareup.okhttp3:okhttp-bom:${okhttpVersion}")
   implementation "com.squareup.okhttp3:okhttp:${okhttpVersion}"
+  // T3-05: sign-in builds and parses JSON, and the token filter reads parsed strings. Tree API only, no compiler plugin.
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinxSerializationJsonVersion}"
 
   testImplementation "com.squareup.okhttp3:mockwebserver3:${okhttpVersion}"
-  testImplementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinxSerializationJsonVersion}"
   testImplementation platform(junitBom)
   testImplementation "org.junit.jupiter:junit-jupiter"
   testImplementation "org.junit.jupiter:junit-jupiter-params"

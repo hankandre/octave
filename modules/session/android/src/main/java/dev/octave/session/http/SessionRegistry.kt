@@ -1,7 +1,5 @@
 package dev.octave.session.http
 
-import okhttp3.HttpUrl
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
 
@@ -29,8 +27,17 @@ class SessionId private constructor(val value: String) {
     }
 }
 
-// A session as the registry holds it: the pinned origin and the header value. Nothing outside http/ can read one.
-internal class SessionEntry(val scheme: String, val host: String, val port: Int, val authorization: MediaBrowserAuthorization) {
+// A session as the registry holds it: the pinned origin, the base path and the header value. Nothing outside http/
+// can read one.
+internal class SessionEntry(
+    val scheme: String,
+    val host: String,
+    val port: Int,
+    val authorization: MediaBrowserAuthorization,
+    val basePath: String = "",
+) {
+    val address: ServerAddress get() = ServerAddress(scheme, host, port, basePath)
+
     override fun toString(): String = "SessionEntry([redacted])"
 }
 
@@ -40,7 +47,8 @@ object SessionRegistry {
 
     // Opens a session for a server address as the core hands it over. Throws OctaveHttpException.
     internal fun open(baseUrl: String, authorization: MediaBrowserAuthorization): SessionId {
-        val entry = entryFor(baseUrl, authorization)
+        val address = ServerAddress.parse(baseUrl)
+        val entry = SessionEntry(address.scheme, address.host, address.port, authorization, address.basePath)
         while (true) {
             val id = SessionId.random()
             if (sessions.putIfAbsent(id, entry) == null) return id
@@ -51,42 +59,8 @@ object SessionRegistry {
         sessions.remove(session)
     }
 
+    // Removes the session and hands its entry to the one logout call (decision 0005: the entry goes first).
+    internal fun take(session: SessionId): SessionEntry? = sessions.remove(session)
+
     internal fun entry(session: SessionId): SessionEntry? = sessions[session]
-
-    private fun entryFor(baseUrl: String, authorization: MediaBrowserAuthorization): SessionEntry {
-        val written = HostClassifier.jsTrim(baseUrl)
-        // 1. A plain-HTTP address whose class is public, before any other check, so every public vector gets this code.
-        val plainHttp = written.length >= 5 && written.substring(0, 5).lowercase() == "http:"
-        if (plainHttp && HostClassifier.classifyServerAddress(written) == HostClass.PUBLIC) refuse(HttpRefusal.PUBLIC_HTTP)
-        // 2. R1 for https as well: a Unicode-written host would let the core and OkHttp disagree on the origin.
-        if (!HostClassifier.hasPlainAsciiAuthority(written)) refuse(HttpRefusal.INVALID_ADDRESS)
-        // 3. OkHttp must parse it, with no user info, query or fragment. A base path is kept; the pin is the origin.
-        val url = written.toHttpUrlOrNull() ?: refuse(HttpRefusal.INVALID_ADDRESS)
-        if (url.encodedUsername.isNotEmpty() || url.encodedPassword.isNotEmpty() || url.encodedQuery != null || url.encodedFragment != null) {
-            refuse(HttpRefusal.INVALID_ADDRESS)
-        }
-        // 4. The host OkHttp dials must be the host the classifier read.
-        val read = HostClassifier.parseServerHost(written) ?: refuse(HttpRefusal.INVALID_ADDRESS)
-        if (!dialsTheHostRead(read, url)) refuse(HttpRefusal.INVALID_ADDRESS)
-        return SessionEntry(url.scheme, url.host, url.port, authorization)
-    }
-
-    private fun dialsTheHostRead(read: ParsedHost, url: HttpUrl): Boolean {
-        val dialled = HostClassifier.parseUrlHost(url.host) ?: return false
-        val same = when (read) {
-            is ParsedHost.Ipv4 -> url.host == read.dotted
-            is ParsedHost.Name -> url.host == read.name
-            is ParsedHost.Ipv6 -> {
-                val mapped = read.mappedIpv4
-                if (mapped != null) {
-                    url.host == mapped.dotted
-                } else {
-                    dialled is ParsedHost.Ipv6 && dialled.groups.contentEquals(read.groups)
-                }
-            }
-        }
-        return same && HostClassifier.classify(read) == HostClassifier.classify(dialled)
-    }
-
-    private fun refuse(refusal: HttpRefusal): Nothing = throw OctaveHttpException(refusal)
 }
