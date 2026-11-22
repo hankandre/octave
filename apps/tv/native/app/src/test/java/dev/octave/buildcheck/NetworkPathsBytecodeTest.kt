@@ -10,8 +10,10 @@ import dev.octave.buildcheck.samples.SendsThroughACallFactory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.net.JarURLConnection
+import java.util.concurrent.TimeUnit
 import java.util.jar.JarFile
 
 // T3-04 items 1 and 2 by type (docs/specs/T3-04.md, "The JVM test"): Octave's compiled classes refer to no other HTTP
@@ -131,7 +133,38 @@ class NetworkPathsBytecodeTest {
         assertEquals(emptyList<NetworkViolation>(), found)
     }
 
+    // Rule D8 (T3-29): octaveClasses() finds Octave's code by the dev/octave/ prefix, as the dex check does; a module
+    // in another package would not be read here at all. The dex check's own guard runs on the same source, so the two
+    // checks cannot disagree about which module is Octave's.
+    @Test
+    fun octave_modules_declare_only_octave_packages() {
+        val (code, output) = modulePackages(BuildCheck.repoRoot)
+        assertEquals(0, code, output)
+        assertTrue(output.contains("all under dev.octave"), output)
+    }
+
+    @field:TempDir
+    lateinit var tempRoot: File
+
+    @Test
+    fun a_module_in_another_package_fails() {
+        val root = tempRoot
+        val source = "modules/lan/android/src/main/java/com/example/lan/Lan.kt"
+        root.resolve(source).apply { checkNotNull(parentFile).mkdirs() }.writeText("package com.example.lan\n\nclass Lan\n")
+        val (code, output) = modulePackages(root)
+        assertEquals(1, code, output)
+        assertTrue(output.contains(source) && output.contains("com.example.lan"), output)
+    }
+
     // --- helpers ---
+
+    private fun modulePackages(root: File): Pair<Int, String> {
+        val script = BuildCheck.repoRoot.resolve("scripts/octave-module-packages.mjs")
+        val process = ProcessBuilder("node", script.path, "--root", root.path).redirectErrorStream(true).start()
+        val output = process.inputStream.bufferedReader().readText()
+        assertTrue(process.waitFor(60, TimeUnit.SECONDS), "node did not finish running ${script.path}")
+        return process.exitValue() to output
+    }
 
     private fun probe(vararg members: MemberRef, name: String = "dev/octave/tv/Probe"): ClassRefs {
         val utf8 = members.flatMap { listOf(it.owner, it.name, it.descriptor) }.toSet()
