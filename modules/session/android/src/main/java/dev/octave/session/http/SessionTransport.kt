@@ -184,10 +184,14 @@ internal class SessionTransport(private val identity: ClientIdentity) {
 
     // An empty or non-JSON body is null, so no HTML error page crosses. The tree reader takes an unquoted word as a
     // literal (it read `<html>oops</html>` as one), so every literal must also be true, false, null or a JSON number.
+    // A text that begins with [ or { and nests deeper than JsonDepth.MAX (64) is UnusableAnswer before the parse, at
+    // every status (docs/specs/T3-25.md): the reader recurses on arrays, so the bound is checked on the text.
     private fun parse(bytes: ByteArray): JsonElement? {
         if (bytes.isEmpty()) return null
+        val text = String(bytes, Charsets.UTF_8)
+        if (JsonDepth.exceeds(text)) throw UnusableAnswer()
         val element = try {
-            Json.parseToJsonElement(String(bytes, Charsets.UTF_8))
+            Json.parseToJsonElement(text)
         } catch (_: Exception) {
             return null
         }
