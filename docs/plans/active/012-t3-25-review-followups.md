@@ -49,7 +49,16 @@ Follow-ups (low, not fixed in T3-25):
 
 ## Validation evidence
 
-Milestones 1 and 2, 2026-11-22: see the T3-25 evidence and the PR body.
+Milestones 1 and 2, 2026-11-22, at f3bdd5e5 (main source unchanged since e40bf264: `git diff --stat e40bf264..HEAD -- modules/session/android/src/main apps` is empty):
+
+- `mise exec -- pnpm check`: exit 0; vitest 2892 and 1619 passed; workflow tests pass 87, fail 0; flow ok: 10 commits ahead; frozen T3-25; 0 frozen changes.
+- `mise exec -- pnpm tv:native:test`: tv native: 682 tests, 0 failed, 2 projects.
+- `node scripts/tv-native-test-only.mjs dev.octave.session.http.AnswerReadErrorTest`: 4 tests, 0 failed. With `catch (error: Error) { ByteArray(0) }` added to `readLimited`: 2 failed; with `catch (_: Throwable)` in `parse`: 1 failed; main source restored with `git checkout` each time.
+- `node scripts/tv-native-test-only.mjs dev.octave.session.http.ResponseCapEdgeTest`: 3 tests, 0 failed.
+- `mise exec -- node scripts/check-red.mjs T3-25 --expect green`: red [], green [1,2,5], problems []; `T3-16`: red [], green [4,5,6,7,8], problems [].
+- `mise exec -- pnpm lint:flow`: flow ok: 10 commits ahead; frozen T3-25; 0 frozen changes.
+
+Not rerun: `pnpm tv:wire --task T3-05` (the diff since its run on e40bf264 is a JVM test and documents only); the wire job of `ci.yml` on the PR head (no PR yet). Not run: the Shield, any physical TV, arm64, other Android versions or AVDs, the pinned Jellyscale, Jellyfin 10.11 and 12.4 and the mock in this round, the dogfood servers, Android's ICU regex on the million-digit literal.
 
 ## Outcome & retrospective
 
