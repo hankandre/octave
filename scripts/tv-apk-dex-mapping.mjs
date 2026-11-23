@@ -11,6 +11,33 @@ const MEMBER_COMMENT = /^ {6}# (\{.*\})\s*$/;
 const PRIMITIVES = { void: "V", boolean: "Z", byte: "B", char: "C", short: "S", int: "I", long: "J", float: "F", double: "D" };
 
 export const REMOVED = "R8$$REMOVED$$CLASS$$";
+const OUTLINE_CALLSITE = "com.android.tools.r8.outlineCallsite";
+
+const sameMethod = (a, b) => a.holder === b.holder && a.name === b.name && a.args === b.args && a.ret === b.ret;
+
+/**
+ * An outline's positions (T8-01, Product Owner ruling of 2026-11-23). R8 writes each line an outline's call site lists
+ * in `positions` with the frames down to the method it took the outline from, and the call site's own stack holds the
+ * frames above that method. A one-line stack on such a line of the same dex method is read with the call site's outer
+ * frames as its outer frames. It fails closed: a line two call sites of the method list, a stack whose outermost frame
+ * is not the call site's innermost method, and every other stack are read as written.
+ */
+function readOutlinePositions(section) {
+  const sites = new Map();
+  for (const s of section.stacks) {
+    for (const line of s.outlinePositions ?? []) {
+      const key = `${s.name}|${line}`;
+      sites.set(key, sites.has(key) && sites.get(key) !== s ? null : s);
+    }
+  }
+  if (sites.size === 0) return;
+  for (const s of section.stacks) {
+    if (s.outlinePositions || s.range === null || s.range[0] !== s.range[1]) continue;
+    const site = sites.get(`${s.name}|${s.range[0]}`);
+    if (!site || site.frames.length < 2 || !sameMethod(s.frames[s.frames.length - 1], site.frames[0])) continue;
+    s.frames.push(...site.frames.slice(1).map((frame) => ({ ...frame })));
+  }
+}
 
 // `holder.name` or `name`. R8 writes a synthesized frame's holder as a simple name, relative to the section's package.
 function splitHolder(qualified, original) {
@@ -31,6 +58,7 @@ export function mappingBuilder() {
 
   const finishSection = () => {
     if (!section) return;
+    readOutlinePositions(section);
     // A residual signature is written once per method; it holds for every range of that method.
     const residuals = new Map();
     const key = (s) => {
@@ -75,6 +103,9 @@ export function mappingBuilder() {
           data = null;
         }
         if (data?.id === "com.android.tools.r8.residualsignature" && last) last.residual = data.signature;
+        if (data?.id === OUTLINE_CALLSITE && last?.frames && data.positions && typeof data.positions === "object") {
+          last.outlinePositions = Object.values(data.positions).filter((line) => Number.isInteger(line));
+        }
         if (data?.id === "com.android.tools.r8.synthesized") {
           // A frame of a method, or a field line: R8's own member (a merged constructor, a class-id field).
           if (lastFrame) lastFrame.synthesized = true;
