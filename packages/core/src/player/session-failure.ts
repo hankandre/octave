@@ -38,12 +38,12 @@ export function stopFailureAction(): PlaybackSessionAction {
   return { type: "failure", code: "stop-failed" };
 }
 
-// A message that is not a ReportingWarningCode goes to the log and gives an action with no code, which clears the warning.
+// A message that is not a ReportingWarningCode goes, filtered, to the log and leaves the state's warning as it was.
 export function reportingWarningAction(message: string | undefined, log: FailureLog): PlaybackSessionAction {
   if (message === undefined) return { type: "reporting-warning" };
   if ((REPORTING_WARNING_CODES as readonly string[]).includes(message)) {
     return { type: "reporting-warning", code: message as ReportingWarningCode };
   }
-  log(message);
-  return { type: "reporting-warning" };
+  log(errorReason(message, "Something went wrong."));
+  return { type: "reporting-warning", unchanged: true };
 }

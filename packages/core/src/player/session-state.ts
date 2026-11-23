@@ -14,7 +14,7 @@ export type PlaybackSessionAction =
   | { type: "reset" }
   | { type: "event"; event: PlayerEvent }
   | { type: "failure"; code: PlaybackFailureCode }
-  | { type: "reporting-warning"; code?: ReportingWarningCode };
+  | { type: "reporting-warning"; code?: ReportingWarningCode; unchanged?: true };
 
 export const initialPlaybackSessionState: PlaybackSessionState = {
   firstFrameReady: false,
@@ -30,6 +30,7 @@ export function playbackSessionReducer(
     case "failure":
       return { ...state, failure: action.code };
     case "reporting-warning":
+      if (action.unchanged) return state;
       return { ...state, reportingWarning: action.code };
     case "event":
       return reducePlayerEvent(state, action.event);
