@@ -1,0 +1,335 @@
+{
+  "description": "Launch requests the core builds on the edges of its host grammar (rules R1 and R2: a host with `_`, a bracketed IPv6 literal, a host in upper or mixed case), which packages/core/tests/fixtures/launch-requests.json does not hold. Each vector is a plan, a session id and the request packages/core/src/player/launch-request.ts builds from them; scripts/tv-launch-request-host-edges.test.ts checks the core still builds exactly each request, and every native launch reader accepts each request (Kotlin: modules/player/android/src/test/java/dev/octave/player/seam/LaunchRequestHostEdgesTest.kt). No address here is a real server; the IPv6 address is from the documentation range.",
+  "vectors": [
+    {
+      "name": "original file on a host with an underscore, plain-HTTP port",
+      "sessionId": "3f1c9a7e5b2d4c6e8a0b1c2d3e4f5a6b",
+      "plan": {
+        "itemId": "b2c3d4e5f60718293a4b5c6d7e8f90a1",
+        "title": "A Sample Episode",
+        "streamUrl": "http://media_box.test:8096/jellyfin/Videos/b2c3d4e5f60718293a4b5c6d7e8f90a1/stream?static=true&mediaSourceId=b2c3d4e5f60718293a4b5c6d7e8f90a1&playSessionId=1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b",
+        "mediaSourceId": "b2c3d4e5f60718293a4b5c6d7e8f90a1",
+        "playSessionId": "1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b",
+        "startPositionTicks": 0,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "1080p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2,
+            "isDefault": true
+          },
+          {
+            "index": 3,
+            "type": "Subtitle",
+            "displayTitle": "English (SDH) - SRT - External",
+            "codec": "srt",
+            "language": "eng",
+            "external": true,
+            "deliveryUrl": "http://media_box.test:8096/jellyfin/Videos/b2c3d4e5f60718293a4b5c6d7e8f90a1/b2c3d4e5f60718293a4b5c6d7e8f90a1/Subtitles/3/0/Stream.vtt",
+            "isHearingImpaired": true,
+            "isDefault": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1,
+        "defaultSubtitleStreamIndex": -1,
+        "delivery": "static",
+        "playMethod": "DirectPlay",
+        "conversionReasons": []
+      },
+      "request": {
+        "kind": "original",
+        "url": "http://media_box.test:8096/jellyfin/Videos/b2c3d4e5f60718293a4b5c6d7e8f90a1/stream?static=true&mediaSourceId=b2c3d4e5f60718293a4b5c6d7e8f90a1&playSessionId=1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b",
+        "sessionId": "3f1c9a7e5b2d4c6e8a0b1c2d3e4f5a6b",
+        "startPositionSeconds": 0,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "1080p H264 SDR",
+            "external": false,
+            "codec": "h264"
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "external": false,
+            "codec": "aac",
+            "language": "eng",
+            "channels": 2,
+            "isDefault": true
+          },
+          {
+            "index": 3,
+            "type": "Subtitle",
+            "displayTitle": "English (SDH) - SRT - External",
+            "external": true,
+            "codec": "srt",
+            "language": "eng",
+            "deliveryUrl": "http://media_box.test:8096/jellyfin/Videos/b2c3d4e5f60718293a4b5c6d7e8f90a1/b2c3d4e5f60718293a4b5c6d7e8f90a1/Subtitles/3/0/Stream.vtt",
+            "isDefault": false,
+            "isHearingImpaired": true
+          }
+        ],
+        "audioStreamIndex": 1,
+        "subtitleStreamIndex": -1
+      }
+    },
+    {
+      "name": "HLS audio conversion on a host with an underscore",
+      "sessionId": "3f1c9a7e5b2d4c6e8a0b1c2d3e4f5a6b",
+      "plan": {
+        "itemId": "d4e5f60718293a4b5c6d7e8f90a1b2c3",
+        "title": "A Sample Track",
+        "streamUrl": "http://music_box.test:8096/audio/d4e5f60718293a4b5c6d7e8f90a1b2c3/master.m3u8?MediaSourceId=d4e5f60718293a4b5c6d7e8f90a1b2c3&AudioCodec=aac&PlaySessionId=3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d",
+        "mediaSourceId": "d4e5f60718293a4b5c6d7e8f90a1b2c3",
+        "playSessionId": "3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d",
+        "startPositionTicks": 0,
+        "tracks": [
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "FLAC - Stereo",
+            "codec": "flac",
+            "language": "eng",
+            "external": false,
+            "channels": 2,
+            "isDefault": true
+          }
+        ],
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "AudioCodecNotSupported"
+        ],
+        "serverUrl": "http://music_box.test:8096",
+        "mediaKind": "audio"
+      },
+      "request": {
+        "kind": "hls",
+        "masterUrl": "http://music_box.test:8096/audio/d4e5f60718293a4b5c6d7e8f90a1b2c3/master.m3u8?MediaSourceId=d4e5f60718293a4b5c6d7e8f90a1b2c3&AudioCodec=aac&PlaySessionId=3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d",
+        "serverUrl": "http://music_box.test:8096",
+        "mediaKind": "audio",
+        "sessionId": "3f1c9a7e5b2d4c6e8a0b1c2d3e4f5a6b",
+        "startPositionSeconds": 0,
+        "tracks": [
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "FLAC - Stereo",
+            "external": false,
+            "codec": "flac",
+            "language": "eng",
+            "channels": 2,
+            "isDefault": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "original file on an IPv6 literal, written in upper case",
+      "sessionId": "3f1c9a7e5b2d4c6e8a0b1c2d3e4f5a6b",
+      "plan": {
+        "itemId": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+        "title": "A Sample Film",
+        "streamUrl": "https://[2001:DB8::8]:8920/Videos/a1b2c3d4e5f60718293a4b5c6d7e8f90/stream?Static=true&MediaSourceId=a1b2c3d4e5f60718293a4b5c6d7e8f90&PlaySessionId=0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a",
+        "mediaSourceId": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+        "playSessionId": "0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a",
+        "startPositionTicks": 12345000000,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "1080p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2,
+            "isDefault": true
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "English - Forced - SUBRIP",
+            "codec": "subrip",
+            "language": "eng",
+            "external": false,
+            "isForced": true,
+            "title": "Signs"
+          },
+          {
+            "index": 3,
+            "type": "Subtitle",
+            "displayTitle": "English (SDH) - SRT - External",
+            "codec": "srt",
+            "language": "eng",
+            "external": true,
+            "deliveryUrl": "https://[2001:DB8::8]:8920/Videos/a1b2c3d4e5f60718293a4b5c6d7e8f90/a1b2c3d4e5f60718293a4b5c6d7e8f90/Subtitles/3/0/Stream.srt",
+            "isHearingImpaired": true,
+            "isDefault": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1,
+        "defaultSubtitleStreamIndex": 3,
+        "delivery": "static",
+        "playMethod": "DirectPlay",
+        "conversionReasons": []
+      },
+      "request": {
+        "kind": "original",
+        "url": "https://[2001:db8::8]:8920/Videos/a1b2c3d4e5f60718293a4b5c6d7e8f90/stream?Static=true&MediaSourceId=a1b2c3d4e5f60718293a4b5c6d7e8f90&PlaySessionId=0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a",
+        "sessionId": "3f1c9a7e5b2d4c6e8a0b1c2d3e4f5a6b",
+        "startPositionSeconds": 1234.5,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "1080p H264 SDR",
+            "external": false,
+            "codec": "h264"
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "external": false,
+            "codec": "aac",
+            "language": "eng",
+            "channels": 2,
+            "isDefault": true
+          },
+          {
+            "index": 2,
+            "type": "Subtitle",
+            "displayTitle": "English - Forced - SUBRIP",
+            "external": false,
+            "codec": "subrip",
+            "language": "eng",
+            "title": "Signs",
+            "isForced": true
+          },
+          {
+            "index": 3,
+            "type": "Subtitle",
+            "displayTitle": "English (SDH) - SRT - External",
+            "external": true,
+            "codec": "srt",
+            "language": "eng",
+            "deliveryUrl": "https://[2001:db8::8]:8920/Videos/a1b2c3d4e5f60718293a4b5c6d7e8f90/a1b2c3d4e5f60718293a4b5c6d7e8f90/Subtitles/3/0/Stream.srt",
+            "isDefault": false,
+            "isHearingImpaired": true
+          }
+        ],
+        "audioStreamIndex": 1,
+        "subtitleStreamIndex": 3
+      }
+    },
+    {
+      "name": "HLS video conversion on a host written in mixed case",
+      "sessionId": "3f1c9a7e5b2d4c6e8a0b1c2d3e4f5a6b",
+      "plan": {
+        "itemId": "c3d4e5f60718293a4b5c6d7e8f90a1b2",
+        "title": "A Converted Film",
+        "streamUrl": "https://Media.TEST/jellyfin/videos/c3d4e5f60718293a4b5c6d7e8f90a1b2/master.m3u8?DeviceId=0123456789abcdef&MediaSourceId=c3d4e5f60718293a4b5c6d7e8f90a1b2&VideoCodec=h264&AudioCodec=aac&PlaySessionId=2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c&SubtitleMethod=External",
+        "mediaSourceId": "c3d4e5f60718293a4b5c6d7e8f90a1b2",
+        "playSessionId": "2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c",
+        "startPositionTicks": 600000000,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "1080p H264 SDR",
+            "codec": "h264",
+            "external": false
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "codec": "aac",
+            "language": "eng",
+            "external": false,
+            "channels": 2,
+            "isDefault": true
+          },
+          {
+            "index": 3,
+            "type": "Subtitle",
+            "displayTitle": "English (SDH) - SRT - External",
+            "codec": "srt",
+            "language": "eng",
+            "external": true,
+            "deliveryUrl": "https://Media.TEST/jellyfin/Videos/c3d4e5f60718293a4b5c6d7e8f90a1b2/c3d4e5f60718293a4b5c6d7e8f90a1b2/Subtitles/3/0/Stream.vtt",
+            "isHearingImpaired": true,
+            "isDefault": false
+          }
+        ],
+        "defaultAudioStreamIndex": 1,
+        "delivery": "hls",
+        "playMethod": "Transcode",
+        "conversionReasons": [
+          "VideoCodecNotSupported"
+        ],
+        "serverUrl": "https://Media.TEST/jellyfin/",
+        "mediaKind": "videos"
+      },
+      "request": {
+        "kind": "hls",
+        "masterUrl": "https://media.test/jellyfin/videos/c3d4e5f60718293a4b5c6d7e8f90a1b2/master.m3u8?DeviceId=0123456789abcdef&MediaSourceId=c3d4e5f60718293a4b5c6d7e8f90a1b2&VideoCodec=h264&AudioCodec=aac&PlaySessionId=2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c&SubtitleMethod=External",
+        "serverUrl": "https://media.test/jellyfin",
+        "mediaKind": "videos",
+        "sessionId": "3f1c9a7e5b2d4c6e8a0b1c2d3e4f5a6b",
+        "startPositionSeconds": 60,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "Video",
+            "displayTitle": "1080p H264 SDR",
+            "external": false,
+            "codec": "h264"
+          },
+          {
+            "index": 1,
+            "type": "Audio",
+            "displayTitle": "English - AAC - Stereo",
+            "external": false,
+            "codec": "aac",
+            "language": "eng",
+            "channels": 2,
+            "isDefault": true
+          },
+          {
+            "index": 3,
+            "type": "Subtitle",
+            "displayTitle": "English (SDH) - SRT - External",
+            "external": true,
+            "codec": "srt",
+            "language": "eng",
+            "deliveryUrl": "https://media.test/jellyfin/Videos/c3d4e5f60718293a4b5c6d7e8f90a1b2/c3d4e5f60718293a4b5c6d7e8f90a1b2/Subtitles/3/0/Stream.vtt",
+            "isDefault": false,
+            "isHearingImpaired": true
+          }
+        ],
+        "audioStreamIndex": 1
+      }
+    }
+  ]
+}

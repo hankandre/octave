@@ -4,13 +4,6 @@ import dev.octave.player.seam.PlayerSeam
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import java.util.concurrent.Executors
 
 // The player module (T8-01): the PlayerEngine port's six commands, its one event, playerEvent (the port's
 // subscribe), and one view with no prop. Its surface is held by surface-allowlist.json, docs/security.md and
@@ -19,12 +12,11 @@ import java.util.concurrent.Executors
 //
 // No engine is behind the seam until T8-02, so initialize answers "cannot tell" and a launch unsupported-request.
 //
-// Threading: each body hands the call to this module's own single thread and returns, so a command never holds
-// Expo's shared modules queue and commands run in the order they came. An engine marshals to the thread its player
-// needs.
+// Threading: each body hands the call to CommandQueue, this module's own single thread, and returns, so a command
+// never holds Expo's shared modules queue and commands run in the order they came. A command still queued when the
+// module is destroyed answers `unknown`. An engine marshals to the thread its player needs.
 class OctavePlayerModule : Module() {
-    private val dispatcher: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+    private val commands = CommandQueue()
     private val seam = PlayerSeam(null, RegistrySessionCheck) { event -> sendEvent("playerEvent", event) }
 
     override fun definition() = ModuleDefinition {
@@ -47,20 +39,9 @@ class OctavePlayerModule : Module() {
         View(OctavePlayerView::class) {}
 
         OnDestroy {
-            scope.cancel()
-            dispatcher.close()
+            commands.close()
         }
     }
 
-    private fun run(promise: Promise, call: () -> Map<String, Any?>) {
-        scope.launch {
-            // PlayerSeam catches everything itself; this is the last guard, and it carries a code only.
-            val result = try {
-                call()
-            } catch (_: Throwable) {
-                mapOf("error" to "unknown")
-            }
-            promise.resolve(result)
-        }
-    }
+    private fun run(promise: Promise, call: () -> Map<String, Any?>) = commands.run({ promise.resolve(it) }, call)
 }
