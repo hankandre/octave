@@ -134,7 +134,7 @@ describe("judgeManifestSurface", () => {
     const { judgeManifestSurface } = await loadCheck();
     const text = trimmedExcept();
     expect(text).toContain('"android.permission.INTERNET"');
-    expect(text).toContain('"dev.octave.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"');
+    expect(text).toContain('"cloud.jellyscale.octave.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"');
     expect(judgeManifestSurface(text)).toEqual([]);
   });
 
@@ -169,10 +169,10 @@ describe("judgeManifestSurface", () => {
 
   it.each(["permission", "permission-group", "permission-tree"])("T3-22 item 2: fails a declared %s no list names", async (element) => {
     const { judgeManifestSurface } = await loadCheck();
-    const block = [`      E: ${element} (line=200)`, nameAttr(8, "name", "0x01010003", "dev.octave.tv.EXTRA_DECLARED")].join("\n");
+    const block = [`      E: ${element} (line=200)`, nameAttr(8, "name", "0x01010003", "cloud.jellyscale.octave.EXTRA_DECLARED")].join("\n");
     const errors = judgeManifestSurface(withManifestChild(trimmedExcept(), block));
     expect(errors).toHaveLength(1);
-    expectErrors(errors, "dev.octave.tv.EXTRA_DECLARED");
+    expectErrors(errors, "cloud.jellyscale.octave.EXTRA_DECLARED");
   });
 
   it("T3-22 item 2: fails a <package> under <queries>", async () => {

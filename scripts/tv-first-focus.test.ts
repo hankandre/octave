@@ -23,7 +23,7 @@ async function loadJudge(): Promise<JudgeFirstFocus> {
   return module.judgeFirstFocus;
 }
 
-const RESOLVED = "OCTAVE_RESOLVE dev.octave.tv/.MainActivity";
+const RESOLVED = "OCTAVE_RESOLVE cloud.jellyscale.octave/dev.octave.tv.MainActivity";
 // `adb logcat` default (threadtime) format.
 const focus = (tile: number, time = "10:00:01.000") => `11-21 ${time}  4321  4377 I ReactNativeJS: OCTAVE_FOCUS tile-${tile}`;
 const press = (time = "10:00:02.000") => `11-21 ${time}  5000  5000 I OCTAVE_PRESS: 1 RIGHT`;

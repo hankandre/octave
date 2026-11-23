@@ -45,7 +45,7 @@ function files(dir: string): { name: string; text: string }[] {
 
 async function smokeChild(options: Partial<FakeSmokeOptions> & Pick<FakeSmokeOptions, "control">) {
   const port = await freePort();
-  const fake = writeFakeSmokeAdb({ serial: SERIAL, port, appId: ANDROID_APPLICATION_ID, ...options });
+  const fake = writeFakeSmokeAdb({ serial: SERIAL, port, appId: ANDROID_APPLICATION_ID, emulator: true, ...options });
   const evidence = temp("octave-smoke-evidence-");
   const apk = join(fake.dir, "app.apk");
   writeFileSync(apk, "apk");
@@ -120,6 +120,7 @@ describe("T3-30 item 1: the probes hold no device address", () => {
           serial: SERIAL,
           port: 1,
           appId: ANDROID_APPLICATION_ID,
+          emulator: true,
           control: "connect",
           reverse: failing === "reverse" ? "fail-named" : "ok",
           install: failing === "install" ? "fail-named" : "ok",
@@ -135,7 +136,7 @@ describe("T3-30 item 1: the probes hold no device address", () => {
     }
 
     it(`T3-30 item 1: ${label} with the serial in an instrumentation value writes and returns no form of it`, async () => {
-      const fake = writeFakeSmokeAdb({ serial: SERIAL, port: 1, appId: ANDROID_APPLICATION_ID, control: "connect", instrument: instrumentFor(key) });
+      const fake = writeFakeSmokeAdb({ serial: SERIAL, port: 1, appId: ANDROID_APPLICATION_ID, emulator: true, control: "connect", instrument: instrumentFor(key) });
       const evidenceDir = temp("octave-probe-evidence-");
       const result = await (await importProbe(module))[run]?.({ adbPath: fake.adb, serial: SERIAL, apk: join(fake.dir, "p.apk"), evidenceDir });
       expect(result).toBeDefined();

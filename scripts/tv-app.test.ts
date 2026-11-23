@@ -1,7 +1,8 @@
 // @vitest-environment node
 // T3-01 acceptance item 1: apps/tv is an Expo SDK 58 app on react-native-tvos 0.88.x that builds for TV, with the
-// application ID dev.octave.tv. The manifest pins every package the spec's Dependencies table adopts and none it
-// rejects; Expo's own config resolution gives the core's application ID and the TV plugin. The build is item 2's job.
+// application ID cloud.jellyscale.octave (T3-21 item 7). The manifest pins every package the spec's Dependencies table
+// adopts and none it rejects; Expo's own config resolution gives the core's application ID, the Kotlin package and the
+// TV plugin. The build is item 2's job.
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
@@ -116,9 +117,9 @@ describe("apps/tv resolved Expo config", () => {
   it(
     "T3-01 item 1: builds with the core's application ID and name, and the TV plugin on",
     () => {
-      expect(ANDROID_APPLICATION_ID).toBe("dev.octave.tv");
+      expect(ANDROID_APPLICATION_ID).toBe("cloud.jellyscale.octave");
       const config = expoConfig();
-      expect(config.android?.package).toBe(ANDROID_APPLICATION_ID);
+      // T3-21 item 7: android.package is the Kotlin package, apart from the application ID.
       expect(config.android?.package).toBe("dev.octave.tv");
       expect(config.name).toBe(APP_NAME);
       const tv = (config.plugins ?? []).find((plugin) => (Array.isArray(plugin) ? plugin[0] : plugin) === "@react-native-tvos/config-tv");
