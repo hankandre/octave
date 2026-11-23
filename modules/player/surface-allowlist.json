@@ -1,0 +1,8 @@
+{
+  "module": "OctavePlayer",
+  "functions": ["initialize", "launch", "setPaused", "seek", "selectTrack", "stop"],
+  "events": ["playerEvent"],
+  "eventKinds": ["loaded", "first-frame", "state", "tracks-changed", "ended", "error"],
+  "views": [{ "name": "OctavePlayerView", "props": [] }],
+  "pending": {}
+}

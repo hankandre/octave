@@ -1,0 +1,7 @@
+{
+  "module": "OctaveSession",
+  "functions": ["signIn", "request", "restoreSessions", "endSession"],
+  "events": ["sessionEnded"],
+  "views": [],
+  "pending": { "restoreSessions": "T4-05", "sessionEnded": "T4-05" }
+}
