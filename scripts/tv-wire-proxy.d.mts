@@ -1,6 +1,8 @@
 // Types for tv-wire-proxy.mjs.
 import type { CaptureRecord } from "./tv-wire-judge.mjs";
 export function describeAuthorization(value: unknown): { authorization: boolean; scheme: string | null; token: boolean };
+export type PlaybackInfoFlags = Record<"EnableDirectPlay" | "EnableDirectStream" | "EnableTranscoding" | "AllowVideoStreamCopy" | "AllowAudioStreamCopy" | "AutoOpenLiveStream", boolean | null>;
+export function playbackInfoFacts(body: string, rawUrl: string): { body: PlaybackInfoFlags; query: PlaybackInfoFlags; profile: string | null };
 export function startRecorder(options: {
   upstream: { port: number };
   secrets: Set<string>;
