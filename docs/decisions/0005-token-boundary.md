@@ -320,11 +320,20 @@ T3-25 narrows what an answer may hold (`docs/specs/T3-25.md`). It adds no method
 T3-11 builds the image view this record names ("How the player and the image loader get authority"; `docs/specs/T3-11.md`). It is an architecture change: a third native module with one view, five props and one view event. It adds no session method or event.
 
 - **A module of its own.** `modules/artwork` (`OctaveArtwork`) holds one view, `OctaveArtworkView`, and no function, module event, property or constant. The session module keeps its four methods, its one event and `views: []`; the artwork module has its own allowlist, `modules/artwork/surface-allowlist.json`, held by `scripts/tv-artwork-module.test.ts`, `ModuleSurfaceTest` and its line in `docs/security.md`.
-- **Five props and one event.** The props are `session` (the opaque id), `itemId`, `imageType` (`Primary`, `Backdrop`, `Thumb` or `Logo`), `tag` and `width` (the drawn width in canvas px). The one event, `onArtworkState`, carries `{ state: "loaded" | "failed" }`. No URL, header, token or BlurHash prop.
+- **Five props and one event.** The props are `session` (the opaque id), `itemId`, `imageType` (`Primary`, `Backdrop`, `Thumb` or `Logo`), `tag` and `width` (the drawn width in canvas px). The one event, `onArtworkState`, carries `{ state: "loaded" | "failed" }`. No URL, header, token or BlurHash prop (BlurHash: see the T3-39 amendment).
 - **The fetch stays in the session's HTTP package.** `ArtworkFetch` (Kotlin only, no JavaScript surface) builds `GET {base}/Items/{itemId}/Images/{type}?tag=&maxWidth=&quality=90&format=Webp` from the registry entry's address and sends it with `OctaveHttp.newCall` under the session's authority, so the interceptor adds the header and runs the origin pin, C2 and the 3xx refusal. The artwork module sees only bytes or a failure, and asks the registry nothing but `SessionRegistry.holds`.
 - **The header goes on every image request**, Jellyscale's public image route included (`ARCHITECTURE.md` §4).
 - **The cap, the timeout and 401.** `ArtworkRequest.cappedWidth` is the one cap: a width below 1 is refused, a Primary is asked for at most 400 px wide and the other types at most 1920. Each request has a 15 s timeout, no resend and the session-read body cap (8 MiB). A 401 makes the image `failed` and does not end the session; "a confirmed 401 ends the session" arrives with T4-05.
 - **The cache** holds decoded pixels in memory only, keyed by session, item, type, tag and capped width, and serves an entry only while the registry holds its session. No token, URL or header is in a key.
+
+## Amendment, 2026-11-23 (T3-39): the BlurHash prop
+
+T3-39 shows a blurred preview of a card's picture while it loads (`docs/specs/T3-39.md`; the owner's choice, `docs/specs/decisions-owner-inbox-2026-11-23b.md` §3). It changes the artwork view's surface: a sixth prop. It adds no method, no module event, no view event and no session method or event.
+
+- **The sixth prop.** `blurHash`, a string, holds the server's BlurHash for the image the card draws (`ImageBlurHashes[type][tag]`) and nothing else. The view still accepts no URL, header or token prop, and `onArtworkState` is unchanged. The allowlist, `docs/security.md` and `scripts/tv-artwork-preview.test.ts` hold the six props; a `blurHashUrl` or `previewUrl` prop fails the scan.
+- **Two instances of one view.** The slot draws a preview view that gets only `blurHash`, beneath the picture view that gets the five T3-11 props. A view given none of the five loads no picture and emits nothing. The fade from preview to picture is React's, on the design tokens.
+- **The bound.** A hash longer than 166 characters (the format's longest, 9×9 components), shorter than 6, holding a character outside the 83-character alphabet, of a length its size flag does not give, or with a DC or AC value out of range is refused, and a refused hash draws nothing (the plain `surface2` shows).
+- **The decode.** The module's own plain-Kotlin decoder (`load/BlurHash.kt`), no dependency, decodes a 32×32 preview off the main thread with no network request. Previews are cached in memory (1 MiB) by the hash string alone: a hash describes a few colours of the picture, already sits in the core's catalog data in JavaScript, and is not a credential, so no session is in the key.
 
 ## Revisit if
 

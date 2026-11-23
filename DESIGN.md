@@ -122,7 +122,7 @@ Player overlays use scrims and opaque surfaces, never blur.
 | `durInstant` | 80 ms | Press feedback |
 | `durQuick` | 160 ms | Focus lift, toggles, the rail opening |
 | `durBase` | 240 ms | Chrome in and out, sheets, toasts |
-| `durSlow` | 480 ms | Backdrop and art-tint crossfade |
+| `durSlow` | 480 ms | Backdrop, art-tint and card-preview crossfades |
 | `easeOut` | cubic-bezier(.16, 1, .3, 1) | Entrances, focus |
 | `easeInOut` | cubic-bezier(.65, 0, .35, 1) | Crossfades |
 | `lift` | scale 1.08 | Focused art |
@@ -198,6 +198,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 
 - Marks (top right, 24 px disc on a scrim): a check for played, a count for unplayed episodes. The played disc ships empty until the icon set lands (owner decision, 2026-11-22), and the check glyph comes with it. The progress bar sits at the bottom of the frame: a 4 px track at white .22 with an `artAccent` fill.
 - Focus: the frame lifts by `lift` with `shadowLift`, plus a 3 px `focus` ring at a 3 px offset with a 1 px black .6 outer line so the ring reads on bright posters. The title goes from `text2` to `text1`.
+- Loading: while the picture loads, the frame shows a blurred preview of it, decoded from the image's BlurHash, and the picture fades in over it on `durSlow` with `easeInOut` (reduced motion: 120 ms, opacity only). A card with no BlurHash shows `surface2` until the picture appears. (Owner, 2026-11-23.)
 - Missing image: `surface2` with the title in `typeLabel`, centred. Never a broken image.
 - Images are requested at the drawn size, through the authenticated native client, never wider than 400 px for a poster.
 - Accessibility: the label joins the title, subtitle, and progress ("Harbor Lights, S1 E2 The Keeper's Log, 38 minutes left").
@@ -540,6 +541,10 @@ What the evidence says for each option, for the decisions that had options:
 | Where Remove lives | A short menu on a held select | The title's page | No measurement compares the two. A menu on the card removes a title without leaving the row; Netflix brought removal to every device in 2022 (`streaming-ux-gripes.md:246`), and where its control sits is unverified here. It changes what a held select does on these cards; the owner has since said what the menu holds (7.4). |
 | Whether titles leave by themselves | After 90 days, changeable per account, Never included | Keep everything by default | That Netflix ranks the row by recency supports ageing titles out, and "no data says where the cut should be" (`streaming-ux-gripes.md:246`); the desktop rule of two weeks had no evidence (`PRODUCT.md` before this decision). 90 days is the owner's choice, not a measured value. |
 | Where per-account settings are stored | The server's display preferences | On the device, keyed by account | "Settings that follow the account" has 260 votes on Jellyfin's tracker, and both servers are said to implement the record (`docs/research/streaming-wishlist.md:250`); that the pinned Jellyscale keeps what Octave writes is unverified until the task that builds it checks. |
+
+### Owner decisions, 2026-11-23
+
+- **A card's artwork while it loads (T3-39).** The frame shows a blurred preview of the picture, decoded from the image's BlurHash, in place of a plain `surface2` stand-in (`docs/specs/decisions-owner-inbox-2026-11-23b.md` §3; 7.5). The picture fades in over the preview the way the ambient backdrop does (7.2): `durSlow` with `easeInOut`, 120 ms on opacity only under reduced motion. The fade reuses that approved behaviour and is listed for the owner's veto (an instant swap needs no native change); it also runs when a recycled card remounts with its picture already cached.
 
 ### Awaiting the owner
 
