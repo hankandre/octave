@@ -176,6 +176,11 @@
     "{\"version\":1,\"streamingLimits\":{},\"\":1}",
     "{\"Version\":1,\"streamingLimits\":{}}",
     "{\"version\":1,\"streamingLimits\":{\"localMbps\":20,\"remoteMbps\":4}}\u0000",
-    "{\"version\":1,\"streamingLimits\":{\"locålMbps\":20}}"
+    "{\"version\":1,\"streamingLimits\":{\"locålMbps\":20}}",
+    "{\"streamingLimits\":{},\"version\":1}",
+    "{\"streamingLimits\":{\"localMbps\":20},\"version\":1}",
+    "{\"streamingLimits\":{\"remoteMbps\":4,\"localMbps\":20},\"version\":1}",
+    "{\"version\":1,\"streamingLimits\":{\"remoteMbps\":4,\"localMbps\":20}}",
+    "{\"version\":1,\"streamingLimits\":{\"remoteMbps\":120,\"localMbps\":2}}"
   ]
 }
