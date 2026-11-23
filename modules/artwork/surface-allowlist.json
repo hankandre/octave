@@ -1,0 +1,7 @@
+{
+  "module": "OctaveArtwork",
+  "functions": [],
+  "events": [],
+  "views": [{ "name": "OctaveArtworkView", "props": ["session", "itemId", "imageType", "tag", "width"], "events": ["onArtworkState"] }],
+  "pending": {}
+}

@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No permission and no component: the module hosts one image view and loads through the session module's one client. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
