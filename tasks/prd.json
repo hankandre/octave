@@ -2935,10 +2935,10 @@
             "The play-session id and item ids appear in no log or event payload beyond what the port defines"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit b57b40ec (branch task/T8-01; also b06eca7a, bdde0ccf, cf8c6633). pnpm check passes; the 4 frozen Vitest suites pass 40/40. Blocked: frozen PlayerEventMapsTest.kt:201 and FakeEngine.kt:11 do not compile, so pnpm tv:native:test fails at :octave-player:compileDebugUnitTestKotlin (a scratch copy with those 2 lines fixed: 51 passed, 0 failed). tv:build passes; tv:apk:check fails D7 on OctavePlayerModule (R8 inlined Expo registerViewDefinition). Not run: tv:smoke, tv:wire T3-05, any device."
         },
         {
           "id": "T8-22",
