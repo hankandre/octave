@@ -3158,7 +3158,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "In progress at commit ee7e6989 (with commit c7e19109 probe, commit 150bd949 app factory). pnpm check and tv:native:test (931) pass. tv:wire on own TV emulator (API 36): T8-07 jellyscale pass; jellyfin-12 fail (h264plan=not-found: setup never scans Jellyfin libraries, and 12.4 names the sample 'Synthetic H264 (2024)'); PO question open. T8-02 and T3-05 pairs pass. No-decoder sample negotiated, not played; its device play is an untested gate (T8-20, T10-08)."
+          "evidence": "In progress at commit 7093809b (runner scans jellyfin-12 library per PO ruling; earlier c7e19109, 150bd949, ee7e6989). Own TV emulator API 36: tv:wire all 13 pairs pass, incl. player-capabilities jellyscale and jellyfin-12 (h264 first frame; no-decoder sample negotiated, not played: transcode DeviceCannotPlay on jellyfin-12, refused on jellyscale). pnpm check, tv:native:test (931, 0 failed), tv:e2e, test:tripwire pass. Untested: no-decoder device play (T8-20, T10-08), Shield, real TVs, other Android versions, Jellyfin 10.11 for T8-07."
         },
         {
           "id": "T8-23",
