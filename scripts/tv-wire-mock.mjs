@@ -7,12 +7,17 @@
 // - main, for the player's redirect test (T8-02 item 5): GET /Items finds one movie, POST /Items/{id}/PlaybackInfo
 //   offers it for direct play, and GET /Videos/{id}/stream answers a 302 to the canary origin with a credential
 //   parameter, which the one client must refuse.
+// - main, for the artwork tests (T3-11): GET /Items/Latest lists three films with Primary tags, and
+//   GET /Items/{id}/Images/{type} answers a generated PNG to a signed-in call (401 without the token, as every signed-in
+//   route), 404 for the one missing id, and records each request's item id and maxWidth for the judge.
 // - redirector: every answer is a 302 to the canary origin with a credential parameter.
 // - canaryOrigin: records every request; must stay at zero.
 // - privateLan: answers only GET /System/Info/Public, gives LocalAddress as http://10.0.2.2:<its port>, and counts the
 //   requests whose Host is exactly 10.0.2.2:<its port>, which only a direct plain-HTTP request carries.
 // Nothing here logs a request, a header or a body.
 import { createServer } from "node:http";
+import { crc32, deflateSync } from "node:zlib";
+import { LATEST_FILM_IDS, MISSING_IMAGE_ID } from "../apps/tv/src/e2e/wire/artwork-fixture-ids.ts";
 
 const LOOPBACK = "127.0.0.1";
 const SERVER_ID = "0f3e9c1a7b5d4e2f8a6c0b9d1e3f5a7c";
@@ -41,6 +46,36 @@ const PLAYBACK_INFO = {
   PlaySessionId: PLAY_SESSION_ID,
 };
 
+const LATEST = LATEST_FILM_IDS.map((id, index) => ({
+  Id: id,
+  Name: `Synthetic Film ${index + 1}`,
+  Type: "Movie",
+  ProductionYear: 2024,
+  ImageTags: { Primary: `9${index}c1e3a5f7b9d2c4e6a8f0b1d3c5e7a9` },
+  UserData: { Played: false, PlaybackPositionTicks: 0 },
+}));
+const IMAGE_PATH = /^\/Items\/([^/]+)\/Images\/([^/]+)$/;
+
+// A solid 200 x 300 PNG, built once: signature, IHDR, one IDAT and IEND.
+function solidPng(width, height, [r, g, b]) {
+  const chunk = (type, data) => {
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(body));
+    return Buffer.concat([length, body, crc]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const row = Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: width }, () => [r, g, b]).flat())]);
+  const pixels = Buffer.concat(Array.from({ length: height }, () => row));
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", header), chunk("IDAT", deflateSync(pixels)), chunk("IEND", Buffer.alloc(0))]);
+}
+const PNG = solidPng(200, 300, [0x3a, 0x5f, 0x8c]);
+
 function listen(handler) {
   const server = createServer({ keepAliveTimeout: 120_000 }, handler);
   return new Promise((resolve, reject) => {
@@ -67,6 +102,7 @@ function send(response, status, body, headers = {}) {
 // options: { canary, user, password, canaryDevicePort }
 export async function startMock({ canary, user, password, canaryDevicePort }) {
   const counts = { redirector: 0, canaryOrigin: 0, privateLan: 0 };
+  const images = [];
   const encoded = encodeURIComponent(canary);
   const landing = `http://${LOOPBACK}:${canaryDevicePort}/Wire/landing?api_key=${encoded}`;
   const signedIn = (request) => {
@@ -95,7 +131,17 @@ export async function startMock({ canary, user, password, canaryDevicePort }) {
     if (!signedIn(request)) return send(response, 401, { Message: "sign in first" });
     if (request.method === "POST" && path === `/Items/${MOVIE_ID}/PlaybackInfo`) return send(response, 200, PLAYBACK_INFO);
     if (request.method === "GET" && path === `/Videos/${MOVIE_ID}/stream`) return send(response, 302, undefined, { Location: landing });
+    const image = request.method === "GET" ? IMAGE_PATH.exec(path) : null;
+    if (image !== null) {
+      const maxWidth = Number(new URL(request.url ?? "/", "http://mock.invalid").searchParams.get("maxWidth"));
+      images.push({ itemId: image[1], maxWidth });
+      if (image[1] === MISSING_IMAGE_ID) return send(response, 404, { Message: "not found" });
+      response.writeHead(200, { "Content-Type": "image/png", "Content-Length": PNG.length });
+      return response.end(PNG);
+    }
     switch (route) {
+      case "GET /Items/Latest":
+        return send(response, 200, LATEST);
       case "GET /Items":
         return send(response, 200, { Items: [MOVIE], TotalRecordCount: 1 });
       case "GET /UserViews":
@@ -149,6 +195,8 @@ export async function startMock({ canary, user, password, canaryDevicePort }) {
   return {
     ports: Object.fromEntries(Object.entries(servers).map(([name, server]) => [name, server.address().port])),
     counts: () => ({ ...counts }),
+    // The maxWidth of each image request for the three latest films (artwork-header-and-cache), in order.
+    latestImageWidths: () => images.filter((entry) => LATEST_FILM_IDS.includes(entry.itemId)).map((entry) => entry.maxWidth),
     close: () =>
       Promise.all(
         Object.values(servers).map(

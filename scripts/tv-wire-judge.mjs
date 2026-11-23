@@ -12,6 +12,9 @@
 // - judgeCapabilityCapture(records): the PlaybackInfo requests of player-capabilities (T8-07 items 4, 6 and 7): one for
 //   the H.264 item, then the no-decoder item's first and forced requests, the forced flags in body and query, and the
 //   one Octave profile on each.
+// - judgeArtworkCapture(records, { host, secrets, images, widths }): the artwork test's capture (T3-11 items 2 to 4):
+//   the four non-image calls in order, exactly `images` Primary image requests with distinct paths between the latest
+//   items and the logout, and on the mock every maxWidth 248.
 // - judgeWire({ pairs, lines }): the app's OCTAVE_WIRE lines against the selected pairs and the host's counts
 //   (items 2, 4, 6 and 9); WIRE_JUDGES holds the rule per test id.
 import { findSecret } from "../apps/tv/src/e2e/wire/find-secret.ts";
@@ -102,6 +105,49 @@ export function judgeCapture(records, { expected, host, secrets }) {
     next += 1;
   }
   if (next < expected.length) errors.push(`ERROR wire capture: ${next} of the ${expected.length} expected requests were recorded`);
+  return errors;
+}
+
+// T3-11: what artwork-header-and-cache sends besides its images, in order, and the shape of each image request.
+export const ARTWORK_CALLS = ["GET /System/Info/Public", "POST /Users/AuthenticateByName", "GET /Items/Latest", "POST /Sessions/Logout"];
+const ARTWORK_IMAGE = /^\/Items\/[^/]+\/Images\/Primary$/;
+const ARTWORK_QUERY = ["tag", "maxWidth", "quality", "format"];
+export const ARTWORK_POSTER_WIDTH = 248;
+
+// `images` is k, from the app's line; `widths` the mock's recorded maxWidth values, undefined for a real server. A repeat
+// of an image request is allowed only right after a 503 with Retry-After: 0 (OkHttp's own), as judgeCapture allows.
+export function judgeArtworkCapture(records, { host, secrets, images, widths }) {
+  const errors = judgeRecords(records, { host, secrets });
+  const fail = (text) => errors.push(`ERROR wire artwork: ${text}`);
+  const isImage = (record) => record.path.includes("/Images/");
+  const others = records.filter((record) => !isImage(record)).map(call);
+  if (JSON.stringify(others) !== JSON.stringify(ARTWORK_CALLS)) {
+    fail(`the calls other than images were ${others.length} (${others.map((text) => shown(text, secrets)).join(", ")}), expected ${ARTWORK_CALLS.join(", ")} in that order`);
+  }
+  const latest = records.findIndex((record) => call(record) === "GET /Items/Latest");
+  const logout = records.findIndex((record) => call(record) === "POST /Sessions/Logout");
+  const seen = new Set();
+  let counted = 0;
+  records.forEach((record, index) => {
+    if (!isImage(record)) return;
+    const name = `request ${index + 1} (${shown(call(record), secrets)})`;
+    if (record.method !== "GET" || !ARTWORK_IMAGE.test(record.path)) fail(`${name} is not a GET of /Items/{id}/Images/Primary`);
+    if (JSON.stringify(record.queryNames ?? []) !== JSON.stringify(ARTWORK_QUERY)) fail(`${name} has query names other than ${ARTWORK_QUERY.join(", ")}`);
+    if (latest < 0 || index < latest) fail(`${name} came before GET /Items/Latest`);
+    if (logout >= 0 && index > logout) fail(`${name} came after the logout`);
+    const following = records[index + 1];
+    const retried = record.status === 503 && record.retryAfter === "0" && following !== undefined && following.method === record.method && following.path === record.path;
+    if (retried) return;
+    if (seen.has(record.path)) fail(`${name} repeats an image request already made; a second visit must come from the cache`);
+    seen.add(record.path);
+    counted += 1;
+  });
+  if (!Number.isInteger(images) || images < 1) fail(`the app named ${images ?? "no"} cards with an image; at least one is needed`);
+  else if (counted !== images) fail(`${counted} image request(s) recorded for the ${images} card(s) the app named`);
+  if (widths !== undefined) {
+    if (!Array.isArray(widths) || widths.length === 0) fail("the mock recorded no image width");
+    else if (widths.some((width) => width !== ARTWORK_POSTER_WIDTH)) fail(`the mock recorded maxWidth ${widths.join(", ")}; every poster asks for ${ARTWORK_POSTER_WIDTH}`);
+  }
   return errors;
 }
 
@@ -308,6 +354,36 @@ export const WIRE_JUDGES = {
     for (const [key, value] of Object.entries(expected)) {
       if (said[key] !== value) fail(`${key}=${said[key] ?? "missing"}, expected ${key}=${value}`);
     }
+    return errors;
+  },
+  // T3-11 item 4: every card loaded on the first visit and again, from the cache, on the second.
+  "artwork-header-and-cache": (pair, said) => {
+    const errors = [];
+    const fail = (text) => errors.push(`ERROR wire ${pair.test} ${pair.target}: ${text}`);
+    if (said.outcome !== "ok") fail(`outcome=${said.outcome ?? "missing"}, expected outcome=ok`);
+    const images = /^[0-9]+$/.test(said.images ?? "") ? Number(said.images) : null;
+    if (images === null || images < 1) {
+      fail(`images=${said.images ?? "missing"}, expected at least one card with an image`);
+      return errors;
+    }
+    for (const key of ["first", "second"]) {
+      if (said[key] !== `${images}/${images}`) fail(`${key}=${said[key] ?? "missing"}, expected ${key}=${images}/${images}`);
+    }
+    return errors;
+  },
+  // T3-11 item 6: the scroll through the fixture Home with the canary as the token.
+  "artwork-canary": (pair, said) => {
+    const errors = [];
+    const fail = (text) => errors.push(`ERROR wire ${pair.test} ${pair.target}: ${text}`);
+    const atLeast = (key, least) => {
+      const value = /^[0-9]+$/.test(said[key] ?? "") ? Number(said[key]) : null;
+      if (value === null || value < least) fail(`${key}=${said[key] ?? "missing"}, expected at least ${least}`);
+    };
+    if (said.canary !== "absent") fail(`the canary token reached a prop, an event or the seam (canary=${said.canary ?? "missing"})`);
+    if (said.selftest !== "ok") fail(`the scan's self-test did not pass (selftest=${said.selftest ?? "missing"})`);
+    atLeast("viewProps", 24);
+    atLeast("events", 24);
+    atLeast("failed", 1);
     return errors;
   },
   "transport-private-lan-and-proxy": (pair, said) => {

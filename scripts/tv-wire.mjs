@@ -21,7 +21,7 @@ import { openAdb } from "./tv-adb.mjs";
 import { E2E_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { clearEvidence, evidenceDir, writeEvidence, writeSummary } from "./tv-wire-evidence.mjs";
 import { openDevice } from "./tv-wire-device.mjs";
-import { judgeCapture, judgeLogcat, judgePlayerCapture, judgeRecords, judgeWire } from "./tv-wire-judge.mjs";
+import { judgeArtworkCapture, judgeCapture, judgeLogcat, judgePlayerCapture, judgeRecords, judgeWire } from "./tv-wire-judge.mjs";
 import { describeLogKept, logKeptErrors, startLogKeeper } from "./tv-wire-logcat.mjs";
 import { startMock } from "./tv-wire-mock.mjs";
 import { proxyRequestsNamingTargets, startProxyListener, startRecorder } from "./tv-wire-proxy.mjs";
@@ -40,6 +40,15 @@ const PLAYS = ["player-original-file", "player-samples", "player-capabilities"];
 // The tests the emulator's decoder list is read for (T8-02 item 6, T8-07 item 8).
 const READS_DECODERS = ["player-samples", "player-capabilities"];
 const REDIRECTED = ["transport-redirect", "transport-canary", "player-redirect"];
+
+// T3-11: the artwork test whose capture judgeArtworkCapture reads, with the card count from its result line.
+const ARTWORK_CAPTURE = "artwork-header-and-cache";
+
+function imagesNamed(lines, pair) {
+  const line = lines.find((text) => text.trim().startsWith(`OCTAVE_WIRE result test=${pair.test} target=${pair.target} `));
+  const match = line === undefined ? null : / images=([0-9]+)(?:\s|$)/.exec(line);
+  return match === null ? null : Number(match[1]);
+}
 
 // What transport-probe-then-signed-in sends: the gateway's connect, login, userViews and logout.
 export const PROBE_THEN_SIGNED_IN = ["GET /System/Info/Public", "POST /Users/AuthenticateByName", "GET /UserViews", "POST /Sessions/Logout"];
@@ -173,6 +182,11 @@ export function judgeRun(input, { write }) {
     const host = `127.0.0.1:${pair.devicePort}`;
     const errors = [...judgeWire({ pairs: [counted], lines })];
     if (pair.test === "transport-probe-then-signed-in") errors.push(...judgeCapture(pair.records, { expected: PROBE_THEN_SIGNED_IN, host, secrets: known }));
+    else if (pair.test === ARTWORK_CAPTURE) {
+      // k is the card count the app's line names; on the mock the widths are the mock's record, and none fails.
+      const widths = pair.target === "mock" ? (pair.widths ?? []) : undefined;
+      errors.push(...judgeArtworkCapture(pair.records, { host, secrets: known, images: imagesNamed(lines, pair), widths }));
+    }
     else if (PLAYS.includes(pair.test)) errors.push(...judgeRecords(pair.records, { host, secrets: known }), ...judgePlayerCapture(pair.records));
     // The redirect tests ask for a 3xx on purpose; the app must refuse it (their own judges), not avoid it.
     else errors.push(...judgeRecords(pair.records, { host, secrets: known, redirects: REDIRECTED.includes(pair.test) }));
@@ -367,7 +381,12 @@ async function main(args) {
   // The kept lines and the final dump are both judged; only the counting attempt's kept lines are the app's lines.
   const result = judgeRun(
     {
-      pairs: selected.map((pair) => ({ ...pair, records: recorders.get(`${pair.test} ${pair.target}`).records, ...(READS_DECODERS.includes(pair.test) ? { decoders } : {}) })),
+      pairs: selected.map((pair) => ({
+        ...pair,
+        records: recorders.get(`${pair.test} ${pair.target}`).records,
+        ...(READS_DECODERS.includes(pair.test) ? { decoders } : {}),
+        ...(pair.test === ARTWORK_CAPTURE && pair.target === "mock" ? { widths: mock.latestImageWidths() } : {}),
+      })),
       counts: mock.counts(),
       lines: wireLines(run.keptLines),
       logLines: [...earlier.keptLines, ...earlier.dump, ...run.keptLines, ...run.dump],

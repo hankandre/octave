@@ -1,0 +1,87 @@
+// What the artwork wire tests draw (T3-11): a recording wrapper around the native artwork view, a strip of poster
+// cards for artwork-header-and-cache, and a fixture Home of T3-08's rows for artwork-canary. The wrapper hands every
+// prop object and every event payload to the test, which scans them on the device; nothing here logs.
+import type { OctaveArtworkViewProps } from "@octave/artwork";
+import type { ImageRef } from "@octave/core/src/domain/catalog";
+import { useCallback, type ComponentType } from "react";
+import { StyleSheet, View } from "react-native";
+import { ArtworkProvider, type ArtworkComponent } from "../../design/rows/artwork";
+import type { CardItem } from "../../design/rows/media-card";
+import { cardGap, cardHeight, cardWidth } from "../../design/rows/row-geometry";
+import { RowList, type RowSpec } from "../../design/rows/row-list";
+import type { RowMemory } from "../../design/rows/row-memory";
+import { px } from "../../design/scale";
+import { colors, space } from "../../design/tokens";
+import { FIXTURE_ITEM_IDS, FIXTURE_TAG } from "./artwork-fixture-ids";
+
+type StateEvent = Parameters<NonNullable<OctaveArtworkViewProps["onArtworkState"]>>[0];
+
+export interface ArtworkRecord {
+  // Every prop object the native view receives, without its event handler.
+  props(props: Record<string, unknown>): void;
+  // Every event payload, with the item id of the view that sent it.
+  state(itemId: string, payload: unknown): void;
+}
+
+export function recordingView(NativeView: ComponentType<OctaveArtworkViewProps>, record: ArtworkRecord): ComponentType<OctaveArtworkViewProps> {
+  return function RecordingArtworkView(props: OctaveArtworkViewProps) {
+    const { onArtworkState, ...rest } = props;
+    record.props({ ...rest });
+    const { itemId } = props;
+    const onState = useCallback(
+      (event: StateEvent) => {
+        record.state(itemId, event.nativeEvent);
+        onArtworkState?.(event);
+      },
+      [itemId, onArtworkState],
+    );
+    return <NativeView {...props} onArtworkState={onState} />;
+  };
+}
+
+const ignore = () => undefined;
+
+// One poster-sized slot per image, in a row, as a card draws it.
+export function PosterStrip({ artwork: Artwork, images }: { artwork: ArtworkComponent; images: readonly ImageRef[] }) {
+  const width = cardWidth("poster");
+  const height = cardHeight("poster");
+  return (
+    <View style={styles.strip}>
+      {images.map((image) => (
+        <View key={`${image.itemId}/${image.tag}`} style={{ width: px(width), height: px(height), marginRight: px(cardGap) }}>
+          <Artwork image={image} width={width} height={height} onFailed={ignore} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const card = (itemId: string, index: number): CardItem => ({
+  id: itemId,
+  title: `Fixture title ${index + 1}`,
+  image: { itemId, type: "Primary", tag: FIXTURE_TAG },
+});
+
+// Two rows of twelve: posters, then thumbs. The fourth poster is the id the mock answers 404 for.
+export const FIXTURE_ROWS: RowSpec[] = [
+  { id: "posters", title: "Fixture posters", variant: "poster", items: FIXTURE_ITEM_IDS.slice(0, 12).map(card) },
+  { id: "thumbs", title: "Fixture thumbs", variant: "thumb", items: FIXTURE_ITEM_IDS.slice(12).map((id, index) => card(id, index + 12)) },
+];
+
+// The distance in dp between one card's start and the next in a row of this variant.
+export const rowStride = (variant: RowSpec["variant"]) => px(cardWidth(variant) + cardGap);
+
+export function FixtureHome({ artwork, memory }: { artwork: ArtworkComponent; memory: RowMemory }) {
+  return (
+    <View style={styles.home}>
+      <ArtworkProvider component={artwork}>
+        <RowList rows={FIXTURE_ROWS} memory={memory} testID="fixture-home" />
+      </ArtworkProvider>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  strip: { flex: 1, flexDirection: "row", padding: px(space.safeX), backgroundColor: colors.surface0 },
+  home: { flex: 1, paddingTop: px(space.safeY), backgroundColor: colors.surface0 },
+});
