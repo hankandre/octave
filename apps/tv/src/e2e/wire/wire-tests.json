@@ -15,6 +15,7 @@
     { "id": "transport-private-lan-and-proxy", "task": "T3-05", "targets": ["mock"] },
     { "id": "player-original-file", "task": "T8-02", "targets": ["jellyscale"] },
     { "id": "player-samples", "task": "T8-02", "targets": ["jellyscale"] },
-    { "id": "player-redirect", "task": "T8-02", "targets": ["mock"] }
+    { "id": "player-redirect", "task": "T8-02", "targets": ["mock"] },
+    { "id": "player-capabilities", "task": "T8-07", "targets": ["jellyscale", "jellyfin-12"] }
   ]
 }

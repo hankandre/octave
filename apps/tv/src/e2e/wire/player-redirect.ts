@@ -5,7 +5,7 @@ import { isOutcome, planFor, PlayerRig, signIn } from "./player-run";
 import type { WireContext, WireOutcome } from "./wire-context";
 
 export async function run(context: WireContext): Promise<WireOutcome> {
-  const gateway = await signIn(context);
+  const gateway = await signIn(context, { statingFull: true });
   if (isOutcome(gateway)) return gateway;
   const plan = await planFor(gateway, "Synthetic H264");
   if (typeof plan === "string") return { words: `code=${plan}` };

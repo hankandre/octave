@@ -14,9 +14,12 @@ export interface WireContext {
   readonly crypto: Crypto;
   readonly transport: Transport;
   readonly seam: SeamRecorder;
-  // A gateway for `base` over this pair's transport, from the app's one factory (T4-09), so it sends the stored
-  // install id's DeviceId.
+  // A gateway for `base` over this pair's transport, from the app's factory (T4-09, T8-07): it sends the stored install
+  // id's DeviceId and hands the device probe's answer to the core's source decision.
   readonly gateway: (base: string) => Promise<JellyfinGateway>;
+  // The same gateway with a host that states no device limit, for the T8-02 player tests only (T8-07 D3): they test
+  // the engine behind such a host, and the engine's own refusal is the second guard.
+  readonly gatewayStatingFull: (base: string) => Promise<JellyfinGateway>;
 }
 
 // A test's outcome: the words of its result line, or unreachable when its first call found no listener.

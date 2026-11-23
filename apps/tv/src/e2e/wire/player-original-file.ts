@@ -10,7 +10,7 @@ const SAMPLE = "Synthetic H264";
 const SEEK_SECONDS = 6;
 
 export async function run(context: WireContext): Promise<WireOutcome> {
-  const gateway = await signIn(context);
+  const gateway = await signIn(context, { statingFull: true });
   if (isOutcome(gateway)) return gateway;
   const plan = await planFor(gateway, SAMPLE);
   if (typeof plan === "string") return { words: `outcome=${plan}` };

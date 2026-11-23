@@ -9,6 +9,9 @@
 // - judgeLogcat(lines, secrets): the whole logcat dump of the run (item 4).
 // - judgePlayerCapture(records): a play's media requests (T8-02 item 7): only original-file stream URLs, a range request
 //   among them, and no playlist, universal, subtitle or trickplay path.
+// - judgeCapabilityCapture(records): the PlaybackInfo requests of player-capabilities (T8-07 items 4, 6 and 7): one for
+//   the H.264 item, then the no-decoder item's first and forced requests, the forced flags in body and query, and the
+//   one Octave profile on each.
 // - judgeWire({ pairs, lines }): the app's OCTAVE_WIRE lines against the selected pairs and the host's counts
 //   (items 2, 4, 6 and 9); WIRE_JUDGES holds the rule per test id.
 import { findSecret } from "../apps/tv/src/e2e/wire/find-secret.ts";
@@ -142,6 +145,67 @@ export function judgePlayerCapture(records) {
   return errors;
 }
 
+// T8-07 item 4: canonicalDigest (tv-wire-proxy.mjs) of OCTAVE_PROFILE (packages/core/src/jellyfin/device-profile.ts)
+// without MaxStreamingBitrate. Node cannot load that module here (its imports name no extension), so the value is
+// written out, and scripts/tv-wire-capabilities.test.ts fails when it no longer matches the profile.
+export const OCTAVE_PROFILE_DIGEST = "e79ae220e230304810e54c6c4470afda9fa2eba6377a7335103aedb9e7b4f933";
+
+// T8-07 item 7: T2-09's expectation per server for a sample whose video codec the device lacks
+// (tests/integration/tripwire-expectations.ts, expectationFor(server, "no-av1", "av1")); the test holds them equal, so
+// T10-08's change there fails it until this follows.
+export const CAPABILITY_EXPECTATIONS = Object.freeze({
+  jellyscale: Object.freeze({ kind: "refused", reason: "device-cannot-play" }),
+  "jellyfin-12": Object.freeze({ kind: "conversion", methods: Object.freeze(["Transcode"]), clientReason: "DeviceCannotPlay" }),
+});
+
+const FIRST_FLAGS = Object.freeze({
+  EnableDirectPlay: true,
+  EnableDirectStream: true,
+  EnableTranscoding: true,
+  AllowVideoStreamCopy: true,
+  AllowAudioStreamCopy: true,
+  AutoOpenLiveStream: false,
+});
+const FORCED_FLAGS = Object.freeze({ ...FIRST_FLAGS, EnableDirectPlay: false, AllowVideoStreamCopy: false });
+const PLAYBACK_INFO_PATH = /^\/Items\/([^/]+)\/PlaybackInfo$/i;
+
+function flagErrors(name, facts, expected) {
+  const errors = [];
+  for (const [flag, value] of Object.entries(expected)) {
+    for (const where of ["body", "query"]) {
+      const sent = facts?.[where]?.[flag];
+      if (sent !== value) errors.push(`ERROR wire capabilities: ${name} sent ${flag}=${sent ?? "nothing"} in the ${where}, expected ${value}`);
+    }
+  }
+  return errors;
+}
+
+export function judgeCapabilityCapture(records) {
+  const infos = records.filter((record) => record.method === "POST" && PLAYBACK_INFO_PATH.test(record.path));
+  const items = infos.map((record) => PLAYBACK_INFO_PATH.exec(record.path)[1]);
+  if (infos.length !== 3 || items[0] === items[1] || items[1] !== items[2]) {
+    return [`ERROR wire capabilities: expected one PlaybackInfo for the H.264 item, then two for the no-decoder item; recorded ${infos.length} for ${new Set(items).size} item(s) in another order`];
+  }
+  const names = ["the H.264 item's PlaybackInfo", "the no-decoder item's first PlaybackInfo", "the no-decoder item's forced PlaybackInfo"];
+  const errors = [];
+  infos.forEach((record, index) => {
+    if (record.playbackInfo === undefined) {
+      errors.push(`ERROR wire capabilities: the recorder kept no flags for ${names[index]}`);
+      return;
+    }
+    if (record.playbackInfo.profile !== OCTAVE_PROFILE_DIGEST) errors.push(`ERROR wire capabilities: ${names[index]} did not carry the Octave DeviceProfile`);
+    errors.push(...flagErrors(names[index], record.playbackInfo, index === 2 ? FORCED_FLAGS : FIRST_FLAGS));
+  });
+  return errors;
+}
+
+// The words the app writes for the no-decoder sample when the server answers as T2-09 expects.
+function noDecoderWords(expectation) {
+  if (expectation.kind === "refused") return { nodecoder: "refused", reason: expectation.reason };
+  const method = expectation.methods[0] === "Transcode" ? "transcode" : "direct-stream";
+  return { nodecoder: method, client: expectation.clientReason ?? "none" };
+}
+
 const words = (line) => Object.fromEntries([...line.matchAll(/(\S+?)=(\S*)/g)].map(([, key, value]) => [key, value]));
 const count = (value) => (Number.isInteger(value) ? value : null);
 
@@ -219,6 +283,31 @@ export const WIRE_JUDGES = {
     const streams = pair.records.filter((record) => record.method === "GET" && /^\/videos\/[^/]+\/stream$/i.test(record.path));
     if (streams.length !== 1) errors.push(`ERROR wire ${pair.test} ${pair.target}: ${streams.length} stream requests recorded, expected exactly one`);
     else if (streams[0].status !== 302) errors.push(`ERROR wire ${pair.test} ${pair.target}: the stream request was answered ${streams[0].status ?? "with nothing"}, not 302`);
+    return errors;
+  },
+  // T8-07 items 1, 2, 3, 6, 7 and 8: the app's probe-backed gateway plays the H.264 sample and negotiates the
+  // no-decoder one; the requests on the wire and the words against the device's decoder list and T2-09's expectation.
+  "player-capabilities": (pair, said) => {
+    const errors = [];
+    const fail = (text) => errors.push(`ERROR wire ${pair.test} ${pair.target}: ${text}`);
+    if (!Array.isArray(pair.records)) fail("no records to judge the PlaybackInfo requests by");
+    else errors.push(...judgeCapabilityCapture(pair.records));
+    const hevc = pair.decoders?.hevc?.type;
+    if (typeof hevc !== "boolean") fail("the device's decoder list could not be read, so hevcmain cannot pass");
+    const expectation = CAPABILITY_EXPECTATIONS[pair.target];
+    if (expectation === undefined) fail("no T2-09 expectation for this target");
+    const expected = {
+      outcome: "ok",
+      probe: "complete",
+      h264main: "listed",
+      ...(hevc === true ? { hevcmain: "listed" } : {}),
+      h264plan: "original",
+      h264: "first-frame",
+      ...(expectation === undefined ? {} : noDecoderWords(expectation)),
+    };
+    for (const [key, value] of Object.entries(expected)) {
+      if (said[key] !== value) fail(`${key}=${said[key] ?? "missing"}, expected ${key}=${value}`);
+    }
     return errors;
   },
   "transport-private-lan-and-proxy": (pair, said) => {
