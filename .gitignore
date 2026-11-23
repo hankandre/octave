@@ -20,3 +20,8 @@ modules/*/android/.cxx/
 tests/integration/.fixture-ports
 tests/integration/.fixture-ports.tmp
 mise.local.toml
+*.jks
+*.keystore
+*.p12
+*.pk8
+signing*.properties

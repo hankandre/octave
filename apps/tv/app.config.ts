@@ -9,7 +9,8 @@ const config: ExpoConfig = {
   version: "0.1.0",
   orientation: "landscape",
   android: {
-    package: ANDROID_APPLICATION_ID,
+    // The Kotlin package, not the application ID: with-release-signing.js sets the ID from the core.
+    package: "dev.octave.tv",
     // Backup is off (T3-22); apps/tv/plugins/with-trimmed-manifest.js adds the data extraction rules.
     allowBackup: false,
   },
@@ -49,6 +50,7 @@ const config: ExpoConfig = {
         },
       },
     ],
+    ["./plugins/with-release-signing.js", { applicationId: ANDROID_APPLICATION_ID }],
     "./plugins/with-app-jvm-tests.js",
     "./plugins/with-trimmed-manifest.js",
     "./plugins/with-device-probe.js",
