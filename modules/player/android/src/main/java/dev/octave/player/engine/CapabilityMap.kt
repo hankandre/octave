@@ -45,7 +45,7 @@ object CapabilityMap {
     // non-video ids) and answers null for the rest (lines 876-910), and MediaCodecInfo.isCodecProfileAndLevelSupported
     // answers true for a null (line 346). For h264, hevc, av1 and vp9 a decoder reporting no profile level is refused
     // by that check (the loop at line 399 finds nothing), so it gets no entry.
-    private val UNREAD_PROFILE = setOf("mpeg2video", "mpeg4")
+    val UNREAD_PROFILE = setOf("mpeg2video", "mpeg4")
 
     // Supersets that hold by the codec standards (D4); av1 and vp9 imply nothing, their bit depth carries it.
     private val IMPLIES: Map<String, Map<String, List<String>>> = mapOf(

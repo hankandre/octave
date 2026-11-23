@@ -38,17 +38,33 @@ export function createGatewayFactory(host: GatewayHost): GatewayFactory {
 // What this device can play, as the player engine's initialize answers it (./device-capabilities.ts).
 export type CapabilityProbe = () => Promise<PlayerCapabilities>;
 
+// How long a gateway waits for the device probe before it counts the probe as "cannot tell".
+export const PROBE_LIMIT_MS = 10_000;
+
+// The probe's answer, or a rejection once limitMs has passed; the timer is cleared either way.
+async function within<T>(answer: Promise<T>, limitMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error("The device probe did not answer in time.")), limitMs);
+  });
+  try {
+    return await Promise.race([answer, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // The factory the app composes (T8-07 items 2, 5 and 9): each gateway it builds probes the device once and hands the
 // answer to the core's source decision. It throws at composition without a probe, so the app can never fall back to
-// the core's "full" default; a probe that rejects or answers anything but a capability list is "cannot tell". The
-// app's source wins over a caller's deviceCapabilities store.
-export function createAppGatewayFactory(host: GatewayHost, probe: CapabilityProbe): GatewayFactory {
+// the core's "full" default; a probe that rejects, does not answer within limitMs, or answers anything but a
+// capability list is "cannot tell". The app's source wins over a caller's deviceCapabilities store.
+export function createAppGatewayFactory(host: GatewayHost, probe: CapabilityProbe, limitMs: number = PROBE_LIMIT_MS): GatewayFactory {
   if (typeof probe !== "function") throw new Error("No device capability source.");
   const build = createGatewayFactory(host);
   return async (serverUrl, stores) => {
     let answer: PlayerCapabilities;
     try {
-      answer = readCapabilities(await probe());
+      answer = readCapabilities(await within(Promise.resolve().then(probe), limitMs));
     } catch {
       answer = { probe: "failed" };
     }

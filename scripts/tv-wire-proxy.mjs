@@ -86,16 +86,27 @@ export function canonicalDigest(value) {
   return createHash("sha256").update(canonicalJson(value), "utf8").digest("hex");
 }
 
+// A query key as the server binds it: decoded and compared without case (ASP.NET Core's model binding). A key that
+// does not decode matches nothing.
+function queryKey(raw) {
+  try {
+    return decodeURIComponent(raw.replace(/\+/g, " ")).toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 function queryFlag(rawUrl, name) {
   const mark = rawUrl.indexOf("?");
   if (mark < 0) return null;
+  const wanted = name.toLowerCase();
   const values = rawUrl
     .slice(mark + 1)
     .split("#")[0]
     .split("&")
     .filter((part) => part !== "")
     .map((part) => (part.includes("=") ? [part.slice(0, part.indexOf("=")), part.slice(part.indexOf("=") + 1)] : [part, null]))
-    .filter(([key]) => key === name)
+    .filter(([key]) => queryKey(key) === wanted)
     .map(([, value]) => value);
   if (values.length !== 1 || values[0] === null) return null;
   let decoded;
