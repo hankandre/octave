@@ -7,6 +7,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import dev.octave.player.VideoSurfaceSlot
+import dev.octave.player.engine.CapabilityProbe
 import dev.octave.player.engine.EngineCore
 import dev.octave.player.engine.MainThreadGate
 import dev.octave.player.seam.Capabilities
@@ -18,7 +19,8 @@ import dev.octave.player.seam.PlayerEvent
 import dev.octave.player.seam.TrackType
 
 // The Android engine behind the seam (T8-02): EngineCore's rules over one Media3Handle per launch. The capability
-// probe stays "cannot tell" until T8-07, and HLS stays unsupported until T8-08.
+// probe (T8-07) reads the device afresh on every initialize, on the module's command thread; HLS stays unsupported
+// until T8-08.
 //
 // Threading (docs/specs/T8-02.md, "Threading"): the players and EngineCore live on the main looper. MainThreadGate
 // runs each method inline when called on the main looper, and otherwise posts it to the main thread and waits at most
@@ -28,7 +30,7 @@ import dev.octave.player.seam.TrackType
 // the main thread, and never waits. The engine logs nothing, and Media3's own logging is off before the first player
 // (D12).
 @OptIn(UnstableApi::class)
-class Media3Engine(private val context: () -> Context?, closed: () -> Boolean) : PlaybackEngine {
+class Media3Engine(private val context: () -> Context?, private val closed: () -> Boolean) : PlaybackEngine {
     private val main = Handler(Looper.getMainLooper())
     private val gate = MainThreadGate(
         onMainThread = { Looper.myLooper() == Looper.getMainLooper() },
@@ -44,7 +46,9 @@ class Media3Engine(private val context: () -> Context?, closed: () -> Boolean) :
     private var holdsSurface = false
     private var logsOff = false
 
-    override fun capabilities(): Capabilities = Capabilities.Failed
+    private val probe = CapabilityProbe { DevicePlatformReader.read(if (closed()) null else context()) }
+
+    override fun capabilities(): Capabilities = probe.probe()
 
     override fun setListener(listener: ((PlayerEvent) -> Unit)?) {
         this.listener = listener
