@@ -1590,7 +1590,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Milestones 1-6 at commit 86e4a5f7 (branch task/T3-11): pnpm check green, tv:native:test 947/0, tv:apk:check and tv:e2e pass, tv:wire --task T3-11 5/5 pass and --task T3-05 8/8 on own emulator. Open PO question: Jellyfin fixture libraries are never scanned before the wire run (refreshLibrary=false), so artwork-header-and-cache jellyfin pairs report images=0 on a fresh fixture."
+          "evidence": "Milestones 1-7 at commit a9beda4b (branch task/T3-11). M7 adds the host-side Jellyfin library scan to tv:wire per the PO ruling on acceptance 7. pnpm check exit 0 (vitest 3614+2626, jest 162), tv:native:test 947/0. On own emulator after fixture:down: tv:wire --task T3-11 5/5 pass (images=3 first=3/3 second=3/3 on all four servers), --task T3-05 8/8 pass. Item 7 gate: CI wire summary on the PR head."
         },
         {
           "id": "T3-28",
