@@ -1,6 +1,6 @@
 // @vitest-environment node
 // T3-21 review fixes: the key and its properties file stay outside every checkout, and the Gradle helper says so too.
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -39,6 +39,30 @@ describe("a key inside a sibling checkout", () => {
     expect(out).toContain("octaveInCheckout");
     expect(out).toContain("names a file inside a checkout");
     expect(out).toContain("storeFile is inside a checkout");
+  });
+});
+
+describe("CI's throwaway key step fails when the key cannot be made", () => {
+  const repo = join(__dirname, "..");
+
+  it("T3-21 review: --throwaway exits 1 and prints no path when keytool is not on PATH", () => {
+    const result = spawnSync(process.execPath, [join(repo, "scripts", "tv-signing.mjs"), "--throwaway", join(root, "key")], {
+      encoding: "utf8",
+      env: { PATH: join(root, "no-tools") },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(/^ERROR tv signing: keytool failed/);
+  });
+
+  it("T3-21 review: both jobs assign the path before they write it, so a failed command fails the step", () => {
+    const workflow = readFileSync(join(repo, ".github", "workflows", "ci.yml"), "utf8");
+    const calls = workflow.split("\n").filter((line) => line.includes("tv-signing.mjs --throwaway"));
+    expect(calls).toHaveLength(2);
+    for (const line of calls) {
+      expect(line.trim()).toMatch(/^properties=\$\(node scripts\/tv-signing\.mjs --throwaway "\$RUNNER_TEMP\/octave-signing"\)$/);
+    }
+    expect(workflow.match(/^\s*echo "OCTAVE_SIGNING_PROPERTIES=\$properties" >> "\$GITHUB_ENV"$/gm)).toHaveLength(2);
   });
 });
 
