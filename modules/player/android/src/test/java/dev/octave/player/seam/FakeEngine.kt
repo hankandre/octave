@@ -9,6 +9,7 @@ class FakeEngine(var capabilitiesAnswer: Capabilities = Capabilities.Failed) : P
     val calls = mutableListOf<String>()
     val launched = mutableListOf<LaunchRequest>()
     var listener: ((PlayerEvent) -> Unit)? = null
+        private set
     var failure: Throwable? = null
     // Runs inside launch, after the request is recorded, before `failure` is thrown.
     var onLaunch: (FakeEngine) -> Unit = {}

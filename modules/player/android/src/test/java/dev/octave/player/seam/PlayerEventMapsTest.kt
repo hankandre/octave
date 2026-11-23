@@ -198,7 +198,7 @@ class PlayerEventMapsTest {
         assertEquals(cut, asMap(list(otherMap["tracks"]).single())["language"])
         assertEquals(cut, asMap(otherMap["audio"])["codec"])
         val exact = "y".repeat(256)
-        assertEquals(exact, asMap(asMap(PlayerEventMaps.toMap(PlayerEvent.Loaded(Samples.fullSnapshot(decodeLabel = exact))))["snapshot"])["diagnostics"])["decodeLabel"])
+        assertEquals(exact, asMap(asMap(asMap(PlayerEventMaps.toMap(PlayerEvent.Loaded(Samples.fullSnapshot(decodeLabel = exact))))["snapshot"])["diagnostics"])["decodeLabel"])
     }
 
     @Test
