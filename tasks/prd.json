@@ -1637,10 +1637,10 @@
             "Where a test T3-11 froze pins the five-prop limit, the task returns it to the Product Owner and changes no frozen file itself"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented through commit 862f5ac9 (milestones from commit 726dd519). pnpm check exit 0 (one T3-30 dev-server watch flake passed alone twice and on the full rerun); pnpm tv:native:test 1015 passed. Own emulator t339_tv (API 36): tv:e2e pass, tv:wire --task T3-11 5 pairs pass, canary=absent. Item 7: 3 cold runs per build, median janky 20.21%/p90 31 ms (3e692771) vs 4.41%/28 ms (head), within thresholds. Screenshots before/after taken. Untested: Shield, other Android versions, tvOS, real-library hashes on device."
         },
         {
           "id": "T3-28",
