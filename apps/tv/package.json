@@ -10,6 +10,7 @@
   "dependencies": {
     "@octave/core": "workspace:*",
     "@octave/install-id": "workspace:*",
+    "@octave/player": "workspace:*",
     "@octave/preferences": "workspace:*",
     "@octave/session": "workspace:*",
     "@react-navigation/native": "7.5.2",
