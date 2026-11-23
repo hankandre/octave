@@ -7,8 +7,9 @@
 // - modules/player is the workspace package @octave/player (private, GPL-3.0-only, main src/index.ts), a dependency
 //   of @octave/tv as "workspace:*". expo-module.config.json names dev.octave.player.OctavePlayerModule for Android
 //   only. android/build.gradle has namespace dev.octave.player, the JUnit BOM pin modules/session uses,
-//   project(':octave-session'), the octave.repoRoot system property, and no Media3, Robolectric or
-//   logging-interceptor line.
+//   project(':octave-session'), the octave.repoRoot system property, and no Robolectric or logging-interceptor
+//   line. (Until T8-02 it also held no Media3 line; T8-02 adopts Media3 there, and its own item 1 test holds which
+//   artifacts the file may name: Product Owner ruling of 2026-11-23.)
 // - apps/tv/src/host/player-module.android.ts is the one app file that calls requireNativeModule for "OctavePlayer",
 //   and player-view.android.tsx the one that calls requireNativeViewManager for it; each has a sibling without the
 //   .android suffix.
@@ -19,7 +20,7 @@
 // - Item 6: every Kotlin file in dev.octave.player.seam imports nothing from android, androidx, expo, okhttp3 or
 //   com.facebook, and from modules/session only dev.octave.session.http.SessionId. PlaybackEngine is an interface
 //   with exactly seven functions. No media3, exoplayer or exo word, in any case, is in modules/player/src, the app's
-//   player-* host files or modules/player/package.json, and no media3 in the Gradle file.
+//   player-* host files or modules/player/package.json.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -145,7 +146,7 @@ describe("the player module package", () => {
     expect(withoutComments(read(MODULE_FILE))).toMatch(/\bclass\s+OctavePlayerModule\s*:\s*Module\s*\(\s*\)/);
   });
 
-  it("T8-01 item 1: the Gradle file has the namespace, the JUnit BOM pin, the session project and no player library", () => {
+  it("T8-01 item 1: the Gradle file has the namespace, the JUnit BOM pin, the session project and no Robolectric or logging-interceptor line", () => {
     const gradle = read("modules/player/android/build.gradle");
     const code = withoutComments(gradle);
     expect(code).toMatch(/namespace\s*=?\s*["']dev\.octave\.player["']/);
@@ -154,7 +155,7 @@ describe("the player module package", () => {
     expect(code, "the same JUnit BOM pin as modules/session").toContain(sessionBom ?? "junit-bom");
     expect(code).toMatch(/project\s*\(\s*["']:octave-session["']\s*\)/);
     expect(code).toMatch(/systemProperty\s*\(?\s*["']octave\.repoRoot["']/);
-    for (const word of [/media3/i, /robolectric/i, /logging-interceptor/i]) expect(gradle, `build.gradle names ${word}`).not.toMatch(word);
+    for (const word of [/robolectric/i, /logging-interceptor/i]) expect(gradle, `build.gradle names ${word}`).not.toMatch(word);
   });
 
   it("T8-01 item 1: the loaders are the only app files that name the native module", () => {
@@ -262,6 +263,5 @@ describe("the seam a Swift engine can mirror", () => {
     }
     const hostPlayerFiles = filesUnder("apps/tv/src/host", /^player-/);
     for (const path of hostPlayerFiles) expect(readFileSync(join(repo, path), "utf8"), `${path} names Media3`).not.toMatch(/media3|exoplayer|\bexo\b/i);
-    expect(read("modules/player/android/build.gradle")).not.toMatch(/media3/i);
   });
 });
