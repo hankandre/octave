@@ -1,5 +1,13 @@
 import type { MediaCard } from "./catalog";
-import { continueWatchingRow, pickUpNext, type ContinueWindow, type RecentPlays, type UpNext } from "./up-next";
+import {
+  CONTINUE_ROW_LIMIT,
+  continueWatchingRow,
+  continueWindowOrDefault,
+  pickUpNext,
+  type ContinueWindow,
+  type RecentPlays,
+  type UpNext,
+} from "./up-next";
 
 // Home's lists, and the three things they make: Continue watching, Recently added and the hero (T5-02).
 // Pure: the window and the clock are arguments, and a server is reached only through HomeSource.
@@ -22,8 +30,8 @@ export interface HomeListFailure {
 
 // The four reads Home needs. JellyfinGateway satisfies it structurally.
 export interface HomeSource {
-  resumeItems(signal?: AbortSignal): Promise<MediaCard[]>;
-  nextUp(signal?: AbortSignal): Promise<MediaCard[]>;
+  resumeItems(signal?: AbortSignal, limit?: number): Promise<MediaCard[]>;
+  nextUp(signal?: AbortSignal, limit?: number): Promise<MediaCard[]>;
   recentlyPlayed(signal?: AbortSignal): Promise<RecentPlays>;
   latestItems(signal?: AbortSignal): Promise<MediaCard[]>;
 }
@@ -31,8 +39,8 @@ export interface HomeSource {
 export const HOME_LISTS: readonly HomeListName[] = ["resume", "nextUp", "recentlyPlayed", "recentlyAdded"];
 
 const READ: Record<HomeListName, (source: HomeSource, signal?: AbortSignal) => Promise<MediaCard[] | RecentPlays>> = {
-  resume: (source, signal) => source.resumeItems(signal),
-  nextUp: (source, signal) => source.nextUp(signal),
+  resume: (source, signal) => source.resumeItems(signal, CONTINUE_ROW_LIMIT),
+  nextUp: (source, signal) => source.nextUp(signal, CONTINUE_ROW_LIMIT),
   recentlyPlayed: (source, signal) => source.recentlyPlayed(signal),
   recentlyAdded: (source, signal) => source.latestItems(signal),
 };
@@ -65,13 +73,13 @@ export interface Home {
   recentlyAdded: MediaCard[];
 }
 
-export function composeHome(lists: HomeLists, options: { window: ContinueWindow; now: number }): Home {
+export function composeHome(lists: HomeLists, options: { window?: ContinueWindow; now: number }): Home {
   const recentlyAdded = lists.recentlyAdded ?? [];
   const { row, agedOutIds } = continueWatchingRow({
     resume: lists.resume ?? [],
     nextUp: lists.nextUp ?? [],
     plays: lists.recentlyPlayed,
-    window: options.window,
+    window: continueWindowOrDefault(options.window),
     now: options.now,
   });
   const hero = pickUpNext({ row, agedOutIds, sequel: undefined, similar: undefined, latest: [recentlyAdded] });
@@ -82,4 +90,20 @@ export function composeHome(lists: HomeLists, options: { window: ContinueWindow;
   // Recently added is the row below the hero when Continue watching has nothing left to show.
   const belowHero = hero.rule === "newest" || continueWatching.length === 0;
   return { hero, continueWatching, recentlyAdded: belowHero ? without(recentlyAdded) : recentlyAdded };
+}
+
+// The core's Clock port satisfies this structurally; the domain imports no port.
+export interface HomeClock {
+  now(): number;
+}
+
+// Loads the lists, reads the clock once after they settle, and composes Home (T5-07 D6).
+export async function loadHome(
+  source: HomeSource,
+  options: { window?: ContinueWindow; clock: HomeClock },
+  signal?: AbortSignal,
+): Promise<{ lists: HomeLists; failed: HomeListFailure[]; home: Home }> {
+  const { lists, failed } = await loadHomeLists(source, HOME_LISTS, signal);
+  const home = composeHome(lists, { window: options.window, now: options.clock.now() });
+  return { lists, failed, home };
 }

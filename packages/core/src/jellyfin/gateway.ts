@@ -396,13 +396,13 @@ export class JellyfinGateway {
     return toHomeLibraries(data.Items);
   }
 
-  async resumeItems(signal?: AbortSignal): Promise<MediaCard[]> {
+  async resumeItems(signal?: AbortSignal, limit = HOME_ROW_LIMIT): Promise<MediaCard[]> {
     const { userId } = this.requireSession();
     const { data } = await this.get<ItemsResult>("/UserItems/Resume", {
       params: {
         userId,
         mediaTypes: "Video",
-        limit: HOME_ROW_LIMIT,
+        limit,
         enableUserData: true,
         enableTotalRecordCount: false,
         ...CARD_IMAGE_PARAMS,
@@ -413,12 +413,12 @@ export class JellyfinGateway {
     return toMediaCards(data.Items);
   }
 
-  async nextUp(signal?: AbortSignal): Promise<MediaCard[]> {
+  async nextUp(signal?: AbortSignal, limit = HOME_ROW_LIMIT): Promise<MediaCard[]> {
     const { userId } = this.requireSession();
     const { data } = await this.get<ItemsResult>("/Shows/NextUp", {
       params: {
         userId,
-        limit: HOME_ROW_LIMIT,
+        limit,
         enableRewatching: false,
         // A series whose next episode is in progress is in Resume, so it is not listed twice.
         enableResumable: false,

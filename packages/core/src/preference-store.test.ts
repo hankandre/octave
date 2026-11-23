@@ -20,14 +20,14 @@ describe("preference store", () => {
     expect(sanitizePreferences(null)).toEqual(DEFAULT_PREFERENCES);
     expect(sanitizePreferences(5)).toEqual(DEFAULT_PREFERENCES);
     expect(sanitizePreferences([])).toEqual(DEFAULT_PREFERENCES);
-    expect(sanitizePreferences({ streamingLimits: 5 })).toEqual({ streamingLimits: {}, continueWindow: "14", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
+    expect(sanitizePreferences({ streamingLimits: 5 })).toEqual({ streamingLimits: {}, continueWindow: "90", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
     expect(sanitizePreferences({ streamingLimits: { localMbps: 7, remoteMbps: 4 } })).toEqual({
       streamingLimits: { remoteMbps: 4 },
-      continueWindow: "14",
+      continueWindow: "90",
       skipModes: { intro: "button", credits: "button" },
       autoPlay: { enabled: true, countdownSeconds: 10 },
     });
-    expect(sanitizePreferences({ streamingLimits: {}, other: 1 })).toEqual({ streamingLimits: {}, continueWindow: "14", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
+    expect(sanitizePreferences({ streamingLimits: {}, other: 1 })).toEqual({ streamingLimits: {}, continueWindow: "90", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
   });
 
   it("reads a stored record only at version 1", () => {
@@ -35,7 +35,7 @@ describe("preference store", () => {
     expect(parseStoredPreferences({ streamingLimits: limits })).toEqual(DEFAULT_PREFERENCES);
     expect(parseStoredPreferences({ version: 2, streamingLimits: limits })).toEqual(DEFAULT_PREFERENCES);
     expect(parseStoredPreferences({ version: "1", streamingLimits: limits })).toEqual(DEFAULT_PREFERENCES);
-    expect(parseStoredPreferences({ version: 1, streamingLimits: limits })).toEqual({ streamingLimits: limits, continueWindow: "14", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
+    expect(parseStoredPreferences({ version: 1, streamingLimits: limits })).toEqual({ streamingLimits: limits, continueWindow: "90", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
   });
 
   it("notifies once after an update, once get() returns it, until unsubscribed", () => {
@@ -59,10 +59,10 @@ describe("preference store", () => {
     expect(seen).toEqual([{ localMbps: 40 }]);
   });
 
-  it("defaults the Continue watching window to 14 days and falls back from an invalid value", () => {
-    expect(DEFAULT_PREFERENCES.continueWindow).toBe("14");
-    for (const bad of [14, "15", "", null, {}, "ALL"]) expect(sanitizePreferences({ continueWindow: bad }).continueWindow).toBe("14");
-    for (const good of ["7", "14", "30", "all"] as const) expect(sanitizePreferences({ continueWindow: good }).continueWindow).toBe(good);
+  it("defaults the Continue watching window to 90 days and falls back from an invalid value", () => {
+    expect(DEFAULT_PREFERENCES.continueWindow).toBe("90");
+    for (const bad of [14, "15", "", null, {}, "ALL", "7", "14"]) expect(sanitizePreferences({ continueWindow: bad }).continueWindow).toBe("90");
+    for (const good of ["30", "90", "180", "365", "all"] as const) expect(sanitizePreferences({ continueWindow: good }).continueWindow).toBe(good);
   });
 
   it("gives the Continue watching window as a store of its own", () => {
@@ -72,8 +72,8 @@ describe("preference store", () => {
     window.subscribe(() => seen.push(window.get()));
     window.set("30");
     window.set("nope" as never);
-    expect(store.get().continueWindow).toBe("14");
-    expect(seen).toEqual(["30", "14"]);
+    expect(store.get().continueWindow).toBe("90");
+    expect(seen).toEqual(["30", "90"]);
   });
 
   it("defaults both skip modes to a button and reads each field on its own", () => {
@@ -81,7 +81,7 @@ describe("preference store", () => {
     expect(sanitizePreferences({ skipModes: { intro: "auto", credits: 7 } }).skipModes).toEqual({ intro: "auto", credits: "button" });
     expect(sanitizePreferences({ skipModes: { intro: "AUTO", credits: "none" } }).skipModes).toEqual({ intro: "button", credits: "none" });
     expect(sanitizePreferences({ skipModes: "auto" }).skipModes).toEqual({ intro: "button", credits: "button" });
-    expect(sanitizePreferences({ continueWindow: "7" })).toMatchObject({ continueWindow: "7", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
+    expect(sanitizePreferences({ continueWindow: "30" })).toMatchObject({ continueWindow: "30", skipModes: { intro: "button", credits: "button" }, autoPlay: { enabled: true, countdownSeconds: 10 } });
   });
 
   it("gives the skip modes as a store that writes one kind and keeps the other", () => {
@@ -114,14 +114,14 @@ describe("preference store", () => {
   it("gives auto-play as a store of its own and keeps the other fields", () => {
     const store = new MemoryPreferenceStore();
     store.update("streamingLimits", { localMbps: 20 });
-    store.update("continueWindow", "7");
+    store.update("continueWindow", "30");
     const autoPlay = autoPlayOf(store);
     const seen: unknown[] = [];
     autoPlay.subscribe(() => seen.push(autoPlay.get()));
     autoPlay.set({ enabled: false, countdownSeconds: 5 });
     autoPlay.set({ enabled: true, countdownSeconds: 7 } as never);
     expect(store.get().streamingLimits).toEqual({ localMbps: 20 });
-    expect(store.get().continueWindow).toBe("7");
+    expect(store.get().continueWindow).toBe("30");
     expect(seen).toEqual([{ enabled: false, countdownSeconds: 5 }, { enabled: true, countdownSeconds: 10 }]);
   });
 
