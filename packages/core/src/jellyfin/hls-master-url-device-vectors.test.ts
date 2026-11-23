@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { PlaybackPlan } from "../domain/playback";
+import type { PlayerCapabilities } from "../domain/player-engine";
 import { listOf, negotiate } from "./device-test-support";
 import { rebuildMasterUrl } from "./hls-url";
 import type { PlaybackInfoResponse } from "./types";
@@ -25,7 +26,8 @@ const HOSTS = ["127.0.0.1:8096", "media.test"];
 const VIDEO = ["h264", "hevc", "av1", "vp9"] as const;
 const AUDIO = ["aac", "ac3", "eac3", "opus", "flac", "mp3"] as const;
 
-// The device cannot play the sample's video codec: every video codec but that one (T2-09's no-h264, no-hevc, no-av1).
+// The device cannot play the sample's video: every video codec but that one, and for the H.264 sample an h264
+// decoder of another profile.
 const SAMPLES = [
   { sample: "h264", itemId: "item-h264", first: "conversion-h264", forced: "device-conversion-h264", missing: "h264" },
   { sample: "hevc-hdr10", itemId: "item-hevc", first: "conversion-hevc-hdr10", forced: "device-conversion-hevc-hdr10", missing: "hevc" },
@@ -53,10 +55,16 @@ async function buildVectors(): Promise<{ vectors: Vector[]; postCounts: number[]
   const postCounts: number[] = [];
   for (const version of VERSIONS) {
     for (const { itemId, first, forced, missing } of SAMPLES) {
-      const capabilities = listOf(
+      const lacking = listOf(
         VIDEO.filter((codec) => codec !== missing),
         AUDIO,
       );
+      // The conversion is encoded into H.264, so the list that cannot play the H.264 sample (it is High) still
+      // decodes H.264: its one h264 decoder states another profile (T8-23).
+      const capabilities: PlayerCapabilities =
+        missing === "h264" && lacking.probe === "complete"
+          ? { ...lacking, videoDecoders: [{ codec: "h264", hardware: true, profile: "Constrained Baseline" }, ...lacking.videoDecoders] }
+          : lacking;
       for (const server of SERVERS) {
         const { transport, result } = await negotiate(itemId, [answer(version, first), answer(version, forced)], capabilities, { server });
         if (result instanceof Error) throw result;

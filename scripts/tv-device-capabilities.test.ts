@@ -59,7 +59,12 @@ const EMULATOR_LIKE = cases.find((entry) => entry.name.includes("emulator-like")
 const WITHOUT_H264: PlayerCapabilities =
   EMULATOR_LIKE.probe === "complete" ? { ...EMULATOR_LIKE, videoDecoders: EMULATOR_LIKE.videoDecoders.filter((decoder) => decoder.codec !== "h264") } : EMULATOR_LIKE;
 
+// The emulator-like list without its HEVC decoder. It still decodes H.264, the codec a conversion is encoded into.
+const WITHOUT_HEVC: PlayerCapabilities =
+  EMULATOR_LIKE.probe === "complete" ? { ...EMULATOR_LIKE, videoDecoders: EMULATOR_LIKE.videoDecoders.filter((decoder) => decoder.codec !== "hevc") } : EMULATOR_LIKE;
+
 const ITEM: LibraryItem = { id: "item-h264", name: "Fixture", type: "Movie", resumePositionTicks: 0, played: false };
+const HEVC_ITEM: LibraryItem = { ...ITEM, id: "item-hevc" };
 
 function host(answers: PlaybackInfoResponse[]) {
   const transport = new QueueTransport(answers);
@@ -146,8 +151,14 @@ describe.each(VERSIONS)("T8-07 item 2: a source the device decodes direct plays 
 // ---- item 3 ----
 
 describe.each(VERSIONS)("T8-07 item 3: a source whose video codec has no decoder sends the one forced request (Jellyfin %s)", (version) => {
-  it("T8-07 item 3: with a probe lacking h264, two posts, the second forced in body and query, and an hls plan the client asked for", async () => {
-    const { transport, result } = await negotiateApp(async () => WITHOUT_H264, version);
+  // The HEVC sample on a list without hevc: the forced answer is encoded into H.264, which the list decodes. A list
+  // without h264 cannot decode that answer (T8-23).
+  it("T8-07 item 3: with a probe lacking hevc, two posts, the second forced in body and query, and an hls plan the client asked for", async () => {
+    const createAppGatewayFactory = await loadFactory();
+    const { transport, host: made } = host([recorded(version, "conversion-hevc-hdr10"), recorded(version, "device-conversion-hevc-hdr10")]);
+    const gateway = await createAppGatewayFactory(made, async () => WITHOUT_HEVC)(SERVER);
+    await gateway.login("tester", "password");
+    const result = await gateway.createPlaybackPlan(HEVC_ITEM, 0).catch((error: unknown) => error);
     expect(transport.posts).toHaveLength(2);
     const [first, forced] = transport.posts;
     expectFirst(first);
