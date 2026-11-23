@@ -1,0 +1,40 @@
+{
+  "task": "T3-33",
+  "files": [
+    "modules/session/android/src/test/java/dev/octave/session/http/DevelopmentBuildRefusalTest.kt",
+    "modules/session/android/src/test/java/dev/octave/session/http/ReleaseBuildServersTest.kt",
+    "scripts/dev-allowlist-tracked.test.ts",
+    "scripts/tv-apk-allowlist.test.ts",
+    "scripts/security-doc-t3-33.test.ts"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": ["node", "scripts/tv-native-test-only.mjs", "dev.octave.session.http.DevelopmentBuildRefusalTest"]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/dev-allowlist-tracked.test.ts", "-t", "T3-33 item 2:"]
+    },
+    {
+      "item": 3,
+      "run": ["node", "scripts/tv-native-test-only.mjs", "dev.octave.session.http.ReleaseBuildServersTest"],
+      "also": ["pnpm", "exec", "vitest", "run", "scripts/tv-apk-allowlist.test.ts", "-t", "T3-33 item 3:"],
+      "note": "Item 3's second frozen file runs under pnpm test, not under this entry's run. Its red run at the freeze is recorded in the freeze commit's message (spec check issue 2). pnpm tv:wire and pnpm tv:e2e are regression evidence the verify step quotes from the wire and tv CI jobs; they cannot fail before the implementation."
+    },
+    {
+      "item": 4,
+      "gate": "review",
+      "why": "Product Owner ruling on T3-33 open question 1: option C, no acceptance edit; item 4 is closed through its own second branch (no such test can exist inside the rules this task may change, docs/specs/T3-33.md, 'Item 4: why it returns to the Product Owner'). The reviewer and the guardian check that section stands and that docs/security.md, Development builds, says plainly that nothing refuses a development-server host a developer points elsewhere, naming the backlog entry. Rules K7 and K4 of T3-04, scripts/check-network-paths.mjs, the bytecode test and the CI workflow are not touched."
+    },
+    {
+      "item": 5,
+      "gate": "review",
+      "why": "A record in the spec ('What already keeps the debug path off a real TV') that no test can read. The spec check and the guardian read it against T3-21 item 4, T3-19's development-server watch and T3-28, and check that the task adds only the sign-in fence of items 1 to 3."
+    },
+    {
+      "item": 6,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/security-doc-t3-33.test.ts", "-t", "T3-33 item 6:"]
+    }
+  ]
+}
