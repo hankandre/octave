@@ -45,10 +45,13 @@ export function judgeConversion(decision: Convert, context: SourceContext, optio
   const audio = audioPart(decision, params, context.audioStreamIndex);
 
   if (capabilities.probe === "complete") {
-    // 1. A target the device cannot decode: asking again cannot change it (D2).
+    // 1. A target the device cannot decode: asking again cannot change it (D2). A stream whose copy is possible and
+    // plays is not refused for its target: the server may copy it, and the device plays that (D12).
+    const judged = (part: Part | undefined): part is Part => part !== undefined && part.encodes
+      && !(part.copyPossible && part.copyPlayable(capabilities));
     const target: EncodeTarget = {
-      ...(video?.encodes ? { video: { codec: video.target ?? "", ...videoTargetLimits(decision, params) } } : {}),
-      ...(audio?.encodes ? { audio: { codec: audio.target ?? "" } } : {}),
+      ...(judged(video) ? { video: { codec: video.target ?? "", ...videoTargetLimits(decision, params) } } : {}),
+      ...(judged(audio) ? { audio: { codec: audio.target ?? "" } } : {}),
     };
     const decodes = deviceDecodesTarget(target, capabilities);
     if (!decodes.video || !decodes.audio) return refused("conversion target not playable");
@@ -138,18 +141,40 @@ function holds(list: readonly string[], stream: MediaStreamDto): boolean {
   return list.includes(codec);
 }
 
-// The target's size and frame rate: the source's first video stream's, lowered by the URL's limits. A value neither
-// gives is not judged.
+// The target's size and frame rate: the source's first video stream's, lowered by the URL's limits. A source whose
+// width and height are both known is scaled into the URL's MaxWidth and MaxHeight with its aspect ratio kept, as the
+// server scales it. A value neither gives is not judged.
 function videoTargetLimits(decision: Convert, params: URLSearchParams): { width?: number; height?: number; frameRate?: number } {
   const [stream] = streamsOf(decision.source, "Video");
-  const width = lowest(stream?.Width, param(params, "MaxWidth"));
-  const height = lowest(stream?.Height, param(params, "MaxHeight"));
+  const { width, height } = targetSize(stream?.Width, stream?.Height, param(params, "MaxWidth"), param(params, "MaxHeight"));
   const frameRate = lowest(stream?.ReferenceFrameRate, param(params, "MaxFramerate"));
   return {
     ...(width !== undefined ? { width } : {}),
     ...(height !== undefined ? { height } : {}),
     ...(frameRate !== undefined ? { frameRate } : {}),
   };
+}
+
+function targetSize(
+  sourceWidth: number | null | undefined,
+  sourceHeight: number | null | undefined,
+  maxWidth: string | undefined,
+  maxHeight: string | undefined,
+): { width?: number; height?: number } {
+  const width = positive(sourceWidth);
+  const height = positive(sourceHeight);
+  if (width === undefined || height === undefined) {
+    return { width: lowest(sourceWidth, maxWidth), height: lowest(sourceHeight, maxHeight) };
+  }
+  const widthLimit = positive(maxWidth === undefined ? undefined : Number(maxWidth));
+  const heightLimit = positive(maxHeight === undefined ? undefined : Number(maxHeight));
+  const scale = Math.min(1, widthLimit === undefined ? 1 : widthLimit / width, heightLimit === undefined ? 1 : heightLimit / height);
+  if (scale === 1) return { width, height };
+  return { width: Math.round(width * scale), height: Math.round(height * scale) };
+}
+
+function positive(value: number | null | undefined): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
 function lowest(source: number | null | undefined, limit: string | undefined): number | undefined {
