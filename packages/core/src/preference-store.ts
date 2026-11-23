@@ -1,7 +1,11 @@
-// Non-secret preferences for this computer (product review Q9 A: one set of
-// settings per computer, not per account). Shell-neutral: this module holds
-// the port, the record type, the defaults, validation, and an in-memory
-// store. A shell that can persist supplies its own PreferenceStore.
+// Non-secret preferences. Some are per device (the streaming limits) and some
+// are per account (auto-play and its countdown, the skip modes, the Continue
+// watching window), as T9-01 decided: the device keeps its fields in one
+// versioned record (T9-02) and the account's fields are stored on the server's
+// display preferences (T9-09). Both pass the one allowlist below.
+// Shell-neutral: this module holds the port, the record type, the defaults,
+// validation, the device record's encoding, and an in-memory store. A shell
+// that can persist supplies its own PreferenceStore.
 //
 // Rule for every field added here: it is a typed, validated value with a
 // default, and it is never a token, credential, URL, play-session ID, user
@@ -84,17 +88,65 @@ export function sanitizePreferences(value: unknown): PreferenceValues {
   };
 }
 
-// For adapters reading a stored record: a version 1 object is sanitized;
+// The allowlist split in two (T9-01): the device record holds the device
+// fields only; the account fields are kept for the server's display
+// preferences. Together they are every field of PreferenceValues.
+export const DEVICE_PREFERENCE_KEYS = Object.freeze(["streamingLimits"] as const);
+export const ACCOUNT_PREFERENCE_KEYS = Object.freeze(["continueWindow", "skipModes", "autoPlay"] as const);
+
+export type DevicePreferenceKey = (typeof DEVICE_PREFERENCE_KEYS)[number];
+export type AccountPreferenceKey = (typeof ACCOUNT_PREFERENCE_KEYS)[number];
+export type DevicePreferences = Pick<PreferenceValues, DevicePreferenceKey>;
+export type AccountPreferences = Pick<PreferenceValues, AccountPreferenceKey>;
+
+export function isDevicePreferenceKey(key: unknown): key is DevicePreferenceKey {
+  return (DEVICE_PREFERENCE_KEYS as readonly unknown[]).includes(key);
+}
+
+// The account fields of a values object, and no device field.
+export function accountPreferencesOf(values: PreferenceValues): AccountPreferences {
+  return { continueWindow: values.continueWindow, skipModes: values.skipModes, autoPlay: values.autoPlay };
+}
+
+// The account fields of anything, through the same allowlist as the whole
+// record: unknown keys are dropped and each field falls back on its own.
+export function sanitizeAccountPreferences(value: unknown): AccountPreferences {
+  return accountPreferencesOf(sanitizePreferences(value));
+}
+
+// For adapters reading a stored device record: a version 1 object gives its
+// sanitized device fields, with the account fields at their defaults;
 // anything else reads as the defaults.
 export function parseStoredPreferences(value: unknown): PreferenceValues {
   if (typeof value !== "object" || value === null) return DEFAULT_PREFERENCES;
   if ((value as { version?: unknown }).version !== PREFERENCES_VERSION) return DEFAULT_PREFERENCES;
-  return sanitizePreferences(value);
+  const device = sanitizePreferences(value);
+  return { ...DEFAULT_PREFERENCES, streamingLimits: device.streamingLimits };
 }
 
-// The only shape an adapter writes.
-export function storedPreferences(values: PreferenceValues): { version: number } & PreferenceValues {
-  return { version: PREFERENCES_VERSION, ...sanitizePreferences(values) };
+// The only shape an adapter writes: the version and the device fields, rebuilt
+// through the allowlist.
+export function storedPreferences(values: PreferenceValues): { version: number } & DevicePreferences {
+  return { version: PREFERENCES_VERSION, streamingLimits: sanitizePreferences(values).streamingLimits };
+}
+
+// The device record's text. The native store accepts exactly what this writes
+// (packages/core/tests/fixtures/preference-records.json).
+export function encodeDeviceRecord(values: PreferenceValues): string {
+  return JSON.stringify(storedPreferences(values));
+}
+
+// The values a stored device record gives: text that is not a version 1
+// record, or not JSON at all, gives the defaults.
+export function decodeDeviceRecord(text: unknown): PreferenceValues {
+  if (typeof text !== "string") return DEFAULT_PREFERENCES;
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return DEFAULT_PREFERENCES;
+  }
+  return parseStoredPreferences(value);
 }
 
 export interface PreferenceStore {
