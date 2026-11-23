@@ -1,0 +1,170 @@
+{
+  "task": "T8-07",
+  "files": [
+    "packages/core/tests/fixtures/device-capability-probes.json",
+    "packages/core/src/domain/device-capability-probes.test.ts",
+    "packages/core/src/jellyfin/device-profile-every-device.test.ts",
+    "scripts/tv-device-capabilities.test.ts",
+    "scripts/tv-wire-capabilities.test.ts",
+    "modules/player/android/src/test/java/dev/octave/player/engine/CapabilityMapTest.kt",
+    "modules/player/android/src/test/java/dev/octave/player/engine/CapabilityProbeTest.kt",
+    "modules/player/android/src/test/java/dev/octave/player/media3/PlatformNamesTest.kt"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "gate": "ci",
+      "why": "The spec's Acceptance row 1 names gate: ci (the wire half: player-capabilities reports probe=complete and h264main=listed on the emulator, judged by WIRE_JUDGES[player-capabilities] in CI's wire job, as item 6). The host half is frozen and red until implemented: PlatformNamesTest (the run below in 'also'), CapabilityMapTest.report_*, and scripts/tv-device-capabilities.test.ts -t 'T8-07 item 1:'; they run in pnpm tv:native:test and pnpm check.",
+      "also": [
+        [
+          "node",
+          "scripts/tv-native-test-only.mjs",
+          "dev.octave.player.media3.PlatformNamesTest"
+        ],
+        [
+          "node",
+          "scripts/tv-native-test-only.mjs",
+          "dev.octave.player.engine.CapabilityMapTest.report_*"
+        ],
+        [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "scripts/tv-device-capabilities.test.ts",
+          "-t",
+          "T8-07 item 1:"
+        ]
+      ],
+      "note": "probe=complete and h264main=listed on the emulator are judged by WIRE_JUDGES[player-capabilities] (item 6's gate). PlatformNames' API (videoMime, audioMime, profile, hdrType, passthroughFormat) and the plain report types (PlatformReport, PlatformVideoDecoder, PlatformProfile with named constructor arguments) are fixed by these tests."
+    },
+    {
+      "item": 2,
+      "gate": "ci",
+      "why": "The spec's Acceptance row 2 names gate: ci (the wire half: one PlaybackInfo for Synthetic H264, plan original, first frame, in CI's wire job, as item 6). The host half is frozen and red until implemented: scripts/tv-device-capabilities.test.ts -t 'T8-07 item 2:' (in 'also'), run by pnpm check.",
+      "also": [
+        [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "scripts/tv-device-capabilities.test.ts",
+          "-t",
+          "T8-07 item 2:"
+        ]
+      ],
+      "note": "One PlaybackInfo for Synthetic H264 and its first frame on the emulator are judged by WIRE_JUDGES[player-capabilities] (item 6's gate)."
+    },
+    {
+      "item": 3,
+      "gate": "ci",
+      "why": "The spec's Acceptance row 3 names gate: ci (the wire half: nodecoder=transcode client=DeviceCannotPlay on jellyfin-12, negotiated and not launched, in CI's wire job, as item 6). The host half is frozen and red until implemented: scripts/tv-device-capabilities.test.ts -t 'T8-07 item 3:' (in 'also'), run by pnpm check.",
+      "also": [
+        [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "scripts/tv-device-capabilities.test.ts",
+          "-t",
+          "T8-07 item 3:"
+        ]
+      ],
+      "note": "nodecoder=transcode client=DeviceCannotPlay on jellyfin-12 is judged on the wire (item 6's gate); the HLS plan is negotiated, not played, until T8-08 (Product Owner ruling on item 6)."
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-wire-capabilities.test.ts",
+        "-t",
+        "T8-07 item 4:"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "--filter",
+          "@octave/core",
+          "exec",
+          "vitest",
+          "run",
+          "src/jellyfin/device-profile-every-device.test.ts"
+        ]
+      ],
+      "note": "device-profile-every-device.test.ts passes before implementation (unchanged core code over the new vectors; spec check issue 3), so the run is the wire digest half, which is red until canonicalDigest and OCTAVE_PROFILE_DIGEST exist. Both are frozen."
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-device-capabilities.test.ts",
+        "-t",
+        "T8-07 item 5:"
+      ],
+      "also": [
+        [
+          "node",
+          "scripts/tv-native-test-only.mjs",
+          "dev.octave.player.engine.CapabilityProbeTest"
+        ]
+      ]
+    },
+    {
+      "item": 6,
+      "gate": "ci",
+      "why": "A pinned Jellyscale, Jellyfin 12.4, Docker and an emulator cannot run in the red gate. Evidence: release-evidence/wire/summary.txt from CI's wire job on the pull request's head holding 'player-capabilities jellyscale T8-07 pass' and 'player-capabilities jellyfin-12 T8-07 pass' with no fail line, plus the implementer's own pnpm tv:wire --task T8-07. Synthetic H264 is played to its first frame; Synthetic No Decoder is negotiated, not played (Product Owner ruling): its device play is an untested gate (T8-20 item 3, T10-08 item 2). The host judges are frozen in scripts/tv-wire-capabilities.test.ts ('T8-07 item 6:') and run in pnpm check; a fetch of the converted plan fails the run through judgePlayerCapture."
+    },
+    {
+      "item": 7,
+      "gate": "ci",
+      "why": "As item 6: the jellyscale pair of player-capabilities in CI's wire job. The judge's flags-in-body-and-query rule, the header rules and CAPABILITY_EXPECTATIONS equal to tripwire-expectations.ts' expectationFor(server, 'no-av1', 'av1') are frozen in scripts/tv-wire-capabilities.test.ts ('T8-07 item 7:') and run in pnpm check."
+    },
+    {
+      "item": 8,
+      "run": [
+        "node",
+        "scripts/tv-native-test-only.mjs",
+        "dev.octave.player.engine.CapabilityMapTest"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "--filter",
+          "@octave/core",
+          "exec",
+          "vitest",
+          "run",
+          "src/domain/device-capability-probes.test.ts"
+        ],
+        [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "scripts/tv-wire-capabilities.test.ts",
+          "-t",
+          "T8-07 item 8:"
+        ]
+      ],
+      "note": "device-capability-probes.test.ts passes before implementation (spec check issue 3); it is frozen with the vectors. A decoder of h264, hevc, av1, vp9, mpeg2video or mpeg4 reporting an empty profile list is deliberately not pinned (spec check issue 1: the implementer settles it against Media3 1.11.1 and cites it); VP8 and VC-1 are. 'No video decoder' is judged on the mapped list (spec check issue 2): the High 4:2:2 and unknown-codec cases carry a second, mapped decoder, and CapabilityMapTest.report_whose_decoders_all_map_to_nothing_is_failed pins a report whose only decoder maps to nothing as Failed. hevcmain=listed on the emulator is judged on the wire (item 6's gate)."
+    },
+    {
+      "item": 9,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-device-capabilities.test.ts",
+        "-t",
+        "T8-07 item 9:"
+      ]
+    }
+  ]
+}

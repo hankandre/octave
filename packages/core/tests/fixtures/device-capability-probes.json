@@ -1,0 +1,267 @@
+{
+  "description": "T8-07 shared vectors (docs/specs/T8-07.md, Test plan 1). `platform` is what the Android half reads from the device, with each reported profile already named by PlatformNames (`name`, and `bitDepth` for AV1 and VP9); `capabilities` is the PlayerCapabilities the probe answers for it; `plays` is what the core's devicePlayability answers for the video of each source against that answer. Kotlin: CapabilityMapTest (order of videoDecoders not pinned). TypeScript: packages/core/src/domain/device-capability-probes.test.ts. A decoder of h264, hevc, av1, vp9, mpeg2video or mpeg4 that reports an empty profile list is deliberately not a vector here (spec check issue 1: the implementer settles it against Media3 1.11.1).",
+  "cases": [
+    {
+      "name": "an AVC hardware decoder reporting only High lists High, Main and Constrained Baseline",
+      "platform": {
+        "video": [{ "codec": "h264", "hardware": true, "profiles": [{ "name": "High" }] }],
+        "audio": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [
+          { "codec": "h264", "hardware": true, "profile": "High" },
+          { "codec": "h264", "hardware": true, "profile": "Main" },
+          { "codec": "h264", "hardware": true, "profile": "Constrained Baseline" }
+        ],
+        "audioDecoders": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "plays": [
+        { "source": { "video": { "codec": "h264", "profile": "Main", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true },
+        { "source": { "video": { "codec": "h264", "profile": "High", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true },
+        { "source": { "video": { "codec": "h264", "profile": "Constrained Baseline", "bitDepth": 8, "width": 640, "height": 360 } }, "video": true },
+        { "source": { "video": { "codec": "h264", "profile": "Baseline", "bitDepth": 8, "width": 640, "height": 360 } }, "video": false },
+        { "source": { "video": { "codec": "h264", "profile": "High 10", "bitDepth": 10, "width": 1920, "height": 1080 } }, "video": false },
+        { "source": { "video": { "codec": "h264", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": false }
+      ]
+    },
+    {
+      "name": "two AVC decoders reporting the same profile give each entry once",
+      "platform": {
+        "video": [
+          { "codec": "h264", "hardware": true, "profiles": [{ "name": "Main" }] },
+          { "codec": "h264", "hardware": true, "profiles": [{ "name": "Main" }, { "name": "Constrained Baseline" }] }
+        ],
+        "audio": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [
+          { "codec": "h264", "hardware": true, "profile": "Main" },
+          { "codec": "h264", "hardware": true, "profile": "Constrained Baseline" }
+        ],
+        "audioDecoders": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "plays": [
+        { "source": { "video": { "codec": "h264", "profile": "Main", "bitDepth": 8, "width": 1280, "height": 720 } }, "video": true },
+        { "source": { "video": { "codec": "h264", "profile": "High", "bitDepth": 8, "width": 1280, "height": 720 } }, "video": false }
+      ]
+    },
+    {
+      "name": "an HEVC decoder reporting only Main 10 lists Main 10 and Main",
+      "platform": {
+        "video": [{ "codec": "hevc", "hardware": true, "profiles": [{ "name": "Main 10" }], "maxWidth": 3840, "maxHeight": 2160 }],
+        "audio": ["aac", "ac3"],
+        "hdr": ["hdr10", "hlg"],
+        "passthrough": ["ac3", "eac3"]
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [
+          { "codec": "hevc", "hardware": true, "profile": "Main 10", "maxWidth": 3840, "maxHeight": 2160 },
+          { "codec": "hevc", "hardware": true, "profile": "Main", "maxWidth": 3840, "maxHeight": 2160 }
+        ],
+        "audioDecoders": ["aac", "ac3"],
+        "hdr": ["hdr10", "hlg"],
+        "passthrough": ["ac3", "eac3"]
+      },
+      "plays": [
+        { "source": { "video": { "codec": "hevc", "profile": "Main", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true },
+        { "source": { "video": { "codec": "hevc", "profile": "Main 10", "bitDepth": 10, "width": 3840, "height": 2160 } }, "video": true },
+        { "source": { "video": { "codec": "hevc", "profile": "Main 10", "bitDepth": 10, "width": 7680, "height": 4320 } }, "video": false },
+        { "source": { "video": { "codec": "hevc", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": false }
+      ]
+    },
+    {
+      "name": "an AV1 Main10 decoder lists Main with maxBitDepth 10",
+      "platform": {
+        "video": [{ "codec": "av1", "hardware": true, "profiles": [{ "name": "Main", "bitDepth": 10 }] }],
+        "audio": ["opus"],
+        "hdr": ["hdr10", "hdr10-plus"],
+        "passthrough": []
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [{ "codec": "av1", "hardware": true, "profile": "Main", "maxBitDepth": 10 }],
+        "audioDecoders": ["opus"],
+        "hdr": ["hdr10", "hdr10-plus"],
+        "passthrough": []
+      },
+      "plays": [
+        { "source": { "video": { "codec": "av1", "profile": "Main", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true },
+        { "source": { "video": { "codec": "av1", "profile": "Main", "bitDepth": 10, "width": 1920, "height": 1080 } }, "video": true },
+        { "source": { "video": { "codec": "av1", "profile": "High", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": false }
+      ]
+    },
+    {
+      "name": "a VP9 decoder reporting Profile 2 lists Profile 2 with maxBitDepth 10",
+      "platform": {
+        "video": [{ "codec": "vp9", "hardware": true, "profiles": [{ "name": "Profile 2", "bitDepth": 10 }] }],
+        "audio": ["opus", "vorbis"],
+        "hdr": ["hdr10"],
+        "passthrough": []
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [{ "codec": "vp9", "hardware": true, "profile": "Profile 2", "maxBitDepth": 10 }],
+        "audioDecoders": ["opus", "vorbis"],
+        "hdr": ["hdr10"],
+        "passthrough": []
+      },
+      "plays": [
+        { "source": { "video": { "codec": "vp9", "profile": "Profile 2", "bitDepth": 10, "width": 3840, "height": 2160 } }, "video": true },
+        { "source": { "video": { "codec": "vp9", "profile": "Profile 0", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": false }
+      ]
+    },
+    {
+      "name": "a VP8 decoder gets one entry with no profile, whatever it reports",
+      "platform": {
+        "video": [{ "codec": "vp8", "hardware": false, "profiles": [{ "name": "Main" }] }],
+        "audio": ["vorbis"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [{ "codec": "vp8", "hardware": false }],
+        "audioDecoders": ["vorbis"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "plays": [
+        { "source": { "video": { "codec": "vp8", "bitDepth": 8, "width": 1280, "height": 720 } }, "video": true },
+        { "source": { "video": { "codec": "vp8", "profile": "0", "bitDepth": 8, "width": 1280, "height": 720 } }, "video": true }
+      ]
+    },
+    {
+      "name": "a VC-1 decoder reporting an empty profile list gets one entry with no profile",
+      "platform": {
+        "video": [{ "codec": "vc1", "hardware": true, "profiles": [] }],
+        "audio": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [{ "codec": "vc1", "hardware": true }],
+        "audioDecoders": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "plays": [
+        { "source": { "video": { "codec": "vc1", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true },
+        { "source": { "video": { "codec": "vc1", "profile": "Advanced", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true }
+      ]
+    },
+    {
+      "name": "an AVC decoder reporting only High 4:2:2 gets no entry; the HEVC decoder beside it stays",
+      "platform": {
+        "video": [
+          { "codec": "h264", "hardware": true, "profiles": [{ "name": "High 4:2:2" }] },
+          { "codec": "hevc", "hardware": true, "profiles": [{ "name": "Main" }] }
+        ],
+        "audio": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [{ "codec": "hevc", "hardware": true, "profile": "Main" }],
+        "audioDecoders": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "plays": [
+        { "source": { "video": { "codec": "h264", "profile": "High 4:2:2", "bitDepth": 10, "width": 1920, "height": 1080 } }, "video": false },
+        { "source": { "video": { "codec": "h264", "profile": "High", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": false },
+        { "source": { "video": { "codec": "hevc", "profile": "Main", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true }
+      ]
+    },
+    {
+      "name": "an unknown codec, audio codec, HDR type and passthrough format are dropped; the AVC decoder beside them stays",
+      "platform": {
+        "video": [
+          { "codec": "msmpeg4v3", "hardware": false, "profiles": [] },
+          { "codec": "h264", "hardware": false, "profiles": [{ "name": "Main" }] }
+        ],
+        "audio": ["aac", "wmav2"],
+        "hdr": ["hdr10", "hdr-vivid"],
+        "passthrough": ["ac3", "mpegh"]
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [
+          { "codec": "h264", "hardware": false, "profile": "Main" },
+          { "codec": "h264", "hardware": false, "profile": "Constrained Baseline" }
+        ],
+        "audioDecoders": ["aac"],
+        "hdr": ["hdr10"],
+        "passthrough": ["ac3"]
+      },
+      "plays": [
+        { "source": { "video": { "codec": "msmpeg4v3", "bitDepth": 8, "width": 640, "height": 360 } }, "video": false },
+        { "source": { "video": { "codec": "h264", "profile": "Main", "bitDepth": 8, "width": 640, "height": 360 } }, "video": true }
+      ]
+    },
+    {
+      "name": "an emulator-like list: software AVC and HEVC, AAC, no HDR, no passthrough",
+      "platform": {
+        "video": [
+          {
+            "codec": "h264",
+            "hardware": false,
+            "profiles": [{ "name": "Constrained Baseline" }, { "name": "Baseline" }, { "name": "Main" }, { "name": "High" }],
+            "maxWidth": 4096,
+            "maxHeight": 4096
+          },
+          { "codec": "hevc", "hardware": false, "profiles": [{ "name": "Main" }], "maxWidth": 4096, "maxHeight": 4096 }
+        ],
+        "audio": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "capabilities": {
+        "probe": "complete",
+        "videoDecoders": [
+          { "codec": "h264", "hardware": false, "profile": "Constrained Baseline", "maxWidth": 4096, "maxHeight": 4096 },
+          { "codec": "h264", "hardware": false, "profile": "Baseline", "maxWidth": 4096, "maxHeight": 4096 },
+          { "codec": "h264", "hardware": false, "profile": "Main", "maxWidth": 4096, "maxHeight": 4096 },
+          { "codec": "h264", "hardware": false, "profile": "High", "maxWidth": 4096, "maxHeight": 4096 },
+          { "codec": "hevc", "hardware": false, "profile": "Main", "maxWidth": 4096, "maxHeight": 4096 }
+        ],
+        "audioDecoders": ["aac"],
+        "hdr": [],
+        "passthrough": []
+      },
+      "plays": [
+        { "source": { "video": { "codec": "h264", "profile": "High", "bitDepth": 8, "width": 640, "height": 360 } }, "video": true },
+        { "source": { "video": { "codec": "h264", "profile": "Main", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true },
+        { "source": { "video": { "codec": "hevc", "profile": "Main", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": true },
+        { "source": { "video": { "codec": "hevc", "profile": "Main 10", "bitDepth": 10, "width": 1920, "height": 1080 } }, "video": false },
+        { "source": { "video": { "codec": "h264", "bitDepth": 8, "width": 640, "height": 360 } }, "video": false },
+        { "source": { "video": { "codec": "av1", "profile": "Main", "bitDepth": 8, "width": 1920, "height": 1080 } }, "video": false }
+      ]
+    },
+    {
+      "name": "a report with no video decoder is cannot tell",
+      "platform": {
+        "video": [],
+        "audio": ["aac"],
+        "hdr": [],
+        "passthrough": ["ac3"]
+      },
+      "capabilities": { "probe": "failed" },
+      "plays": [
+        { "source": { "video": { "codec": "h264", "profile": "High", "bitDepth": 8, "width": 640, "height": 360 } }, "video": false }
+      ]
+    }
+  ]
+}
