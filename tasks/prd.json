@@ -1967,7 +1967,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit e0aec065 (with f531cb1e, 0203d911) on task/T3-21: signing plugin, key check, cert check, install guard, ID cloud.jellyscale.octave. T3-21 tests pass; tv:build, tv:apk:check, tv:native:test (986), tv:e2e, tv:smoke pass on an emulator. Blocked: done tasks frozen tests need a PO commit (46 fail)."
+          "evidence": "commit 65eaf736 on task/T3-21 (not pushed). pnpm check green (3920 core, 2771 scripts tests). tv:native:test 986 tests, 0 failed. tv:build with a throwaway key and tv:apk:check pass on the real APK (signed, not debug cert). Items 1 and 5 owner gates (key, Shield uninstall); item 6 review. Done-task records keep dev.octave.tv."
         },
         {
           "id": "T3-17",
