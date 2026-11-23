@@ -2343,10 +2343,10 @@
             "Contract tests cover Jellyfin 10.11, 12.4 and Jellyscale fixtures"
           ],
           "verify": "pnpm --filter @octave/core test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 4166b069: windows 30/90/180/365/all, default 90, cap 20 with hero counted (PO ruling), loadHome(clock), limit=20 on Resume/NextUp. Frozen home.test.ts 16-card case (line 41) and \"7\" (line 73, tsc error) still fail pnpm check; awaiting PO ruling."
         },
         {
           "id": "T5-03",
