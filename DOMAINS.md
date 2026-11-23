@@ -69,9 +69,9 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Library (UserView), Item, Movie, Series, Season, Episode, Collection, Card, Row, Rail, Resume position, Played, Favorite, Image tag.
 
-**Today.** `JellyfinGateway` catalog calls, `packages/core/src/jellyfin/cards.ts`, `packages/core/src/jellyfin/item-detail.ts`, `packages/core/src/domain/catalog.ts`, `packages/core/src/domain/up-next.ts`, `packages/core/src/domain/subtitle-list.ts`, `packages/core/src/domain/languages.ts`, `packages/core/src/domain/media-format.ts`.
+**Today.** `JellyfinGateway` catalog calls, `packages/core/src/jellyfin/cards.ts`, `packages/core/src/jellyfin/item-detail.ts`, `packages/core/src/domain/catalog.ts`, `packages/core/src/domain/up-next.ts`, `packages/core/src/domain/subtitle-list.ts`, `packages/core/src/domain/languages.ts`, `packages/core/src/domain/media-format.ts`. The native image view (T3-11): `modules/artwork` (the view `OctaveArtworkView` and its plain-Kotlin loader), the image request in the session's HTTP package (`ArtworkFetch`), and `createNativeArtwork` (`apps/tv/src/host/native-artwork.tsx`), which fills the rows' artwork slot.
 
-**Target.** `packages/core` for queries and rules; Home, library, search, and detail screens in `apps/tv`; the native image view (T3-11).
+**Target.** `packages/core` for queries and rules; Home, library, search, and detail screens in `apps/tv`.
 
 **Rules.**
 - Catalog code never builds stream URLs or decides playability. It hands an `itemId` (and optionally a `mediaSourceId`) to Playback Negotiation.
