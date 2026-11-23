@@ -39,6 +39,14 @@ function isInside(root, path) {
   return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
 }
 
+// True when a `.git` entry sits in a parent directory of `path`: the path is inside some checkout, this one or a sibling worktree.
+function isInsideCheckout(path) {
+  for (let dir = dirname(real(path)); ; dir = dirname(dir)) {
+    if (existsSync(join(dir, ".git"))) return true;
+    if (dirname(dir) === dir) return false;
+  }
+}
+
 const line = (text) => `ERROR tv build: ${text}`;
 
 // One line per missing piece; empty when the key is complete and sits outside the repository. No line holds a path or a
@@ -49,13 +57,13 @@ export function signingProblems(env, { repoRoot = repo } = {}) {
     return [line(`${SIGNING_VARIABLE} is not set; point it at your signing properties file (docs/commands.md, Release signing)`)];
   }
   if (!existsSync(location) || !statSync(location).isFile()) return [line(`${SIGNING_VARIABLE} names a file that does not exist`)];
-  if (isInside(repoRoot, location)) return [line(`${SIGNING_VARIABLE} names a file inside the repository; keep the key and its properties outside every checkout`)];
+  if (isInside(repoRoot, location) || isInsideCheckout(location)) return [line(`${SIGNING_VARIABLE} names a file inside the repository; keep the key and its properties outside every checkout`)];
   const properties = parseProperties(readFileSync(location, "utf8"));
   const missing = SIGNING_KEYS.filter((key) => (properties[key] ?? "") === "");
   if (missing.length > 0) return missing.map((key) => line(`the signing properties file has no ${key}`));
   const store = isAbsolute(properties.storeFile) ? properties.storeFile : resolve(dirname(location), properties.storeFile);
   if (!existsSync(store) || !statSync(store).isFile()) return [line("storeFile in the signing properties file does not exist")];
-  if (isInside(repoRoot, store)) return [line("storeFile in the signing properties file is inside the repository; keep the key outside every checkout")];
+  if (isInside(repoRoot, store) || isInsideCheckout(store)) return [line("storeFile in the signing properties file is inside the repository; keep the key outside every checkout")];
   return [];
 }
 

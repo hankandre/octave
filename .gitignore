@@ -25,3 +25,4 @@ mise.local.toml
 *.p12
 *.pk8
 signing*.properties
+*throwaway*.properties

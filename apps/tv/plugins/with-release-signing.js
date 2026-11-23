@@ -16,11 +16,19 @@ const HELPER = `${MARKER} (apps/tv/plugins/with-release-signing.js)
 def octaveSigningNames = ["storeFile", "keyAlias"] + ["store", "key"].collect { it + "Password" }
 def octaveSigning = [:]
 def octaveSigningMissing = []
+def octaveInCheckout = { File f ->
+    for (def d = f.canonicalFile.parentFile; d != null; d = d.parentFile) {
+        if (new File(d, ".git").exists()) return true
+    }
+    return false
+}
 def octaveSigningVariable = System.getenv("${SIGNING_VARIABLE}")
 if (!octaveSigningVariable) {
     octaveSigningMissing << "${SIGNING_VARIABLE} is not set"
 } else if (!new File(octaveSigningVariable).isFile()) {
     octaveSigningMissing << "${SIGNING_VARIABLE} names a file that does not exist"
+} else if (octaveInCheckout(new File(octaveSigningVariable))) {
+    octaveSigningMissing << "${SIGNING_VARIABLE} names a file inside a checkout"
 } else {
     def octaveSigningFile = new File(octaveSigningVariable).absoluteFile
     def octaveSigningProps = new Properties()
@@ -34,6 +42,7 @@ if (!octaveSigningVariable) {
         def octaveStore = new File(octaveSigning.storeFile)
         octaveSigning.storeFile = octaveStore.isAbsolute() ? octaveStore : new File(octaveSigningFile.parentFile, octaveSigning.storeFile)
         if (!octaveSigning.storeFile.isFile()) octaveSigningMissing << "storeFile does not exist"
+        else if (octaveInCheckout(octaveSigning.storeFile)) octaveSigningMissing << "storeFile is inside a checkout"
     }
 }
 ${END_MARKER}
