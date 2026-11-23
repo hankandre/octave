@@ -149,6 +149,13 @@ export function decodeDeviceRecord(text: unknown): PreferenceValues {
   return parseStoredPreferences(value);
 }
 
+// Where the account fields live (T9-09): the signed-in account's display preferences, read and saved through the
+// core's gateway. A save changes only the fields given and answers the values the account now holds.
+export interface AccountPreferenceSource {
+  read(): Promise<AccountPreferences>;
+  save(change: Partial<AccountPreferences>): Promise<AccountPreferences>;
+}
+
 export interface PreferenceStore {
   get(): PreferenceValues;
   update<K extends keyof PreferenceValues>(key: K, value: PreferenceValues[K]): void;
