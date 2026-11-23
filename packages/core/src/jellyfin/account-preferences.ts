@@ -58,7 +58,7 @@ export function keptOctaveKeys(dto: unknown): Record<string, string> {
   return kept;
 }
 
-export function displayPreferencesBody(values: AccountPreferences, kept: Record<string, string>): DisplayPreferencesDto {
+export function displayPreferencesBody(values: AccountPreferences, kept: Record<string, string>): DisplayPreferencesDto & { CustomPrefs: Record<string, string | null> } {
   const safe = sanitizeAccountPreferences(values);
   return {
     Id: ACCOUNT_PREFERENCES_RECORD.id,
