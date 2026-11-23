@@ -38,11 +38,11 @@ describe("composeHome, Continue watching", () => {
     expect(wholeRow(home)).toEqual(["episode-now", "next-b", "film-old"]);
   });
 
-  it("T5-02 item 1: gives at most 16 cards for 20 titles, the hero included", () => {
-    const resume = Array.from({ length: 20 }, (_, index) => film(`f${index}`, ago(index + 1)));
+  it("T5-02 item 1: gives at most 20 cards for 24 titles, the hero included", () => {
+    const resume = Array.from({ length: 24 }, (_, index) => film(`f${index}`, ago(index + 1)));
     const home = composeHome({ resume }, { window: "all", now: NOW });
-    expect(wholeRow(home)).toEqual(Array.from({ length: 16 }, (_, index) => `f${index}`));
-    expect(home.continueWatching).toHaveLength(15);
+    expect(wholeRow(home)).toEqual(Array.from({ length: 20 }, (_, index) => `f${index}`));
+    expect(home.continueWatching).toHaveLength(19);
   });
 
   it("T5-02 item 1: puts a next episode with no known play after the dated titles", () => {
@@ -70,7 +70,7 @@ describe("composeHome, Continue watching", () => {
   it("T5-02 item 1: applies the window the caller passes, not a default of its own", () => {
     const lists = { resume: [film("film-year", ago(365)), film("film-recent", ago(2))] };
     expect(wholeRow(composeHome(lists, { window: "all", now: NOW }))).toEqual(["film-recent", "film-year"]);
-    expect(wholeRow(composeHome(lists, { window: "7", now: NOW }))).toEqual(["film-recent"]);
+    expect(wholeRow(composeHome(lists, { window: "30", now: NOW }))).toEqual(["film-recent"]);
   });
 
   it("T5-02 item 1: treats a missing list as empty", () => {
