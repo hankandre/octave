@@ -271,6 +271,33 @@ export const APK_NETWORK_ENTRY_POINTS = [
     reason: "loadResource opens the URL its own class loader returns for a resource path (a resource inside the APK) and reads it, as the dex shows: ClassLoader.getResource, then URL.openConnection with caches off. The URL never comes from input. No source row stands for the Kotlin runtime.",
     linkedPath: null,
   },
+  // --- Media3 (T8-02) ---
+  {
+    id: "M1",
+    classes: ["androidx.media3.datasource.okhttp.OkHttpDataSource"],
+    sinks: ["S1"],
+    what: "the player's media requests",
+    reason:
+      "Media3's HTTP data source (media3-datasource-okhttp 1.11.1, OkHttpDataSource.java) invokes Call.Factory.newCall on the factory it is built with; Octave's engine builds it only over OctaveHttp.callFactory(session) (dev.octave.player.media3, D4_EXCEPTIONS), so every media request is the one client's. No other Media3 data source is built.",
+    linkedPath: null,
+  },
+];
+
+// The references D4 lets Octave make to a listed class (Product Owner ruling of 2026-11-23, T8-02): each entry is one
+// constructor of one library class from one Octave package. A reference passes only when its frame is a real (not
+// synthetic) frame of a class under `package`, the name it references is exactly `class`, attributed to that one
+// original, and it is a `new-instance` of the class, an `invoke-direct` of `constructor`, or that constructor inlined
+// by R8 into the Octave method. Every other member, cast, type check, class literal, field, parameter or return type
+// fails D4 as before. An entry no reference in the APK uses fails the check, as a stale row fails D3.
+export const D4_EXCEPTIONS = [
+  {
+    id: "E1",
+    package: "dev.octave.player.media3.",
+    class: "androidx.media3.datasource.okhttp.OkHttpDataSource$Factory",
+    constructor: ["okhttp3.Call$Factory"],
+    reason:
+      "The engine hands Media3's OkHttp data source the one client's call factory, OctaveHttp.callFactory(session), and sets nothing else on it; the dex check does not trace which factory is passed: decision log 14's D1 rule, T8-02's item 1 source test and its wire test hold that.",
+  },
 ];
 
 // Every class whose code references DevSupportHttpClient, with why it does not run in a release build.
@@ -347,4 +374,5 @@ export const PRODUCTION_LISTS = {
   entryPoints: APK_NETWORK_ENTRY_POINTS,
   devSupportCallers: DEV_SUPPORT_CLIENT_CALLERS,
   absentPackages: ABSENT_PACKAGES,
+  d4Exceptions: D4_EXCEPTIONS,
 };

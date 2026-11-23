@@ -3,7 +3,7 @@
 // file holds the listing reader, the stacks, and D1 and D2; the other rules are split out along the rules (T3-29):
 // D4 in tv-apk-dex-d4.mjs, decision log 15's declarations in tv-apk-dex-declarations.mjs, the rules judged once the
 // listing is read in tv-apk-dex-closing.mjs, and operand parsing in tv-apk-dex-operand.mjs.
-import { dexTypeName, framesAt, originalsOf, resolveField, resolveMethod } from "./tv-apk-dex-mapping.mjs";
+import { dexTypeName, frameRecordsAt, originalsOf, resolveField, resolveMethod } from "./tv-apk-dex-mapping.mjs";
 import { FRAMEWORK_SUPERCLASSES } from "./tv-apk-dex-lists.mjs";
 import { closingRules } from "./tv-apk-dex-closing.mjs";
 import { judgeHookDispatch, judgeOctaveReference } from "./tv-apk-dex-d4.mjs";
@@ -75,11 +75,12 @@ export async function judgeDex(lines, mapping, lists) {
   function stacksOf(dexClass, name, descriptor, line) {
     const section = mapping.sections.get(dexClass);
     const syntheticOctave = () => section.original.startsWith(OCTAVE) || sectionHoldsOctave(dexClass);
-    const found = framesAt(mapping, dexClass, name, descriptor, line);
+    const found = frameRecordsAt(mapping, dexClass, name, descriptor, line);
     if (found.length > 0) {
-      return found.map((holders) => {
-        const synthetic = section.synthesized && holders.every((holder) => holder === section.original);
-        return holders.map((holder) => ({ holder, octave: holder.startsWith(OCTAVE) || (synthetic && syntheticOctave()), synthetic }));
+      return found.map((records) => {
+        const synthetic = section.synthesized && records.every((record) => record.holder === section.original);
+        // `method` and `args` are the frame's member line, which D4_EXCEPTIONS reads for an inlined constructor.
+        return records.map(({ holder, name: method, args }) => ({ holder, octave: holder.startsWith(OCTAVE) || (synthetic && syntheticOctave()), synthetic, method, args }));
       });
     }
     // A class R8 synthesized (a lambda, a bridge) is attributed by its class line (spec, "Attribution", step 4).
@@ -188,7 +189,9 @@ export async function judgeDex(lines, mapping, lists) {
     return out;
   };
 
-  const d4 = { mapping, lists, listed, factories, report, leftBeforeR8 };
+  // The D4_EXCEPTIONS entries a reference used; an entry no reference used fails in closingRules.
+  const usedExceptions = new Set();
+  const d4 = { mapping, lists, listed, factories, report, leftBeforeR8, usedExceptions };
 
   function judgeInstruction(site, opcode, operand) {
     const parsed = readOperand(opcode, operand);
@@ -341,7 +344,7 @@ export async function judgeDex(lines, mapping, lists) {
 
   const reported = [...errors.values()].map(({ text, count }) => (count > 1 ? `${text} (and ${count - 1} more like it)` : text));
   return {
-    errors: closingRules({ mapping, lists, stats, reported, dexClasses, matchedRows, matchedCallers, devSupportDex }),
+    errors: closingRules({ mapping, lists, stats, reported, dexClasses, matchedRows, matchedCallers, devSupportDex, usedExceptions }),
     stats: {
       opened: stats.opened,
       classes: stats.classes,

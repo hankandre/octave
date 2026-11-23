@@ -82,14 +82,17 @@ class NetworkPathsBytecodeTest {
         assertRules(setOf("K1"), probe(MemberRef("androidx/media3/datasource/rtmp/RtmpDataSource\$Factory", "<init>", "()V")))
         assertRules(setOf("K2"), probe(MemberRef("androidx/media3/datasource/DefaultDataSource\$Factory", "<init>", "($context)V")))
         assertRules(setOf("K2"), probe(MemberRef("androidx/media3/datasource/DefaultDataSourceFactory", "<init>", "($context)V")))
-        assertRules(emptySet(), probe(MemberRef("androidx/media3/datasource/okhttp/OkHttpDataSource\$Factory", "<init>", "(Lokhttp3/Call\$Factory;)V")))
+        // T8-02: K7 refuses Media3's OkHttp data source but for its factory's constructor from the engine's package.
+        val okHttpFactory = MemberRef("androidx/media3/datasource/okhttp/OkHttpDataSource\$Factory", "<init>", "(Lokhttp3/Call\$Factory;)V")
+        assertRules(emptySet(), probe(okHttpFactory, name = "dev/octave/player/media3/Probe"))
+        assertRules(setOf("K7"), probe(okHttpFactory))
     }
 
     @Test
     fun every_rule_has_a_failing_and_a_passing_sample() {
         val samples: Map<String, Pair<ClassRefs, ClassRefs>> = mapOf(
             "K1" to (probe(MemberRef("androidx/media3/datasource/DefaultHttpDataSource\$Factory", "<init>", "()V")) to
-                probe(MemberRef("androidx/media3/datasource/okhttp/OkHttpDataSource\$Factory", "<init>", "(Lokhttp3/Call\$Factory;)V"))),
+                probe(MemberRef("androidx/media3/datasource/okhttp/OkHttpDataSource\$Factory", "<init>", "(Lokhttp3/Call\$Factory;)V"), name = "dev/octave/player/media3/Probe")),
             "K2" to (probe(MemberRef("androidx/media3/datasource/DefaultDataSource\$Factory", "<init>", "(Landroid/content/Context;)V")) to
                 probe(MemberRef("dev/octave/session/http/OctaveHttp", "callFactory", "(Ljava/lang/String;)Lokhttp3/Call\$Factory;"))),
             "K3" to (probe(MemberRef("androidx/media3/exoplayer/source/DefaultMediaSourceFactory", "<init>", "(Landroid/content/Context;)V")) to

@@ -310,6 +310,11 @@ export function resolveField(mapping, dexClass, name, typeDescriptor) {
  * null when the method has no position for the instruction. Returns [] when no member line covers it.
  */
 export function framesAt(mapping, dexClass, name, descriptor, line) {
+  return frameRecordsAt(mapping, dexClass, name, descriptor, line).map((frames) => frames.map((f) => f.holder));
+}
+
+/** framesAt's stacks with each frame's member line: `{ holder, name, args, ret }` (T8-02, D4_EXCEPTIONS). */
+export function frameRecordsAt(mapping, dexClass, name, descriptor, line) {
   const section = mapping.sections.get(dexClass);
   if (!section) return [];
   const named = section.stacks.filter((s) => s.name === name);
@@ -320,6 +325,6 @@ export function framesAt(mapping, dexClass, name, descriptor, line) {
   // Retrace drops a frame R8 synthesized (a merged lambda's dispatch, a bridge) unless it is the only one.
   return narrow(mapping, stacks, descriptor).map((s) => {
     const real = s.frames.filter((f) => !f.synthesized);
-    return (real.length > 0 ? real : s.frames).map((f) => f.holder);
+    return real.length > 0 ? real : s.frames;
   });
 }

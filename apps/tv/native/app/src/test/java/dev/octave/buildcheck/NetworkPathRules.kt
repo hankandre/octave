@@ -106,7 +106,30 @@ object NetworkPathRules {
         "com/facebook/react/devsupport/BundleDownloader",
         "com/facebook/react/runtime/ReactHostImpl",
         "kotlin/reflect/jvm/internal/impl/serialization/deserialization/builtins/BuiltInsResourceLoader",
+        // T8-02's row M1. Octave's engine package may construct its factory, and nothing else (MEDIA3_OKHTTP below).
+        "androidx/media3/datasource/okhttp/OkHttpDataSource",
     )
+
+    // K7's one exception (Product Owner ruling of 2026-11-23, T8-02; the dex check's D4_EXCEPTIONS entry E1, before
+    // R8): a class under dev/octave/player/media3/ may hold the member reference to OkHttpDataSource.Factory's
+    // constructor over a Call.Factory, its `new`, and the class names it needs (the factory's, and the outer class's
+    // only as the factory's InnerClasses entry). Any other member, descriptor, signature, string, cast, type check,
+    // class literal or supertype naming the class fails K7, and so does the same reference from any other class.
+    private const val MEDIA3_OKHTTP = "androidx/media3/datasource/okhttp/OkHttpDataSource"
+    private const val MEDIA3_OKHTTP_FACTORY = "$MEDIA3_OKHTTP\$Factory"
+    private val MEDIA3_OKHTTP_CONSTRUCTOR = MemberRef(MEDIA3_OKHTTP_FACTORY, "<init>", "(Lokhttp3/Call\$Factory;)V")
+    private const val ENGINE_PACKAGE = "dev/octave/player/media3/"
+
+    private fun constructsMediaDataSource(refs: ClassRefs): Boolean {
+        if (!refs.name.startsWith(ENGINE_PACKAGE)) return false
+        val namesIt = { text: String -> text.replace('.', '/').contains(MEDIA3_OKHTTP) }
+        if (MEDIA3_OKHTTP_CONSTRUCTOR !in refs.members) return false
+        if (refs.members.any { (namesIt(it.owner) || namesIt(it.descriptor)) && it != MEDIA3_OKHTTP_CONSTRUCTOR }) return false
+        val nested = refs.nests[MEDIA3_OKHTTP_FACTORY] == MEDIA3_OKHTTP
+        if (refs.utf8.any { namesIt(it) && it != MEDIA3_OKHTTP_FACTORY && !(nested && it == MEDIA3_OKHTTP) }) return false
+        if (refs.typeOperands.any { namesIt(it.type) && !(it.opcode == "new" && it.type == MEDIA3_OKHTTP_FACTORY) }) return false
+        return refs.supertypes.none(namesIt)
+    }
     private val K8 = listOf("expo/modules/kotlin/devtools/", "okhttp3/logging/HttpLoggingInterceptor")
     private val K9 = listOf("android/webkit/WebView")
 
@@ -128,6 +151,7 @@ object NetworkPathRules {
         val names = refs.utf8.map { it.replace('.', '/') }
         fun named(rule: String, prefixes: List<String>) {
             for (prefix in prefixes) {
+                if (rule == "K7" && prefix == MEDIA3_OKHTTP && constructsMediaDataSource(refs)) continue
                 if (names.any { it.contains(prefix) }) found += NetworkViolation(rule, refs.name, prefix)
             }
         }

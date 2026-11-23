@@ -1,12 +1,13 @@
-// The dex check's rules judged once the whole listing is read (T3-19): D0 on the listing, D7, D3, D5 and D6's list
-// check. Split out of scripts/tv-apk-dex-judge.mjs in T3-29. Returns the error lines in the order the judge reports
-// them: D0, then the per-site lines in `reported`, then D7, D3, D5 and D6.
+// The dex check's rules judged once the whole listing is read (T3-19): D0 on the listing, D7, D3, an unused
+// D4_EXCEPTIONS entry (T8-02), D5 and D6's list check. Split out of scripts/tv-apk-dex-judge.mjs in T3-29. Returns
+// the error lines in the order the judge reports them: D0, then the per-site lines in `reported`, then D7, D3, the
+// unused D4 exceptions, D5 and D6.
 import { originalsOf } from "./tv-apk-dex-mapping.mjs";
 import { mixedClasses } from "./tv-apk-dex-merged.mjs";
 
 /**
  * `ctx`: { mapping, lists, stats, reported (the per-site error lines), dexClasses, matchedRows, matchedCallers,
- * devSupportDex }.
+ * devSupportDex, usedExceptions }.
  */
 export function closingRules(ctx) {
   const { mapping, lists, stats } = ctx;
@@ -35,6 +36,13 @@ export function closingRules(ctx) {
   for (const row of lists.entryPoints) {
     for (const name of row.classes) {
       if (!ctx.matchedRows.has(`${row.id}|${name}`)) out.push(`D3 row ${row.id} names ${name}, which holds none of ${row.sinks.join(", ")} in the APK; remove it from the row, or correct the row`);
+    }
+  }
+
+  // D4_EXCEPTIONS (T8-02): an entry no reference in the APK used is stale, as a row no sink matched is (D3).
+  for (const entry of lists.d4Exceptions ?? []) {
+    if (!(ctx.usedExceptions ?? new Set()).has(entry.id)) {
+      out.push(`D4 exception ${entry.id} lets ${entry.package} construct ${entry.class}, but no reference in the APK uses it; remove the entry, or correct it`);
     }
   }
 
