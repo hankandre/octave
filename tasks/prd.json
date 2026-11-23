@@ -2987,10 +2987,10 @@
             "The filtered native reason goes only to the log and diagnostics path, and docs/security.md says so"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit c8f33973 (also 47fae0e7, 660ca6df) on task/T8-25: failure codes with DESIGN.md rows (option C), code-only session state, FailureLog sink, security.md rows. pnpm check green. Review and ship pending."
+          "passes": true,
+          "evidence": "commit 617fc01c: failure code only in session state, reason to the failure log; a non-code reporting message is logged filtered and keeps the warning. pnpm check passes. Screen consumer, 401 mapping, decoder wording left to backlog."
         },
         {
           "id": "T8-02",
