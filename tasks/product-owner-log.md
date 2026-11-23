@@ -644,3 +644,25 @@ An inline ruling on one frozen test T4-09's implementer reported. No frozen test
 - [frozen-test] docs/specs/T5-02.tests.json: changed; the three files above are added to `files`. | reason: their manifest (`docs/specs/T2-04.tests.json`) is on the base, and `scripts/check-flow.mjs` reads only manifests added on the branch, so without this nothing holds the three files to this version for the rest of the task. The same was done for T8-22 (commit `0c4a3f12`).
 - [frozen-test] scripts/core-transport-deps.test.ts: left as it is. | reason: it does not contradict the spec; it did its job by catching a new sending method with no transport coverage.
 - No acceptance item, `human`, `verify` or task-list entry is edited, and no backlog line is added. The owner can veto any of it.
+
+## 2026-11-22, launch scope review
+
+Focus: of the 97 open tasks in T3 to T11, the launch needs 89, 8 moved after launch (T12) and 0 were dismissed; the moved ones are the end of T3's hardening and four comfort features, so each lane's next ready task is product work.
+
+A pass of one kind, asked for by the owner on 2026-11-22: judge every open task in T3 to T11 against `PRODUCT.md` as needed for a usable, safe and marketable Play Store release, or not. The plain summary is `docs/research/launch-scope-2026-11-22.md`. No acceptance item, `human` or `verify` is edited, no task is added or dropped, and no backlog line is taken. Not judged: T3-08 and T3-31 (shipping) and T3-27 (in progress). The owner can veto any of it.
+
+- Moved T6-05 (filter a library) to T12 | why: `PRODUCT.md`, Browsing, lists sort and the letter rail and no filter; T6's exit does not ask for it.
+- Moved T8-16 (scrub previews) to T12 | why: `PRODUCT.md` does not name it and T8's exit does not ask for it; T8-05 keeps seeking usable with the time shown.
+- Moved T10-11 (scrub previews on Jellyscale) to T12 | why: it follows T8-16.
+- Moved T8-19 (open a title from a link) to T12 | why: nothing at launch builds a link; its first user, T12-03, is already after launch.
+- Moved T11-08 (Fire TV focus test) to T12 | why: launch is the Play Store; `PRODUCT.md` and `ARCHITECTURE.md` condition 7 make it a gate for promising Fire OS, not for the Play release.
+- Moved T3-18 (measure F4's look trade-offs) to T12 | why: decision 0004's addendum of 2026-11-21 calls it a later refinement, and nothing depends on it.
+- Moved T3-38 (T3 review lows) to T12 | why: hardening that gates nothing. Each finding was logged as neither a path into the home network nor a leak of local information (`docs/specs/decisions-process.md`, point 3), and the rules it tightens stay in force and tested. It may run earlier in a lane with no product task ready.
+- Moved T3-32 (shorten the manifest check's allowed lists) to T12 | why: the same; the release APK already asks for 2 permissions and 0 queries (the task's own item 1), so the app does not change. Not folded into T3-38, because two backlog lines name T3-32 in `taken_by`.
+- Edited T10-05 `depends_on` (no acceptance edit) | why: T6-05, T8-16 and T8-19 are removed because they moved. T3-13, T3-14, T3-17, T3-34, T3-35, T4-01, T4-08, T8-05 and T8-23 are added: they are launch tasks that nothing on the path to T11-07 waited for, so the release could have shipped without them; the dogfood week is where a whole launch build is first used.
+- Kept at launch, having first thought to move them: T3-13 and T3-14 | why: `ARCHITECTURE.md`, "Conditions that shape the work (decision 0004)", 1 and 4, name them as conditions of the release build; changing that is a decision record's, not a pass's. T3-07 | why: T11-02's safe-area item reads the visual catalogue it builds.
+- Kept in T10 and not moved: T10-06, T10-07, T10-08, T10-09, T10-10, T10-12, T10-13 | why: each waits for a Jellyscale issue and nothing on the path to T11-07 depends on it, so none holds the release back today. Whether the release should wait for any of them is a direction call and goes to the owner, with the recommendation to let T10-05's log decide.
+- Security tasks kept and the gate kind of each: T3-21 and T3-33, a path into the home network (T3-33 also enforces the hard rule on development builds); T3-37 and T8-25, a leak of local information; T3-11, T4-05, T4-08, T4-07, T8-08, T10-01 and T10-02, each enforces a hard rule of `AGENTS.md` on the header, the token or playlists.
+- T12 was read: none of T12-01 to T12-08 is needed for launch, and none moved.
+- Not done, for the owner or the next pass: T5-05 is still recorded as waiting for Jellyscale #233 although `docs/specs/decisions-direction-2026-11-22.md` (2) says the menu ships now without Remove; that needs an acceptance edit with that file as approval, and it is why T5-05 was not added to T10-05's dependencies. `PRODUCT.md`'s "Later, by evidence" sentence does not name filters, scrub previews or links; its wording is the owner's.
+- Order after this pass: unchanged inside each phase. T12 now ends with T6-05, T8-16, T10-11, T8-19, T11-08, T3-18, T3-38, T3-32.
