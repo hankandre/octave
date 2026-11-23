@@ -87,8 +87,9 @@ const HOST = new RegExp(
 const USER_INFO =
   /(?<![\w.:@%\/-])[^\s:"'()\[\],;]{1,64}:[^\s]{0,256}@[^\s"'),;]+/g;
 
-// The only way a player failure reason reaches the screen. Native errors carry
-// third-party text, so beyond redaction this hides addresses and file paths.
+// Filters a failure reason for the failure log (FailureLog); no screen shows it.
+// Native errors carry third-party text, so beyond redaction this hides addresses
+// and file paths.
 export function safeReason(value: string): string {
   // User info goes before paths: a password may hold "/" and would start one.
   const text = hidePaths(
