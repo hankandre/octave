@@ -1,10 +1,8 @@
 package dev.octave.session
 
 import android.content.Context
-import android.content.pm.ApplicationInfo
 import android.os.Build
 import dev.octave.session.http.ClientIdentity
-import dev.octave.session.http.DevelopmentServers
 import dev.octave.session.http.SessionTransport
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
@@ -58,11 +56,10 @@ class OctaveSessionModule : Module() {
   private fun transport(): SessionTransport {
     built?.let { return it }
     val context = appContext.reactContext
-      ?: return SessionTransport(ClientIdentity.of(Build.MODEL, null), DevelopmentServers.forBuild(true, BuildConfig.OCTAVE_DEV_SERVERS))
+      ?: return SessionTransport(ClientIdentity.of(Build.MODEL, null), BuildServers.of(null, BuildConfig.OCTAVE_DEV_SERVERS))
     return synchronized(this) {
       built ?: run {
-        val debuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        val servers = DevelopmentServers.forBuild(debuggable, BuildConfig.OCTAVE_DEV_SERVERS)
+        val servers = BuildServers.of(context.applicationInfo.flags, BuildConfig.OCTAVE_DEV_SERVERS)
         SessionTransport(ClientIdentity.of(Build.MODEL, versionName(context)), servers).also { built = it }
       }
     }
