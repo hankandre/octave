@@ -19,6 +19,9 @@ enum class HttpRefusal(val code: String) {
 
     // T3-20: a plain-HTTP call to a name whose answer holds no loopback or private-LAN address (ResolvedAddressRule).
     RESOLVED_PUBLIC("resolved-public"),
+
+    // T3-33: a development build's call to a host that is not loopback, 10.0.2.2 or a build-time allowlist entry.
+    DEVELOPMENT_BUILD("development-build"),
 }
 
 // The message is the code. It never holds a URL, a host, a header or a token, and it has no cause.
