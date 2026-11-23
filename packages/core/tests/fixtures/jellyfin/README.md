@@ -8,6 +8,7 @@ Scrubbed answers from the two pinned fixture servers (`tests/integration/docker-
 |---|---|
 | `record-fixtures.mjs` | `playbackinfo-`, `conversion-`, `device-conversion-` (T2-07: the forced conversion; the gateway-wire golden globs the first two, so the device answers keep their own prefix), `item-` |
 | `record-device-conversion-av1.mjs` | `device-conversion-av1` (T8-24, recorded 2026-11-22 from Jellyfin 10.11.7 and 12.4.0; `record-fixtures.mjs` is frozen, so the AV1 case has its own recorder) |
+| `record-encode-targets.mjs` | `encode-target-` (the forced answer for HEVC and AV1 and a limited first answer for the no-decoder sample, each with the master playlist's `CODECS` and the session's `TranscodingInfo`, `null` when none) and `device-disc-conversion-` (the forced answer after the ISO's and the Blu-ray folder's fallback). T8-23, recorded 2026-11-23 from Jellyfin 10.11.7 and 12.4.0: every conversion is encoded into H.264 and AAC, the first codec of each list |
 | `record-discovery-fixtures.mjs` | `discovery-` |
 | `record-account-language-fixtures.mjs` | `account-language-` |
 | `record-rating-fixtures.mjs` | `rating-` |
