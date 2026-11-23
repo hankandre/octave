@@ -1,5 +1,5 @@
 // T3-11 acceptance items 1, 3 and 5, the React half (docs/specs/T3-11.md, "The JavaScript surface"): the artwork slot
-// filled by createNativeArtwork hands the native view only a session id, an item id, an image type, a tag and the
+// filled by createNativeArtwork hands the picture view only a session id, an item id, an image type, a tag and the
 // drawn width, draws a plain surface2 placeholder until the image arrives, and reports a failed image through the
 // slot's onFailed so the card shows its title. A fake view stands in for the native one.
 //
@@ -7,7 +7,8 @@
 // - createNativeArtwork({ view, session }) from ./native-artwork returns an ArtworkComponent (the T3-08 slot). `view`
 //   is the native view component (ComponentType<OctaveArtworkViewProps>), `session` a () => string | undefined getter.
 // - With a session it draws a wrapper View carrying the slot's testID, with backgroundColor colors.surface2, and the
-//   view inside it. The view receives session, itemId, imageType, tag, width (Math.round of the drawn width),
+//   picture view inside it, last (since T3-39 a preview view that holds only the hash may come before it; its rules
+//   are in native-artwork-preview.test.tsx). The picture view receives session, itemId, imageType, tag, width (Math.round of the drawn width),
 //   onArtworkState and at most a style: no blurHash, height, testID, URL, header or token.
 // - Until an event arrives onFailed is not called. onArtworkState({ nativeEvent: { state: "failed" } }) calls onFailed
 //   once; "loaded" calls nothing.
@@ -67,8 +68,8 @@ beforeEach(() => {
   received.length = 0;
 });
 
-describe("T3-11 item 1: the native view receives only the five props", () => {
-  it("T3-11 item 1: the props the view receives are the five, the state handler and at most a style", async () => {
+describe("T3-11 item 1: the picture view receives only the five props", () => {
+  it("T3-11 item 1: the props the picture view receives are the five, the state handler and at most a style", async () => {
     await slot();
     const props = lastProps();
     const keys = Object.keys(props).filter((key) => key !== "onArtworkState" && key !== "style");
@@ -76,7 +77,7 @@ describe("T3-11 item 1: the native view receives only the five props", () => {
     expect(props).toMatchObject({ session: SESSION, itemId: IMAGE.itemId, imageType: "Primary", tag: IMAGE.tag, width: sizes.posterW });
   });
 
-  it("T3-11 item 1: no blurHash, height, testID, URL, header or token reaches the view", async () => {
+  it("T3-11 item 1: no blurHash, height, testID, URL, header or token reaches the picture view", async () => {
     await slot();
     const props = lastProps();
     for (const key of ["blurHash", "height", "testID", "url", "uri", "source", "src", "headers", "header", "token", "image"]) {
@@ -123,7 +124,7 @@ describe("T3-11 item 5: a plain surface until the image arrives, and the title o
   it("T3-11 item 5: before any event the surface2 placeholder is drawn and onFailed is not called", async () => {
     const onFailed = await slot();
     expect(flat(screen.getByTestId("art")).backgroundColor).toBe(colors.surface2);
-    expect(screen.getByTestId("fake-native-view")).toBeTruthy();
+    expect(screen.getAllByTestId("fake-native-view").length).toBeGreaterThanOrEqual(1);
     expect(onFailed).not.toHaveBeenCalled();
   });
 
