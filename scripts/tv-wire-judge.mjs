@@ -7,6 +7,8 @@
 //   a token only off the six tokenless calls, no credential query name, no secret in the URL, the recorder's Host, and
 //   no 3xx relayed (unless the pair's upstream is the redirector).
 // - judgeLogcat(lines, secrets): the whole logcat dump of the run (item 4).
+// - judgePlayerCapture(records): a play's media requests (T8-02 item 7): only original-file stream URLs, a range request
+//   among them, and no playlist, universal, subtitle or trickplay path.
 // - judgeWire({ pairs, lines }): the app's OCTAVE_WIRE lines against the selected pairs and the host's counts
 //   (items 2, 4, 6 and 9); WIRE_JUDGES holds the rule per test id.
 import { findSecret } from "../apps/tv/src/e2e/wire/find-secret.ts";
@@ -110,6 +112,36 @@ export function judgeLogcat(lines, secrets) {
   return errors;
 }
 
+// The one media URL shape a direct play may request (ARCHITECTURE.md section 3, I2): GET /Videos/{32 hex}/stream with
+// Static=true. A path that names Videos or Audio in any case is a media request (Jellyfin's routes ignore case).
+const STREAM_PATH = /^\/Videos\/[0-9a-f]{32}\/stream$/;
+const MEDIA_PATH = /\/(?:videos|audio)\//i;
+const CONVERSION_PATHS = [
+  [/\.m3u8$/i, "an HLS playlist"],
+  [/\/hls/i, "an HLS segment path"],
+  [/\/universal/i, "a universal audio path"],
+  [/\/subtitles\//i, "a subtitle path"],
+  [/\/trickplay\//i, "a trickplay path"],
+];
+const isStream = (record) => record.method === "GET" && STREAM_PATH.test(record.path);
+
+export function judgePlayerCapture(records) {
+  const errors = [];
+  records.forEach((record, index) => {
+    const name = `request ${index + 1} (${record.method} ${record.path})`;
+    for (const [pattern, what] of CONVERSION_PATHS) {
+      if (pattern.test(record.path)) errors.push(`ERROR wire player: ${name} is ${what}; a direct play requests only the original file`);
+    }
+    if (MEDIA_PATH.test(record.path) && !(isStream(record) && record.staticTrue === true)) {
+      errors.push(`ERROR wire player: ${name} is a media request that is not GET /Videos/{id}/stream with Static=true`);
+    }
+  });
+  const streams = records.filter(isStream);
+  if (streams.length === 0) errors.push("ERROR wire player: the capture holds no GET /Videos/{id}/stream request");
+  else if (!streams.some((record) => record.range === true)) errors.push("ERROR wire player: no stream request carried a Range header");
+  return errors;
+}
+
 const words = (line) => Object.fromEntries([...line.matchAll(/(\S+?)=(\S*)/g)].map(([, key, value]) => [key, value]));
 const count = (value) => (Number.isInteger(value) ? value : null);
 
@@ -150,6 +182,44 @@ export const WIRE_JUDGES = {
     return Object.entries(expected)
       .filter(([key, value]) => said[key] !== value)
       .map(([key, value]) => `ERROR wire ${pair.test} ${pair.target}: ${key}=${said[key] ?? "missing"}, expected ${key}=${value}`);
+  },
+  // T8-02 item 7: the play of the H.264 sample from the pinned Jellyscale, step by step.
+  "player-original-file": (pair, said) => {
+    const expected = { outcome: "ok", plan: "original", firstFrame: "after-loaded", pause: "ok", seek: "ok", stop: "ok", relaunch: "ok" };
+    return Object.entries(expected)
+      .filter(([key, value]) => said[key] !== value)
+      .map(([key, value]) => `ERROR wire ${pair.test} ${pair.target}: ${key}=${said[key] ?? "missing"}, expected ${key}=${value}`);
+  },
+  // T8-02 item 6: each sample against the device's own decoder list (pair.decoders, read by the runner).
+  "player-samples": (pair, said) => {
+    const errors = [];
+    const fail = (text) => errors.push(`ERROR wire ${pair.test} ${pair.target}: ${text}`);
+    if (said.h264 !== "first-frame") fail(`h264=${said.h264 ?? "missing"}, expected the first frame`);
+    if (said.nodecoder !== "decoder-unavailable") fail(`nodecoder=${said.nodecoder ?? "missing"}, expected decoder-unavailable`);
+    if (!["hardware", "software"].includes(said["decode-h264"])) fail(`decode-h264=${said["decode-h264"] ?? "missing"}, expected hardware or software`);
+    if (said.label !== "present") fail(`label=${said.label ?? "missing"}, expected the decoder's name`);
+    const decoders = pair.decoders;
+    for (const key of ["hevc", "av1"]) {
+      const listed = decoders?.[key];
+      if (typeof listed?.type !== "boolean" || typeof listed?.profile !== "boolean") {
+        fail(`the device's decoder list for ${key} could not be read, so ${key}=${said[key] ?? "missing"} cannot pass`);
+        continue;
+      }
+      // A decoder for the type but not the profile: Media3 tries the track (E6), so it may play, fail, or find none.
+      const allowed = listed.type && listed.profile ? ["first-frame"] : !listed.type ? ["decoder-unavailable"] : ["first-frame", "decoder-failed", "decoder-unavailable"];
+      if (!allowed.includes(said[key])) fail(`${key}=${said[key] ?? "missing"}, expected ${allowed.join(" or ")} for the device's decoder list`);
+    }
+    return errors;
+  },
+  // T8-02 item 5: the mock answers the stream with a 302 to the canary origin; the one client refuses it once.
+  "player-redirect": (pair, said) => {
+    const errors = [];
+    if (said.code !== "server-error") errors.push(`ERROR wire ${pair.test} ${pair.target}: code=${said.code ?? "missing"}, expected server-error`);
+    if (!Array.isArray(pair.records)) return [...errors, `ERROR wire ${pair.test} ${pair.target}: no records to judge the stream request by`];
+    const streams = pair.records.filter((record) => record.method === "GET" && /^\/videos\/[^/]+\/stream$/i.test(record.path));
+    if (streams.length !== 1) errors.push(`ERROR wire ${pair.test} ${pair.target}: ${streams.length} stream requests recorded, expected exactly one`);
+    else if (streams[0].status !== 302) errors.push(`ERROR wire ${pair.test} ${pair.target}: the stream request was answered ${streams[0].status ?? "with nothing"}, not 302`);
+    return errors;
   },
   "transport-private-lan-and-proxy": (pair, said) => {
     const errors = [];

@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.Surface
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -13,6 +14,7 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
@@ -112,20 +114,36 @@ internal class Media3Handle(
     override fun onPlayerError(error: PlaybackException) = signal(this, EngineSignal.Failed(error.errorCode, causes(error.cause)))
 
     // The decoder's flags are Media3's entry for that name and the video's type; none when Media3 lists no such name.
+    // ExoPlayer reports the decoder before the input format that made it, so the facts go out once both are known.
+    private var decoderName: String? = null
+    private var videoType: String? = null
+
     override fun onVideoDecoderInitialized(
         eventTime: AnalyticsListener.EventTime,
         decoderName: String,
         initializedTimestampMs: Long,
         initializationDurationMs: Long,
     ) {
-        val type = player.videoFormat?.sampleMimeType
-        val info = type?.let {
-            try {
-                MediaCodecUtil.getDecoderInfos(it, false, false).firstOrNull { decoder -> decoder.name == decoderName }
-            } catch (_: MediaCodecUtil.DecoderQueryException) {
-                null
-            }
+        this.decoderName = decoderName
+        reportDecoder()
+    }
+
+    override fun onVideoInputFormatChanged(eventTime: AnalyticsListener.EventTime, format: Format, decoderReuseEvaluation: DecoderReuseEvaluation?) {
+        val type = format.sampleMimeType ?: return
+        if (type == videoType) return
+        videoType = type
+        reportDecoder()
+    }
+
+    private fun reportDecoder() {
+        val name = decoderName ?: return
+        val type = videoType ?: return
+        decoderName = null
+        val info = try {
+            MediaCodecUtil.getDecoderInfos(type, false, false).firstOrNull { it.name == name }
+        } catch (_: MediaCodecUtil.DecoderQueryException) {
+            null
         }
-        signal(this, EngineSignal.DecoderInitialized(decoderName, info?.hardwareAccelerated, info?.softwareOnly, Build.VERSION.SDK_INT))
+        signal(this, EngineSignal.DecoderInitialized(name, info?.hardwareAccelerated, info?.softwareOnly, Build.VERSION.SDK_INT))
     }
 }

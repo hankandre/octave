@@ -61,8 +61,9 @@ class EngineCore(
     fun seek(positionSeconds: Double) {
         val current = live()
         if (!positionSeconds.isFinite() || positionSeconds < 0) throw PlayerEngineException(PlayerErrorCode.UNSUPPORTED_REQUEST)
-        current.seekTo((positionSeconds * 1000).toLong())
+        // A player may report the seek while seekTo runs (ExoPlayer does, on its own looper), so it is pending first.
         seekPending = true
+        current.seekTo((positionSeconds * 1000).toLong())
     }
 
     // E10: track mapping is T8-10.
