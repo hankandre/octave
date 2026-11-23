@@ -8,6 +8,7 @@
     "test": "jest --ci"
   },
   "dependencies": {
+    "@octave/artwork": "workspace:*",
     "@octave/core": "workspace:*",
     "@octave/install-id": "workspace:*",
     "@octave/player": "workspace:*",

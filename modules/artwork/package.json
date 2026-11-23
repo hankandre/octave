@@ -1,0 +1,8 @@
+{
+  "name": "@octave/artwork",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "description": "Octave's native artwork module (T3-11): one image view that takes a session id, an item id, an image type, a tag and a width, and loads the image through the session module's one client.",
+  "main": "src/index.ts"
+}
