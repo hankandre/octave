@@ -315,6 +315,17 @@ T3-25 narrows what an answer may hold (`docs/specs/T3-25.md`). It adds no method
 - A `StackOverflowError` or an `OutOfMemoryError` raised inside a transport call resolves `{ error: "unexpected-response" }`, decided by type in `TransportCodes.of`, with no message; before T3-25 both were `network`. After the bound no answer can raise a `StackOverflowError` by nesting; the mapping is the second line. An `OutOfMemoryError` is mapped, not prevented: it is caught on the calling thread, the call is not sent again, and before `SessionRegistry.open` it opens no session. One raised on another thread is not seen, and the number of values in an answer is not bounded.
 - `OctaveSessionModule.run`'s last guard keeps `network`.
 
+## Amendment, 2026-11-23 (T3-11): the artwork module and the image fetch
+
+T3-11 builds the image view this record names ("How the player and the image loader get authority"; `docs/specs/T3-11.md`). It is an architecture change: a third native module with one view, five props and one view event. It adds no session method or event.
+
+- **A module of its own.** `modules/artwork` (`OctaveArtwork`) holds one view, `OctaveArtworkView`, and no function, module event, property or constant. The session module keeps its four methods, its one event and `views: []`; the artwork module has its own allowlist, `modules/artwork/surface-allowlist.json`, held by `scripts/tv-artwork-module.test.ts`, `ModuleSurfaceTest` and its line in `docs/security.md`.
+- **Five props and one event.** The props are `session` (the opaque id), `itemId`, `imageType` (`Primary`, `Backdrop`, `Thumb` or `Logo`), `tag` and `width` (the drawn width in canvas px). The one event, `onArtworkState`, carries `{ state: "loaded" | "failed" }`. No URL, header, token or BlurHash prop.
+- **The fetch stays in the session's HTTP package.** `ArtworkFetch` (Kotlin only, no JavaScript surface) builds `GET {base}/Items/{itemId}/Images/{type}?tag=&maxWidth=&quality=90&format=Webp` from the registry entry's address and sends it with `OctaveHttp.newCall` under the session's authority, so the interceptor adds the header and runs the origin pin, C2 and the 3xx refusal. The artwork module sees only bytes or a failure, and asks the registry nothing but `SessionRegistry.holds`.
+- **The header goes on every image request**, Jellyscale's public image route included (`ARCHITECTURE.md` §4).
+- **The cap, the timeout and 401.** `ArtworkRequest.cappedWidth` is the one cap: a width below 1 is refused, a Primary is asked for at most 400 px wide and the other types at most 1920. Each request has a 15 s timeout, no resend and the session-read body cap (8 MiB). A 401 makes the image `failed` and does not end the session; "a confirmed 401 ends the session" arrives with T4-05.
+- **The cache** holds decoded pixels in memory only, keyed by session, item, type, tag and capped width, and serves an entry only while the registry holds its session. No token, URL or header is in a key.
+
 ## Revisit if
 
 - A crash reporter, over-the-air JavaScript updates or any third-party runtime code is proposed. Under A that is a new reader of the token; under C it is not.
