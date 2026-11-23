@@ -66,12 +66,12 @@ describe.each(versions)("Home gateway calls, Jellyfin %s", (version) => {
     const card = cards[0]!;
     expect(card.seriesId).toBe("series-synthetic");
     expect(card.addedAt).toBeTruthy();
-    // The series was finished long ago; the episode arrived inside 14 days of `now`.
+    // The series was finished long ago; the episode arrived inside 30 days of `now`.
     const plays = { entries: [{ id: "item-episode-2", kind: "Episode" as const, seriesId: "series-synthetic", playedAt: "2026-01-05T12:00:00Z" }], complete: true };
     const arrived = Date.parse(card.addedAt!);
-    const row = (now: number) => continueWatchingRow({ resume: [], nextUp: cards, plays, window: "14", now }).row;
+    const row = (now: number) => continueWatchingRow({ resume: [], nextUp: cards, plays, window: "30", now }).row;
     expect(row(arrived + 5 * 86_400_000)).toHaveLength(1);
-    expect(row(arrived + 15 * 86_400_000)).toHaveLength(0);
+    expect(row(arrived + 31 * 86_400_000)).toHaveLength(0);
   });
 
   it("asks for Resume with user data and maps the last play date", async () => {

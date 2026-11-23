@@ -7,7 +7,7 @@
 // default, and it is never a token, credential, URL, play-session ID, user
 // id, or anything derived from them (ARCHITECTURE.md I4).
 import { DEFAULT_SKIP_MODES, SKIP_MODES, type SkipMode, type SkipModes } from "./domain/media-segments";
-import { DEFAULT_CONTINUE_WINDOW, type ContinueWindow } from "./domain/up-next";
+import { continueWindowOrDefault, DEFAULT_CONTINUE_WINDOW, type ContinueWindow } from "./domain/up-next";
 import {
   LimitListeners,
   NO_STREAMING_LIMITS,
@@ -46,10 +46,8 @@ export const DEFAULT_PREFERENCES: PreferenceValues = Object.freeze({
   autoPlay: DEFAULT_AUTO_PLAY,
 });
 
-const CONTINUE_WINDOWS: readonly ContinueWindow[] = ["7", "14", "30", "all"];
-
 export function sanitizeContinueWindow(value: unknown): ContinueWindow {
-  return CONTINUE_WINDOWS.find((option) => option === value) ?? DEFAULT_CONTINUE_WINDOW;
+  return continueWindowOrDefault(value);
 }
 
 function sanitizeSkipMode(value: unknown): SkipMode {

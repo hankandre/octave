@@ -2,10 +2,17 @@ import type { MediaCard } from "./catalog";
 
 // Home's "Continue watching" row and the hero's Up next pick (P16-02, proposal §2.2). Pure: no clock, no I/O.
 
-export type ContinueWindow = "7" | "14" | "30" | "all";
+// The owner's windows in days; "all" is Never.
+export const CONTINUE_WINDOWS = ["30", "90", "180", "365", "all"] as const;
+export type ContinueWindow = (typeof CONTINUE_WINDOWS)[number];
 
-export const DEFAULT_CONTINUE_WINDOW: ContinueWindow = "14";
-export const CONTINUE_ROW_LIMIT = 16;
+export const DEFAULT_CONTINUE_WINDOW: ContinueWindow = "90";
+export const CONTINUE_ROW_LIMIT = 20;
+
+// A stored or missing value that is not a window reads as the default.
+export function continueWindowOrDefault(value: unknown): ContinueWindow {
+  return CONTINUE_WINDOWS.find((option) => option === value) ?? DEFAULT_CONTINUE_WINDOW;
+}
 
 const DAY_MS = 86_400_000;
 
@@ -35,12 +42,14 @@ export function windowStart(window: ContinueWindow, now: number): number | undef
   switch (window) {
     case "all":
       return undefined;
-    case "7":
-      return now - 7 * DAY_MS;
-    case "14":
-      return now - 14 * DAY_MS;
     case "30":
       return now - 30 * DAY_MS;
+    case "90":
+      return now - 90 * DAY_MS;
+    case "180":
+      return now - 180 * DAY_MS;
+    case "365":
+      return now - 365 * DAY_MS;
   }
 }
 

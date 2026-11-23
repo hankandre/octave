@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MediaCard } from "./catalog";
-import { continueWatchingRow, firstUnwatched, lastFinished, nextInCollection, pickUpNext, windowStart, type PlayedEntry, type RecentPlays } from "./up-next";
+import { continueWatchingRow, firstUnwatched, lastFinished, nextInCollection, pickUpNext, windowStart, type ContinueWindow, type PlayedEntry, type RecentPlays } from "./up-next";
 
 const DAY = 86_400_000;
 const NOW = Date.parse("2026-06-20T12:00:00Z");
@@ -17,26 +17,27 @@ const entry = (id: string, playedAt: string, seriesId?: string): PlayedEntry => 
 });
 const plays = (entries: PlayedEntry[], complete = true): RecentPlays => ({ entries, complete });
 const ids = (cards: MediaCard[]) => cards.map((c) => c.id);
-const run = (input: { resume?: MediaCard[]; nextUp?: MediaCard[]; plays?: RecentPlays | undefined; window?: "7" | "14" | "30" | "all" }) =>
-  continueWatchingRow({ resume: input.resume ?? [], nextUp: input.nextUp ?? [], plays: "plays" in input ? input.plays : plays([]), window: input.window ?? "14", now: NOW });
+const run = (input: { resume?: MediaCard[]; nextUp?: MediaCard[]; plays?: RecentPlays | undefined; window?: ContinueWindow }) =>
+  continueWatchingRow({ resume: input.resume ?? [], nextUp: input.nextUp ?? [], plays: "plays" in input ? input.plays : plays([]), window: input.window ?? "30", now: NOW });
 
 describe("windowStart", () => {
-  it("counts back 7, 14, and 30 days and has no start for all", () => {
-    expect(windowStart("7", NOW)).toBe(NOW - 7 * DAY);
-    expect(windowStart("14", NOW)).toBe(NOW - 14 * DAY);
+  it("counts back 30, 90, 180, and 365 days and has no start for all", () => {
     expect(windowStart("30", NOW)).toBe(NOW - 30 * DAY);
+    expect(windowStart("90", NOW)).toBe(NOW - 90 * DAY);
+    expect(windowStart("180", NOW)).toBe(NOW - 180 * DAY);
+    expect(windowStart("365", NOW)).toBe(NOW - 365 * DAY);
     expect(windowStart("all", NOW)).toBeUndefined();
   });
 });
 
 describe("continueWatchingRow window boundary", () => {
-  it.each([["7", 7], ["14", 14], ["30", 30]] as const)("keeps a Resume item last played exactly %s days ago and drops one a millisecond older", (window, days) => {
+  it.each([["30", 30], ["90", 90], ["180", 180], ["365", 365]] as const)("keeps a Resume item last played exactly %s days ago and drops one a millisecond older", (window, days) => {
     const result = run({ window, resume: [film("on", ago(days)), film("before", ago(days, -1))] });
     expect(ids(result.row)).toEqual(["on"]);
     expect([...result.agedOutIds]).toEqual(["before"]);
   });
 
-  it.each([["7", 7], ["14", 14], ["30", 30]] as const)("keeps a next episode whose series was finished exactly %s days ago and drops one a millisecond older", (window, days) => {
+  it.each([["30", 30], ["90", 90], ["180", 180], ["365", 365]] as const)("keeps a next episode whose series was finished exactly %s days ago and drops one a millisecond older", (window, days) => {
     const kept = run({ window, nextUp: [episode("e", "s")], plays: plays([entry("x", ago(days), "s")]) });
     const dropped = run({ window, nextUp: [episode("e", "s")], plays: plays([entry("x", ago(days, -1), "s")]) });
     expect(ids(kept.row)).toEqual(["e"]);
@@ -50,11 +51,12 @@ describe("continueWatchingRow window boundary", () => {
   });
 
   it("changes membership with the window", () => {
-    const resume = [film("a", ago(10)), film("b", ago(20)), film("c", ago(40))];
-    expect(ids(run({ window: "7", resume }).row)).toEqual([]);
-    expect(ids(run({ window: "14", resume }).row)).toEqual(["a"]);
-    expect(ids(run({ window: "30", resume }).row)).toEqual(["a", "b"]);
-    expect(ids(run({ window: "all", resume }).row)).toEqual(["a", "b", "c"]);
+    const resume = [film("a", ago(20)), film("b", ago(60)), film("c", ago(120)), film("d", ago(300)), film("e", ago(500))];
+    expect(ids(run({ window: "30", resume }).row)).toEqual(["a"]);
+    expect(ids(run({ window: "90", resume }).row)).toEqual(["a", "b"]);
+    expect(ids(run({ window: "180", resume }).row)).toEqual(["a", "b", "c"]);
+    expect(ids(run({ window: "365", resume }).row)).toEqual(["a", "b", "c", "d"]);
+    expect(ids(run({ window: "all", resume }).row)).toEqual(["a", "b", "c", "d", "e"]);
   });
 
   it("keeps a Resume item with no date and sorts it after dated ones", () => {
@@ -72,7 +74,7 @@ describe("continueWatchingRow new episodes", () => {
   });
 
   it("drops it a window after the episode arrived", () => {
-    const result = run({ nextUp: [episode("e3", "s", ago(15))], plays: caughtUp });
+    const result = run({ nextUp: [episode("e3", "s", ago(31))], plays: caughtUp });
     expect(ids(result.row)).toEqual([]);
     expect(result.agedOutIds.has("e3")).toBe(true);
     expect(result.agedOutIds.has("s")).toBe(true);
@@ -84,10 +86,10 @@ describe("continueWatchingRow new episodes", () => {
   });
 
   it("does not bring back an episode that was added before the viewer's last play", () => {
-    const result = run({ nextUp: [episode("e2", "s", ago(5))], plays: plays([entry("x", ago(2), "s")]), window: "7" });
+    const result = run({ nextUp: [episode("e2", "s", ago(5))], plays: plays([entry("x", ago(2), "s")]) });
     // Played two days ago: inside the window anyway.
     expect(ids(result.row)).toEqual(["e2"]);
-    const stale = run({ nextUp: [episode("e2", "s", ago(30))], plays: plays([entry("x", ago(20), "s")]) });
+    const stale = run({ nextUp: [episode("e2", "s", ago(50))], plays: plays([entry("x", ago(40), "s")]) });
     expect(ids(stale.row)).toEqual([]);
   });
 });
@@ -99,7 +101,7 @@ describe("continueWatchingRow unknown series", () => {
   });
 
   it("drops a series missing from a full list when the list's oldest date is before the window", () => {
-    const full = plays([entry("x", ago(1), "other"), entry("y", ago(40), "other2")], false);
+    const full = plays([entry("x", ago(1), "other"), entry("y", ago(60), "other2")], false);
     expect(ids(run({ nextUp: [episode("e", "s")], plays: full }).row)).toEqual([]);
   });
 
@@ -136,19 +138,19 @@ describe("continueWatchingRow ordering", () => {
     expect(ids(result.row)).toEqual(["u", "e1", "e2"]);
   });
 
-  it("keeps 16 cards", () => {
-    const resume = Array.from({ length: 20 }, (_, i) => film(`f${i}`, ago(1, -i * 1000)));
-    expect(run({ resume }).row).toHaveLength(16);
+  it("keeps 20 cards", () => {
+    const resume = Array.from({ length: 24 }, (_, i) => film(`f${i}`, ago(1, -i * 1000)));
+    expect(run({ resume }).row).toHaveLength(20);
   });
 });
 
 describe("lastFinished", () => {
-  const list = plays([entry("x", ago(10)), entry("y", ago(20))]);
+  const list = plays([entry("x", ago(40)), entry("y", ago(60))]);
   it("is the newest entry when inside the window", () => {
-    expect(lastFinished(list, "14", NOW)?.id).toBe("x");
+    expect(lastFinished(list, "90", NOW)?.id).toBe("x");
   });
   it("is nothing when the newest entry is outside the window", () => {
-    expect(lastFinished(list, "7", NOW)).toBeUndefined();
+    expect(lastFinished(list, "30", NOW)).toBeUndefined();
   });
   it("ignores the window for all", () => {
     expect(lastFinished(plays([entry("z", ago(400))]), "all", NOW)?.id).toBe("z");
