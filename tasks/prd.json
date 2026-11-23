@@ -1967,7 +1967,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 65eaf736 on task/T3-21 (not pushed). pnpm check green (3920 core, 2771 scripts tests). tv:native:test 986 tests, 0 failed. tv:build with a throwaway key and tv:apk:check pass on the real APK (signed, not debug cert). Items 1 and 5 owner gates (key, Shield uninstall); item 6 review. Done-task records keep dev.octave.tv."
+          "evidence": "commit 5fe8a994 on task/T3-21 (not pushed). pnpm check green (3920 core, 2776 scripts tests). tv:native:test 986 tests, 0 failed, key unset. tv:build with a throwaway key and tv:apk:check pass on the real APK (signed, not debug cert). Hand-run gradlew assembleRelease with the key inside a checkout fails at the guard. Review lows fixed: Gradle checkout refusal, CI key step, throwaway ignore. Open: items 1 and 5 owner gates (key, Shield uninstall); item 6 PR paragraph and tv CI job at Ship. Done-task records keep dev.octave.tv."
         },
         {
           "id": "T3-17",
