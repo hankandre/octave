@@ -88,15 +88,14 @@ class PreferencesStore(private val directory: File) : PreferencesKeeper {
         // The streaming limit choices of packages/core/src/streaming-limits.ts (STREAMING_LIMIT_CHOICES_MBPS). The
         // shared vectors in packages/core/tests/fixtures/preference-records.json fail this module's tests if they drift.
         private val LIMIT_CHOICES = setOf("120", "80", "40", "20", "10", "8", "4", "2")
-        private val LIMIT_NAMES = setOf("localMbps", "remoteMbps")
 
         // One process-wide lock, so two writes cannot interleave and a read never sees a half-renamed file.
         private val LOCK = Any()
 
-        // True only for the device record's shape, as the core's encoder writes it (docs/specs/T9-02.md, D4):
-        // {"version":1,"streamingLimits":{...}} with both names exactly once, and inside streamingLimits at most a
-        // "localMbps" and a "remoteMbps", each once, each one of the limit choices. No whitespace, no escape, no other
-        // name, literal or number. So the store holds no text but a choice among a few dozen fixed records.
+        // True only for the device record's shape, exactly as the core's encoder writes it (docs/specs/T9-02.md, D4):
+        // {"version":1,"streamingLimits":{...}} in that order, and inside streamingLimits at most a "localMbps" and
+        // then a "remoteMbps", each one of the limit choices. No whitespace, no escape, no other order, name, literal
+        // or number. So the store holds no text but one of the 81 records the encoder writes.
         fun isAllowedRecord(text: String): Boolean {
             if (text.toByteArray(Charsets.UTF_8).size > MAX_BYTES) return false
             return RecordReader(text).record()
@@ -107,33 +106,29 @@ class PreferencesStore(private val directory: File) : PreferencesKeeper {
     private class RecordReader(private val text: String) {
         private var at = 0
 
+        // {"version":1,"streamingLimits":<limits>} in that order.
         fun record(): Boolean {
-            if (!take('{')) return false
-            val seen = mutableSetOf<String>()
-            do {
-                val name = name() ?: return false
-                if (!seen.add(name) || !take(':')) return false
-                val ok = when (name) {
-                    "version" -> number() == "1"
-                    "streamingLimits" -> limits()
-                    else -> false
-                }
-                if (!ok) return false
-            } while (take(','))
-            return take('}') && at == text.length && seen == setOf("version", "streamingLimits")
+            return take('{') && name() == "version" && take(':') && number() == "1" &&
+                take(',') && name() == "streamingLimits" && take(':') && limits() &&
+                take('}') && at == text.length
         }
 
+        // {}, {"localMbps":n}, {"remoteMbps":n} or {"localMbps":n,"remoteMbps":n}, localMbps first, as the encoder
+        // writes it.
         private fun limits(): Boolean {
             if (!take('{')) return false
             if (take('}')) return true
-            val seen = mutableSetOf<String>()
-            do {
-                val name = name() ?: return false
-                if (name !in LIMIT_NAMES || !seen.add(name) || !take(':')) return false
-                if (number() !in LIMIT_CHOICES) return false
-            } while (take(','))
-            return take('}')
+            var name = name() ?: return false
+            if (name == "localMbps") {
+                if (!limit()) return false
+                if (take('}')) return true
+                if (!take(',')) return false
+                name = name() ?: return false
+            }
+            return name == "remoteMbps" && limit() && take('}')
         }
+
+        private fun limit(): Boolean = take(':') && number() in LIMIT_CHOICES
 
         // A quoted name of ASCII letters only.
         private fun name(): String? {
