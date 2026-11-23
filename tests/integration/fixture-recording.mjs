@@ -19,14 +19,16 @@ export function readCredentials() {
 }
 
 export const CLIENT = 'MediaBrowser Client="Octave Tests", Device="ci", DeviceId="octave-fixtures", Version="0"';
+// A second device of the same account (T9-09): the same header with another DeviceId.
+export const CLIENT_B = 'MediaBrowser Client="Octave Tests", Device="ci", DeviceId="octave-fixtures-b", Version="0"';
 
-export async function call(base, token, method, path, { query, body } = {}) {
+export async function call(base, token, method, path, { query, body, client = CLIENT } = {}) {
   const url = new URL(base + path);
   for (const [key, value] of Object.entries(query ?? {})) url.searchParams.set(key, String(value));
   const response = await fetch(url, {
     method,
     headers: {
-      Authorization: token ? `${CLIENT}, Token="${token}"` : CLIENT,
+      Authorization: token ? `${client}, Token="${token}"` : client,
       "Content-Type": "application/json",
     },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -38,13 +40,13 @@ export async function call(base, token, method, path, { query, body } = {}) {
 
 // Like call, but returns { status, data } and never throws on a non-2xx answer, so a recorder
 // can save a 404 as a fixture.
-export async function callStatus(base, token, method, path, { query, body } = {}) {
+export async function callStatus(base, token, method, path, { query, body, client = CLIENT } = {}) {
   const url = new URL(base + path);
   for (const [key, value] of Object.entries(query ?? {})) url.searchParams.set(key, String(value));
   const response = await fetch(url, {
     method,
     headers: {
-      Authorization: token ? `${CLIENT}, Token="${token}"` : CLIENT,
+      Authorization: token ? `${client}, Token="${token}"` : client,
       "Content-Type": "application/json",
     },
     body: body === undefined ? undefined : JSON.stringify(body),
