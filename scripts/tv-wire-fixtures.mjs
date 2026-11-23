@@ -54,3 +54,82 @@ export async function ensureFixtures(
   const credentials = readWireCredentials(credentialsFile, recordFile);
   if (!healthy || targets.some((target) => credentials[`${target}_password`] === undefined)) pnpm("fixture:setup");
 }
+
+// T8-07 (Product Owner ruling on item 6): setup creates the Jellyfin libraries without scanning them, so the runner
+// scans the library a selected wire test reads before the first pair runs. Only the tests on this list read a Jellyfin
+// library; a Jellyscale or mock pair starts no scan.
+export const READS_JELLYFIN_LIBRARY = ["player-capabilities"];
+const JELLYFIN_TARGETS = ["jellyfin-10-11", "jellyfin-12"];
+// The samples those tests look up, by file name (Jellyfin titles them from the NFO, so the name varies by server).
+export const SCANNED_SAMPLES = ["Synthetic H264 (2024).mkv", "Synthetic No Decoder (2024).mkv"];
+export const SCAN_LIMIT_MS = 120_000;
+const SCAN_POLL_MS = 2_000;
+const CLIENT = 'MediaBrowser Client="Octave Tests", Device="ci", DeviceId="octave-wire-scan", Version="0"';
+
+// The Jellyfin targets whose library a selected pair reads, each once.
+export function scanTargetsOf(pairs) {
+  return [...new Set(pairs.filter((pair) => READS_JELLYFIN_LIBRARY.includes(pair.test) && JELLYFIN_TARGETS.includes(pair.target)).map((pair) => pair.target))];
+}
+
+// Signs in to each such target's fixture origin (never its recorder) with the fixture's admin user, sends
+// POST /Library/Refresh, and waits until every scanned sample is listed as a movie and the scheduled tasks are idle on
+// two polls in a row, within SCAN_LIMIT_MS. The token is added to `secrets` before it is used and appears in no message.
+// A scan that does not settle throws with a plain line; the caller fails the run.
+export async function scanJellyfinLibraries(
+  pairs,
+  { credentials, secrets, fetch = globalThis.fetch, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = Date.now, log = console.log } = {},
+) {
+  for (const target of scanTargetsOf(pairs)) {
+    const origin = credentials[`${target}_url`];
+    const user = credentials[`${target}_username`];
+    const password = credentials[`${target}_password`];
+    if (!origin || !user || !password) throw new Error(`no fixture credentials for ${target}; run pnpm fixture:setup`);
+    await scanOne(target, origin, user, password, { secrets, fetch, sleep, now, log });
+  }
+}
+
+async function scanOne(target, origin, user, password, { secrets, fetch, sleep, now, log }) {
+  const call = async (method, path, { token, body } = {}) => {
+    const response = await fetch(`${origin}${path}`, {
+      method,
+      redirect: "manual",
+      headers: {
+        Authorization: token === undefined ? CLIENT : `${CLIENT}, Token="${token}"`,
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    if (response.status < 200 || response.status > 299) throw new Error(`${target}'s library scan failed: ${method} ${path} answered ${response.status}`);
+    return response.status === 204 ? null : response.json();
+  };
+
+  const signedIn = await call("POST", "/Users/AuthenticateByName", { body: { Username: user, Pw: password } });
+  const token = signedIn?.AccessToken;
+  if (typeof token !== "string" || token === "") throw new Error(`${target}'s library scan failed: sign-in returned no token`);
+  secrets.add(token);
+  try {
+    await call("POST", "/Library/Refresh", { token });
+    const started = now();
+    let listed = 0;
+    let busy = 0;
+    let quietPolls = 0;
+    while (now() - started < SCAN_LIMIT_MS) {
+      await sleep(SCAN_POLL_MS);
+      const tasks = await call("GET", "/ScheduledTasks?isHidden=false", { token });
+      const items = await call("GET", "/Items?Recursive=true&IncludeItemTypes=Movie&Fields=Path", { token });
+      busy = (Array.isArray(tasks) ? tasks : []).filter((task) => task.State !== "Idle").length;
+      const movies = (items?.Items ?? []).filter((item) => item.Type === "Movie" && typeof item.Path === "string");
+      listed = SCANNED_SAMPLES.filter((file) => movies.some((item) => item.Path.endsWith(`/${file}`))).length;
+      quietPolls = listed === SCANNED_SAMPLES.length && busy === 0 ? quietPolls + 1 : 0;
+      if (quietPolls >= 2) {
+        log(`tv wire: scanned the ${target} library; ${listed} sample(s) listed, scheduled tasks idle`);
+        return;
+      }
+    }
+    throw new Error(
+      `${target}'s library scan did not settle in ${SCAN_LIMIT_MS / 1000} s (${listed} of ${SCANNED_SAMPLES.length} samples listed, ${busy} scheduled task(s) busy)`,
+    );
+  } finally {
+    await call("POST", "/Sessions/Logout", { token }).catch(() => {});
+  }
+}
