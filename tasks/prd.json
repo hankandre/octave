@@ -1964,10 +1964,10 @@
             "The application ID is cloud.jellyscale.octave (owner, 2026-11-22), changed in packages/core/src/domain/app-identity.ts, the one place that defines it; every test, fixture and document holding dev.octave.tv follows, and the Kotlin package names stay"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit e0aec065 (with f531cb1e, 0203d911) on task/T3-21: signing plugin, key check, cert check, install guard, ID cloud.jellyscale.octave. T3-21 tests pass; tv:build, tv:apk:check, tv:native:test (986), tv:e2e, tv:smoke pass on an emulator. Blocked: done tasks frozen tests need a PO commit (46 fail)."
         },
         {
           "id": "T3-17",
