@@ -1,0 +1,105 @@
+{
+  "task": "T5-07",
+  "files": [
+    "packages/core/src/domain/continue-window.test.ts",
+    "packages/core/src/jellyfin/home-window.test.ts",
+    "packages/core/src/jellyfin/home-window-fixtures.test.ts",
+    "packages/core/src/preference-store.window.test.ts"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/domain/continue-window.test.ts",
+        "src/jellyfin/home-window.test.ts",
+        "-t",
+        "T5-07 item 1:"
+      ]
+    },
+    {
+      "item": 2,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/domain/continue-window.test.ts",
+        "src/preference-store.window.test.ts",
+        "-t",
+        "T5-07 item 2:"
+      ]
+    },
+    {
+      "item": 3,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/domain/continue-window.test.ts",
+        "-t",
+        "T5-07 item 3:"
+      ]
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/domain/continue-window.test.ts",
+        "src/jellyfin/home-window.test.ts",
+        "-t",
+        "T5-07 item 4:"
+      ]
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/domain/continue-window.test.ts",
+        "src/jellyfin/home-window.test.ts",
+        "-t",
+        "T5-07 item 5:"
+      ]
+    },
+    {
+      "item": 6,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/jellyfin/home-window-fixtures.test.ts",
+        "-t",
+        "T5-07 item 6:"
+      ]
+    }
+  ]
+}
