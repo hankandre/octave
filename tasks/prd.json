@@ -3630,10 +3630,10 @@
             "A per-device Continue watching window left from before the owner's values (7 or 14) is read as 90 when the setting moves to the account"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit bbb6bc8f (with c180a7ea, 6361203e): gateway accountPreferences/saveAccountPreferences, mapping, TV store useAccount/saveAccount, docs, backlog. pnpm check green. Gaps for PR: no subtitle key (R2); nothing calls useAccount yet (backlog)."
+          "passes": true,
+          "evidence": "commit 83f7683c (with c180a7ea, 6361203e, bbb6bc8f): gateway accountPreferences/saveAccountPreferences (save dropped if session changed), mapping, TV store useAccount/saveAccount, docs. pnpm check green. Item 5 proven by unit tests only: nothing calls useAccount yet (backlog). No subtitle key (R2)."
         },
         {
           "id": "T9-03",
