@@ -23,7 +23,7 @@ import { clearEvidence, evidenceDir, writeEvidence, writeSummary } from "./tv-wi
 import { openDevice } from "./tv-wire-device.mjs";
 import { judgeArtworkCapture, judgeCapture, judgeLogcat, judgePlayerCapture, judgeRecords, judgeWire } from "./tv-wire-judge.mjs";
 import { describeLogKept, logKeptErrors, startLogKeeper } from "./tv-wire-logcat.mjs";
-import { startMock } from "./tv-wire-mock.mjs";
+import { MAX_IMAGE_HOLD_MS, startMock } from "./tv-wire-mock.mjs";
 import { proxyRequestsNamingTargets, startProxyListener, startRecorder } from "./tv-wire-proxy.mjs";
 import { readDecoderList } from "./tv-wire-decoders.mjs";
 import { ensureFixtures, readWireCredentials, scanJellyfinLibraries, upstreamPort } from "./tv-wire-fixtures.mjs";
@@ -231,6 +231,11 @@ async function main(args) {
   }
   if (selected.length === 0) fail(`no wire test is tagged ${options.task}`);
 
+  const imageHold = Number(process.env.OCTAVE_WIRE_IMAGE_HOLD_MS ?? "0");
+  if (!Number.isInteger(imageHold) || imageHold < 0 || imageHold > MAX_IMAGE_HOLD_MS) {
+    fail(`OCTAVE_WIRE_IMAGE_HOLD_MS must be a whole number of ms from 0 to ${MAX_IMAGE_HOLD_MS}`);
+  }
+
   // The serial chooses the device; it is never printed or written.
   const serial = process.env.ANDROID_SERIAL;
   if (!serial) fail("set ANDROID_SERIAL to your own emulator's serial; this script never picks a device itself");
@@ -283,7 +288,8 @@ async function main(args) {
       await sleep(2_000);
     }
     if (before === null || before.elapsed < ADBD_STEADY_S) fail(`the device's adb daemon did not stay up for ${ADBD_STEADY_S} s within ${ADBD_WAIT_MS / 1000} s`);
-    const mock = await startMock({ canary: list.canary, user: list.user, password: list.password, canaryDevicePort: list.canaryPort });
+    // OCTAVE_WIRE_IMAGE_HOLD_MS (T3-39's screenshot run only) holds the mock's image answers; unset, it is 0.
+    const mock = await startMock({ canary: list.canary, user: list.user, password: list.password, canaryDevicePort: list.canaryPort, imageHoldMs: imageHold });
     const proxy = await startProxyListener();
     const recorders = new Map();
     let reversed = [];

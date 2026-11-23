@@ -9,7 +9,9 @@
 //   parameter, which the one client must refuse.
 // - main, for the artwork tests (T3-11): GET /Items/Latest lists three films with Primary tags, and
 //   GET /Items/{id}/Images/{type} answers a generated PNG to a signed-in call (401 without the token, as every signed-in
-//   route), 404 for the one missing id, and records each request's item id and maxWidth for the judge.
+//   route), 404 for the one missing id, and records each request's item id and maxWidth for the judge. With
+//   imageHoldMs (off by default; T3-39's screenshot run only) each image answer waits that long, so the BlurHash
+//   preview stays on screen to be captured; the hold is at most MAX_IMAGE_HOLD_MS, well below the client's timeouts.
 // - redirector: every answer is a 302 to the canary origin with a credential parameter.
 // - canaryOrigin: records every request; must stay at zero.
 // - privateLan: answers only GET /System/Info/Public, gives LocalAddress as http://10.0.2.2:<its port>, and counts the
@@ -20,6 +22,7 @@ import { crc32, deflateSync } from "node:zlib";
 import { LATEST_FILM_IDS, MISSING_IMAGE_ID } from "../apps/tv/src/e2e/wire/artwork-fixture-ids.ts";
 
 const LOOPBACK = "127.0.0.1";
+export const MAX_IMAGE_HOLD_MS = 10_000;
 const SERVER_ID = "0f3e9c1a7b5d4e2f8a6c0b9d1e3f5a7c";
 const USER_ID = "4b8e2d6f0a1c3e5f7b9d1f3a5c7e9b0d";
 const STALL_MS = 20_000;
@@ -99,8 +102,11 @@ function send(response, status, body, headers = {}) {
   response.end(text);
 }
 
-// options: { canary, user, password, canaryDevicePort }
-export async function startMock({ canary, user, password, canaryDevicePort }) {
+// options: { canary, user, password, canaryDevicePort, imageHoldMs = 0 }
+export async function startMock({ canary, user, password, canaryDevicePort, imageHoldMs = 0 }) {
+  if (!Number.isInteger(imageHoldMs) || imageHoldMs < 0 || imageHoldMs > MAX_IMAGE_HOLD_MS) {
+    throw new Error(`imageHoldMs must be a whole number of ms from 0 to ${MAX_IMAGE_HOLD_MS}`);
+  }
   const counts = { redirector: 0, canaryOrigin: 0, privateLan: 0 };
   const images = [];
   const encoded = encodeURIComponent(canary);
@@ -135,6 +141,16 @@ export async function startMock({ canary, user, password, canaryDevicePort }) {
     if (image !== null) {
       const maxWidth = Number(new URL(request.url ?? "/", "http://mock.invalid").searchParams.get("maxWidth"));
       images.push({ itemId: image[1], maxWidth });
+      if (imageHoldMs > 0) {
+        const held = await new Promise((resolve) => {
+          const timer = setTimeout(() => resolve(true), imageHoldMs);
+          response.once("close", () => {
+            clearTimeout(timer);
+            resolve(false);
+          });
+        });
+        if (!held) return undefined;
+      }
       if (image[1] === MISSING_IMAGE_ID) return send(response, 404, { Message: "not found" });
       response.writeHead(200, { "Content-Type": "image/png", "Content-Length": PNG.length });
       return response.end(PNG);
