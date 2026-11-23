@@ -1,24 +1,25 @@
 // @vitest-environment node
 // T3-11 acceptance item 1 (docs/specs/T3-11.md, "The JavaScript surface" and "The native module"): an image view takes
-// only an item id, an image type, a tag, a size and a session id from React, and no URL, header or token. Source scans
+// only an item id, an image type, a tag, a size and a session id from React, and no URL, header or token. Since T3-39
+// (decision 0005, the BlurHash prop) it also takes a sixth prop, blurHash, the hash string only. Source scans
 // only: nothing here loads the module. ModuleSurfaceTest (modules/artwork, JVM) holds the Kotlin definition the same
 // way, and apps/tv/src/host/native-artwork.test.tsx the props the view receives.
 //
 // The contract frozen here:
 // - modules/artwork/android/src/main/java/dev/octave/artwork/OctaveArtworkModule.kt has one `ModuleDefinition { }`
 //   whose top-level calls are only `Name("OctaveArtwork")`, one `View(OctaveArtworkView::class) { … }` and an optional
-//   `OnDestroy`. The view's block holds exactly the five `Prop`s session, itemId, imageType, tag and width, one
+//   `OnDestroy`. The view's block holds exactly the six `Prop`s session, itemId, imageType, tag, width and blurHash, one
 //   `Events("onArtworkState")` and On… lifecycle hooks. Anywhere in the file's code an AsyncFunction, a Function, a
 //   Property, a Constant or Constants, a PropGroup, a static function, a Class, a GroupView, an OnCreate, a sendEvent
 //   or a Prop outside the view fails.
 // - modules/artwork/surface-allowlist.json is exactly { module: "OctaveArtwork", functions: [], events: [], views:
-//   [{ name: "OctaveArtworkView", props: [session, itemId, imageType, tag, width], events: ["onArtworkState"] }],
+//   [{ name: "OctaveArtworkView", props: [session, itemId, imageType, tag, width, blurHash], events: ["onArtworkState"] }],
 //   pending: {} }.
 // - docs/security.md has exactly one line starting `Artwork module allowlist:` (a list marker before it is allowed).
-//   Its backticked names, apart from the module name `OctaveArtwork` and task ids, are exactly the view, its five
+//   Its backticked names, apart from the module name `OctaveArtwork` and task ids, are exactly the view, its six
 //   props and its event.
 // - modules/artwork/src/index.ts declares `interface OctaveArtworkViewProps` with exactly session, itemId, imageType,
-//   tag, width, onArtworkState and style, and `interface ArtworkStateEvent` with exactly `state: "loaded" | "failed"`.
+//   tag, width, blurHash, onArtworkState and style, and `interface ArtworkStateEvent` with exactly `state: "loaded" | "failed"`.
 // - The package is @octave/artwork (private, GPL-3.0-only, main src/index.ts, no dependency of its own), a
 //   "workspace:*" dependency of @octave/tv; its Expo config names dev.octave.artwork.OctaveArtworkModule for Android
 //   only; its Gradle file has namespace dev.octave.artwork, project(':octave-session'), the JUnit BOM pin of
@@ -33,7 +34,7 @@ import { describe, expect, it } from "vitest";
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const MODULE_FILE = "modules/artwork/android/src/main/java/dev/octave/artwork/OctaveArtworkModule.kt";
-const PROPS = ["session", "itemId", "imageType", "tag", "width"];
+const PROPS = ["session", "itemId", "imageType", "tag", "width", "blurHash"];
 const VIEW = "OctaveArtworkView";
 const EVENT = "onArtworkState";
 
@@ -282,7 +283,7 @@ function interfaceMembers(source: string, name: string): Map<string, string> {
 }
 
 describe("T3-11 item 1: the artwork module's surface", () => {
-  it("T3-11 item 1: the Kotlin definition is one view with the five props and one event, and nothing else", () => {
+  it("T3-11 item 1: the Kotlin definition is one view with the six props and one event, and nothing else", () => {
     expect(surfaceProblems(read(MODULE_FILE))).toEqual([]);
   });
 
@@ -320,7 +321,7 @@ describe("T3-11 item 1: the artwork module's surface", () => {
     expect(surfaceProblems(`${source}\nfun stray() { sendEvent("onArtworkState", mapOf<String, Any>()) }`), "a sendEvent").not.toEqual([]);
   });
 
-  it("T3-11 item 1: the allowlist file is the one view, its five props and its one event", () => {
+  it("T3-11 item 1: the allowlist file is the one view, its six props and its one event", () => {
     const allowlist = JSON.parse(read("modules/artwork/surface-allowlist.json")) as unknown;
     expect(allowlist).toEqual({
       module: "OctaveArtwork",
@@ -331,7 +332,7 @@ describe("T3-11 item 1: the artwork module's surface", () => {
     });
   });
 
-  it("T3-11 item 1: docs/security.md has one artwork allowlist line naming the view, its five props and its event", () => {
+  it("T3-11 item 1: docs/security.md has one artwork allowlist line naming the view, its six props and its event", () => {
     const lines = read("docs/security.md").split("\n");
     const found = lines.filter((line) => /^\s*(?:[-*]\s+)?Artwork\s+module\s+allowlist:/.test(line));
     expect(found.length, 'docs/security.md has exactly one line starting "Artwork module allowlist:"').toBe(1);
@@ -339,7 +340,7 @@ describe("T3-11 item 1: the artwork module's surface", () => {
     expect(sorted(names)).toEqual(sorted([VIEW, ...PROPS, EVENT]));
   });
 
-  it("T3-11 item 1: the TypeScript types declare the five props, the event handler and style, and the event's two states", () => {
+  it("T3-11 item 1: the TypeScript types declare the six props, the event handler and style, and the event's two states", () => {
     const types = read("modules/artwork/src/index.ts");
     const props = interfaceMembers(types, "OctaveArtworkViewProps");
     expect(sorted([...props.keys()])).toEqual(sorted([...PROPS, EVENT, "style"]));

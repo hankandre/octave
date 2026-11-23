@@ -6,15 +6,15 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 // T3-11 acceptance item 1, the Kotlin half (docs/specs/T3-11.md, "The native module"): the artwork module's
-// definition is `Name("OctaveArtwork")` and one `View(OctaveArtworkView::class)` whose block holds exactly five
-// Props, session, itemId, imageType, tag and width, one `Events("onArtworkState")` and On… lifecycle hooks. The
+// definition is `Name("OctaveArtwork")` and one `View(OctaveArtworkView::class)` whose block holds exactly six
+// Props, session, itemId, imageType, tag, width and (since T3-39) blurHash, one `Events("onArtworkState")` and On… lifecycle hooks. The
 // module defines no function, module-level event, property, constant or class. The allowlist file says the same.
 // The load/ package imports no Android, AndroidX, Expo or OkHttp class, so a Swift loader can mirror it.
 // scripts/tv-artwork-module.test.ts holds the same surface against docs/security.md and the TypeScript types.
 class ModuleSurfaceTest {
     private val repoRoot = File(checkNotNull(System.getProperty("octave.repoRoot")) { "system property octave.repoRoot is not set" })
     private val main = File(repoRoot, "modules/artwork/android/src/main/java/dev/octave/artwork")
-    private val props = listOf("session", "itemId", "imageType", "tag", "width")
+    private val props = listOf("session", "itemId", "imageType", "tag", "width", "blurHash")
 
     // Code only: comments may name what the definition avoids.
     private val source: String
@@ -63,7 +63,7 @@ class ModuleSurfaceTest {
     }
 
     @Test
-    fun the_definition_is_one_view_with_five_props_and_one_event() {
+    fun the_definition_is_one_view_with_six_props_and_one_event() {
         assertTrue(File(main, "OctaveArtworkModule.kt").isFile, "OctaveArtworkModule.kt exists")
         assertEquals(emptyList<String>(), surfaceProblems(source))
     }
@@ -107,12 +107,12 @@ class ModuleSurfaceTest {
     }
 
     @Test
-    fun the_allowlist_file_names_the_module_the_view_its_five_props_and_its_one_event() {
+    fun the_allowlist_file_names_the_module_the_view_its_six_props_and_its_one_event() {
         val text = File(repoRoot, "modules/artwork/surface-allowlist.json").readText().replace(Regex("\\s"), "")
         assertTrue(text.contains("\"module\":\"OctaveArtwork\""), "module")
         assertTrue(text.contains("\"functions\":[]"), "no function")
         assertTrue(text.contains("\"name\":\"OctaveArtworkView\""), "the view")
-        assertTrue(text.contains("\"props\":[\"session\",\"itemId\",\"imageType\",\"tag\",\"width\"]"), "the five props in order")
+        assertTrue(text.contains("\"props\":[\"session\",\"itemId\",\"imageType\",\"tag\",\"width\",\"blurHash\"]"), "the six props in order")
         assertTrue(text.contains("\"events\":[\"onArtworkState\"]"), "the view's one event")
         assertTrue(text.contains("\"pending\":{}"), "nothing pending")
     }
