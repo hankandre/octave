@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
 import { openAdb } from "./tv-adb.mjs";
 import { androidSdk, newestBuildTool, platformTool } from "./tv-android-sdk.mjs";
+import { checkApkAllowlist } from "./tv-apk-allowlist.mjs";
 import { judgeNetworkSecurity, readNetworkSecurity } from "./tv-apk-check.mjs";
 import { E2E_APK, E2E_MAPPING, PROBE_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { checkE2eApk } from "./tv-e2e-apk.mjs";
@@ -179,6 +180,17 @@ async function main(args) {
   if (apkErrors.length > 0) {
     for (const error of apkErrors) console.error(error);
     process.exit(1);
+  }
+  // T3-33: the e2e APK holds no development-server allowlist. Outside E2E_APK_CHECKS, after they pass, before any adb.
+  let allowlist;
+  try {
+    allowlist = checkApkAllowlist(apk);
+  } catch (error) {
+    allowlist = [`ERROR tv allowlist: ${error.message}`];
+  }
+  if (allowlist.length > 0) {
+    for (const error of allowlist) console.error(error);
+    fail("the e2e APK holds the development-server allowlist canary");
   }
   if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
 

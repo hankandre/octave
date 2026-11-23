@@ -123,6 +123,9 @@ function build(e2e, system) {
   const env = { ...process.env };
   delete env.OCTAVE_E2E;
   if (e2e) env.OCTAVE_E2E = "1";
+  // T3-33: the development-server allowlist is replaced by a canary for every build, whatever the machine holds, so
+  // scripts/tv-apk-allowlist.mjs can show the APK holds no list.
+  env.OCTAVE_DEV_SERVERS = "octave-allowlist-canary.invalid";
   rmSync(releaseApk, { force: true });
   if (e2e) rmSync(probeBuildDir, { recursive: true, force: true });
   const tasks = [":app:createBundleReleaseJsAndAssets", "--rerun", ":app:assembleRelease", ...(e2e ? ["octaveDeviceProbeApk"] : [])];
