@@ -119,6 +119,8 @@ export interface MediaStreamDto {
   BitRate?: number | null;
   SampleRate?: number | null;
   ReferenceFrameRate?: number | null;
+  // Jellyfin's level scale for the codec (VideoDecoder.maxLevel); the pinned Jellyscale states none.
+  Level?: number | null;
   ChannelLayout?: string | null;
   IsDefault?: boolean;
   IsForced?: boolean;

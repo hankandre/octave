@@ -29,6 +29,7 @@ import type { AccountPreferences } from "../preference-store";
 import { toItemDetail } from "./item-detail";
 import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
 import { findSessionPlayMethod, type SessionDto } from "./session-play-method";
+import { judgeConversion } from "./conversion-device-check";
 import { decideForcedConversion, selectSource, sourcePlayability, type SourceDecision } from "./source-acceptance";
 import type {
   BaseItemDto,
@@ -902,19 +903,25 @@ export class JellyfinGateway {
         decision = { kind: "refused", reason: "device-cannot-play", detail: "direct play offered again" };
       }
     }
+    // T8-23: a conversion is judged against the device before it is used. An answer that may copy a stream the device
+    // cannot play becomes the rule 5 request below; a target the device cannot decode is refused.
+    if (decision.kind === "convert") {
+      decision = judgeConversion(decision, { ...context(data), audioStreamIndex: carriesPick ? streams.AudioStreamIndex : undefined }, { forced: false });
+    }
     let clientConversionReason: ClientConversionReason | undefined;
     if (decision.kind === "force-conversion") {
-      // Rule 5: the server offered direct play and the device cannot play the source. Ask once more for that source
-      // with direct play and video stream copy off; audio copy goes off too when the judged audio is what the device
-      // cannot play. The request carries the stream indices and the pick, and is never repeated.
+      // Rule 5: the device cannot play the source as offered. Ask once more for that source with direct play and
+      // video stream copy off; audio copy goes off too when the judged audio is what the device cannot play. The
+      // request carries the stream indices and the pick, and is never repeated.
       const { source } = decision;
-      const audioCopyOff = !sourcePlayability(source, capabilities, streams.AudioStreamIndex).audio;
+      const audioCopyOff = decision.cannotPlay.audio;
       data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false, limit, streams, {
         AllowVideoStreamCopy: false,
         AllowAudioStreamCopy: !audioCopyOff,
       });
       carriesPick = streams.AudioStreamIndex !== undefined;
       decision = decideForcedConversion(data.MediaSources, context(data), source.Id, audioCopyOff);
+      if (decision.kind === "convert") decision = judgeConversion(decision, context(data), { forced: true });
       clientConversionReason = "DeviceCannotPlay";
     }
     if (decision.kind === "refused") {

@@ -81,9 +81,17 @@ export function capabilitiesOf(set: CapabilitySetName): "full" | PlayerCapabilit
   };
 }
 
+// The typed refusal that says this device cannot play the file. Written once; the two named expectations below are
+// separate objects built from it.
+const CANNOT_PLAY = { kind: "refused", reason: "device-cannot-play" } as const;
+
 // Jellyscale ignores EnableDirectPlay and AllowVideoStreamCopy (Jellyscale #224), so the core refuses with
 // device-cannot-play. T10-08 makes this a conversion like the Jellyfin servers' and changes it here, and only here.
-export const JELLYSCALE_FORCED_CONVERSION: Expectation = { kind: "refused", reason: "device-cannot-play" };
+export const JELLYSCALE_FORCED_CONVERSION: Expectation = { ...CANNOT_PLAY };
+
+// Every server's conversion is encoded into H.264 (docs/specs/T8-23.md, "Which codec each server encodes into"), so a
+// set without an h264 decoder cannot decode it and the core refuses (T8-23). It stays a refusal after T10-08.
+export const CONVERSION_TARGET_NOT_DECODABLE: Expectation = { ...CANNOT_PLAY };
 
 const DIRECT: Expectation = { kind: "direct-play" };
 const BOTH_METHODS = ["DirectStream", "Transcode"] as const;
@@ -144,7 +152,10 @@ export function expectationFor(serverName: string, set: CapabilitySetName, sampl
   if (set === "full") return fullExpectation(kind, sampleName);
   const sample = SAMPLES.find((candidate) => candidate.name === sampleName)!;
   if (sample.videoCodec !== setting.lacks) return DIRECT;
-  return kind === "jellyscale" ? JELLYSCALE_FORCED_CONVERSION : { kind: "conversion", methods: ["Transcode"], clientReason: "DeviceCannotPlay" };
+  // The Jellyscale no-h264 row keeps the Jellyscale constant until T10-08 (backlog).
+  if (kind === "jellyscale") return JELLYSCALE_FORCED_CONVERSION;
+  if (setting.lacks === "h264") return CONVERSION_TARGET_NOT_DECODABLE;
+  return { kind: "conversion", methods: ["Transcode"], clientReason: "DeviceCannotPlay" };
 }
 
 export interface PlanRow {
