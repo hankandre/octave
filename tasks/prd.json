@@ -2938,7 +2938,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit b57b40ec (branch task/T8-01; also b06eca7a, bdde0ccf, cf8c6633). pnpm check passes; the 4 frozen Vitest suites pass 40/40. Blocked: frozen PlayerEventMapsTest.kt:201 and FakeEngine.kt:11 do not compile, so pnpm tv:native:test fails at :octave-player:compileDebugUnitTestKotlin (a scratch copy with those 2 lines fixed: 51 passed, 0 failed). tv:build passes; tv:apk:check fails D7 on OctavePlayerModule (R8 inlined Expo registerViewDefinition). Not run: tv:smoke, tv:wire T3-05, any device."
+          "evidence": "commit 29c897a6 (branch task/T8-01; D7 outline reading per PO ruling (c); earlier b06eca7a..b57b40ec). pnpm check passes; tv:native:test 808 tests, 0 failed; tv:build and tv:apk:check pass (D7 clean); tv:e2e, tv:smoke and tv:wire --task T3-05 (8 pairs) pass on emulator-5580 (fluster_tv). Not run: T8-02 item 7 wire test (no engine yet), view loads on a device (T8-02), the Shield, any real TV."
         },
         {
           "id": "T8-22",
