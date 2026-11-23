@@ -1,5 +1,5 @@
 export type Frame = { holder: string; name: string; args: string; ret: string; synthesized: boolean };
-export type Stack = { name: string; range: [number, number] | null; frames: Frame[]; residual: string | null };
+export type Stack = { name: string; range: [number, number] | null; frames: Frame[]; residual: string | null; outlinePositions?: number[] };
 export type FieldLine = { name: string; holder: string; originalName: string; type: string; residual: string | null; synthesized: boolean };
 export type Section = { original: string; dex: string; removed: boolean; synthesized: boolean; stacks: Stack[]; fields: FieldLine[] };
 export type Mapping = {
