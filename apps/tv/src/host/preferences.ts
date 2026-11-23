@@ -38,6 +38,8 @@ interface ActiveAccount {
   epoch: number;
   // How many times each field changed on this account since the switch.
   changes: Map<AccountPreferenceKey, number>;
+  // What the server is known to hold: the read's values, then each saved value.
+  known: Map<AccountPreferenceKey, PreferenceValues[AccountPreferenceKey]>;
   saving: Promise<unknown>;
 }
 
@@ -49,7 +51,7 @@ export function createDevicePreferenceStore(native: () => Pick<OctavePreferences
   let deviceFieldUpdated = false;
   let writing: Promise<unknown> = Promise.resolve();
   const listeners = new LimitListeners();
-  let account: ActiveAccount = { source: undefined, epoch: 0, changes: new Map(), saving: Promise.resolve() };
+  let account: ActiveAccount = { source: undefined, epoch: 0, changes: new Map(), known: new Map(), saving: Promise.resolve() };
 
   const sameAccountFields = (a: PreferenceValues, b: PreferenceValues): boolean =>
     JSON.stringify(accountPreferencesOf(a)) === JSON.stringify(accountPreferencesOf(b));
@@ -72,7 +74,7 @@ export function createDevicePreferenceStore(native: () => Pick<OctavePreferences
   const ready = readStored();
 
   const useAccount = async (source: AccountPreferenceSource | undefined): Promise<void> => {
-    const mine: ActiveAccount = { source, epoch: account.epoch + 1, changes: new Map(), saving: Promise.resolve() };
+    const mine: ActiveAccount = { source, epoch: account.epoch + 1, changes: new Map(), known: new Map(), saving: Promise.resolve() };
     account = mine;
     const reset = { ...values, ...accountPreferencesOf(DEFAULT_PREFERENCES) };
     const changed = !sameAccountFields(values, reset);
@@ -89,6 +91,7 @@ export function createDevicePreferenceStore(native: () => Pick<OctavePreferences
     const fresh = sanitizeAccountPreferences(read);
     const next = { ...values };
     for (const key of ["continueWindow", "skipModes", "autoPlay"] as const) {
+      if (!mine.known.has(key)) mine.known.set(key, fresh[key]);
       if (!mine.changes.has(key)) Object.assign(next, { [key]: fresh[key] });
     }
     if (sameAccountFields(values, next)) return;
@@ -110,10 +113,14 @@ export function createDevicePreferenceStore(native: () => Pick<OctavePreferences
     mine.saving = run.catch(() => undefined);
     try {
       await run;
+      mine.known.set(key, saved);
       return "saved";
     } catch {
       if (account === mine && mine.changes.get(key) === count) {
-        values = { ...values, [key]: previous };
+        // Back to what the server holds; with no read landed yet, to the value before this call, and the read
+        // may still set it.
+        values = { ...values, [key]: mine.known.has(key) ? mine.known.get(key) : previous };
+        if (!mine.known.has(key)) mine.changes.delete(key);
         listeners.notify();
       }
       return "failed";
@@ -127,6 +134,7 @@ export function createDevicePreferenceStore(native: () => Pick<OctavePreferences
     saveAccount,
     update: (key, value) => {
       if (!isDevicePreferenceKey(key)) {
+        // A screen that must show a failed save calls saveAccount, which answers it; update only reverts the value.
         void saveAccount(key, value as PreferenceValues[AccountPreferenceKey]);
         return;
       }

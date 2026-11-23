@@ -767,11 +767,23 @@ export class JellyfinGateway {
 
   // Jellyfin replaces the record's custom keys on save, so read fresh, change only the given fields, and post
   // the body built from allowlisted values. One GET then one POST; saves run one at a time. No signal.
+  // The save belongs to the session that asked: if another sign-in replaces it before the GET or before the POST,
+  // the save is dropped, so one account's change is never written under another's session.
   saveAccountPreferences(change: Partial<AccountPreferences>): Promise<AccountPreferences> {
+    let asked: { session: SessionId; userId: string };
+    try {
+      asked = this.requireSession();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    const stillAsked = (): void => {
+      if (this.session !== asked.session || this.userId !== asked.userId) throw new Error("The account changed before the settings were saved.");
+    };
     const run = this.preferencesWrite.then(async () => {
-      const { userId } = this.requireSession();
-      const params = { userId, client: ACCOUNT_PREFERENCES_RECORD.client };
+      stillAsked();
+      const params = { userId: asked.userId, client: ACCOUNT_PREFERENCES_RECORD.client };
       const { data } = await this.get<DisplayPreferencesDto>(`/DisplayPreferences/${ACCOUNT_PREFERENCES_RECORD.id}`, { params, timeout: CONTROL_REQUEST_TIMEOUT_MS });
+      stillAsked();
       if (customPrefsOf(data) === undefined) throw new AccountPreferencesUnreadable("Jellyfin returned no display preferences.");
       const next = withAccountChange(toAccountPreferences(data), change);
       await this.post(`/DisplayPreferences/${ACCOUNT_PREFERENCES_RECORD.id}`, displayPreferencesBody(next, keptOctaveKeys(data)), { params, timeout: CONTROL_REQUEST_TIMEOUT_MS });
