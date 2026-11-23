@@ -1587,10 +1587,10 @@
             "Jellyscale wire test: the capture above runs against the pinned Jellyscale and passes"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Milestones 1-6 at commit 86e4a5f7 (branch task/T3-11): pnpm check green, tv:native:test 947/0, tv:apk:check and tv:e2e pass, tv:wire --task T3-11 5/5 pass and --task T3-05 8/8 on own emulator. Open PO question: Jellyfin fixture libraries are never scanned before the wire run (refreshLibrary=false), so artwork-header-and-cache jellyfin pairs report images=0 on a fresh fixture."
         },
         {
           "id": "T3-28",
