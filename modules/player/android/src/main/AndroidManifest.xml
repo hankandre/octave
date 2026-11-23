@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No permission and no component: the module hosts a view and sends nothing itself (T8-01). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

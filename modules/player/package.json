@@ -1,0 +1,8 @@
+{
+  "name": "@octave/player",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "description": "Octave's native player module (T8-01): the PlayerEngine port's six commands, its one event and one native view, over a plain-Kotlin seam an engine plugs into.",
+  "main": "src/index.ts"
+}
