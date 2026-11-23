@@ -3,6 +3,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot, PlayerEvent } from "../domain/playback";
+import { playbackFailureForPlayerError } from "../domain/playback-failure";
 import { PLAYER_ERROR_CODES, PLAYER_ERROR_MESSAGES, PlayerEngineError } from "../domain/player-engine";
 import { FakeClock } from "../ports/fake-clock";
 import { PlaybackCoordinator, type PlaybackGateway } from "./coordinator";
@@ -195,17 +196,17 @@ describe("a failed stop after the end", () => {
 });
 
 describe("the session state", () => {
-  it("shows the fixed copy for an error event's code and keeps the code", () => {
+  it("holds the failure code for an error event's code, and no text", () => {
     const state = playbackSessionReducer(initialPlaybackSessionState, { type: "event", event: { kind: "error", code: "decoder-unavailable" } });
-    expect(state.error).toBe(PLAYER_ERROR_MESSAGES["decoder-unavailable"]);
-    expect(state.errorCode).toBe("decoder-unavailable");
+    expect(state.failure).toBe(playbackFailureForPlayerError("decoder-unavailable"));
+    expect(state).toEqual({ firstFrameReady: false, failure: state.failure });
   });
 
-  it("clears the code on a later failure and on reset", () => {
+  it("takes the code of a later failure and clears it on reset", () => {
     const failed = playbackSessionReducer(initialPlaybackSessionState, { type: "event", event: { kind: "error", code: "network" } });
-    const afterFailure = playbackSessionReducer(failed, { type: "failure", message: "Jellyfin request failed.", kind: "network" });
-    expect(afterFailure.errorCode).toBeUndefined();
-    expect(afterFailure.error).toBe("Jellyfin request failed.");
-    expect(playbackSessionReducer(failed, { type: "reset" }).errorCode).toBeUndefined();
+    expect(failed.failure).toBe(playbackFailureForPlayerError("network"));
+    const afterFailure = playbackSessionReducer(failed, { type: "failure", code: "server-error" });
+    expect(afterFailure.failure).toBe("server-error");
+    expect(playbackSessionReducer(failed, { type: "reset" }).failure).toBeUndefined();
   });
 });

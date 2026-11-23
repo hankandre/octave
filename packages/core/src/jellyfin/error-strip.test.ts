@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../domain/catalog";
 import type { PlaybackPlan, PlaybackSnapshot } from "../domain/playback";
-import { PlaybackCoordinator, type PlaybackGateway } from "../player/coordinator";
+import { PlaybackCoordinator, PlayerStopError, type PlaybackGateway } from "../player/coordinator";
 import { createFakePlayerEngine } from "../player/fake-player-engine";
 import { failureAction, stopFailureAction } from "../player/session-failure";
 import { classifyTransportError } from "../transport-error";
@@ -140,9 +140,9 @@ describe("the coordinator PlaybackInfo failure", () => {
 });
 
 describe("failureAction", () => {
-  it("keeps the transport kind and hides the message", () => {
-    const action = failureAction(transportFailure("500"));
-    expect(action).toEqual({ type: "failure", message: "Jellyfin request failed.", kind: "server" });
+  it("keeps only the code of a failed request and hides the message", () => {
+    const action = failureAction(transportFailure("500"), vi.fn());
+    expect(action).toEqual({ type: "failure", code: "server-error" });
   });
 
   const nativeReason =
@@ -151,23 +151,28 @@ describe("failureAction", () => {
   it.each([
     ["string", nativeReason],
     ["Error", new Error(nativeReason)],
-  ])("keeps a native %s reason without token, address, or path", (_label, error) => {
-    const action = failureAction(error);
-    if (action.type !== "failure") throw new Error("expected a failure action");
-    expect(action.kind).toBeUndefined();
-    expect(action.message).toContain("[path]");
+  ])("gives a native %s reason a code, and logs it without token, address, or path", (_label, error) => {
+    const log = vi.fn();
+    const action = failureAction(error, log);
+    expect(action).toEqual({ type: "failure", code: "request-failed" });
+    expect(log).toHaveBeenCalledTimes(1);
+    const reason: unknown = log.mock.calls[0]?.[0];
+    if (typeof reason !== "string") throw new Error("expected a logged reason");
+    expect(reason).toContain("[path]");
     for (const leak of ["SECRET-TOKEN", "media.test", "api_key", "/home/u", "x.mkv"]) {
-      expect(action.message).not.toContain(leak);
+      expect(reason).not.toContain(leak);
+      expect(JSON.stringify(action)).not.toContain(leak);
     }
   });
 
-  it("gives a failed stop the same message for a string and an Error", () => {
-    const fromString = failureAction("The player did not stop.");
-    expect(fromString).toEqual({ type: "failure", message: "The player did not stop.", kind: undefined });
-    expect(failureAction(new Error("The player did not stop."))).toEqual(fromString);
+  it("gives a failed stop its code, and a string and an Error with the same text one action", () => {
+    expect(failureAction(new PlayerStopError(), vi.fn())).toEqual({ type: "failure", code: "stop-failed" });
+    const fromString = failureAction("The player did not stop.", vi.fn());
+    expect(fromString).toEqual({ type: "failure", code: "request-failed" });
+    expect(failureAction(new Error("The player did not stop."), vi.fn())).toEqual(fromString);
   });
 
-  it("marks a failed stop with fixed text, so the native reason never reaches the view", () => {
-    expect(stopFailureAction()).toEqual({ type: "failure", message: "The player did not stop.", stage: "stop" });
+  it("marks a failed stop with its code and no text, so the native reason never reaches the view", () => {
+    expect(stopFailureAction()).toEqual({ type: "failure", code: "stop-failed" });
   });
 });

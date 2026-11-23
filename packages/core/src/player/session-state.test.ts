@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PlaybackSnapshot } from "../domain/playback";
-import { PLAYER_ERROR_MESSAGES } from "../domain/player-engine";
+import { playbackFailureForPlayerError } from "../domain/playback-failure";
 import { initialPlaybackSessionState, playbackSessionReducer } from "./session-state";
 
 const snapshot: PlaybackSnapshot = {
@@ -26,9 +26,8 @@ describe("playbackSessionReducer", () => {
 
     expect(state).toMatchObject({
       firstFrameReady: true,
-      // The fixed copy for the code, never player text (T2-05).
-      error: PLAYER_ERROR_MESSAGES["decoder-failed"],
-      errorCode: "decoder-failed",
+      // The failure code for the engine's code, never player text (T2-05) and no text at all (T8-25).
+      failure: playbackFailureForPlayerError("decoder-failed"),
       snapshot: { positionSeconds: 31 },
     });
     expect(state.snapshot?.buffering).toBe(false);
@@ -36,12 +35,13 @@ describe("playbackSessionReducer", () => {
   });
 
   it("marks a failed stop, and a later player error clears the mark", () => {
-    let state = playbackSessionReducer(initialPlaybackSessionState, { type: "failure", message: "The player did not stop.", stage: "stop" });
-    expect(state).toMatchObject({ error: "The player did not stop.", errorStage: "stop" });
+    let state = playbackSessionReducer(initialPlaybackSessionState, { type: "failure", code: "stop-failed" });
+    expect(state).toMatchObject({ failure: "stop-failed" });
     state = playbackSessionReducer(state, { type: "event", event: { kind: "error", code: "decoder-failed" } });
-    expect(state.errorStage).toBeUndefined();
-    state = playbackSessionReducer(state, { type: "failure", message: "x", kind: "network" });
-    expect(state.errorStage).toBeUndefined();
+    expect(state.failure).toBe(playbackFailureForPlayerError("decoder-failed"));
+    expect(state.failure).not.toBe("stop-failed");
+    state = playbackSessionReducer(state, { type: "failure", code: "server-unreachable" });
+    expect(state.failure).toBe("server-unreachable");
   });
 
   it("does not discard diagnostics when a first-frame event arrives after state", () => {
