@@ -1,0 +1,112 @@
+{
+  "task": "T9-09",
+  "files": [
+    "packages/core/src/jellyfin/account-preferences.test.ts",
+    "packages/core/src/jellyfin/account-preferences-gateway.test.ts",
+    "packages/core/src/jellyfin/account-preferences-fixtures.test.ts",
+    "scripts/tv-account-preferences.test.ts",
+    "packages/core/tests/fixtures/jellyfin/10.11.7/display-preferences.json",
+    "packages/core/tests/fixtures/jellyfin/12.4.0/display-preferences.json",
+    "packages/core/tests/fixtures/jellyscale/b920b193cd6f/display-preferences.json",
+    "packages/core/tests/fixtures/jellyfin/README.md",
+    "packages/core/tests/fixtures/jellyscale/README.md",
+    "tests/integration/fixture-recording.d.mts",
+    "tests/integration/fixture-recording.mjs",
+    "tests/integration/record-display-preferences-fixtures.mjs"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/jellyfin/account-preferences-gateway.test.ts",
+        "-t",
+        "T9-09 item 1:"
+      ]
+    },
+    {
+      "item": 2,
+      "gate": "review",
+      "why": "The reviewer checks that the spec's Recorded answers section is filled from the committed display-preferences.json fixtures and shows S3, S4 and S6 equal to what was written on all three servers; item 6's contract tests assert the same facts."
+    },
+    {
+      "item": 3,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/jellyfin/account-preferences.test.ts",
+        "src/jellyfin/account-preferences-gateway.test.ts",
+        "-t",
+        "T9-09 item 3:"
+      ]
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/jellyfin/account-preferences-gateway.test.ts",
+        "-t",
+        "T9-09 item 4:"
+      ]
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-account-preferences.test.ts",
+        "-t",
+        "T9-09 item 5:"
+      ]
+    },
+    {
+      "item": 6,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/jellyfin/account-preferences-fixtures.test.ts",
+        "-t",
+        "T9-09 item 6:"
+      ]
+    },
+    {
+      "item": 7,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "--fail-if-no-match",
+        "exec",
+        "vitest",
+        "run",
+        "src/jellyfin/account-preferences.test.ts",
+        "-t",
+        "T9-09 item 7:"
+      ]
+    }
+  ]
+}
