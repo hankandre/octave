@@ -1640,7 +1640,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Implemented through commit 862f5ac9 (milestones from commit 726dd519). pnpm check exit 0 (one T3-30 dev-server watch flake passed alone twice and on the full rerun); pnpm tv:native:test 1015 passed. Own emulator t339_tv (API 36): tv:e2e pass, tv:wire --task T3-11 5 pairs pass, canary=absent. Item 7: 3 cold runs per build, median janky 20.21%/p90 31 ms (3e692771) vs 4.41%/28 ms (head), within thresholds. Screenshots before/after taken. Untested: Shield, other Android versions, tvOS, real-library hashes on device."
+          "evidence": "Implemented through commit 862f5ac9; verify rerun recorded in commit fffd89d1. pnpm check exit 0 (Vitest 3681, Jest 272, scripts 2698 pass); pnpm tv:native:test 1016 passed, 0 failed. T3-30 watch-controls flake passed alone on origin/main 4ca11908 and branch, logged to backlog. Own emulator t339_tv (API 36): tv:e2e pass, tv:wire --task T3-11 5 pairs pass, canary=absent. Item 7: 3 cold runs per build, median janky 20.21%/p90 31 ms (3e692771) vs 4.41%/28 ms (head). Untested: Shield, other Android versions, tvOS, real-library hashes on device."
         },
         {
           "id": "T3-28",
