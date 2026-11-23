@@ -3021,7 +3021,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Implemented on task/T8-02 through commit 6d6723af. Local: pnpm check pass (3449+2551 tests); tv:native:test 893/0; tv:build + tv:apk:check pass (dex: D4_EXCEPTIONS E1 used by invoke-direct); tv:e2e pass; test:tripwire pass; tv:wire --task T8-02 on own API 36 TV emulator: player-original-file, player-samples, player-redirect pass; full tv:wire 11 pairs pass. CI wire job on the PR head still due (items 5-8, gate: ci)."
+          "evidence": "Review fixes in commit e9722356 (spec sections restored; engine refuses work after destroy and undoes a late launch; failed launch paused; alternative decoder type). Local: pnpm check pass (3449+2557 tests); tv:native:test 903/0; tv:build + tv:apk:check pass; tv:e2e pass; tv:wire --task T8-02 on own API 36 TV emulator: player-original-file, player-samples, player-redirect pass. CI wire job and tv apk dex line on the PR head still due (items 5-8, gate: ci)."
         },
         {
           "id": "T8-03",
