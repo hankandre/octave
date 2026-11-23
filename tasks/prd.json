@@ -2987,10 +2987,10 @@
             "The filtered native reason goes only to the log and diagnostics path, and docs/security.md says so"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit c8f33973 (also 47fae0e7, 660ca6df) on task/T8-25: failure codes with DESIGN.md rows (option C), code-only session state, FailureLog sink, security.md rows. pnpm check green. Review and ship pending."
         },
         {
           "id": "T8-02",
