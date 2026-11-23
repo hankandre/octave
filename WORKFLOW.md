@@ -224,7 +224,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 | Review, routine diffs | **Sonnet 5.5** | `reviewer` |
 | Review: native, token, redaction, or negotiation diffs | **Opus 5.5** | `guardian` |
 | Plans and decision records | **Opus 5.5** | `planner` |
-| Coordinator (starts lanes, not tasks; one fresh session per lane run) | **Sonnet 5.5** | main session |
+| Coordinator (starts lanes, not tasks; one fresh session per lane run, with the advisor off: `docs/commands.md`, Coordinator) | **Sonnet 5.5** | main session |
 | Escalation after two failed attempts at the same problem | one tier up; **Fable 5.2** after Opus | any |
 
 ### Rules
