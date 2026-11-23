@@ -2935,10 +2935,10 @@
             "The play-session id and item ids appear in no log or event payload beyond what the port defines"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit 29c897a6 (branch task/T8-01; D7 outline reading per PO ruling (c); earlier b06eca7a..b57b40ec). pnpm check passes; tv:native:test 808 tests, 0 failed; tv:build and tv:apk:check pass (D7 clean); tv:e2e, tv:smoke and tv:wire --task T3-05 (8 pairs) pass on emulator-5580 (fluster_tv). Not run: T8-02 item 7 wire test (no engine yet), view loads on a device (T8-02), the Shield, any real TV."
+          "passes": true,
+          "evidence": "commit 13b1add1 (review fixes; record be0a59e1; branch task/T8-01, earlier b06eca7a..c4dc6e9a). U1 reads host by the core's grammar (_ host, IPv6, case vectors), queued command answers unknown after destroy, surface slot restores older view. pnpm check passes (vitest 3353 + 2471); tv:native:test 820 tests, 0 failed; tv:build and tv:apk:check pass (D7 clean); tv:e2e passes on emulator-5580 (fluster_tv, API 36). Not run: tv:wire (no request path changed; T3-05 8 pairs passed at c4dc6e9a), view on a device (T8-02), the Shield, any real TV."
         },
         {
           "id": "T8-22",
