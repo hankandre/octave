@@ -20,6 +20,10 @@ export type RowRouter = {
   focused(rowId: string, index: number): void;
   /** A row scrolled: when it holds the focused card, point the neighbours again (its offset moved after the focus event). */
   scrolled(rowId: string): void;
+  /** The view that shows an item, or `undefined`. */
+  viewOf(rowId: string, itemId: string): unknown;
+  /** Point every registered guide at nothing (focus is entering the rows from outside them). */
+  clear(): void;
 };
 
 const keyOf = (rowId: string, itemId: string): string => `${rowId}\u0000${itemId}`;
@@ -41,6 +45,12 @@ export function createRowRouter(memory: RowMemory): RowRouter {
     registerCard(rowId, itemId, view) {
       if (view === null) cards.delete(keyOf(rowId, itemId));
       else cards.set(keyOf(rowId, itemId), view);
+    },
+    viewOf(rowId, itemId) {
+      return cards.get(keyOf(rowId, itemId));
+    },
+    clear() {
+      for (const guide of guides.values()) guide.setDestinations?.([]);
     },
     scrolled(rowId) {
       if (last !== null && last.rowId === rowId) router.focused(rowId, last.index);

@@ -6,10 +6,11 @@
 //
 // testIDs, with l the list's testID: l-list and l-row-<rowId> (each row's testID, so l-row-<rowId>-title and so on).
 import { FlashList } from "@shopify/flash-list";
-import { useMemo, type ReactElement } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactElement } from "react";
 import { StyleSheet, View } from "react-native";
 import { px } from "../scale";
 import { sizes } from "../tokens";
+import { useFocusPlace } from "./focus-place-context";
 import { MediaRow } from "./media-row";
 import type { CardItem } from "./media-card";
 import type { CardVariant } from "./row-geometry";
@@ -36,6 +37,25 @@ export function RowList({ rows, memory, leftEdge, header, onCardFocus, onCardBlu
   const shown = useMemo(() => rows.filter((row) => row.items.length > 0), [rows]);
   const router = useMemo(() => createRowRouter(memory), [memory]);
   router.update(shown);
+  const place = useFocusPlace();
+  const shownRef = useRef(shown);
+  shownRef.current = shown;
+  const handlers = useRef({ onCardFocus });
+  handlers.current = { onCardFocus };
+
+  // The shell asks for the rows' views, their ids and a way to clear the guides; a card focus is reported with its view.
+  useEffect(() => {
+    place.rows({ clear: () => router.clear(), viewOf: (rowId, itemId) => router.viewOf(rowId, itemId), rows: () => shownRef.current });
+    return () => place.rows(null);
+  }, [place, router]);
+  const reportFocus = useCallback(
+    (rowId: string, index: number) => {
+      const item = shownRef.current.find((row) => row.id === rowId)?.items[index];
+      if (item !== undefined) place.focused(`card:${rowId}:${item.id}`, router.viewOf(rowId, item.id), { rowId, itemId: item.id, index });
+      handlers.current.onCardFocus?.(rowId, index);
+    },
+    [place, router],
+  );
   return (
     <FlashList
       testID={`${testID}-list`}
@@ -54,7 +74,7 @@ export function RowList({ rows, memory, leftEdge, header, onCardFocus, onCardBlu
             memory={memory}
             router={router}
             leftEdge={leftEdge}
-            onCardFocus={onCardFocus}
+            onCardFocus={reportFocus}
             onCardBlur={onCardBlur}
             onCardPress={onCardPress}
           />

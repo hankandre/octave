@@ -5,11 +5,12 @@
 //
 // testIDs, with r the row's testID: r, r-title, r-guide, r-list and r-card-<index>.
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
-import { memo, useCallback, useLayoutEffect, useRef } from "react";
+import { memo, useCallback, useContext, useLayoutEffect, useRef } from "react";
 import { StyleSheet, Text, TVFocusGuideView, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { px } from "../scale";
 import { textStyle } from "../text";
 import { colors, space } from "../tokens";
+import { LeftEdgeContext } from "./left-edge";
 import { MediaCard, type CardItem } from "./media-card";
 import { cardGap, cardTopInset, drawDistanceFor, rowInsetStart, rowListHeight, type CardVariant } from "./row-geometry";
 import type { RowMemory } from "./row-memory";
@@ -64,7 +65,9 @@ const RowCell = memo(function RowCell({ rowId, index, item, variant, testID, onF
 
 const keyOf = (item: CardItem): string => item.id;
 
-export function MediaRow({ rowId, title, variant, items, memory, leftEdge = "trap", onCardFocus, onCardBlur, onCardPress, router, testID }: MediaRowProps) {
+export function MediaRow({ rowId, title, variant, items, memory, leftEdge: leftEdgeProp, onCardFocus, onCardBlur, onCardPress, router, testID }: MediaRowProps) {
+  const inherited = useContext(LeftEdgeContext);
+  const leftEdge = leftEdgeProp ?? inherited;
   const guideRef = useCallback(
     (guide: unknown) => {
       router?.registerGuide(rowId, guide as Parameters<RowRouter["registerGuide"]>[1]);
