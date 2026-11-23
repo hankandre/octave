@@ -7,6 +7,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity";
 import {
   INSTALL_ID_NOT_RUN_ERROR,
   INSTALL_ID_NOT_RUN_LINE,
@@ -22,7 +23,7 @@ import {
   transportSelected,
 } from "./tv-install-id.mjs";
 
-const APP = "dev.octave.tv";
+const APP = ANDROID_APPLICATION_ID;
 const SERIAL = "192.0.2.44:5555";
 const LOCAL = "com.android.localtransport/.LocalTransport";
 const PLAY = "com.google.android.gms/.backup.BackupTransportService";

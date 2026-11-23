@@ -1,0 +1,50 @@
+{
+  "task": "T3-21",
+  "files": [
+    "scripts/tv-signing.test.ts",
+    "scripts/tv-apk-signing.test.ts",
+    "scripts/tv-install-guard.test.ts",
+    "scripts/tv-app-identity.test.ts",
+    "scripts/tv-install-id-device.test.ts",
+    "packages/core/src/domain/app-identity.test.ts",
+    "scripts/fixtures/tv/signing/template-app-build.gradle",
+    "scripts/fixtures/tv/signing/apksigner-debug.txt",
+    "scripts/fixtures/tv/signing/apksigner-throwaway.txt",
+    "scripts/fixtures/tv/signing/apksigner-unverified.txt"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "gate": "owner",
+      "why": "The owner creates the private key and keeps it outside every checkout. The tracked-file and ignore-pattern tests of item 2 show that nothing committed holds a key or a signing password."
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-signing.test.ts", "-t", "T3-21 item 2:"]
+    },
+    {
+      "item": 3,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-apk-signing.test.ts", "-t", "T3-21 item 3:"]
+    },
+    {
+      "item": 4,
+      "run": ["pnpm", "exec", "vitest", "run", "scripts/tv-install-guard.test.ts", "-t", "T3-21 item 4:"]
+    },
+    {
+      "item": 5,
+      "gate": "owner",
+      "why": "The owner uninstalls the debug-signed or old-ID build from the Shield before the first private-key install; the evidence records it."
+    },
+    {
+      "item": 6,
+      "gate": "review",
+      "why": "A documentation item (docs/security.md, the PR body); no test reads a document's wording."
+    },
+    {
+      "item": 7,
+      "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/domain/app-identity.test.ts", "-t", "T3-21 item 7:"],
+      "also": ["pnpm", "exec", "vitest", "run", "scripts/tv-app-identity.test.ts", "-t", "T3-21 item 7:"],
+      "note": "The second command runs the new scripts/tv-app-identity.test.ts, which the root suite holds. The Product Owner's frozen-file commit changes the done tasks' tests that hold the old ID; AppIdentityTest (pnpm tv:native:test) and pnpm tv:apk:check on the built APK are regression evidence the verify step quotes."
+    }
+  ]
+}
