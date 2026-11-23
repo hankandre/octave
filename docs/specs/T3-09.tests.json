@@ -1,0 +1,136 @@
+{
+  "task": "T3-09",
+  "files": [
+    "apps/tv/src/shell/routes.test.tsx",
+    "apps/tv/src/shell/back.test.tsx",
+    "apps/tv/src/shell/rail-entries.test.tsx",
+    "apps/tv/src/shell/focus-place.test.tsx",
+    "apps/tv/src/shell/side-rail.test.tsx",
+    "apps/tv/src/shell/app-shell.test.tsx",
+    "apps/tv/src/shell/test-support/shell-fixtures.tsx",
+    "apps/tv/src/shell/test-support/focus-bridge-double.ts",
+    "apps/tv/src/shell/test-support/row-router-spy.ts"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/shell/side-rail.test.tsx",
+        "src/shell/app-shell.test.tsx",
+        "-t",
+        "T3-09 item 1:"
+      ]
+    },
+    {
+      "item": 2,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/shell/side-rail.test.tsx",
+        "src/shell/app-shell.test.tsx",
+        "-t",
+        "T3-09 item 2:"
+      ]
+    },
+    {
+      "item": 3,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/shell/rail-entries.test.tsx",
+        "src/shell/side-rail.test.tsx",
+        "src/shell/app-shell.test.tsx",
+        "-t",
+        "T3-09 item 3:"
+      ]
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/shell/focus-place.test.tsx",
+        "src/shell/app-shell.test.tsx",
+        "-t",
+        "T3-09 item 4:"
+      ]
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/shell/back.test.tsx",
+        "src/shell/app-shell.test.tsx",
+        "-t",
+        "T3-09 item 5:"
+      ]
+    },
+    {
+      "item": 6,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/shell/routes.test.tsx",
+        "src/shell/app-shell.test.tsx",
+        "-t",
+        "T3-09 item 6:"
+      ]
+    },
+    {
+      "item": 7,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/shell/routes.test.tsx",
+        "src/shell/app-shell.test.tsx",
+        "-t",
+        "T3-09 item 7:"
+      ]
+    },
+    {
+      "item": 8,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/shell/app-shell.test.tsx",
+        "-t",
+        "T3-09 item 8:"
+      ]
+    }
+  ]
+}
