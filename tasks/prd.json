@@ -1679,41 +1679,6 @@
           "evidence": ""
         },
         {
-          "id": "T3-38",
-          "title": "T3 hardening: close the review lows of T3-24, T3-25, T3-28, T3-29 and T3-30",
-          "domain": "Security & Redaction",
-          "lane": "native-session",
-          "model": "opus",
-          "skill": "native-player",
-          "human": false,
-          "depends_on": [
-            "T3-24",
-            "T3-25",
-            "T3-28",
-            "T3-29",
-            "T3-30",
-            "T3-31",
-            "T3-33"
-          ],
-          "acceptance": [
-            "The spec lists every finding of the five reviews (plans 011-t3-24, 012-t3-25, 012-t3-28, 013-t3-29 and 011-t3-30 under docs/plans/active, and the backlog lines this task took) with whether it still holds on main; one already fixed is closed with the commit, and the rest are closed by the items below",
-            "The request path rule, in RequestPath.kt and request-path.ts alike, refuses a segment that is only dots once the characters UTS #46 ignores (U+00AD and the variation selectors among them) or trailing spaces are removed, and refuses the characters a proxy may fold to a separator or a ; (U+FF0F, U+FF3C, U+FF1B, U+FE54, U+037E), as written or after any decoding round; a server address whose base path fails the rule is refused before any session opens; the spec rules on whether a query pair needs a rule for a ; or a control character and records why",
-            "New tests in files no manifest freezes: a closing call sent through the client the logout uses is refused outside the base path; RequestPath.isSafe refuses the raw C1 controls and the raw dot-like characters; a 100,000-deep object through the one client is unexpected-response",
-            "The native signIn closes the session when anything fails after SessionRegistry.open; the OutOfMemoryError mapping allocates nothing after the catch, or docs/security.md and decision 0005 state the limit; the number of values in a native answer is bounded, with the bound taken from the largest recorded answer; the reference transport and the TV adapter refuse an answer nested deeper than 64, or the spec shows from a test under Hermes and Node why they need not",
-            "The ELF reader records a problem for a REL or RELA section not linked to .dynsym, so L0 fails closed, and for an SHT_REL section or tests that path; a test shows L0 for a library with an undefined dispatcher symbol and packed relocations",
-            "D8's reader (scripts/octave-module-packages.mjs) reads a whole qualified package name and fails on a segment that is not a plain identifier, strips comments in one left-to-right pass, and fails closed on a Gradle namespace it cannot read, each with a test; a test asserts the text \"D8 read no Octave Kotlin or Java source\"",
-            "The dex check reports an entry whose CRC-32 does not match as damage in one ERROR tv apk dex: line, and counts a sink site once when the superclass walk finds it again; the source scan (pnpm lint:network) exempts only client sockets in DirectSocketFactory.kt and names the listening, datagram, factory, provider, MediaExtractor and MediaMetadataRetriever openers; the spec rules on a K4 twin for android.net.Network's opens and android.net.http",
-            "scripts/check-adb-output.mjs gives a finding for a template-literal specifier, a re-exporting helper, an interpreter given as a literal program, and a shell option under a quoted key or in a variable, each with a test, or docs/security.md lists the one the spec shows cannot be read as not covered",
-            "docs/security.md and ARCHITECTURE.md say what is built and no more: a stack overflow or out-of-memory error is never network; the debugOptimized run was the judge on a recorded cut; the inspector check also reads one debugger-only string; D8 covers what it reads; D0's bounds claim covers dex entries; and the decision 0005 bullet gives the path rule as built. The PR calls out every changed security rule",
-            "No frozen file changes: where a frozen test contradicts an item the task returns to the Product Owner. pnpm tv:apk:check still passes on the release APK the tv CI job builds, and the PR quotes its lines"
-          ],
-          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
           "id": "T3-26",
           "title": "Keep secrets out of the wire evidence and make a failed wire run plain",
           "domain": "Security & Redaction",
@@ -1835,30 +1800,6 @@
           "owner": "implementer",
           "passes": true,
           "evidence": "PR #265 merged 2026-11-22 as c47ccef3 (head ccf1c7c9): checks, dependency-review, tripwire and tv green on the head; tv job ran pnpm tv:apk:check on the release APK. Attributes read by resource id and reading mode. Detail in the PR."
-        },
-        {
-          "id": "T3-32",
-          "title": "Shorten the manifest check's allowed permissions and queries to what the release APK asks for",
-          "domain": "Security & Redaction",
-          "lane": "apk-checks",
-          "model": "sonnet",
-          "skill": "verify",
-          "human": false,
-          "depends_on": [
-            "T3-22",
-            "T3-23"
-          ],
-          "acceptance": [
-            "ALLOWED_PERMISSIONS and ALLOWED_QUERIES in scripts/tv-apk-manifest.mjs hold only what the release APK the tv job builds asks for (2 permissions and 0 queries on T3-19's build; the spec reads them again), and a test shows that a storage permission or a query added back fails the check",
-            "The spec says whether the four remove-markers in apps/tv/plugins/with-trimmed-manifest.js that now match nothing stay (the manifest merger only warns, and T3-22's frozen tests pin them) or go",
-            "T3-22's and T3-23's frozen tests pass unchanged; if one pins the longer lists the task returns to the Product Owner",
-            "pnpm tv:apk:check passes on the release APK the tv job builds, and docs/security.md section 6 lists what is allowed, in the same PR"
-          ],
-          "verify": "pnpm check && pnpm tv:build && pnpm tv:apk:check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
         },
         {
           "id": "T3-21",
@@ -2065,33 +2006,6 @@
             "Holding Down on the Shield is within the T3-12 budget with the animated focus lift kept (decision 0004 F1)"
           ],
           "verify": "mise exec -- pnpm check"
-        },
-        {
-          "id": "T3-18",
-          "title": "Measure the F4 browse rows' look trade-offs on the Shield for the owner to choose",
-          "domain": "App Shell & Presentation",
-          "lane": "device",
-          "model": "opus",
-          "skill": "verify",
-          "human": true,
-          "depends_on": [
-            "T3-08",
-            "T3-11",
-            "T3-12",
-            "T3-14"
-          ],
-          "acceptance": [
-            "The browse rows use F4 with a row draw distance of about 150, as decision 0004's addendum of 2026-11-21 says, and that build is the baseline of every measurement",
-            "Each of the four trade-offs is changed on its own and measured with T3-12's script: the lift that does not animate, 16-bit artwork, the 1280 px backdrop, and no in-memory image cache",
-            "Shield check (owner): each variant's memory and frame numbers are measured on the Shield and stored with the commit they measured, beside the baseline and T3-12's budget",
-            "Owner decision: the owner chooses which changes stay, from the numbers and the look on the Shield; no variant that misses the memory or frame target is kept",
-            "The chosen look is recorded in a decision file, and DESIGN.md takes it in the same PR"
-          ],
-          "verify": "pnpm check && pnpm tv:e2e",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
         }
       ]
     },
@@ -2648,29 +2562,6 @@
             "A letter with no titles is shown as unavailable and skipped",
             "From the grid, any letter is reached in 19 presses or fewer in a 1,000-title fixture library",
             "On a server that cannot count the titles before a name, as Jellyscale cannot today, the rail is hidden (T10-09 changes this)"
-          ],
-          "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T6-05",
-          "title": "Filter a library by unwatched and favourites",
-          "domain": "Catalog",
-          "lane": "ui",
-          "model": "sonnet",
-          "skill": "jellyfin-api",
-          "human": false,
-          "depends_on": [
-            "T6-03"
-          ],
-          "acceptance": [
-            "Unwatched and Favourites are toggles beside the sort control, each showing its state in words or an icon change, never colour alone",
-            "A filter that is on is saved with the sort and is clearly shown on the next visit",
-            "A filtered library with no titles shows Nothing matches these filters with Clear filters",
-            "The count beside the controls is the filtered total"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -3441,31 +3332,6 @@
           "evidence": ""
         },
         {
-          "id": "T8-16",
-          "title": "Show scrub previews from trickplay",
-          "domain": "Playback Session",
-          "lane": "player",
-          "model": "opus",
-          "skill": "native-player",
-          "human": false,
-          "depends_on": [
-            "T8-05"
-          ],
-          "acceptance": [
-            "While scrubbing, a preview frame for the pending position shows above the scrubber with the time",
-            "Tiles are fetched only through the one OkHttp client, at the width nearest the preview size",
-            "A title with no trickplay shows the time alone",
-            "The HLS master URL still carries EnableTrickplay=false, and no playlist lists trickplay renditions",
-            "Tiles are dropped from memory when the player closes",
-            "A capture against a local test server shows the header on every tile request and no credential parameter (the Jellyscale wire test is T10-11, when the server has trickplay)"
-          ],
-          "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
           "id": "T8-17",
           "title": "Explain refusals and playback errors in plain words",
           "domain": "Playback Session",
@@ -3509,31 +3375,6 @@
             "Jellyscale wire test: a limit change during a play from the pinned Jellyscale ends the old session and the new session's requests carry the header"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T8-19",
-          "title": "Open a title or start playback from a link that carries no token",
-          "domain": "App Shell & Presentation",
-          "lane": "ui",
-          "model": "sonnet",
-          "skill": "change-review",
-          "human": false,
-          "depends_on": [
-            "T8-03",
-            "T7-01"
-          ],
-          "acceptance": [
-            "A link naming a server id and an item id opens that title's page, or plays it when the link says play, for the signed-in account on that server",
-            "A link with any credential parameter, user info or an unknown field is refused and opens Home",
-            "A link for a server with no signed-in account opens sign-in for that server and continues to the title afterwards",
-            "Playback from a link goes through Playback Negotiation like a press on Play",
-            "The app never puts a token, a play-session id or a server address in a link it builds"
-          ],
-          "verify": "pnpm check",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -3949,22 +3790,28 @@
             "T10-02",
             "T10-03",
             "T10-04",
+            "T3-13",
+            "T3-14",
+            "T3-17",
+            "T3-34",
+            "T3-35",
+            "T4-01",
             "T4-06",
+            "T4-08",
             "T5-06",
-            "T6-05",
             "T6-07",
             "T6-08",
             "T7-03",
             "T7-04",
             "T7-05",
             "T7-06",
+            "T8-05",
             "T8-12",
             "T8-13",
-            "T8-16",
             "T8-17",
             "T8-18",
-            "T8-19",
             "T8-21",
+            "T8-23",
             "T9-04",
             "T9-05",
             "T9-06"
@@ -4093,29 +3940,6 @@
             "A title without segments still shows nothing"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T10-11",
-          "title": "Show scrub previews on Jellyscale (Jellyscale #105)",
-          "domain": "Playback Session",
-          "lane": "player",
-          "model": "opus",
-          "skill": "native-player",
-          "human": false,
-          "depends_on": [
-            "T8-16"
-          ],
-          "acceptance": [
-            "Blocked on Jellyscale #105: the task starts when the pinned Jellyscale has it; until then its status is blocked with the issue's state in evidence",
-            "On the pinned Jellyscale, scrubbing shows preview frames for a title that has trickplay",
-            "Jellyscale wire test: every tile request carries the header and no credential parameter",
-            "The HLS master URL still carries EnableTrickplay=false"
-          ],
-          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -4350,27 +4174,6 @@
           "owner": null,
           "passes": false,
           "evidence": ""
-        },
-        {
-          "skill": null,
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": null,
-          "id": "T11-08",
-          "title": "Test focus on a Fire TV device (react-native-tvos #1162)",
-          "domain": "Device lab",
-          "lane": "device",
-          "model": "haiku",
-          "human": true,
-          "depends_on": [
-            "T0-05"
-          ],
-          "acceptance": [
-            "On a Fire OS 7 or 8 device, 500 scripted D-pad presses on Home lose focus zero times and show no oscillation",
-            "If #1162 reproduces, a workaround or upstream fix is recorded before release"
-          ],
-          "verify": "adb devices"
         }
       ]
     },
@@ -4559,6 +4362,209 @@
             "Nothing from outside the library, no shuffle play, and nothing that plays by itself is added"
           ],
           "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T6-05",
+          "title": "Filter a library by unwatched and favourites",
+          "domain": "Catalog",
+          "lane": "ui",
+          "model": "sonnet",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "T6-03"
+          ],
+          "acceptance": [
+            "Unwatched and Favourites are toggles beside the sort control, each showing its state in words or an icon change, never colour alone",
+            "A filter that is on is saved with the sort and is clearly shown on the next visit",
+            "A filtered library with no titles shows Nothing matches these filters with Clear filters",
+            "The count beside the controls is the filtered total"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T8-16",
+          "title": "Show scrub previews from trickplay",
+          "domain": "Playback Session",
+          "lane": "player",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T8-05"
+          ],
+          "acceptance": [
+            "While scrubbing, a preview frame for the pending position shows above the scrubber with the time",
+            "Tiles are fetched only through the one OkHttp client, at the width nearest the preview size",
+            "A title with no trickplay shows the time alone",
+            "The HLS master URL still carries EnableTrickplay=false, and no playlist lists trickplay renditions",
+            "Tiles are dropped from memory when the player closes",
+            "A capture against a local test server shows the header on every tile request and no credential parameter (the Jellyscale wire test is T10-11, when the server has trickplay)"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T10-11",
+          "title": "Show scrub previews on Jellyscale (Jellyscale #105)",
+          "domain": "Playback Session",
+          "lane": "player",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T8-16"
+          ],
+          "acceptance": [
+            "Blocked on Jellyscale #105: the task starts when the pinned Jellyscale has it; until then its status is blocked with the issue's state in evidence",
+            "On the pinned Jellyscale, scrubbing shows preview frames for a title that has trickplay",
+            "Jellyscale wire test: every tile request carries the header and no credential parameter",
+            "The HLS master URL still carries EnableTrickplay=false"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T8-19",
+          "title": "Open a title or start playback from a link that carries no token",
+          "domain": "App Shell & Presentation",
+          "lane": "ui",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T8-03",
+            "T7-01"
+          ],
+          "acceptance": [
+            "A link naming a server id and an item id opens that title's page, or plays it when the link says play, for the signed-in account on that server",
+            "A link with any credential parameter, user info or an unknown field is refused and opens Home",
+            "A link for a server with no signed-in account opens sign-in for that server and continues to the title afterwards",
+            "Playback from a link goes through Playback Negotiation like a press on Play",
+            "The app never puts a token, a play-session id or a server address in a link it builds"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "skill": null,
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": null,
+          "id": "T11-08",
+          "title": "Test focus on a Fire TV device (react-native-tvos #1162)",
+          "domain": "Device lab",
+          "lane": "device",
+          "model": "haiku",
+          "human": true,
+          "depends_on": [
+            "T0-05"
+          ],
+          "acceptance": [
+            "On a Fire OS 7 or 8 device, 500 scripted D-pad presses on Home lose focus zero times and show no oscillation",
+            "If #1162 reproduces, a workaround or upstream fix is recorded before release"
+          ],
+          "verify": "adb devices"
+        },
+        {
+          "id": "T3-18",
+          "title": "Measure the F4 browse rows' look trade-offs on the Shield for the owner to choose",
+          "domain": "App Shell & Presentation",
+          "lane": "device",
+          "model": "opus",
+          "skill": "verify",
+          "human": true,
+          "depends_on": [
+            "T3-08",
+            "T3-11",
+            "T3-12",
+            "T3-14"
+          ],
+          "acceptance": [
+            "The browse rows use F4 with a row draw distance of about 150, as decision 0004's addendum of 2026-11-21 says, and that build is the baseline of every measurement",
+            "Each of the four trade-offs is changed on its own and measured with T3-12's script: the lift that does not animate, 16-bit artwork, the 1280 px backdrop, and no in-memory image cache",
+            "Shield check (owner): each variant's memory and frame numbers are measured on the Shield and stored with the commit they measured, beside the baseline and T3-12's budget",
+            "Owner decision: the owner chooses which changes stay, from the numbers and the look on the Shield; no variant that misses the memory or frame target is kept",
+            "The chosen look is recorded in a decision file, and DESIGN.md takes it in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-38",
+          "title": "T3 hardening: close the review lows of T3-24, T3-25, T3-28, T3-29 and T3-30",
+          "domain": "Security & Redaction",
+          "lane": "native-session",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-24",
+            "T3-25",
+            "T3-28",
+            "T3-29",
+            "T3-30",
+            "T3-31",
+            "T3-33"
+          ],
+          "acceptance": [
+            "The spec lists every finding of the five reviews (plans 011-t3-24, 012-t3-25, 012-t3-28, 013-t3-29 and 011-t3-30 under docs/plans/active, and the backlog lines this task took) with whether it still holds on main; one already fixed is closed with the commit, and the rest are closed by the items below",
+            "The request path rule, in RequestPath.kt and request-path.ts alike, refuses a segment that is only dots once the characters UTS #46 ignores (U+00AD and the variation selectors among them) or trailing spaces are removed, and refuses the characters a proxy may fold to a separator or a ; (U+FF0F, U+FF3C, U+FF1B, U+FE54, U+037E), as written or after any decoding round; a server address whose base path fails the rule is refused before any session opens; the spec rules on whether a query pair needs a rule for a ; or a control character and records why",
+            "New tests in files no manifest freezes: a closing call sent through the client the logout uses is refused outside the base path; RequestPath.isSafe refuses the raw C1 controls and the raw dot-like characters; a 100,000-deep object through the one client is unexpected-response",
+            "The native signIn closes the session when anything fails after SessionRegistry.open; the OutOfMemoryError mapping allocates nothing after the catch, or docs/security.md and decision 0005 state the limit; the number of values in a native answer is bounded, with the bound taken from the largest recorded answer; the reference transport and the TV adapter refuse an answer nested deeper than 64, or the spec shows from a test under Hermes and Node why they need not",
+            "The ELF reader records a problem for a REL or RELA section not linked to .dynsym, so L0 fails closed, and for an SHT_REL section or tests that path; a test shows L0 for a library with an undefined dispatcher symbol and packed relocations",
+            "D8's reader (scripts/octave-module-packages.mjs) reads a whole qualified package name and fails on a segment that is not a plain identifier, strips comments in one left-to-right pass, and fails closed on a Gradle namespace it cannot read, each with a test; a test asserts the text \"D8 read no Octave Kotlin or Java source\"",
+            "The dex check reports an entry whose CRC-32 does not match as damage in one ERROR tv apk dex: line, and counts a sink site once when the superclass walk finds it again; the source scan (pnpm lint:network) exempts only client sockets in DirectSocketFactory.kt and names the listening, datagram, factory, provider, MediaExtractor and MediaMetadataRetriever openers; the spec rules on a K4 twin for android.net.Network's opens and android.net.http",
+            "scripts/check-adb-output.mjs gives a finding for a template-literal specifier, a re-exporting helper, an interpreter given as a literal program, and a shell option under a quoted key or in a variable, each with a test, or docs/security.md lists the one the spec shows cannot be read as not covered",
+            "docs/security.md and ARCHITECTURE.md say what is built and no more: a stack overflow or out-of-memory error is never network; the debugOptimized run was the judge on a recorded cut; the inspector check also reads one debugger-only string; D8 covers what it reads; D0's bounds claim covers dex entries; and the decision 0005 bullet gives the path rule as built. The PR calls out every changed security rule",
+            "No frozen file changes: where a frozen test contradicts an item the task returns to the Product Owner. pnpm tv:apk:check still passes on the release APK the tv CI job builds, and the PR quotes its lines"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-32",
+          "title": "Shorten the manifest check's allowed permissions and queries to what the release APK asks for",
+          "domain": "Security & Redaction",
+          "lane": "apk-checks",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T3-22",
+            "T3-23"
+          ],
+          "acceptance": [
+            "ALLOWED_PERMISSIONS and ALLOWED_QUERIES in scripts/tv-apk-manifest.mjs hold only what the release APK the tv job builds asks for (2 permissions and 0 queries on T3-19's build; the spec reads them again), and a test shows that a storage permission or a query added back fails the check",
+            "The spec says whether the four remove-markers in apps/tv/plugins/with-trimmed-manifest.js that now match nothing stay (the manifest merger only warns, and T3-22's frozen tests pin them) or go",
+            "T3-22's and T3-23's frozen tests pass unchanged; if one pins the longer lists the task returns to the Product Owner",
+            "pnpm tv:apk:check passes on the release APK the tv job builds, and docs/security.md section 6 lists what is allowed, in the same PR"
+          ],
+          "verify": "pnpm check && pnpm tv:build && pnpm tv:apk:check",
           "status": "todo",
           "owner": null,
           "passes": false,
