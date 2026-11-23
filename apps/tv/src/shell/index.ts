@@ -1,0 +1,11 @@
+export { AppShell } from "./app-shell";
+export type { AppShellProps } from "./app-shell";
+export { NotFoundScreen } from "./not-found-screen";
+export { railEntries } from "./rail-entries";
+export type { RailEntry, RailIconName, RailKey } from "./rail-entries";
+export { buildPath, chromeOf, fromScreen, isRoot, parsePath, railKeyOf, toScreen } from "./routes";
+export type { Route, RouteKind } from "./routes";
+export { useShell } from "./shell-context";
+export type { ShellApi } from "./shell-context";
+export { RailIconsProvider, SideRail } from "./side-rail";
+export type { RailIcons, SideRailProps } from "./side-rail";

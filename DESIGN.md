@@ -458,6 +458,7 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Settings, copy diagnostics | n/a | Diagnostics copied | Copy |
 | Settings, copy failed | n/a | Couldn't copy. Select the text below and copy it. | n/a |
 | Item gone | This item is no longer on the server | It may have been removed or renamed. | Go home |
+| Page not available (an unknown route; owner, 2026-11-23, `docs/specs/decisions-owner-inbox-2026-11-23b.md` §1) | This page isn't available | It may have moved, or this account can't see it. | Go home |
 | Player loading | n/a | Opening the original file… | Back |
 | Player, this device can't play the original | n/a | Converting on server: this device can't play the original file. | n/a |
 | Player loading, converting | n/a | Converting on server: {reason}… | Back |
