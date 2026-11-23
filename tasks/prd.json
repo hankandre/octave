@@ -3509,10 +3509,10 @@
             "Defaults: auto-play next on, countdown 10 s, intros and credits Show a Skip button, limits No limit, Continue watching window 90 days"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit b0a98625 (milestones from commit 958db14f: native store, core split, TV store, docs). pnpm check green (core 3353, TV jest 152, root 2263); green gate items 1-5; tv:native:test 732 passed (PreferencesStoreTest 14, ModuleSurfaceTest 4); tv:build + tv:apk:check pass; tv:e2e passed on own fluster_tv emulator. Untested: Shield/real TV, other Android versions; no server calls."
+          "passes": true,
+          "evidence": "commit 1f327bfa (milestones from commit 958db14f; review low fixed: native store accepts only the encoder's order, 81 texts). pnpm check green (core 3353, TV jest 152, root 2263); gate items 1-5 green; tv:native:test 733 passed (PreferencesRecordOrderTest 1, PreferencesStoreTest 14); tv:e2e passed on own fluster_tv emulator (url 202/202, install-id ok). Untested: Shield/real TV, other Android versions; no server calls, so no Jellyfin or Jellyscale gate."
         },
         {
           "id": "T9-09",
