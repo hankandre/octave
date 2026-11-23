@@ -1,5 +1,6 @@
 package dev.octave.player
 
+import dev.octave.player.media3.Media3Engine
 import dev.octave.player.seam.PlayerSeam
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
@@ -10,14 +11,18 @@ import expo.modules.kotlin.modules.ModuleDefinition
 // scripts/tv-module-surfaces.test.ts. Each command takes at most one map and resolves one map (PlayerSeam); none
 // rejects on purpose.
 //
-// No engine is behind the seam until T8-02, so initialize answers "cannot tell" and a launch unsupported-request.
+// The engine behind the seam is Media3Engine (T8-02); it reads the app's context at its first launch, so the module
+// needs no OnCreate.
 //
 // Threading: each body hands the call to CommandQueue, this module's own single thread, and returns, so a command
 // never holds Expo's shared modules queue and commands run in the order they came. A command still queued when the
-// module is destroyed answers `unknown`. An engine marshals to the thread its player needs.
+// module is destroyed answers `unknown`. The engine marshals to the main thread its player needs; on destroy it is
+// stopped first, inline when Expo calls OnDestroy on the main thread.
 class OctavePlayerModule : Module() {
     private val commands = CommandQueue()
-    private val seam = PlayerSeam(null, RegistrySessionCheck) { event -> sendEvent("playerEvent", event) }
+    private val seam = PlayerSeam(Media3Engine(context = { appContext.reactContext?.applicationContext }), RegistrySessionCheck) { event ->
+        sendEvent("playerEvent", event)
+    }
 
     override fun definition() = ModuleDefinition {
         Name("OctavePlayer")
@@ -39,6 +44,7 @@ class OctavePlayerModule : Module() {
         View(OctavePlayerView::class) {}
 
         OnDestroy {
+            seam.stop()
             commands.close()
         }
     }

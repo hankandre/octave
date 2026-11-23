@@ -1,8 +1,9 @@
 // Rule D4 of the dex check (T3-19, decision logs 14, 22 and 27): Octave's code references no listed class, a merged
 // lambda group's dispatch references no client hook, and Octave takes a call or web socket factory only from its own
 // code. Split out of scripts/tv-apk-dex-judge.mjs in T3-29; `ctx` is the judge's state for one listing:
-// { mapping, lists, listed, factories, report, leftBeforeR8 }.
-import { dexTypeName, originalsOf } from "./tv-apk-dex-mapping.mjs";
+// { mapping, lists, listed, factories, report, leftBeforeR8, usedExceptions }. T8-02 adds D4_EXCEPTIONS, the one
+// constructor the Product Owner let Octave's engine package reference (exceptionFor).
+import { dexTypeName, memberTypes, originalsOf } from "./tv-apk-dex-mapping.mjs";
 import { judgeSet, referenceSets } from "./tv-apk-dex-merged.mjs";
 import { OCTAVE, SEND_THROUGH, isOctave, isSyntheticOnly, matchesClass, returnToken, where, who } from "./tv-apk-dex-operand.mjs";
 
@@ -27,6 +28,37 @@ export function judgeHookDispatch(ctx, site, holders) {
   }
 }
 
+// The original classes of a dex constructor's parameters when it takes exactly one class-typed parameter, else null.
+function oneParameter(mapping, member) {
+  const params = member.descriptor.slice(1, member.descriptor.lastIndexOf(")"));
+  if (!/^L[^;]+;$/.test(params)) return null;
+  return memberTypes(mapping, member.owner, member.name, member.descriptor, true) ?? originalsOf(mapping, dexTypeName(params));
+}
+
+/**
+ * The D4_EXCEPTIONS entry (T8-02; Product Owner ruling of 2026-11-23) that lets `frame` reference `name`, or undefined.
+ * `how` is the reference's shape: `{ kind: "operand", opcode, member, set, holderSet }` for the instruction's own
+ * operand, or `{ kind: "inlined", callee }` for the callee frame R8 inlined into `frame`. Only three shapes pass, from
+ * a real frame of a class under the entry's package, naming exactly the entry's class as the one original of its set:
+ * a new-instance of it, an invoke-direct of its constructor, and that constructor inlined.
+ */
+function exceptionFor(ctx, frame, name, how) {
+  if (frame.synthetic) return undefined;
+  for (const entry of ctx.lists.d4Exceptions ?? []) {
+    if (name !== entry.class || !frame.holder.startsWith(entry.package)) continue;
+    const takes = (originals) => originals !== null && entry.constructor.length === 1 && originals.size === 1 && originals.has(entry.constructor[0]);
+    if (how.kind === "inlined") {
+      if (how.callee.method === "<init>" && how.callee.args === entry.constructor.join(",")) return entry;
+      continue;
+    }
+    if (how.set.size !== 1) continue;
+    if (how.opcode === "new-instance" && !how.member) return entry;
+    const invokeDirect = how.opcode === "invoke-direct" || how.opcode === "invoke-direct/range";
+    if (invokeDirect && how.holderSet && how.member.method && how.member.name === "<init>" && takes(oneParameter(ctx.mapping, how.member))) return entry;
+  }
+  return undefined;
+}
+
 /** D4 and decision log 14's factory rule for one instruction at a site that holds Octave's code. */
 export function judgeOctaveReference(ctx, site, opcode, operand, parsed, holders) {
   const { mapping, lists, listed, report } = ctx;
@@ -38,18 +70,25 @@ export function judgeOctaveReference(ctx, site, opcode, operand, parsed, holders
   // before R8.
   const octaveHolder = site.stacks.flatMap((s) => s).find(isOctave).holder;
   const listedEntry = (name) => listed.find((entry) => matchesClass(name, entry));
-  const judgeReference = (frame, name) => {
+  const judgeReference = (frame, name, how) => {
     const hit = listedEntry(name);
-    if (hit) report(`D4|${frame.holder}|${name}`, `D4 ${who(frame)} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
+    if (!hit) return;
+    const exception = exceptionFor(ctx, frame, name, how);
+    if (exception) {
+      ctx.usedExceptions?.add(exception.id);
+      return;
+    }
+    report(`D4|${frame.holder}|${name}`, `D4 ${who(frame)} references ${name} at ${where(site)}, which ${lists.hooks.includes(hit) ? "is a client hook (ENTRY_POINT_HOOKS)" : "is on APK_NETWORK_ENTRY_POINTS"}; ${SEND_THROUGH}`);
   };
   let operandSets = null;
   const judgeOperand = (frame) => {
     operandSets ??= referenceSets(mapping, parsed);
-    for (const set of operandSets) {
+    operandSets.forEach((set, index) => {
       const verdict = judgeSet(set, (name) => listedEntry(name) !== undefined);
-      for (const name of verdict.listed) judgeReference(frame, name);
+      const how = { kind: "operand", opcode, member, set, holderSet: member !== null && index === 0 };
+      for (const name of verdict.listed) judgeReference(frame, name, how);
       if (verdict.mixed) ctx.leftBeforeR8.add(`${where(site)}|${opcode} ${operand}|${[...set].sort().join(",")}`);
-    }
+    });
   };
   for (const stack of site.stacks) {
     // R8's dispatch casts a merged lambda's captured value back to its type before the case's code; the cast is R8's,
@@ -62,7 +101,7 @@ export function judgeOctaveReference(ctx, site, opcode, operand, parsed, holders
       if (!frame.octave) return;
       if (i === 0) {
         if (!dispatchCast) judgeOperand(frame);
-      } else if (!stack[i - 1].octave) judgeReference(frame, stack[i - 1].holder);
+      } else if (!stack[i - 1].octave) judgeReference(frame, stack[i - 1].holder, { kind: "inlined", callee: stack[i - 1] });
     });
   }
   // Decision log 14: Octave takes a call or web socket factory only from Octave's own code.
