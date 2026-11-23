@@ -3237,10 +3237,10 @@
             "Each rule has a core test from a recorded fixture, and the tripwire expectations in tests/integration take any changed result"
           ],
           "verify": "pnpm --filter @octave/core test && pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "commit 09233695 (review fixes: forced audio flag judges the pick, playable copy not refused for its target, aspect-kept target size) on d85e25ce/424cb1be. pnpm check exit 0 (core 140 files/3920 tests). pnpm test:tripwire passed on own servers; no-h264 refused on all three. No device reports maxLevel, maxFrameRate or maxAudioChannels yet, so those rules decide nothing on a device until the probe fills them (backlog). Pending CI: tv:wire player-capabilities, tripwire job. Untested: every physical device and Android version."
+          "passes": true,
+          "evidence": "PR #327, commit 09233695 (fixes, tests). pnpm check exit 0 (core 140 files/3920 tests). Local tripwire passed, no-h264 refused on all three servers. CI run https://github.com/jellyscale-org/octave/actions/runs/45212490176: tripwire, wire player-capabilities (jellyscale nodecoder=refused reason=device-cannot-play; jellyfin-12 nodecoder=transcode client=DeviceCannotPlay), tv, checks pass. Untested: physical devices; maxLevel/maxFrameRate/channels unprobed (backlog)."
         },
         {
           "id": "T8-24",
