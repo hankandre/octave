@@ -11,3 +11,18 @@ export function ensureFixtures(
     pnpm?: (script: string) => void;
   },
 ): Promise<void>;
+export const READS_JELLYFIN_LIBRARY: readonly string[];
+export const SCANNED_SAMPLES: readonly string[];
+export const SCAN_LIMIT_MS: number;
+export function scanTargetsOf(pairs: { test: string; target: string }[]): string[];
+export function scanJellyfinLibraries(
+  pairs: { test: string; target: string }[],
+  options: {
+    credentials: Record<string, string>;
+    secrets: Set<string>;
+    fetch?: (url: string, init: RequestInit) => Promise<Response>;
+    sleep?: (ms: number) => Promise<void>;
+    now?: () => number;
+    log?: (line: string) => void;
+  },
+): Promise<void>;

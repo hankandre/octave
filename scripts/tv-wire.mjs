@@ -26,7 +26,7 @@ import { describeLogKept, logKeptErrors, startLogKeeper } from "./tv-wire-logcat
 import { startMock } from "./tv-wire-mock.mjs";
 import { proxyRequestsNamingTargets, startProxyListener, startRecorder } from "./tv-wire-proxy.mjs";
 import { readDecoderList } from "./tv-wire-decoders.mjs";
-import { ensureFixtures, readWireCredentials, upstreamPort } from "./tv-wire-fixtures.mjs";
+import { ensureFixtures, readWireCredentials, scanJellyfinLibraries, upstreamPort } from "./tv-wire-fixtures.mjs";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
 const LIST = join(repo, "apps", "tv", "src", "e2e", "wire", "wire-tests.json");
@@ -255,6 +255,12 @@ async function main(args) {
   const adbd = () => adbdOf(shell("ps", "-A", "-o", "PID,ELAPSED,NAME").stdout ?? "");
   const secrets = new Set([list.canary, list.password]);
   for (const target of REAL_TARGETS) if (credentials[`${target}_password`]) secrets.add(credentials[`${target}_password`]);
+  // The Jellyfin libraries a selected test reads are scanned before the first pair runs (T8-07); its token joins secrets.
+  try {
+    await scanJellyfinLibraries(selected, { credentials, secrets });
+  } catch (error) {
+    fail(error.message);
+  }
 
   // One whole run with its own mock, recorders, proxy listener and reverses.
   const attempt = async () => {
