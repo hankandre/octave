@@ -3155,10 +3155,10 @@
             "The app's composition fails when no device capability source is passed to the gateway; the full-capability default is never used in the app"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "In progress at commit ee7e6989 (with commit c7e19109 probe, commit 150bd949 app factory). pnpm check and tv:native:test (931) pass. tv:wire on own TV emulator (API 36): T8-07 jellyscale pass; jellyfin-12 fail (h264plan=not-found: setup never scans Jellyfin libraries, and 12.4 names the sample 'Synthetic H264 (2024)'); PO question open. T8-02 and T3-05 pairs pass. No-decoder sample negotiated, not played; its device play is an untested gate (T8-20, T10-08)."
         },
         {
           "id": "T8-23",
