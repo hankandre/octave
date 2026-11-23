@@ -3240,7 +3240,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "commit d85e25ce (judgeConversion, limits) and 424cb1be (docs). pnpm check exit 0 (core 139 files/3904 tests). pnpm test:tripwire passed on own servers; no-h264 refused on all three. No device reports maxLevel, maxFrameRate or maxAudioChannels yet, so those rules decide nothing on a device until the probe fills them (backlog). Untested: tv:wire player-capabilities (CI), every physical device and Android version."
+          "evidence": "commit 09233695 (review fixes: forced audio flag judges the pick, playable copy not refused for its target, aspect-kept target size) on d85e25ce/424cb1be. pnpm check exit 0 (core 140 files/3920 tests). pnpm test:tripwire passed on own servers; no-h264 refused on all three. No device reports maxLevel, maxFrameRate or maxAudioChannels yet, so those rules decide nothing on a device until the probe fills them (backlog). Pending CI: tv:wire player-capabilities, tripwire job. Untested: every physical device and Android version."
         },
         {
           "id": "T8-24",
