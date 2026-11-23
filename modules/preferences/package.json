@@ -1,0 +1,8 @@
+{
+  "name": "@octave/preferences",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "description": "Octave's preferences record store (T9-02): two functions, read() and write(record), which keep the device's one non-secret preferences record in the app's no-backup directory.",
+  "main": "src/index.ts"
+}
