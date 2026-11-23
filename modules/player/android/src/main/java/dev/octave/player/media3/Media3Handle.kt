@@ -113,10 +113,11 @@ internal class Media3Handle(
 
     override fun onPlayerError(error: PlaybackException) = signal(this, EngineSignal.Failed(error.errorCode, causes(error.cause)))
 
-    // The decoder's flags are Media3's entry for that name and the video's type; none when Media3 lists no such name.
-    // ExoPlayer reports the decoder before the input format that made it, so the facts go out once both are known.
+    // The decoder's flags are Media3's entry for that name under the video's type or the type Media3 may decode it as
+    // instead (a Dolby Vision track on an HEVC decoder); none when Media3 lists no such name. ExoPlayer reports the
+    // decoder before the input format that made it, so the facts go out once both are known.
     private var decoderName: String? = null
-    private var videoType: String? = null
+    private var videoFormat: Format? = null
 
     override fun onVideoDecoderInitialized(
         eventTime: AnalyticsListener.EventTime,
@@ -130,19 +131,22 @@ internal class Media3Handle(
 
     override fun onVideoInputFormatChanged(eventTime: AnalyticsListener.EventTime, format: Format, decoderReuseEvaluation: DecoderReuseEvaluation?) {
         val type = format.sampleMimeType ?: return
-        if (type == videoType) return
-        videoType = type
+        if (type == videoFormat?.sampleMimeType) return
+        videoFormat = format
         reportDecoder()
     }
 
     private fun reportDecoder() {
         val name = decoderName ?: return
-        val type = videoType ?: return
+        val format = videoFormat ?: return
         decoderName = null
-        val info = try {
-            MediaCodecUtil.getDecoderInfos(type, false, false).firstOrNull { it.name == name }
-        } catch (_: MediaCodecUtil.DecoderQueryException) {
-            null
+        val types = listOfNotNull(format.sampleMimeType, MediaCodecUtil.getAlternativeCodecMimeType(format)).distinct()
+        val info = types.firstNotNullOfOrNull { type ->
+            try {
+                MediaCodecUtil.getDecoderInfos(type, false, false).firstOrNull { it.name == name }
+            } catch (_: MediaCodecUtil.DecoderQueryException) {
+                null
+            }
         }
         signal(this, EngineSignal.DecoderInitialized(name, info?.hardwareAccelerated, info?.softwareOnly, Build.VERSION.SDK_INT))
     }

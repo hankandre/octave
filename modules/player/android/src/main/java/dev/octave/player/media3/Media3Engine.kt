@@ -8,6 +8,7 @@ import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import dev.octave.player.VideoSurfaceSlot
 import dev.octave.player.engine.EngineCore
+import dev.octave.player.engine.MainThreadGate
 import dev.octave.player.seam.Capabilities
 import dev.octave.player.seam.LaunchRequest
 import dev.octave.player.seam.PlaybackEngine
@@ -15,22 +16,26 @@ import dev.octave.player.seam.PlayerEngineException
 import dev.octave.player.seam.PlayerErrorCode
 import dev.octave.player.seam.PlayerEvent
 import dev.octave.player.seam.TrackType
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.FutureTask
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 // The Android engine behind the seam (T8-02): EngineCore's rules over one Media3Handle per launch. The capability
 // probe stays "cannot tell" until T8-07, and HLS stays unsupported until T8-08.
 //
-// Threading (docs/specs/T8-02.md, "Threading"): the players and EngineCore live on the main looper. Each method runs
-// its work inline when called on the main looper, and otherwise posts it to the main thread and waits at most 10 s,
-// so CommandQueue's thread waits and a main-thread caller (the module's OnDestroy) neither blocks nor times out. The
-// surface listener runs on the UI thread, which is the main thread, and never waits. The engine logs nothing, and
-// Media3's own logging is off before the first player (D12).
+// Threading (docs/specs/T8-02.md, "Threading"): the players and EngineCore live on the main looper. MainThreadGate
+// runs each method inline when called on the main looper, and otherwise posts it to the main thread and waits at most
+// 10 s, so CommandQueue's thread waits and a main-thread caller (the module's OnDestroy) neither blocks nor times out.
+// Once `closed()` holds (the module was destroyed), every call but stop is refused when it comes to run, and a launch
+// whose caller stopped waiting is stopped when it finishes late. The surface listener runs on the UI thread, which is
+// the main thread, and never waits. The engine logs nothing, and Media3's own logging is off before the first player
+// (D12).
 @OptIn(UnstableApi::class)
-class Media3Engine(private val context: () -> Context?) : PlaybackEngine {
+class Media3Engine(private val context: () -> Context?, closed: () -> Boolean) : PlaybackEngine {
     private val main = Handler(Looper.getMainLooper())
+    private val gate = MainThreadGate(
+        onMainThread = { Looper.myLooper() == Looper.getMainLooper() },
+        post = { work -> main.post(work) },
+        closed = closed,
+        waitMillis = MAIN_WAIT_MILLIS,
+    )
 
     @Volatile
     private var listener: ((PlayerEvent) -> Unit)? = null
@@ -45,7 +50,7 @@ class Media3Engine(private val context: () -> Context?) : PlaybackEngine {
         this.listener = listener
     }
 
-    override fun launch(request: LaunchRequest) = onMain {
+    override fun launch(request: LaunchRequest) = gate.run(undoLate = ::release) {
         if (request !is LaunchRequest.Original) throw PlayerEngineException(PlayerErrorCode.UNSUPPORTED_REQUEST)
         if (context() == null) throw PlayerEngineException(PlayerErrorCode.UNSUPPORTED_REQUEST)
         if (!logsOff) {
@@ -59,13 +64,15 @@ class Media3Engine(private val context: () -> Context?) : PlaybackEngine {
         core.launch(request)
     }
 
-    override fun setPaused(paused: Boolean) = onMain { core.setPaused(paused) }
+    override fun setPaused(paused: Boolean) = gate.run { core.setPaused(paused) }
 
-    override fun seek(positionSeconds: Double) = onMain { core.seek(positionSeconds) }
+    override fun seek(positionSeconds: Double) = gate.run { core.seek(positionSeconds) }
 
-    override fun selectTrack(type: TrackType, playerId: Int?) = onMain { core.selectTrack(type, playerId) }
+    override fun selectTrack(type: TrackType, playerId: Int?) = gate.run { core.selectTrack(type, playerId) }
 
-    override fun stop() = onMain {
+    override fun stop() = gate.runEvenWhenClosed(::release)
+
+    private fun release() {
         core.stop()
         if (holdsSurface) {
             VideoSurfaceSlot.setListener(null)
@@ -79,21 +86,7 @@ class Media3Engine(private val context: () -> Context?) : PlaybackEngine {
         return Media3Handle(appContext, request.session) { handle, signal -> if (core.isCurrent(handle)) core.signal(signal) }
     }
 
-    private fun onMain(work: () -> Unit) {
-        if (Looper.myLooper() == Looper.getMainLooper()) return work()
-        val task = FutureTask(work)
-        main.post(task)
-        try {
-            task.get(MAIN_WAIT_SECONDS, TimeUnit.SECONDS)
-        } catch (_: TimeoutException) {
-            task.cancel(false)
-            throw PlayerEngineException(PlayerErrorCode.UNKNOWN)
-        } catch (failure: ExecutionException) {
-            throw failure.cause as? PlayerEngineException ?: PlayerEngineException(PlayerErrorCode.UNKNOWN)
-        }
-    }
-
     private companion object {
-        const val MAIN_WAIT_SECONDS = 10L
+        const val MAIN_WAIT_MILLIS = 10_000L
     }
 }

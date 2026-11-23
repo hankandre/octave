@@ -138,9 +138,11 @@ class EngineCore(
         emit(PlayerEvent.FirstFrame)
     }
 
-    // E8: `error`, then `ended` with reason `error`. The handle stays until the coordinator's stop.
+    // E8: `error`, then `ended` with reason `error`. The handle stays until the coordinator's stop, paused, so a launch
+    // that failed with a track still playable (a file with sound but no decodable picture) plays nothing meanwhile.
     private fun fail(code: PlayerErrorCode) {
         failed = true
+        handle?.setPlayWhenReady(false)
         emit(PlayerEvent.Error(code))
         if (!ended) {
             ended = true
