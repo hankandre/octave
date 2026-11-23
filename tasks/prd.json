@@ -3158,7 +3158,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "In progress at commit 7093809b (runner scans jellyfin-12 library per PO ruling; earlier c7e19109, 150bd949, ee7e6989). Own TV emulator API 36: tv:wire all 13 pairs pass, incl. player-capabilities jellyscale and jellyfin-12 (h264 first frame; no-decoder sample negotiated, not played: transcode DeviceCannotPlay on jellyfin-12, refused on jellyscale). pnpm check, tv:native:test (931, 0 failed), tv:e2e, test:tripwire pass. Untested: no-decoder device play (T8-20, T10-08), Shield, real TVs, other Android versions, Jellyfin 10.11 for T8-07."
+          "evidence": "Review fixes at commit 5678bcc0: per-read capability failures, 10 s probe limit, mpeg2/mpeg4 unnamed profiles, case-blind query judge. Own TV emulator API 36: tv:wire --task T8-07 both pairs pass; tv:e2e, pnpm check, tv:native:test (940, 0 failed), test:tripwire (fresh fixtures) pass. CI wire job pending. No-decoder sample negotiated, not played. Untested: no-decoder device play (T8-20, T10-08), hardware/HDR/passthrough reads on a Shield or real TV, other Android versions, Jellyfin 10.11 for T8-07."
         },
         {
           "id": "T8-23",
