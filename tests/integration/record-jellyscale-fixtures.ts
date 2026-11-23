@@ -384,6 +384,11 @@ async function probe(): Promise<Row[]> {
   add("DELETE", "/Videos/ActiveEncodings", (await hit(token, "DELETE", "/Videos/ActiveEncodings", { query: { deviceId: DEVICE_ID, playSessionId: "probe-session" } })).status);
   add("POST", "/Users/Configuration", (await hit(token, "POST", "/Users/Configuration", { body: me?.Configuration ?? {} })).status);
 
+  // The account's display preferences (T9-09): Octave's own record, read, then written back as read.
+  const preferences = await hit(token, "GET", "/DisplayPreferences/octave", { query: { client: "octave" } });
+  add("GET", "/DisplayPreferences/{displayPreferencesId}", preferences.status);
+  add("POST", "/DisplayPreferences/{displayPreferencesId}", (await hit(token, "POST", "/DisplayPreferences/octave", { query: { client: "octave" }, body: preferences.data ?? {} })).status);
+
   // A second sign-in, logged out last.
   const second = await signIn();
   add("POST", "/Users/AuthenticateByName", 200);

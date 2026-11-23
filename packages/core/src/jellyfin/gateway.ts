@@ -24,6 +24,8 @@ import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
 import { OCTAVE_PROFILE, MAX_BITRATE } from "./device-profile";
 import { AccountConfigurationUnreadable, isPlainRecord, toAccountLanguages, toAccountLanguageSettings, toLanguageCultures, withLanguageChange } from "./account-languages";
+import { ACCOUNT_PREFERENCES_RECORD, AccountPreferencesUnreadable, customPrefsOf, displayPreferencesBody, keptOctaveKeys, toAccountPreferences, withAccountChange } from "./account-preferences";
+import type { AccountPreferences } from "../preference-store";
 import { toItemDetail } from "./item-detail";
 import { toMediaSegments, type MediaSegmentsResponse } from "./media-segments";
 import { findSessionPlayMethod, type SessionDto } from "./session-play-method";
@@ -36,6 +38,7 @@ import type {
   QuickConnectResult,
   SearchHintResult,
   CultureDto,
+  DisplayPreferencesDto,
   ServerInfo,
   UserDto,
 } from "./types";
@@ -195,6 +198,7 @@ export class JellyfinGateway {
   readonly hostClass: HostClass;
   private readonly plainHttp: boolean;
   private accountWrite: Promise<unknown> = Promise.resolve();
+  private preferencesWrite: Promise<unknown> = Promise.resolve();
   // The opaque id of the transport's session. The token never reaches the gateway (decision 0005).
   private session?: SessionId;
   private userId?: string;
@@ -747,6 +751,33 @@ export class JellyfinGateway {
       return toAccountLanguageSettings(next);
     });
     this.accountWrite = run.catch(() => undefined);
+    return run;
+  }
+
+  // The account's settings from Octave's own display preferences record (T9-09).
+  async accountPreferences(signal?: AbortSignal): Promise<AccountPreferences> {
+    const { userId } = this.requireSession();
+    const { data } = await this.get<DisplayPreferencesDto>(`/DisplayPreferences/${ACCOUNT_PREFERENCES_RECORD.id}`, {
+      params: { userId, client: ACCOUNT_PREFERENCES_RECORD.client },
+      signal,
+      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+    });
+    return toAccountPreferences(data);
+  }
+
+  // Jellyfin replaces the record's custom keys on save, so read fresh, change only the given fields, and post
+  // the body built from allowlisted values. One GET then one POST; saves run one at a time. No signal.
+  saveAccountPreferences(change: Partial<AccountPreferences>): Promise<AccountPreferences> {
+    const run = this.preferencesWrite.then(async () => {
+      const { userId } = this.requireSession();
+      const params = { userId, client: ACCOUNT_PREFERENCES_RECORD.client };
+      const { data } = await this.get<DisplayPreferencesDto>(`/DisplayPreferences/${ACCOUNT_PREFERENCES_RECORD.id}`, { params, timeout: CONTROL_REQUEST_TIMEOUT_MS });
+      if (customPrefsOf(data) === undefined) throw new AccountPreferencesUnreadable("Jellyfin returned no display preferences.");
+      const next = withAccountChange(toAccountPreferences(data), change);
+      await this.post(`/DisplayPreferences/${ACCOUNT_PREFERENCES_RECORD.id}`, displayPreferencesBody(next, keptOctaveKeys(data)), { params, timeout: CONTROL_REQUEST_TIMEOUT_MS });
+      return next;
+    });
+    this.preferencesWrite = run.catch(() => undefined);
     return run;
   }
 

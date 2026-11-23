@@ -1,6 +1,6 @@
 {
   "pin": "b920b193cd6f7835dec70198477a07216118b34d",
-  "recorded": "2026-11-21",
+  "recorded": "2026-11-23",
   "routes": [
     {
       "method": "DELETE",
@@ -19,6 +19,12 @@
       "path": "/Videos/ActiveEncodings",
       "declared": "implemented",
       "http": 204
+    },
+    {
+      "method": "GET",
+      "path": "/DisplayPreferences/{displayPreferencesId}",
+      "declared": "implemented",
+      "http": 200
     },
     {
       "method": "GET",
@@ -157,6 +163,12 @@
       "path": "/Videos/{itemId}/stream",
       "declared": "implemented",
       "http": 206
+    },
+    {
+      "method": "POST",
+      "path": "/DisplayPreferences/{displayPreferencesId}",
+      "declared": "implemented",
+      "http": 204
     },
     {
       "method": "POST",

@@ -168,6 +168,21 @@ export interface UserConfigurationDto {
 export interface UserDto {
   Configuration?: UserConfigurationDto | null;
 }
+// The wire shape of the display preferences record (GET and POST /DisplayPreferences/{id}), the fields Octave writes.
+export interface DisplayPreferencesDto {
+  Id?: string;
+  Client?: string;
+  SortBy?: string;
+  SortOrder?: string;
+  RememberIndexing?: boolean;
+  RememberSorting?: boolean;
+  ScrollDirection?: string;
+  ShowBackdrop?: boolean;
+  ShowSidebar?: boolean;
+  PrimaryImageHeight?: number;
+  PrimaryImageWidth?: number;
+  CustomPrefs?: Record<string, string | null> | null;
+}
 export interface CultureDto {
   Name?: string;
   DisplayName?: string;
