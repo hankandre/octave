@@ -26,3 +26,11 @@ Answered by the owner on the decisions page on 2026-11-22.
 
 - A pull request that changes a security rule opens with one plain sentence saying what, if anything, got looser, so the owner can skim it.
 - Frozen-test fixtures have been corrected four times in a few days (T3-26, T8-22 twice, the T3-08 helper). Under `AGENTS.md` (propose a check after the second repeat), the test-writer step gets a check of each fixture against the spec before tests are frozen.
+
+## 4. The Product Owner decides what Octave does (amendment, 2026-11-22)
+
+The owner's words: "The product owner does not need to necessarily reorder work. They can determine what's on the backlog versus what we do. And it can also dismiss work and say, that is not something that we need to do." And: "The goal of the product owner is also to make sure that we're staying on track and not getting sidetracked with things that are important but maybe not primary."
+
+- The Product Owner's job is deciding scope, not arranging a queue. Each backlog entry is **do**, **later** or **dismiss**, and a todo task that no longer earns its place is dropped with a reason.
+- Reordering is the exception: only when a lane would build something secondary before the product.
+- Until the backlog can mark an entry dismissed (backlog line of the same date), each dismissal and later is logged in `tasks/product-owner-log.md` and treated as decided by later passes.
