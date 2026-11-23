@@ -1,26 +1,20 @@
-import type { PlaybackSnapshot, PlayerErrorCode, PlayerEvent } from "../domain/playback";
-import { PLAYER_ERROR_MESSAGES, playerErrorCode } from "../domain/playback";
-
-import type { TransportErrorKind } from "../transport-error";
+import type { PlaybackSnapshot, PlayerEvent } from "../domain/playback";
+import { playerErrorCode } from "../domain/playback";
+import type { PlaybackFailureCode, ReportingWarningCode } from "../domain/playback-failure";
+import { playbackFailureForPlayerError } from "../domain/playback-failure";
 
 export interface PlaybackSessionState {
   snapshot?: PlaybackSnapshot;
   firstFrameReady: boolean;
-  error?: string;
-  // Set only by a player error event: the engine's typed code. A failure action clears it.
-  errorCode?: PlayerErrorCode;
-  // Set when the failure was a failed Jellyfin request; the view shows plain copy for it, not the message.
-  errorKind?: TransportErrorKind;
-  // Set when stopping the player failed; the view shows plain stop copy, not the message.
-  errorStage?: "stop";
-  reportingWarning?: string;
+  failure?: PlaybackFailureCode;
+  reportingWarning?: ReportingWarningCode;
 }
 
 export type PlaybackSessionAction =
   | { type: "reset" }
   | { type: "event"; event: PlayerEvent }
-  | { type: "failure"; message: string; kind?: TransportErrorKind; stage?: "stop" }
-  | { type: "reporting-warning"; message?: string };
+  | { type: "failure"; code: PlaybackFailureCode }
+  | { type: "reporting-warning"; code?: ReportingWarningCode };
 
 export const initialPlaybackSessionState: PlaybackSessionState = {
   firstFrameReady: false,
@@ -34,9 +28,9 @@ export function playbackSessionReducer(
     case "reset":
       return initialPlaybackSessionState;
     case "failure":
-      return { ...state, error: action.message, errorCode: undefined, errorKind: action.kind, errorStage: action.stage };
+      return { ...state, failure: action.code };
     case "reporting-warning":
-      return { ...state, reportingWarning: action.message };
+      return { ...state, reportingWarning: action.code };
     case "event":
       return reducePlayerEvent(state, action.event);
   }
@@ -47,8 +41,7 @@ function reducePlayerEvent(state: PlaybackSessionState, event: PlayerEvent): Pla
     case "first-frame":
       return { ...state, firstFrameReady: true };
     case "error": {
-      const code = playerErrorCode(event.code);
-      return { ...state, error: PLAYER_ERROR_MESSAGES[code], errorCode: code, errorKind: undefined, errorStage: undefined };
+      return { ...state, failure: playbackFailureForPlayerError(playerErrorCode(event.code)) };
     }
     case "ended":
       return { ...state, snapshot: event.snapshot ?? state.snapshot };

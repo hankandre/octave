@@ -1,15 +1,49 @@
+import { PlaybackRefusedError } from "../domain/playback";
+import type { PlaybackFailureCode, ReportingWarningCode } from "../domain/playback-failure";
+import { REPORTING_WARNING_CODES, playbackFailureForPlayerError } from "../domain/playback-failure";
+import { PlayerEngineError, playerErrorCode } from "../domain/player-engine";
+import type { FailureLog } from "../ports/failure-log";
 import { errorReason } from "../safe-reason";
 import { classifyTransportError } from "../transport-error";
+import { PlayerStopError } from "./coordinator";
+import { LaunchRefusedError } from "./launch-request";
 import type { PlaybackSessionAction } from "./session-state";
 
-// A failed Jellyfin request keeps only its kind: the screen writes the copy, and
-// the transport message stays out of state.
-export function failureAction(error: unknown): PlaybackSessionAction {
-  const kind = classifyTransportError(error);
-  return { type: "failure", message: kind ? "Jellyfin request failed." : errorReason(error, "Something went wrong."), kind };
+// Picks the failure code from the error's class and typed fields only, never from its message.
+export function playbackFailureCode(error: unknown): PlaybackFailureCode {
+  if (error instanceof PlayerStopError) return "stop-failed";
+  if (error instanceof LaunchRefusedError) return "unsafe-stream";
+  if (error instanceof PlaybackRefusedError) {
+    return error.reason === "unsafe-transcoding-url" ? "unsafe-stream" : "request-failed";
+  }
+  if (error instanceof PlayerEngineError) return playbackFailureForPlayerError(playerErrorCode(error.code));
+  switch (classifyTransportError(error)) {
+    case "network":
+      return "server-unreachable";
+    case "server":
+      return "server-error";
+    case "request":
+    case undefined:
+      return "request-failed";
+  }
 }
 
-// A failed stop keeps no native text: the screen shows the stop copy for it.
+// The action holds only the code. The filtered native reason goes to the log sink and nowhere else.
+export function failureAction(error: unknown, log: FailureLog): PlaybackSessionAction {
+  log(errorReason(error, "Something went wrong."));
+  return { type: "failure", code: playbackFailureCode(error) };
+}
+
 export function stopFailureAction(): PlaybackSessionAction {
-  return { type: "failure", message: "The player did not stop.", stage: "stop" };
+  return { type: "failure", code: "stop-failed" };
+}
+
+// A message that is not a ReportingWarningCode goes to the log and gives an action with no code, which clears the warning.
+export function reportingWarningAction(message: string | undefined, log: FailureLog): PlaybackSessionAction {
+  if (message === undefined) return { type: "reporting-warning" };
+  if ((REPORTING_WARNING_CODES as readonly string[]).includes(message)) {
+    return { type: "reporting-warning", code: message as ReportingWarningCode };
+  }
+  log(message);
+  return { type: "reporting-warning" };
 }
