@@ -31,6 +31,15 @@ object LaunchRequestReader {
     // the request keeps the text as the core sent it.
     private const val PARSE_ESCAPES = "|^{}[]\\`"
 
+    // R1 and R2 of the core: an http or https scheme in any case, then a host of only ASCII letters, digits, `.`, `_`
+    // and `-` or a bracketed IPv6 literal, then an optional port, then the path, the query or the end. No
+    // case-insensitive option, and \z, because Java's $ also matches before a final line break.
+    private val PLAIN_ASCII_AUTHORITY =
+        Regex("""^([Hh][Tt][Tt][Pp][Ss]?)://(([A-Za-z0-9._-]+|\[[0-9A-Fa-f:.]+\])(?::([0-9]*))?)(?=[/?]|\z)""")
+
+    // A URL as U1 read it: the scheme and host in lower case, the effective port, and the parsed text.
+    private class ParsedUrl(val scheme: String, val host: String, val port: Int, val uri: URI)
+
     fun read(args: Map<String, Any?>): LaunchRequest? = try {
         readOrNull(args)
     } catch (_: Exception) {
@@ -163,19 +172,29 @@ object LaunchRequestReader {
         return text.substring(0, end)
     }
 
-    // U1: at most 8192 characters, absolute http or https with a host, no user info and no fragment.
-    private fun parse(text: String): URI? {
+    // U1: at most 8192 characters, absolute http or https with a plain ASCII host, no user info and no fragment.
+    // Scheme, host and port come from the raw authority, matched with the core's grammar (rules R1 and R2 of
+    // packages/core/src/domain/host-class.ts), because java.net.URI reads a host with `_` as a registry authority with
+    // no host. URI still checks the rest of the text and gives the path and query.
+    private fun parse(text: String): ParsedUrl? {
         if (text.isEmpty() || text.length > MAX_URL || text.contains('#')) return null
+        val authority = PLAIN_ASCII_AUTHORITY.find(text) ?: return null
+        val scheme = authority.groupValues[1].lowercase()
+        val host = authority.groupValues[3].lowercase()
+        val portText = authority.groupValues[4]
+        val port = when {
+            portText.isEmpty() -> if (scheme == "https") 443 else 80
+            portText.length > 5 -> return null
+            else -> portText.toInt().takeIf { it <= 65535 } ?: return null
+        }
         val uri = try {
             URI(escapeAfterAuthority(text))
         } catch (_: URISyntaxException) {
             return null
         }
-        val scheme = uri.scheme?.lowercase() ?: return null
-        if (scheme != "http" && scheme != "https") return null
-        if (uri.isOpaque || uri.host.isNullOrEmpty()) return null
+        if (uri.isOpaque || uri.rawAuthority != authority.groupValues[2]) return null
         if (uri.rawUserInfo != null || uri.rawFragment != null) return null
-        return uri
+        return ParsedUrl(scheme, host, port, uri)
     }
 
     private fun escapeAfterAuthority(text: String): String {
@@ -193,16 +212,15 @@ object LaunchRequestReader {
     // U2: one scheme, host (compared in lower case) and effective port for every URL of the request.
     private fun sameOrigin(urls: List<String>): Boolean {
         val origins = urls.map { text ->
-            val uri = parse(text) ?: return false
-            val scheme = uri.scheme.lowercase()
-            val port = if (uri.port >= 0) uri.port else if (scheme == "https") 443 else 80
-            Triple(scheme, uri.host.lowercase(), port)
+            val url = parse(text) ?: return false
+            Triple(url.scheme, url.host, url.port)
         }
         return origins.toSet().size == 1
     }
 
     // U3: the S1 path and exactly one `Static` parameter (its name read decoded, compared without case) equal to `true`.
-    private fun isOriginalShape(uri: URI): Boolean {
+    private fun isOriginalShape(url: ParsedUrl): Boolean {
+        val uri = url.uri
         val path = uri.rawPath ?: return false
         if (!ORIGINAL_PATH.matches(path)) return false
         val query = uri.rawQuery ?: return false
