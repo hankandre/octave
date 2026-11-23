@@ -1587,10 +1587,10 @@
             "Jellyscale wire test: the capture above runs against the pinned Jellyscale and passes"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "Review-fix commit 38229d3e (branch task/T3-11): stale native failure ignored via keyed view, ended sessions' art dropped from cache, image-requests.json in fixtures README. pnpm check exit 0 (vitest 3614+2626, jest 163), tv:native:test 949/0, tv:e2e pass, tv:wire --task T3-11 5/5 pass on own emulator. Pending Ship: CI wire summary on PR head (item 7) and the 1920x1080 screenshot in the PR."
+          "passes": true,
+          "evidence": "PR #326. All acceptance met. CI wire run https://github.com/jellyscale-org/octave/actions/runs/45203019216 (head before this commit): summary.txt has artwork-header-and-cache pass on mock, jellyfin-10-11, jellyfin-12, jellyscale, artwork-canary mock pass, all T3-05 pairs pass, no fail line. pnpm check, tv:native:test, tv:e2e green. Not tested: Shield, real TVs, API 35 and below."
         },
         {
           "id": "T3-28",
