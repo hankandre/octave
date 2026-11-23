@@ -16,7 +16,8 @@ internal object TransportTestSupport {
     const val TOKEN = "tok/3f9a+b7c=0d1e ü"
     const val DEVICE_ID = "test-device-0001"
 
-    val transport = SessionTransport(ClientIdentity.of("Octave Test TV", "0.0.0"))
+    // The rule of a release build (T3-33): these tests are about the transport, not about development builds.
+    val transport = SessionTransport(ClientIdentity.of("Octave Test TV", "0.0.0"), DevelopmentServers.forBuild(false, ""))
 
     // The JSON a Jellyfin sign-in answers with, carrying `token`.
     fun signInAnswer(token: String = TOKEN, name: String = "louise"): MockResponse =

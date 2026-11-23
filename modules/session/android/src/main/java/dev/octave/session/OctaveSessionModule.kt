@@ -1,7 +1,10 @@
 package dev.octave.session
 
+import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.os.Build
 import dev.octave.session.http.ClientIdentity
+import dev.octave.session.http.DevelopmentServers
 import dev.octave.session.http.SessionTransport
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
@@ -22,16 +25,17 @@ import kotlinx.coroutines.launch
 class OctaveSessionModule : Module() {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-  private val transport: SessionTransport by lazy { SessionTransport(ClientIdentity.of(Build.MODEL, versionName())) }
+  @Volatile
+  private var built: SessionTransport? = null
 
   override fun definition() = ModuleDefinition {
     Name("OctaveSession")
 
-    AsyncFunction("signIn") { args: Map<String, Any?>, promise: Promise -> run(promise) { transport.signIn(args) } }
+    AsyncFunction("signIn") { args: Map<String, Any?>, promise: Promise -> run(promise) { transport().signIn(args) } }
 
-    AsyncFunction("request") { args: Map<String, Any?>, promise: Promise -> run(promise) { transport.request(args) } }
+    AsyncFunction("request") { args: Map<String, Any?>, promise: Promise -> run(promise) { transport().request(args) } }
 
-    AsyncFunction("endSession") { args: Map<String, Any?>, promise: Promise -> run(promise) { transport.endSession(args) } }
+    AsyncFunction("endSession") { args: Map<String, Any?>, promise: Promise -> run(promise) { transport().endSession(args) } }
 
     OnDestroy { scope.cancel() }
   }
@@ -48,8 +52,23 @@ class OctaveSessionModule : Module() {
     }
   }
 
-  private fun versionName(): String? {
-    val context = appContext.reactContext ?: return null
+  // The transport, built once the React context exists. Without a context the app's debuggable flag cannot be read,
+  // so that one call gets a transport that counts the build as a development build (T3-33, fails closed), and
+  // nothing is kept: a later call with a context builds the real one.
+  private fun transport(): SessionTransport {
+    built?.let { return it }
+    val context = appContext.reactContext
+      ?: return SessionTransport(ClientIdentity.of(Build.MODEL, null), DevelopmentServers.forBuild(true, BuildConfig.OCTAVE_DEV_SERVERS))
+    return synchronized(this) {
+      built ?: run {
+        val debuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        val servers = DevelopmentServers.forBuild(debuggable, BuildConfig.OCTAVE_DEV_SERVERS)
+        SessionTransport(ClientIdentity.of(Build.MODEL, versionName(context)), servers).also { built = it }
+      }
+    }
+  }
+
+  private fun versionName(context: Context): String? {
     return try {
       context.packageManager.getPackageInfo(context.packageName, 0).versionName
     } catch (_: Exception) {

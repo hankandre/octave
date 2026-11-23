@@ -28,7 +28,11 @@ import java.util.concurrent.TimeUnit
 //   request    { session } or { server, deviceId }, plus method, path, query ([[name, value], ...]), body (JSON text,
 //              or absent), timeoutMs -> { status, body } (body JSON text or null) or { error }
 //   endSession { session, timeoutMs } -> {} or { error, status? }
-internal class SessionTransport(private val identity: ClientIdentity) {
+//
+// `servers` is the development-build rule (T3-33): signIn and every call before sign-in ask it after the address is
+// parsed and before anything is sent. A session's calls and endSession need not: a session exists only because signIn
+// passed the rule in this process.
+internal class SessionTransport(private val identity: ClientIdentity, private val servers: DevelopmentServers) {
     fun signIn(args: Map<String, Any?>): Map<String, Any?> = outcome {
         val kind = args["kind"]
         val (path, body) = when (kind) {
@@ -49,6 +53,7 @@ internal class SessionTransport(private val identity: ClientIdentity) {
         val deviceId = string(args, "deviceId")
         val timeoutMs = timeoutMs(args)
         val address = ServerAddress.parse(server)
+        servers.check(address)
         val authority = CallAuthority.Tokenless(address, tokenlessHeader(deviceId))
         val request = buildRequest(address, "POST", path, null, body.toString())
         val answer = send(request, authority, timeoutMs, resend = false)
@@ -96,6 +101,7 @@ internal class SessionTransport(private val identity: ClientIdentity) {
             allowOnly(args, TOKENLESS_REQUEST_KEYS)
             if (RequestPolicy.PRE_SIGN_IN_ROUTES.none { it == method to path }) throw Refused()
             address = ServerAddress.parse(string(args, "server"))
+            servers.check(address)
             authority = CallAuthority.Tokenless(address, tokenlessHeader(string(args, "deviceId")))
             forms = emptyList()
         }

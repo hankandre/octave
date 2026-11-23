@@ -21,13 +21,30 @@ def copyOctaveProbeAssets = tasks.register("copyOctaveProbeAssets", Sync) {
 }
 tasks.matching { it.name.endsWith("AndroidTestAssets") }.configureEach { dependsOn(copyOctaveProbeAssets) }
 
+// T3-33: the hosts a development build may sign in to beside loopback and 10.0.2.2, from the build machine's
+// environment (docs/commands.md). Only the debug build type reads it; every other build type holds the empty string.
+// The value may hold only host characters, so no quote or backslash reaches the generated source.
+def octaveDevServers = providers.environmentVariable("OCTAVE_DEV_SERVERS").getOrElse("")
+if (!(octaveDevServers ==~ /[A-Za-z0-9._\-:\[\], ]*/)) {
+  throw new GradleException("The environment variable OCTAVE_DEV_SERVERS holds a character that is not part of a host list.")
+}
+
 android {
   namespace "dev.octave.session"
+  buildFeatures {
+    buildConfig true
+  }
   defaultConfig {
     versionCode 1
     versionName "0.1.0"
+    buildConfigField "String", "OCTAVE_DEV_SERVERS", '""'
     // The device probe of T3-15 is a bare Instrumentation in src/androidTest: no test runner dependency.
     testInstrumentationRunner "dev.octave.session.devicecheck.CleartextProbe"
+  }
+  buildTypes {
+    debug {
+      buildConfigField "String", "OCTAVE_DEV_SERVERS", "\"${octaveDevServers}\""
+    }
   }
   sourceSets {
     androidTest.assets.srcDir(octaveProbeAssets)
