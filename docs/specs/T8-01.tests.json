@@ -1,0 +1,158 @@
+{
+  "task": "T8-01",
+  "files": [
+    "scripts/tv-module-surfaces.test.ts",
+    "scripts/tv-player-module.test.ts",
+    "scripts/tv-player-engine.test.ts",
+    "scripts/security-doc-t8-01.test.ts",
+    "packages/core/tests/fixtures/launch-requests.json",
+    "modules/player/android/src/test/java/dev/octave/player/ModuleSurfaceTest.kt",
+    "modules/player/android/src/test/java/dev/octave/player/seam/FakeEngine.kt",
+    "modules/player/android/src/test/java/dev/octave/player/seam/TestJson.kt",
+    "modules/player/android/src/test/java/dev/octave/player/seam/LaunchRequestReaderTest.kt",
+    "modules/player/android/src/test/java/dev/octave/player/seam/SessionAuthorityTest.kt",
+    "modules/player/android/src/test/java/dev/octave/player/seam/PlayerEventMapsTest.kt",
+    "modules/player/android/src/test/java/dev/octave/player/seam/PlayerSeamTest.kt",
+    "modules/player/android/src/test/java/dev/octave/player/seam/SeamCanaryTest.kt",
+    "modules/session/android/src/test/java/dev/octave/session/http/SessionRegistryHoldsTest.kt"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-module-surfaces.test.ts",
+        "scripts/tv-player-module.test.ts",
+        "scripts/tv-player-engine.test.ts",
+        "scripts/security-doc-t8-01.test.ts",
+        "-t",
+        "T8-01 item 1:"
+      ],
+      "also": [
+        [
+          "node",
+          "scripts/tv-native-test-only.mjs",
+          "dev.octave.player.ModuleSurfaceTest"
+        ]
+      ],
+      "note": "The Kotlin half runs under pnpm tv:native:test; it is red at the freeze because modules/player is not a Gradle project yet."
+    },
+    {
+      "item": 2,
+      "run": [
+        "node",
+        "scripts/tv-native-test-only.mjs",
+        "dev.octave.player.seam.LaunchRequestReaderTest"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "scripts/tv-module-surfaces.test.ts",
+          "scripts/tv-player-module.test.ts",
+          "scripts/tv-player-engine.test.ts",
+          "scripts/security-doc-t8-01.test.ts",
+          "-t",
+          "T8-01 item 2:"
+        ]
+      ],
+      "note": "The adapter half and the shared vectors (packages/core/tests/fixtures/launch-requests.json) run under pnpm test."
+    },
+    {
+      "item": 3,
+      "run": [
+        "node",
+        "scripts/tv-native-test-only.mjs",
+        "dev.octave.player.seam.SessionAuthorityTest"
+      ],
+      "also": [
+        [
+          "node",
+          "scripts/tv-native-test-only.mjs",
+          "dev.octave.session.http.SessionRegistryHoldsTest"
+        ],
+        [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "scripts/tv-module-surfaces.test.ts",
+          "scripts/tv-player-module.test.ts",
+          "scripts/tv-player-engine.test.ts",
+          "scripts/security-doc-t8-01.test.ts",
+          "-t",
+          "T8-01 item 3:"
+        ]
+      ],
+      "note": "SessionRegistryHoldsTest and the docs/security.md rows run under pnpm tv:native:test and pnpm test."
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-module-surfaces.test.ts",
+        "scripts/tv-player-module.test.ts",
+        "scripts/tv-player-engine.test.ts",
+        "scripts/security-doc-t8-01.test.ts",
+        "-t",
+        "T8-01 item 4:"
+      ],
+      "also": [
+        [
+          "node",
+          "scripts/tv-native-test-only.mjs",
+          "dev.octave.player.seam.PlayerEventMapsTest"
+        ]
+      ],
+      "note": "PlayerEventMapsTest runs under pnpm tv:native:test."
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-module-surfaces.test.ts",
+        "scripts/tv-player-module.test.ts",
+        "scripts/tv-player-engine.test.ts",
+        "scripts/security-doc-t8-01.test.ts",
+        "-t",
+        "T8-01 item 5:"
+      ],
+      "note": "A source scan and the build only; that the view loads and draws on a device is untested until T8-02 (spec check issue 6)."
+    },
+    {
+      "item": 6,
+      "run": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "scripts/tv-module-surfaces.test.ts",
+        "scripts/tv-player-module.test.ts",
+        "scripts/tv-player-engine.test.ts",
+        "scripts/security-doc-t8-01.test.ts",
+        "-t",
+        "T8-01 item 6:"
+      ]
+    },
+    {
+      "item": 7,
+      "run": [
+        "node",
+        "scripts/tv-native-test-only.mjs",
+        "dev.octave.player.seam.SeamCanaryTest"
+      ],
+      "note": "PlayerSeamTest (spec test plan: every command with and without an engine) has no item of its own and runs under pnpm tv:native:test."
+    }
+  ]
+}
