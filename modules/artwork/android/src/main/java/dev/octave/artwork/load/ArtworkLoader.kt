@@ -12,8 +12,9 @@ import kotlinx.coroutines.coroutineScope
 // The loader behind the artwork view (T3-11; docs/specs/T3-11.md, "The loader"). Plain Kotlin, so a Swift loader can
 // mirror it: the fetch, the decoder and the registry's held-or-not answer come in as functions.
 //
-// - A cached image is served only while `holds(session)`; a load for a session no longer held is Failed, fetches
-//   nothing and drops every cached entry of that session.
+// - A cached image is served only while `holds(session)`; a load for a session no longer held is Failed and fetches
+//   nothing. Every load first drops the cached entries of each session no longer held, so an ended session's images
+//   leave the cache at the next load for any session, and a fetch that finishes after its session ended is not cached.
 // - A miss prepares the request, executes it with a 15 s timeout and decodes it at the key's width, all off the calling
 //   thread and at most `parallelism` at once. A success is cached; a failure is returned and not cached.
 // - Cancelling the coroutine of a load cancels its request, and a cancelled load caches nothing.
@@ -36,12 +37,11 @@ class ArtworkLoader(
 
     private val cache = ByteBoundedLru<ArtworkKey>(cacheBytes)
     private val work = Dispatchers.IO.limitedParallelism(parallelism)
+    private val cachedSessions = mutableSetOf<SessionId>()
 
     suspend fun load(key: ArtworkKey): Result {
-        if (!holds(key.session)) {
-            cache.removeIf { it.session == key.session }
-            return Result.Failed
-        }
+        dropEndedSessions()
+        if (!holds(key.session)) return Result.Failed
         cache.get(key)?.let { return Result.Loaded(it.image) }
         val prepared = try {
             source(key.session, key.request())
@@ -49,8 +49,20 @@ class ArtworkLoader(
             null
         } ?: return Result.Failed
         val decoded = fetchAndDecode(prepared, key.width) ?: return Result.Failed
-        cache.put(key, decoded)
+        if (!holds(key.session)) return Result.Failed
+        synchronized(cachedSessions) {
+            cachedSessions += key.session
+            cache.put(key, decoded)
+        }
         return Result.Loaded(decoded.image)
+    }
+
+    private fun dropEndedSessions() = synchronized(cachedSessions) {
+        val ended = cachedSessions.filterNot(holds).toSet()
+        if (ended.isNotEmpty()) {
+            cachedSessions.removeAll(ended)
+            cache.removeIf { it.session in ended }
+        }
     }
 
     // Runs on the limited dispatcher; a cancel of the caller cancels the request at once, since execute blocks.
