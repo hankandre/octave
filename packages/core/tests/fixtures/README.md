@@ -30,6 +30,10 @@ Changing it: this file is frozen by T2-06 and a regeneration needs a Product Own
 - SHA-256: `469799492afae646422fc1627ea41db27d235f426fbcf126afe3c66852ffbf2a`
 - Regenerate with `OCTAVE_WRITE_DEVICE_HLS_VECTORS=1 pnpm --filter @octave/core exec vitest run src/jellyfin/hls-master-url-device-vectors.test.ts`, only after a deliberate negotiation change, and update the SHA-256 above in the same commit. A change to the `PlaybackPlan` shape also changes `hls-master-urls.json`; see its "Changing it" for the ruling that needs.
 
+## `device-capability-probes.json`
+
+- `cases` (11): what a device's platform reports (`platform`, each profile already named as the Android half's `PlatformNames` names it), the `PlayerCapabilities` the probe answers for it (`capabilities`), and what the core's `devicePlayability` answers for each listed source (`plays`) (T8-07, `docs/specs/T8-07.md`, Test plan 1). Read by the Kotlin `CapabilityMapTest` and by `packages/core/src/domain/device-capability-probes.test.ts`. Frozen by T8-07 (`docs/specs/T8-07.tests.json`).
+
 ## Host rules
 
 Written without reference to a parser, so Kotlin can mirror them. `host-classes.json` has 94 vectors.
