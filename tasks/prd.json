@@ -3630,10 +3630,10 @@
             "A per-device Continue watching window left from before the owner's values (7 or 14) is read as 90 when the setting moves to the account"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit c180a7ea: gateway accountPreferences/saveAccountPreferences, mapping, TV store useAccount/saveAccount, docs. Blocked: pnpm check fails only scripts/core-transport-deps.test.ts; the three frozen T2-04/T5-02 tables lack rows for the two new methods (frozenTestProblems)."
         },
         {
           "id": "T9-03",
