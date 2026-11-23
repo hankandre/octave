@@ -144,7 +144,7 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Language.** Engine, Launch request (original file or HLS session), Capabilities (complete or failed), Player error code, Snapshot, Player track (player id vs. Jellyfin index), Decode mode, First frame.
 
-**Today.** The port lives in `packages/core/src/domain/player-engine.ts` (re-exported by `domain/playback.ts`); the coordinator's tests use the port-only fake `packages/core/src/player/fake-player-engine.ts`. There is no engine on `main`.
+**Today.** The port lives in `packages/core/src/domain/player-engine.ts` (re-exported by `domain/playback.ts`); the coordinator's tests use the port-only fake `packages/core/src/player/fake-player-engine.ts`. Natively, the player module `modules/player` (T8-01): the plain-Kotlin seam in `dev.octave.player.seam` (`PlaybackEngine`, `PlayerSeam`, `LaunchRequestReader`, `PlayerEventMaps`), the Expo module `OctavePlayerModule`, the view `OctavePlayerView` and `VideoSurfaceSlot`; its surface is typed in `modules/player/src/index.ts`, loaded only by `apps/tv/src/host/player-module.android.ts` and `apps/tv/src/host/player-view.android.tsx`, and turned into the port by `createPlayerEngine` in `apps/tv/src/host/player-engine.ts`. There is no engine behind the seam on `main` until T8-02.
 
 **Target.** `modules/player` (T8-01; Kotlin behind an interface a Swift implementation can mirror).
 

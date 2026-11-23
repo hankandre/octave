@@ -11,8 +11,9 @@
 //   `console?.log` are direct calls; an alias, a destructuring, a computed member other than a constant string,
 //   `.call` and `.bind` fail), so a value cannot reach either one by a form the call patterns miss.
 //
-// Scope: Kotlin and Java under modules/session/android/src/main/, TypeScript under modules/session/src/ and
-// apps/tv/src/host/, and modules/session/android/build.gradle. The JVM test AuthorizationValueTest is stricter for the
+// Scope: Kotlin and Java under modules/session/android/src/main/ and modules/player/android/src/main/ (T8-01),
+// TypeScript under modules/session/src/, modules/player/src/ and apps/tv/src/host/, and
+// modules/session/android/build.gradle. The JVM tests AuthorizationValueTest and SeamCanaryTest are stricter for each
 // module's Kotlin (no log call at all); this check runs without Gradle and reads the TypeScript half too.
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -22,6 +23,8 @@ const GRADLE_FILE = "modules/session/android/build.gradle";
 const SOURCE_ROOTS = [
   { dir: "modules/session/android/src/main", ext: /\.(kt|java)$/ },
   { dir: "modules/session/src", ext: /\.(ts|tsx|mts)$/ },
+  { dir: "modules/player/android/src/main", ext: /\.(kt|java)$/ },
+  { dir: "modules/player/src", ext: /\.(ts|tsx|mts)$/ },
   { dir: "apps/tv/src/host", ext: /\.(ts|tsx|mts)$/ },
 ];
 
