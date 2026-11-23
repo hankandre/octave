@@ -649,6 +649,29 @@
           "evidence": "commit 21b9b1b4 (fix) on 2636dd3f: follow-ups step fixes small lows, leaves go to tasks/backlog.jsonl, real-TV gates in result, unaccountedLows count; task-followups tests and pnpm check green"
         },
         {
+          "id": "T1-29",
+          "title": "Do not park a spec on wording the owner already approved",
+          "domain": "Process",
+          "lane": "workflow",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "The spec step returns no open question for the owner when its recommended option reuses wording, look or behaviour the owner already approved: it takes the option, cites the approval in the spec (the approval file and section, the DESIGN.md row, or the done task's acceptance item), and the run goes on (owner, 2026-11-23)",
+            "Every approval a spec reused is listed in the task's result and in the pull request body, so the owner can veto it; a spec still parks for a call the owner has not made, and an option that changes approved wording, even by a word, is a new call",
+            "The Check step and the inline Product Owner step treat a look or wording question the same way: one whose answer is an approval they can cite is answered with the citation and is not returned in forOwner",
+            "pnpm test:workflow covers a spec result with a cited reuse, which does not park, and one with a new call, which does",
+            "DESIGN.md's status line and its Awaiting the owner list (section 12) drop the calls the owner has settled (the rail's look and entries, the posters beside it and what Back does on Home, approved with T1-08 on 2026-11-20; what Menu or Info does on a Continue watching card, docs/specs/decisions-direction-2026-11-22.md, 2) and keep what is still open",
+            "WORKFLOW.md and the task workflow's prompts state the rule in the same PR; no check is given up and a denied command still halts the run"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T1-25",
           "title": "Make PRODUCT.md describe the product and move its task lists out",
           "domain": "Process",
@@ -1593,6 +1616,33 @@
           "evidence": "PR #326. All acceptance met. CI wire run https://github.com/jellyscale-org/octave/actions/runs/45203019216 (head before this commit): summary.txt has artwork-header-and-cache pass on mock, jellyfin-10-11, jellyfin-12, jellyscale, artwork-canary mock pass, all T3-05 pairs pass, no fail line. pnpm check, tv:native:test, tv:e2e green. Not tested: Shield, real TVs, API 35 and below."
         },
         {
+          "id": "T3-39",
+          "title": "Show a blurred preview of the picture while a card's artwork loads",
+          "domain": "Catalog",
+          "lane": "native-session",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-11"
+          ],
+          "acceptance": [
+            "While a card's artwork loads, the native image view shows a blurred preview of the picture decoded from the title's BlurHash, in place of T3-11's plain stand-in, and the picture replaces it when it arrives (owner: docs/specs/decisions-owner-inbox-2026-11-23b.md, 3)",
+            "Decision 0005 is amended in the same PR for a sixth image view prop that holds the hash string only; the view still accepts no URL, header or token prop, and docs/security.md and ARCHITECTURE.md say so. The PR calls out the changed surface",
+            "The spec says where the hash comes from (the server's hash for the image type and tag the card draws) and what the core's card fields add to carry it; a card with no hash shows the plain surface, and a failed image still shows the title",
+            "The hash is decoded natively, off the UI thread, with no network request; a hash that is malformed or longer than the bound the spec sets is refused and shows the plain surface, with a native test for each",
+            "A decoder taken as a dependency is checked for active maintenance from primary sources and the check is recorded in the spec; otherwise the decoder is the module's own code with tests against known hashes",
+            "The swap from the preview to the picture follows DESIGN.md's motion rules and honours reduced motion; DESIGN.md says what a card shows while its artwork loads, in the same PR, with before and after screenshots at 1920x1080",
+            "Holding Down through a fixture Home stays within what T3-11 measured: the spec records the decode cost per card and how previews are kept for recycled cards",
+            "Where a test T3-11 froze pins the five-prop limit, the task returns it to the Product Owner and changes no frozen file itself"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-28",
           "title": "Test that a release build's inspector cannot fetch a debugger-supplied URL",
           "domain": "Security & Redaction",
@@ -1995,7 +2045,8 @@
             "It runs in the CI emulator job in under ten minutes and is required",
             "The same driver runs against a device serial for Shield checks, and never writes the serial or an address to disk",
             "No script of the run sends keys with adb's monkey; the spec names the sender it uses and shows it raises no configuration change",
-            "The oracle also checks that a row never scrolled opens at its first card after other rows were scrolled, and that no blur arrives without a focus"
+            "The oracle also checks that a row never scrolled opens at its first card after other rows were scrolled, and that no blur arrives without a focus",
+            "The run covers the shell's Left, Right and Back moves between the rail and the rows on the 20x50 fixture (T3-09 items 1, 2 and 8), which the jest tests check only through a focus-bridge double"
           ],
           "verify": "pnpm check && pnpm tv:e2e",
           "status": "todo",
@@ -2136,7 +2187,9 @@
             "Each failure shows the copy table's sentence for it: unreachable, refused plain HTTP, redirect, unsupported version, anything else",
             "Remembered servers are listed first on a later visit",
             "An https address typed with a host that is not plain ASCII is refused before any request with the copy table's sentence \"This address uses characters Octave can't check. Type the server's plain address instead.\"; the same address typed in its punycode (xn--) form is accepted; the core and the native client refuse the same addresses",
-            "The found servers come from a discovery source the screen is given; until T4-01 supplies the native one the app's source finds none, so the address field shows (DESIGN.md section 7.20, step 1)"
+            "The found servers come from a discovery source the screen is given; until T4-01 supplies the native one the app's source finds none, so the address field shows (DESIGN.md section 7.20, step 1)",
+            "The unsupported-version failure carries a code only: the gateway puts no Version string from the server in it, and the screen shows the copy table's sentence",
+            "A signed-out viewer never reaches Home or the rail by pressing Back on a sign-in step; the spec states what Back does on each step from DESIGN.md, a case DESIGN.md does not answer goes to the owner, and where a test T3-09 froze requires go-home from sign-in the task returns it to the Product Owner"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2271,7 +2324,8 @@
             "The stored credential is excluded from Android backup and from device-to-device transfer",
             "The token appears in no shared preference, React Native storage, log or event; a canary test reads all of them",
             "docs/security.md describes the store in the same PR",
-            "In a development build a restored session is opened only on a server the development-server rule (T3-33) allows, and the scan that pins the one opener of a session covers the restore path"
+            "In a development build a restored session is opened only on a server the development-server rule (T3-33) allows, and the scan that pins the one opener of a session covers the restore path",
+            "When an account becomes active (sign-in or a restored session) and when it signs out, the app calls hostPreferences().useAccount with the gateway's account preference source, so the account's settings follow it (T9-09, D9)"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
@@ -2320,7 +2374,8 @@
             "An account is one user on one server, saved by server id; each account sees only its own server's libraries",
             "The rail's account entry opens the same screen; Add account starts sign-in without signing anyone out",
             "Switching accounts drops the previous account's cached screens",
-            "A signed-out account's tile says so in words and opens sign-in for that user and server"
+            "A signed-out account's tile says so in words and opens sign-in for that user and server",
+            "Switching accounts calls hostPreferences().useAccount with the new account's preference source, so each account sees its own settings (T9-09, D9)"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2814,7 +2869,7 @@
             "T7-02"
           ],
           "acceptance": [
-            "Holding the select key, or pressing Menu where the remote has it, on a card that plays opens that title's page instead",
+            "Holding the select key, or pressing Menu or Info where the remote has one, on a card that plays opens that title's page instead; a Continue watching card is the exception and opens its short menu (T5-05) (owner: docs/specs/decisions-owner-inbox-2026-11-23b.md, 2)",
             "A short press still hands the title to playback, and a hold never does both",
             "The episode page shows the series name as a link, S1 E2, the runtime, the overview and a More from this season row placed at this episode",
             "Its first action is Resume or Play for that episode"
@@ -3044,7 +3099,8 @@
             "A failed report shows Couldn't save your progress once and never stops playback",
             "Back during loading cancels the attempt and sends no report",
             "From Home, one press on Resume reaches the first frame at the saved position, and returning to Home shows the new position on the card without a restart",
-            "Jellyscale wire test: the three reports reach the pinned Jellyscale with the header, and its resume list shows the title at the reported position"
+            "Jellyscale wire test: the three reports reach the pinned Jellyscale with the header, and its resume list shows the title at the reported position",
+            "createPlayerEngine(loadPlayerModule()) typechecks without a cast: the player module's typed declaration and the app adapter's PlayerNative are one shape"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
           "status": "todo",
@@ -3286,7 +3342,8 @@
             "Each Media3 track maps to its Jellyfin stream index, checked by type, language and codec; a track that cannot be mapped is left unmapped, not guessed",
             "Choosing a track switches it without a restart during a direct play, and the next progress report carries its Jellyfin index",
             "A JVM test maps the tracks of the multi-audio, embedded-subtitle and external-subtitle samples to the recorded indices",
-            "The sheet stays open after a choice and Back closes it"
+            "The sheet stays open after a choice and Back closes it",
+            "The Media3 engine applies the launch request's audio and subtitle picks (audioStreamIndex, subtitleStreamIndex), and its snapshots carry the audio track, so the coordinator's notice for a pick that was not applied can fire"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
@@ -3442,7 +3499,8 @@
             "Server unreachable, server error and other failures show the copy table's sentences",
             "No screen shows a status code, an exception message, a URL or an id",
             "Retry negotiates again with a new play session, from the last position once a first frame was shown",
-            "Back returns to the title's page with focus on the play action"
+            "Back returns to the title's page with focus on the play action",
+            "The player screen reads only the failure code and the reporting warning code from session state and looks up its copy; a test shows it renders nothing else from that state"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -3865,7 +3923,8 @@
             "A 401 during playback stops the player cleanly first",
             "A server that stops answering shows the plain unreachable sentence with Retry, and Retry continues without a restart of the app",
             "The app stays signed in when an identity provider's own session ends, until the server revokes the device; on Jellyscale the rule for single sign-on accounts is not yet filed and is noted as such",
-            "The realtime socket is not required for any of this"
+            "The realtime socket is not required for any of this",
+            "A 401 from PlaybackInfo or from a launch maps to the session-ended failure code, so the player offers Sign in and not Retry"
           ],
           "verify": "pnpm check",
           "status": "todo",
