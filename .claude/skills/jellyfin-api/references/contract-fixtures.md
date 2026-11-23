@@ -20,7 +20,7 @@
 - Save to `packages/core/tests/fixtures/jellyfin/<server-version>/<endpoint>-<case>.json` ; Jellyscale fixtures go in `packages/core/tests/fixtures/jellyscale/<12 hex of the pinned commit>/`, recorded by `tests/integration/record-jellyscale-fixtures.ts`.
 - Record one fixture per server version that behaves differently.
 - Name the case after the behavior, such as `playbackinfo-bluray-folder.json`.
-- Never start a new Jellyfin fixture with `playbackinfo-` or `conversion-` (the gateway-wire golden globs both in every folder), nor a Jellyscale fixture with `playbackinfo-` (the T2-08 test replays it as a first answer). Use `device-conversion-` for a forced-conversion answer.
+- Never start a new Jellyfin fixture with `playbackinfo-` or `conversion-` (the gateway-wire golden globs both in every folder), nor a Jellyscale fixture with `playbackinfo-` (the T2-08 test replays it as a first answer). Use `device-conversion-` for a forced-conversion answer, `device-disc-conversion-` for the forced answer after a disc's fallback, and `encode-target-` for a recording of what a conversion is encoded into (T8-23: the answer, the master playlist's `CODECS` and the session's `TranscodingInfo`).
 
 ## Test
 
