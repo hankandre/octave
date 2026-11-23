@@ -107,21 +107,36 @@ export function decideSource(source: MediaSourceDto, context: SourceContext): So
 // else the source's default, else the first audio stream.
 export function sourcePlayability(source: MediaSourceDto, capabilities: DeviceCapabilities, audioStreamIndex?: number): Playability {
   const [video] = streamsOf(source, "Video");
-  const audioStreams = streamsOf(source, "Audio");
-  const audio = [audioStreamIndex, source.DefaultAudioStreamIndex]
-    .map((index) => audioStreams.find((stream) => stream.Index === index))
-    .find((stream) => stream !== undefined) ?? audioStreams[0];
+  const audio = judgedAudio(source, audioStreamIndex);
   const format: SourceFormat = {
-    ...(video ? { video: {
-      codec: video.Codec ?? undefined,
-      profile: video.Profile ?? undefined,
-      bitDepth: video.BitDepth ?? undefined,
-      width: video.Width ?? undefined,
-      height: video.Height ?? undefined,
-    } } : {}),
-    ...(audio ? { audio: { codec: audio.Codec ?? undefined } } : {}),
+    ...(video ? { video: videoFormat(video) } : {}),
+    ...(audio ? { audio: audioFormat(audio) } : {}),
   };
   return devicePlayability(format, capabilities);
+}
+
+// The judged audio stream: the one the index names, else the source's default, else the first audio stream.
+export function judgedAudio(source: MediaSourceDto, audioStreamIndex?: number): MediaStreamDto | undefined {
+  const audioStreams = streamsOf(source, "Audio");
+  return [audioStreamIndex, source.DefaultAudioStreamIndex]
+    .map((index) => audioStreams.find((stream) => stream.Index === index))
+    .find((stream) => stream !== undefined) ?? audioStreams[0];
+}
+
+export function videoFormat(video: MediaStreamDto): NonNullable<SourceFormat["video"]> {
+  return {
+    codec: video.Codec ?? undefined,
+    profile: video.Profile ?? undefined,
+    bitDepth: video.BitDepth ?? undefined,
+    width: video.Width ?? undefined,
+    height: video.Height ?? undefined,
+    level: video.Level ?? undefined,
+    frameRate: video.ReferenceFrameRate ?? undefined,
+  };
+}
+
+export function audioFormat(audio: MediaStreamDto): NonNullable<SourceFormat["audio"]> {
+  return { codec: audio.Codec ?? undefined, channels: audio.Channels ?? undefined };
 }
 
 // The answer to the forced-conversion request, decided for one source (ARCHITECTURE.md §3 rule 5). A conversion
@@ -179,7 +194,7 @@ function mediaKindOf(source: MediaSourceDto): HlsMediaKind {
 }
 
 // Query names are matched case-insensitively, as ASP.NET binds them.
-function param(params: URLSearchParams, name: string): string | undefined {
+export function param(params: URLSearchParams, name: string): string | undefined {
   const wanted = name.toLowerCase();
   for (const [key, value] of params) {
     if (key.toLowerCase() === wanted) return value.trim();
@@ -187,7 +202,7 @@ function param(params: URLSearchParams, name: string): string | undefined {
   return undefined;
 }
 
-function codecList(params: URLSearchParams, name: string): string[] {
+export function codecList(params: URLSearchParams, name: string): string[] {
   return (param(params, name) ?? "").split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
 }
 
@@ -204,7 +219,7 @@ function exceeds(limit: string | undefined, actual: number | null | undefined, s
   return actual == null || actual > value + slack;
 }
 
-function streamsOf(source: MediaSourceDto, type: string): MediaStreamDto[] {
+export function streamsOf(source: MediaSourceDto, type: string): MediaStreamDto[] {
   return (source.MediaStreams ?? []).filter((stream) => stream.Type === type);
 }
 

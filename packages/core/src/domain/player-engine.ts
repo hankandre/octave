@@ -88,6 +88,12 @@ export interface VideoDecoder {
   maxBitDepth?: 8 | 10 | 12;
   maxWidth?: number;
   maxHeight?: number;
+  // The highest level, in Jellyfin's MediaStream.Level scale for the codec: h264 ten times the level (4.1 is 41),
+  // hevc general_level_idc (thirty times the level; 3.1 is 93), av1 seq_level_idx. Only h264, hevc and av1 state
+  // one. Absent means no limit; a source that states no Level is not judged on it (T8-23 D6).
+  maxLevel?: number;
+  // The highest frame rate, compared with MediaStream.ReferenceFrameRate. Absent means no limit.
+  maxFrameRate?: number;
 }
 
 // What the device can play, as the engine probed it.
@@ -98,6 +104,9 @@ export type PlayerCapabilities =
     audioDecoders: readonly AudioCodec[];
     hdr: readonly HdrType[];
     passthrough: readonly PassthroughFormat[];
+    // The most channels a decoder plays, per audio codec. Passthrough is not limited by it: the receiver decodes.
+    // Absent, or absent for a codec, means no limit.
+    maxAudioChannels?: Partial<Record<AudioCodec, number>>;
   }
   // The engine could not read the device: "cannot tell", never "can play".
   | { probe: "failed" };
