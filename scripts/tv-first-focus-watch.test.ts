@@ -46,6 +46,7 @@ function failingInstallAdb(): { adb: string; dir: string; calls: () => string[][
       'const { appendFileSync } = require("node:fs");',
       "const args = process.argv.slice(2);",
       `appendFileSync(${JSON.stringify(log)}, JSON.stringify(args) + "\\n");`,
+      'if (args.includes("getprop") && args.includes("ro.boot.qemu")) process.stdout.write("1\\n");',
       'if (args.includes("install")) { process.stderr.write("Failure [INSTALL_FAILED_TEST]\\n"); process.exitCode = 1; }',
       "",
     ].join("\n"),
