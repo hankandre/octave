@@ -43,11 +43,11 @@ const leave = async (outcome) => {
 
 const decide = await agent(
   `Run a Product Owner pass. First remove a worktree or branch an earlier pass left behind (git -C ${main} worktree remove --force ${worktree}; git -C ${main} worktree prune; git -C ${main} branch -D ${branch}; ignore errors if absent). Then create the worktree: git -C ${main} fetch -q && git -C ${main} worktree add ${worktree} -b ${branch} origin/main. Work only in ${worktree}.
-1. Read the backlog entries without taken_by in tasks/backlog.jsonl, \`mise exec -- node ${worktree}/scripts/task.mjs list\`, and the parts of PRODUCT.md you need. Never load tasks/prd.json whole.
-2. Decide what to add, split (a drop or an edit plus adds), reorder or drop, within the existing product direction. Look, wording and direction stay with the owner.
+1. Read the backlog entries without taken_by in tasks/backlog.jsonl, \`mise exec -- node ${worktree}/scripts/task.mjs list\`, the owner's direction in docs/specs/decisions-direction-*.md, and the parts of PRODUCT.md you need. Never load tasks/prd.json whole.
+2. Decide what to add, split (a drop or an edit plus adds), reorder or drop, within the existing product direction. Look, wording and direction stay with the owner. Keep the work on track: order each lane so its next ready task moves the product forward where one is ready, place hardening, process and tooling work behind it, and defer or drop with a reason any entry that would pull the work off course. Check the order even when the backlog is empty.
 3. Write the operations file outside the repo (mktemp) and apply it: mise exec -- node ${worktree}/scripts/task-owner.mjs apply <ops.json> --date <today, from date +%F>. An add needs takes (the backlog entries it covers) and a lane from scripts/task.mjs LANES; set or change a task's lane with an edit of `lane`. An acceptance edit that changes scope only (a path, a split, a dependency, what a task covers) gives scope, your reason, and needs no approval file. An acceptance edit that changes on-screen wording or copy, look or product direction, and any edit of human or verify, needs owner_approval: a docs/specs/decisions-*.md or docs/decisions/*.md file that names the task; without one, leave it for the owner. There is no operation for rules.
-4. Append a dated section to tasks/product-owner-log.md, one line per decision: what, the backlog entry, the approval path or "scope edit", why. Run mise exec -- pnpm check, and commit the task and backlog files and the log in one commit whose message ends with the trailer "Product-Owner-Pass: <today>".
-Return every decision (one line each) and every approval path. Return nothingToDo=true, with no commit, when nothing needs a decision. If a command is denied, report it in deniedCommands and do not work around it.`,
+4. Append a dated section to tasks/product-owner-log.md. Its first line is the focus line: how many tasks merged since the last pass moved the product forward and how many were hardening or process, and whether each lane's order still puts the product first. Then one line per decision: what, the backlog entry, the approval path or "scope edit", why. Run mise exec -- pnpm check, and commit the task and backlog files and the log in one commit whose message ends with the trailer "Product-Owner-Pass: <today>".
+Return the focus line first, then every decision (one line each) and every approval path. Return nothingToDo=true, with no commit, when nothing needs a decision. If a command is denied, report it in deniedCommands and do not work around it.`,
   { agentType: 'product-owner', model: 'fable', schema: DECIDE, phase: 'Decide', label: 'product-owner pass' },
 );
 if (!decide) return leave({ outcome: 'failed', detail: 'The Product Owner returned nothing.' });
@@ -55,7 +55,7 @@ if (denied(decide)) return leave({ outcome: 'denied', detail: denied(decide) });
 if (decide.nothingToDo) return leave({ outcome: 'nothing-to-do' });
 
 const ship = await agent(
-  `Work in ${worktree} (branch ${branch}). Ship with the ship skill: push, open the PR, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body lists these decisions under a heading "The owner can veto any of these", and each approval path:
+  `Work in ${worktree} (branch ${branch}). Ship with the ship skill: push, open the PR, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body opens with the focus line (the first line below) in plain words, then lists the decisions under a heading "The owner can veto any of these", and each approval path:
 ${decide.decisions.join('\n')}
 ${(decide.approvals || []).join('\n')}
 A veto is reverted by the next pass and logged. Change no source files. If CI is red, return merged=false with each failing check. After a merge, run git -C ${main} pull --ff-only and remove the worktree and branch.`,

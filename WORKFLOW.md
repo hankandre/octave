@@ -87,6 +87,8 @@ After the spec check and before implementation, `test-writer` turns each accepta
 
 A Product Owner pass (`.claude/workflows/product-owner.js`, Fable 5.2) triages `tasks/backlog.jsonl` entries without `taken_by` into `tasks/prd.json`, and is the only step that adds, splits, reorders or drops tasks. It works through `scripts/task-owner.mjs`, which changes no status field and has no operation for the `rules`.
 
+- **Focus.** The Product Owner's first duty is keeping the work on Octave's purpose (`PRODUCT.md`) and the owner's direction (`docs/specs/decisions-direction-*.md`). Hardening, process and tooling run beside the product, never ahead of it: each lane's next ready task moves the product forward where one is ready, and an entry that would pull the work off course is placed behind it or dropped with a reason. Each pass opens its log section and its PR with one focus line: how many merged tasks moved the product forward against hardening or process, and whether each lane's order still puts the product first.
+
 - **Scope edits.** The Product Owner approves an acceptance edit that changes scope only (a path, a split, a dependency, what a task covers): the edit operation gives `scope`, its reason, and needs no approval file.
 - **Owner edits.** An acceptance edit that changes on-screen wording or copy, look, or product direction needs an owner approval file naming the task (`owner_approval`: a `docs/specs/decisions-*.md` or `docs/decisions/*.md` file), and so does any edit of `human` or `verify`.
 

@@ -14,6 +14,7 @@ model: sonnet
 - Give each acceptance item, numbered from 1 in the task's order, one entry: a `run` (an argument list without a shell, first word `node` or `pnpm`, selecting only that item's tests) or a `gate` (`owner`, `device`, `review`, `ci` or `met`, with a `why`).
 - Add a `gate` only where the spec's Acceptance row says `gate: <kind>`; `scripts/check-red.mjs` refuses any other.
 - Run each `run` and confirm it fails for the intended reason, not a typo or a missing import.
+- Before you commit, check every fixture against the spec: each address, id, path and value the spec names appears as the spec says, and no fixture reuses another fixture's address or id where the spec says they differ. Fix a mismatch before the freeze; when the spec itself is unclear, stop and report instead of guessing.
 - Commit the tests, fixtures and manifest as one commit, `test(<ID>): freeze failing acceptance tests`.
 - When the manifest already exists on the branch, or the red gate finds a problem, amend that commit with `git commit --amend`; a second commit that touches the manifest or a test fails the frozen-test check.
 - Change nothing but tests, fixtures and the manifest. Do not push.

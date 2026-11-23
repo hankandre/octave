@@ -19,6 +19,7 @@ description: Open a pull request for a finished Octave branch, wait for CI, merg
 - Create it with `gh pr create --base main`.
 - Use a Conventional Commit subject as the title.
 - Fill in every section of `.github/pull_request_template.md`.
+- When the PR changes a security rule (`docs/security.md`, a lint, a validator, a real-TV gate, the network client or redaction), open the Summary with one plain sentence for the owner saying what got looser, or "Nothing got looser."
 - List the task ids and plan it covers.
 - Set each completed task to `done` with `passes: true` and evidence of at most 600 characters before opening the PR, with `pnpm task set <id> --status done --evidence-file <file>`; the evidence names the PR or a commit.
 - Fill the Frozen tests section from `node scripts/check-flow.mjs --json` (`changes`, or "none changed").
