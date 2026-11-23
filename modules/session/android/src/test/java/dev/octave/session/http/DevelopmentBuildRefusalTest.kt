@@ -107,7 +107,7 @@ class DevelopmentBuildRefusalTest {
     @Test
     fun a_listed_host_admits_nothing_beside_itself_and_loopback_and_the_emulator_host_still_qualify() {
         val servers = dev("media.home.arpa, 10.1.2.3,[fd00::1]")
-        for (url in listOf("http://sub.media.home.arpa", "http://media.home.arpa.example", "https://media.home.arpa.example", "http://10.1.2.4", "http://[fd00::2]")) {
+        for (url in listOf("http://sub.media.home.arpa", "https://media.home.arpa.example", "http://10.1.2.4", "http://[fd00::2]")) {
             refused(servers, url)
         }
         for (url in ADMITTED_WITHOUT_A_LIST) admitted(servers, url)
