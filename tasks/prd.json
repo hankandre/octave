@@ -1478,10 +1478,10 @@
             "Right from the rail returns to the card that had focus before even after T3-08's row router pointed the rows' guides elsewhere: a test enters the rows from the rail after focus moved between rows"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "PR not yet opened; commit ed311230 on task/T3-09. Shell, rail, Back, routes, not-found built; pnpm check green; own-emulator smoke and Back/rail moves pass; 20x50 fixture runs not done."
         },
         {
           "id": "T3-36",
