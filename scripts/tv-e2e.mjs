@@ -5,7 +5,7 @@
 // Before installing, the e2e APK's network security is judged (T3-15 item 1); after the conformance run, the module's
 // cleartext probe runs (T3-15 item 2, scripts/tv-cleartext.mjs), then the probe's resolved-address check (T3-20,
 // scripts/tv-resolved-address.mjs), then the install-id stage (T4-09, scripts/tv-install-id.mjs), which runs only on a
-// device that is positively an emulator and is skipped, with a recorded line, on any other. An explicit [apk] needs its probe APK too: the second
+// device that is positively an emulator and is skipped, with a recorded line, on any other. The two probe stages (the debuggable probe) run on an emulator only, and are skipped, with a recorded line, on any other device (T3-21). An explicit [apk] needs its probe APK too: the second
 // argument, or the one pnpm tv:e2e:build wrote; the probe is never skipped. After the network security judgement and
 // before any adb command, the dex, inspector and native inspector checks run on the e2e APK with the R8 mapping of its
 // build (the third argument, or the one pnpm tv:e2e:build kept beside the APK; scripts/tv-e2e-apk.mjs, T3-31); one
@@ -19,10 +19,12 @@ import { openAdb } from "./tv-adb.mjs";
 import { androidSdk, newestBuildTool, platformTool } from "./tv-android-sdk.mjs";
 import { checkApkAllowlist } from "./tv-apk-allowlist.mjs";
 import { judgeNetworkSecurity, readNetworkSecurity } from "./tv-apk-check.mjs";
+import { judgeCerts, readCerts } from "./tv-apk-signing.mjs";
 import { E2E_APK, E2E_MAPPING, PROBE_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { checkE2eApk } from "./tv-e2e-apk.mjs";
 import { expectedPublicCount, runCleartextProbe } from "./tv-cleartext.mjs";
-import { runInstallIdStage } from "./tv-install-id.mjs";
+import { installRefusal, probeStageDecision, readInstallFacts } from "./tv-install-guard.mjs";
+import { runInstallIdStage, stageRequired } from "./tv-install-id.mjs";
 import { runResolvedAddressProbe } from "./tv-resolved-address.mjs";
 
 const FIXTURES = fileURLToPath(new URL("../packages/core/tests/fixtures/", import.meta.url));
@@ -30,6 +32,8 @@ const EVIDENCE = fileURLToPath(new URL("../release-evidence/tv/", import.meta.ur
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
 const RUN_MS = 60_000;
 const PREFIX = "OCTAVE_E2E ";
+const PROBE_SKIP_LINE = "probe stage: skipped, the device is not an emulator";
+const PROBE_NOT_RUN_LINE = "probe stage: not run, the device was not recognised as an emulator and this run requires the stage";
 
 // A logcat line in any column format: `... <pid> <tid> <priority> <tag>: <message>` (as scripts/tv-first-focus.mjs).
 const LOGCAT = /\d+\s+\d+\s+[VDIWEFA]\s+([^:]*?)\s*:\s?(.*)$/;
@@ -192,8 +196,25 @@ async function main(args) {
     for (const error of allowlist) console.error(error);
     fail("the e2e APK holds the development-server allowlist canary");
   }
+  // T3-21: the e2e APK is signed, and not with the template's debug certificate. Outside E2E_APK_CHECKS, before any adb.
+  let signing;
+  try {
+    signing = judgeCerts(readCerts(newestBuildTool(androidSdk(), "apksigner"), apk));
+  } catch (error) {
+    signing = [`ERROR tv signing: ${error.message}`];
+  }
+  if (signing.length > 0) {
+    for (const error of signing) console.error(error);
+    fail("the e2e APK is not signed with a private key");
+  }
   if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
 
+  const facts = await readInstallFacts((rest) => adb(...rest), apk);
+  const refusal = installRefusal(facts);
+  if (refusal !== null) {
+    console.error(refusal);
+    process.exit(1);
+  }
   const install = adb("install", "-r", apk);
   if (install.status !== 0) fail(`adb install failed: ${(install.stdout + install.stderr).trim().split("\n").pop()}`);
   shell("am", "force-stop", ANDROID_APPLICATION_ID);
@@ -224,20 +245,34 @@ async function main(args) {
   }
   console.log(`tv e2e: url ${expected.url}/${expected.url}, device-id ${expected.deviceId}/${expected.deviceId}, host ok`);
 
-  const probe = await runCleartextProbe({ adbPath, serial, apk: probeApk, evidenceDir: EVIDENCE });
-  if (probe.errors.length > 0) {
-    for (const error of probe.errors) console.error(error);
+  // The two probe stages install a debuggable APK, so they run on an emulator only (T3-21 item 4).
+  const probeStages = probeStageDecision({ emulator: facts.emulator, mustRun: stageRequired(process.env) });
+  if (probeStages === "fail") {
+    mkdirSync(EVIDENCE, { recursive: true });
+    for (const name of ["e2e-cleartext.txt", "e2e-resolved-address.txt"]) writeFileSync(join(EVIDENCE, name), `${PROBE_NOT_RUN_LINE}\n`);
+    console.error("ERROR tv e2e: the device is not an emulator, and this run requires the cleartext and resolved-address probe stages");
     process.exit(1);
   }
-  const publicTotal = expectedPublicCount();
-  console.log(`tv e2e: cleartext private-lan ok, loopback ok, public ${probe.report["public-refused"]}/${publicTotal} refused`);
+  if (probeStages === "skip") {
+    mkdirSync(EVIDENCE, { recursive: true });
+    for (const name of ["e2e-cleartext.txt", "e2e-resolved-address.txt"]) writeFileSync(join(EVIDENCE, name), `${PROBE_SKIP_LINE}\n`);
+    console.log("tv e2e: cleartext and resolved-address probe stages skipped, the device is not an emulator");
+  } else {
+    const probe = await runCleartextProbe({ adbPath, serial, apk: probeApk, evidenceDir: EVIDENCE });
+    if (probe.errors.length > 0) {
+      for (const error of probe.errors) console.error(error);
+      process.exit(1);
+    }
+    const publicTotal = expectedPublicCount();
+    console.log(`tv e2e: cleartext private-lan ok, loopback ok, public ${probe.report["public-refused"]}/${publicTotal} refused`);
 
-  const resolvedProbe = await runResolvedAddressProbe({ adbPath, serial, apk: probeApk, evidenceDir: EVIDENCE });
-  if (resolvedProbe.errors.length > 0) {
-    for (const error of resolvedProbe.errors) console.error(error);
-    process.exit(1);
+    const resolvedProbe = await runResolvedAddressProbe({ adbPath, serial, apk: probeApk, evidenceDir: EVIDENCE });
+    if (resolvedProbe.errors.length > 0) {
+      for (const error of resolvedProbe.errors) console.error(error);
+      process.exit(1);
+    }
+    console.log("tv e2e: resolved-address private ok, mixed ok, public refused");
   }
-  console.log("tv e2e: resolved-address private ok, mixed ok, public refused");
 
   // Last: it clears the app's data and switches the backup transport on an emulator; it prints its own outcome.
   const installId = await runInstallIdStage({ adbPath, serial, evidenceDir: EVIDENCE });

@@ -11,6 +11,7 @@ import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity
 import { openAdb } from "./tv-adb.mjs";
 import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
+import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
 import { judgeDevServerWatch, startDevServerWatch } from "./tv-dev-server-watch.mjs";
 
 const EVIDENCE = fileURLToPath(new URL("../release-evidence/tv/", import.meta.url));
@@ -98,6 +99,8 @@ export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = E
   const watch = await startDevServerWatch({ adb: adbPath, serial, port });
   onWatch(watch);
   try {
+    const refusal = installRefusal(await readInstallFacts((args) => adb(...args), apk));
+    if (refusal !== null) throw new SmokeFailure(refusal);
     const install = adb("install", "-r", apk);
     if (install.status !== 0) throw new SmokeFailure(`ERROR tv focus: adb install failed: ${(install.stdout + install.stderr).trim().split("\n").pop()}`);
     shell("am", "force-stop", ANDROID_APPLICATION_ID);
