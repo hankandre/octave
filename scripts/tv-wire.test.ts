@@ -301,7 +301,7 @@ describe("T3-05 item 4: a canary token appears in no logcat line, React Native e
   const CLEAN = [
     "11-21 19:00:00.000  4242  4260 I ReactNativeJS: OCTAVE_WIRE result test=transport-canary target=mock task=T3-05 crossings=64 selftest=ok canary=absent",
     "11-21 19:00:00.100  4242  4242 D OkHttp  : nothing here",
-    "11-21 19:00:00.200   812   900 I ActivityManager: Start proc 4242:dev.octave.tv/u0a123",
+    "11-21 19:00:00.200   812   900 I ActivityManager: Start proc 4242:cloud.jellyscale.octave/u0a123",
     "11-21 19:00:00.300  4242  4260 I ReactNativeJS: OCTAVE_WIRE done",
   ];
   const SECRETS = [CANARY, TOKEN, PASSWORD, PLACEHOLDER];

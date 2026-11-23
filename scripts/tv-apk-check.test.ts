@@ -92,10 +92,10 @@ describe("checkBadging", () => {
 
   it("T3-01 item 3: fails an APK built with another application ID and names Octave's", async () => {
     const checkBadging = await loadCheckBadging();
-    const errors = checkBadging(GOOD.replaceAll("dev.octave.tv", "dev.example.other"));
+    const errors = checkBadging(GOOD.replaceAll("cloud.jellyscale.octave", "dev.example.other"));
     expect(errors.length).toBeGreaterThanOrEqual(1);
     expect(errors[0]).toMatch(/^ERROR tv apk: /);
-    expect(errors.join("\n")).toContain("dev.octave.tv");
+    expect(errors.join("\n")).toContain("cloud.jellyscale.octave");
   });
 
   it("T3-01 item 3: reports one line per missing fact", async () => {

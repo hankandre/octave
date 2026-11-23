@@ -108,7 +108,7 @@ describe("summarizeResults", () => {
 
   it("T3-01 item 5: fails on a failed test", async () => {
     const summarize = await loadSummarize();
-    const failed = suite("dev.octave.buildcheck.AppIdentityTest", [{ name: "applicationIdComesFromTheCore()", failure: "expected: dev.octave.tv but was: dev.example" }]);
+    const failed = suite("dev.octave.buildcheck.AppIdentityTest", [{ name: "applicationIdComesFromTheCore()", failure: "expected: cloud.jellyscale.octave but was: dev.example" }]);
     const result = summarize([app([failed, SHARED_VECTORS])]);
     expect(result.errors.length).toBeGreaterThanOrEqual(1);
     expect(result.errors[0]).toMatch(/^ERROR tv native: /);

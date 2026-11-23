@@ -55,7 +55,7 @@ async function connectOnce(port: number): Promise<void> {
 
 async function fake(control: FakeSmokeOptions["control"]) {
   const port = await freePort();
-  const made = writeFakeSmokeAdb({ serial: "emulator-5554", port, appId: ANDROID_APPLICATION_ID, control });
+  const made = writeFakeSmokeAdb({ serial: "emulator-5554", port, appId: ANDROID_APPLICATION_ID, emulator: true, control });
   temps.push(made.dir);
   return { ...made, port };
 }

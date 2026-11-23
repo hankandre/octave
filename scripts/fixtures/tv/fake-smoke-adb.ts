@@ -19,6 +19,9 @@ export type FakeSmokeOptions = {
   leakIntoOutput?: boolean;
   // The text `am instrument` prints (the probes).
   instrument?: string;
+  // `getprop ro.boot.qemu` answers 1, so the install guard (T3-21 item 4) takes the device for an emulator. Without it
+  // getprop answers nothing and the device is not an emulator.
+  emulator?: boolean;
 };
 
 export function writeFakeSmokeAdb(options: FakeSmokeOptions): { adb: string; dir: string; log: string } {
@@ -44,6 +47,7 @@ export function writeFakeSmokeAdb(options: FakeSmokeOptions): { adb: string; dir
       'const sh = rest[0] === "shell" ? rest.slice(1).join(" ") : "";',
       'const isControl = rest[0] === "shell" && !/^(am|logcat|cmd|log|input|dumpsys|ps|getprop)\\b/.test(sh) && new RegExp("(^|\\\\D)" + o.port + "(\\\\D|$)").test(sh);',
       'if (rest[0] === "get-state") out("device");',
+      'else if (rest[0] === "shell" && sh.startsWith("getprop ")) { if (o.emulator === true && sh === "getprop ro.boot.qemu") out("1"); }',
       'else if (rest[0] === "reverse" && rest[1] !== "--remove" && rest[1] !== "--list") { if (o.reverse === "fail-named") fail(missing); }',
       'else if (rest[0] === "install") { if (o.install === "fail-named") fail("adb: failed to connect to " + o.serial); else out("Success"); }',
       'else if (rest[0] === "shell" && sh.startsWith("cmd package resolve-activity")) { if (o.leakIntoOutput) out("matched " + o.serial); out(o.appId + "/.MainActivity"); }',

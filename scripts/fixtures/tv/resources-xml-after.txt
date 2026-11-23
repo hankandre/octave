@@ -1,5 +1,5 @@
 Binary APK
-Package name=dev.octave.tv id=7f
+Package name=cloud.jellyscale.octave id=7f
   type xml id=13 entryCount=7
     resource 0x7f130000 xml/file_system_provider_paths
       () (file) res/pT.xml type=XML
