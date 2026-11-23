@@ -23,6 +23,7 @@ export interface ArtworkRecord {
   state(itemId: string, payload: unknown): void;
 }
 
+// A preview view (T3-39) has no item id and gets no handler: its props are recorded and it is drawn as given.
 export function recordingView(NativeView: ComponentType<OctaveArtworkViewProps>, record: ArtworkRecord): ComponentType<OctaveArtworkViewProps> {
   return function RecordingArtworkView(props: OctaveArtworkViewProps) {
     const { onArtworkState, ...rest } = props;
@@ -30,11 +31,12 @@ export function recordingView(NativeView: ComponentType<OctaveArtworkViewProps>,
     const { itemId } = props;
     const onState = useCallback(
       (event: StateEvent) => {
-        record.state(itemId, event.nativeEvent);
+        if (itemId !== undefined) record.state(itemId, event.nativeEvent);
         onArtworkState?.(event);
       },
       [itemId, onArtworkState],
     );
+    if (itemId === undefined) return <NativeView {...props} />;
     return <NativeView {...props} onArtworkState={onState} />;
   };
 }
