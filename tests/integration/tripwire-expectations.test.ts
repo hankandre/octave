@@ -118,9 +118,11 @@ describe("T2-09 item 2: full capabilities direct play every playable sample", ()
 });
 
 describe("T2-09 item 3: a set lacking the codec converts with the client reason on Jellyfin", () => {
+  // no-h264 is not in this loop: the conversion is encoded into H.264, which that set cannot decode (T8-23, whose
+  // own test holds that row).
   it("the lacking sample is a Transcode conversion with DeviceCannotPlay on both Jellyfin servers", () => {
     for (const server of JELLYFIN) {
-      for (const set of SETS) {
+      for (const set of SETS.filter((name) => name !== "no-h264")) {
         expect(expectationFor(server, set, PAIRS[set].lacking), `${server} ${set}`).toEqual({
           kind: "conversion",
           methods: ["Transcode"],

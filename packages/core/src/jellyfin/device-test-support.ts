@@ -134,7 +134,19 @@ export function listOf(video: readonly VideoCodec[], audio: readonly AudioCodec[
 
 export const EVERYTHING = listOf(["h264", "hevc", "av1", "vp9"], ["aac", "ac3", "eac3", "opus", "flac", "mp3"]);
 export const FAILED: PlayerCapabilities = { probe: "failed" };
-export const withoutH264 = listOf(["hevc", "av1"], ["aac", "ac3"]);
+// No decoder plays the samples' H.264 as stored (they are High), and an H.264 encode still decodes: the one h264
+// decoder states another profile. A list with no h264 decoder at all cannot decode a conversion's target (T8-23).
+export const withoutH264: PlayerCapabilities = {
+  probe: "complete",
+  videoDecoders: [
+    { codec: "h264", hardware: true, profile: "Constrained Baseline" },
+    { codec: "hevc", hardware: true },
+    { codec: "av1", hardware: true },
+  ],
+  audioDecoders: ["aac", "ac3"],
+  hdr: [],
+  passthrough: [],
+};
 export const withoutHevc = listOf(["h264", "av1"], ["aac", "ac3"]);
 export const withoutAac = listOf(["h264", "hevc", "av1"], ["ac3"]);
 export const withoutAc3 = listOf(["h264", "hevc", "av1"], ["aac"]);
