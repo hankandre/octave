@@ -64,6 +64,9 @@ object SessionRegistry {
 
     internal fun entry(session: SessionId): SessionEntry? = sessions[session]
 
+    // Whether this process holds the session: the one answer another module gets (T8-01). No entry, origin or header.
+    fun holds(session: SessionId): Boolean = sessions.containsKey(session)
+
     // The number of sessions held; no id and no entry (T3-25, for the cap tests).
     internal fun count(): Int = sessions.size
 }
