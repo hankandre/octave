@@ -3509,10 +3509,10 @@
             "Defaults: auto-play next on, countdown 10 s, intros and credits Show a Skip button, limits No limit, Continue watching window 90 days"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit b0a98625 (milestones from commit 958db14f: native store, core split, TV store, docs). pnpm check green (core 3353, TV jest 152, root 2263); green gate items 1-5; tv:native:test 732 passed (PreferencesStoreTest 14, ModuleSurfaceTest 4); tv:build + tv:apk:check pass; tv:e2e passed on own fluster_tv emulator. Untested: Shield/real TV, other Android versions; no server calls."
         },
         {
           "id": "T9-09",
