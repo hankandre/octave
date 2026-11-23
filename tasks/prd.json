@@ -3018,10 +3018,10 @@
             "Before the implement step, the spec's Dependencies section records the T8 phase dependency re-check from primary sources, with the date: Media3 and the pins the player path builds on (the Expo module core, OkHttp, the JUnit BOM, and the Gradle pins Dependabot does not read); a pin that cannot be verified returns as a question, and the task does not go to implement on it"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "Review fixes in commit e9722356 (spec sections restored; engine refuses work after destroy and undoes a late launch; failed launch paused; alternative decoder type). Local: pnpm check pass (3449+2557 tests); tv:native:test 903/0; tv:build + tv:apk:check pass; tv:e2e pass; tv:wire --task T8-02 on own API 36 TV emulator: player-original-file, player-samples, player-redirect pass. CI wire job and tv apk dex line on the PR head still due (items 5-8, gate: ci)."
+          "passes": true,
+          "evidence": "PR #321, run https://github.com/jellyscale-org/octave/actions/runs/45159962155 head f2a6d12d. wire job: 'player-original-file jellyscale T8-02 pass', 'player-samples jellyscale T8-02 pass', 'player-redirect mock T8-02 pass'. tv job: 'tv apk dex: .../app-release.apk passes (6202 classes in 1 dex files, 0 in Octave code outside the one client)'. Local: pnpm check, tv:native:test 903/0, tv:e2e pass. Item 7 gate: ci."
         },
         {
           "id": "T8-03",
