@@ -8,6 +8,7 @@ import { createServer } from "node:http";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openAdb } from "./tv-adb.mjs";
+import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
 
 const HOST_CLASSES = fileURLToPath(new URL("../packages/core/tests/fixtures/host-classes.json", import.meta.url));
 
@@ -115,6 +116,9 @@ export function startHostServer() {
   });
 }
 
+// An async adb answer in the form the install guard reads.
+export const asStatus = (answer) => ({ status: answer.code, stdout: answer.stdout });
+
 export const lastLine = (result) => (result.stdout + result.stderr).trim().split("\n").pop() ?? "";
 
 // Installs and runs the probe on the device `serial` names, judges it, and writes release-evidence/tv/e2e-cleartext.txt.
@@ -129,7 +133,9 @@ export async function runCleartextProbe({ adbPath, serial, apk, evidenceDir }) {
   try {
     const reverse = await adb(["reverse", `tcp:${port}`, `tcp:${port}`]);
     if (reverse.code !== 0) errors.push(`ERROR tv e2e: cleartext adb reverse failed: ${lastLine(reverse)}`);
-    const install = reverse.code === 0 ? await adb(["install", "-r", "-t", apk]) : undefined;
+    const refusal = reverse.code === 0 ? installRefusal(await readInstallFacts(async (args) => asStatus(await adb(args)), apk)) : null;
+    if (refusal !== null) errors.push(refusal);
+    const install = reverse.code === 0 && refusal === null ? await adb(["install", "-r", "-t", apk]) : undefined;
     if (install !== undefined && install.code !== 0) errors.push(`ERROR tv e2e: cleartext probe install failed: ${lastLine(install)}`);
     if (install?.code === 0) {
       const run = await adb(["shell", "am", "instrument", "-w", "-e", "hostPort", String(port), PROBE_COMPONENT]);

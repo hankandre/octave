@@ -7,7 +7,7 @@ const ADB_MODULE = "scripts/tv-adb.mjs";
 const CALLERS = ["tv-first-focus", "tv-dev-server-watch", "tv-e2e", "tv-cleartext", "tv-resolved-address", "tv-wire"].map((name) => `scripts/${name}.mjs`);
 // Files that start a program held in a variable and do not know adb: aapt2 and dexdump, and a manifest's command. A sixth
 // such file is a finding until it is added here, which is a reviewed change.
-const PINNED = new Set(["tv-apk-check", "tv-apk-manifest", "tv-apk-inspector", "tv-apk-dex", "check-red"].map((name) => `scripts/${name}.mjs`));
+const PINNED = new Set(["tv-apk-check", "tv-apk-manifest", "tv-apk-inspector", "tv-apk-dex", "tv-apk-signing", "check-red"].map((name) => `scripts/${name}.mjs`));
 // Files that start adb or a variable program on a CI runner with stdio discarded, so nothing of adb reaches a console or a file.
 // An entry is skipped only while the file still holds `stdio: "ignore"`.
 const DISCARDS_OUTPUT = new Set(["scripts/ci-emulator-retry.mjs"]);

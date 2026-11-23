@@ -8,7 +8,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { openAdb } from "./tv-adb.mjs";
-import { PROBE_COMPONENT, PROBE_PACKAGE, lastLine, parseInstrumentation, startHostServer } from "./tv-cleartext.mjs";
+import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
+import { PROBE_COMPONENT, PROBE_PACKAGE, asStatus, lastLine, parseInstrumentation, startHostServer } from "./tv-cleartext.mjs";
 
 export const RESOLVED_REPORT_KEYS = [
   "resolved-private",
@@ -93,9 +94,11 @@ export async function runResolvedAddressProbe({ adbPath, serial, apk, evidenceDi
   const errors = [];
   let report = {};
   try {
-    const install = await adb(["install", "-r", "-t", apk]);
-    if (install.code !== 0) errors.push(`ERROR tv e2e: resolved-address probe install failed: ${lastLine(install)}`);
-    if (install.code === 0) {
+    const refusal = installRefusal(await readInstallFacts(async (args) => asStatus(await adb(args)), apk));
+    if (refusal !== null) errors.push(refusal);
+    const install = refusal === null ? await adb(["install", "-r", "-t", apk]) : undefined;
+    if (install !== undefined && install.code !== 0) errors.push(`ERROR tv e2e: resolved-address probe install failed: ${lastLine(install)}`);
+    if (install?.code === 0) {
       const run = await adb(
         ["shell", "am", "instrument", "-w", "-e", "check", "resolved-address", "-e", "hostPort", String(port), PROBE_COMPONENT],
         PROBE_MS,

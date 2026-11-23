@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
 import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
 import { openAdb } from "./tv-adb.mjs";
+import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
 import { E2E_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { clearEvidence, evidenceDir, writeEvidence, writeSummary } from "./tv-wire-evidence.mjs";
 import { openDevice } from "./tv-wire-device.mjs";
@@ -265,6 +266,11 @@ async function main(args) {
       for (const error of errors) console.error(error);
       process.exit(1);
     }
+  }
+  const refusal = installRefusal(await readInstallFacts((args) => adb(...args), E2E_APK));
+  if (refusal !== null) {
+    console.error(refusal);
+    process.exit(1);
   }
   const install = adb("install", "-r", E2E_APK);
   if (install.status !== 0) fail("adb install of the e2e APK failed");
