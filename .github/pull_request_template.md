@@ -1,6 +1,6 @@
 ## Summary
 
-<!-- What changed and why, two to four bullets. -->
+<!-- What changed and why, two to four bullets. If this changes a security rule, start with one plain sentence: what got looser, or "Nothing got looser." -->
 
 ## User impact
 
