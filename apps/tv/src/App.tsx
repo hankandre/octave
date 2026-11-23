@@ -1,19 +1,19 @@
-// The composition root: the navigation container and its one route. T3-09 builds the shell and routes on it.
-import { DarkTheme, NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+// The composition root: the app shell with the one placeholder screen every route shows until its own task replaces it
+// (sign-in T4, Home T5-03, libraries T6-01, the player T8, Settings T9). Libraries and the account arrive with T4 and T6-01.
 import { FirstScreen } from "./first-screen/FirstScreen";
-import { colors } from "./design/tokens";
+import { AppShell } from "./shell";
 
-const Stack = createNativeStackNavigator();
-
-const theme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.surface0 } };
+const screens = {
+  home: FirstScreen,
+  search: FirstScreen,
+  library: FirstScreen,
+  settings: FirstScreen,
+  accounts: FirstScreen,
+  item: FirstScreen,
+  play: FirstScreen,
+  signIn: FirstScreen,
+};
 
 export default function App() {
-  return (
-    <NavigationContainer theme={theme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="First" component={FirstScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
+  return <AppShell screens={screens} libraries={[]} />;
 }
