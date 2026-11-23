@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
 import { RELEASE_MAPPING } from "./tv-apk-inspector.mjs";
 import { ANDROID_DIR, APP_DIR, prebuild, prebuildIsCurrent } from "./tv-prebuild.mjs";
+import { signingProblems } from "./tv-signing.mjs";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
 export const E2E_APK = join(APP_DIR, "dist", "e2e", "octave-tv-e2e.apk");
@@ -91,6 +92,7 @@ const SYSTEM = {
   prebuildIsCurrent,
   prebuild,
   sourceHash: () => e2eSourceHash(),
+  signingProblems: () => signingProblems(process.env),
   gradle: (tasks, env) => spawnSync("./gradlew", tasks, { cwd: ANDROID_DIR, stdio: "inherit", env }),
   releaseApk: RELEASE_APK,
   releaseMapping: RELEASE_MAPPING,
@@ -114,6 +116,9 @@ export function buildTv({ e2e }, system = SYSTEM) {
 function build(e2e, system) {
   const flavour = e2e ? "e2e" : "release";
   const { releaseApk, probeBuildDir } = system;
+  // T3-21: no key, no build. Checked before anything is built, and before Gradle, which repeats the check.
+  const signing = system.signingProblems?.() ?? [];
+  if (signing.length > 0) return signing;
   if (!system.prebuildIsCurrent()) {
     console.log("tv build: apps/tv/android is missing or stale; running pnpm tv:prebuild");
     if (system.prebuild() !== 0) return ["ERROR tv build: expo prebuild failed"];

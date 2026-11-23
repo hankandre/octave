@@ -8,6 +8,7 @@ export function e2eApkIsCurrent(): boolean;
 export interface TvBuildSystem {
   prebuildIsCurrent(): boolean;
   prebuild(): number;
+  signingProblems?(): string[];
   sourceHash(): string;
   gradle(tasks: string[], env: NodeJS.ProcessEnv): { status: number | null; signal?: NodeJS.Signals | null };
   releaseApk: string;
