@@ -1,0 +1,116 @@
+{
+  "description": "BlurHash decode vectors (T3-39, docs/specs/T3-39.md, Test plan). Each decode vector's pixels are [x, y, r, g, b] of a 32x32 decode with punch 1, alpha 255; a decoder passes within +-1 per channel. Every refuse vector decodes to nothing.",
+  "source": {
+    "reference": "woltapp/blurhash, TypeScript/src/decode.ts, base83.ts and utils.ts at commit 712a47f946b98c30097eb1ada086ea00b18681ec (2024-05-21), read through the GitHub API on 2026-11-23",
+    "licence": "MIT (License.md at that commit, Copyright (c) 2018 Wolt Enterprises), read before the reference was run",
+    "method": "The reference decoder was run once at 32x32, outside the repository, by the T3-39 test writer; only its numbers are committed, no code of it"
+  },
+  "size": 32,
+  "maxLength": 166,
+  "decode": [
+    {
+      "hash": "000000",
+      "from": "1x1 (flag 0), DC 0x000000 (black): every pixel is the DC colour, derived by hand; the reference agrees",
+      "pixels": [
+        [0, 0, 0, 0, 0],
+        [31, 0, 0, 0, 0],
+        [0, 31, 0, 0, 0],
+        [31, 31, 0, 0, 0],
+        [16, 16, 0, 0, 0]
+      ]
+    },
+    {
+      "hash": "00TSUA",
+      "from": "1x1 (flag 0), DC 0xFFFFFF (white): every pixel is the DC colour, derived by hand; the reference agrees",
+      "pixels": [
+        [0, 0, 255, 255, 255],
+        [31, 0, 255, 255, 255],
+        [0, 31, 255, 255, 255],
+        [31, 31, 255, 255, 255],
+        [16, 16, 255, 255, 255]
+      ]
+    },
+    {
+      "hash": "005?}k",
+      "from": "1x1 (flag 0), DC 0x336699 (a mid blue): every pixel is the DC colour, derived by hand; the reference agrees",
+      "pixels": [
+        [0, 0, 51, 102, 153],
+        [31, 0, 51, 102, 153],
+        [0, 31, 51, 102, 153],
+        [31, 31, 51, 102, 153],
+        [16, 16, 51, 102, 153]
+      ]
+    },
+    {
+      "hash": "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+      "from": "the reference README's example hash (4x3, numX x numY); pixels from the reference decoder at 32x32",
+      "pixels": [
+        [0, 0, 135, 164, 177],
+        [31, 0, 137, 166, 181],
+        [0, 31, 136, 144, 147],
+        [31, 31, 133, 142, 147],
+        [16, 16, 158, 125, 108]
+      ]
+    },
+    {
+      "hash": "|e8h|XT1u;25T[v#2{U+wr3:Vvxi4zWmyZ5qXdzQ6hYU#H7YZL$88PaC$~9Gb3%?A7b^*%A}c-+tB=dx,kC$eo-bDsff.SEjgW:JFahN;AGRiE=1HIj5=[I9j{?+J0k:@vJ@lz[mK*mq]dLunh^UMloY_LNcpP{COTqG|3",
+      "from": "a 9x9 hash of 166 characters built for this file: flag 80, quantised maximum 40, DC 0x4A6B8C, AC k (1 to 80) = (k * 2311 + 97) mod 6859; pixels from the reference decoder at 32x32",
+      "pixels": [
+        [0, 0, 0, 255, 92],
+        [31, 0, 71, 232, 234],
+        [0, 31, 80, 102, 0],
+        [31, 31, 144, 148, 191],
+        [16, 16, 149, 221, 144]
+      ]
+    },
+    {
+      "hash": "diE|rGDNI9tmPpMca0tSO@xFs9R%xuofWARiNGkWWVso",
+      "from": "packages/core/tests/fixtures/jellyfin/12.4.0/home-latest.json, ImageBlurHashes.Primary[\"id-2\"] (4x5, numX x numY); pixels from the reference decoder at 32x32",
+      "pixels": [
+        [0, 0, 0, 127, 120],
+        [31, 0, 93, 201, 221],
+        [0, 31, 78, 80, 70],
+        [31, 31, 76, 96, 97],
+        [16, 16, 160, 166, 177]
+      ]
+    }
+  ],
+  "refuse": [
+    {
+      "hash": "",
+      "why": "empty"
+    },
+    {
+      "hash": "00000",
+      "why": "5 characters, fewer than 6"
+    },
+    {
+      "hash": "|e8h|XT1u;25T[v#2{U+wr3:Vvxi4zWmyZ5qXdzQ6hYU#H7YZL$88PaC$~9Gb3%?A7b^*%A}c-+tB=dx,kC$eo-bDsff.SEjgW:JFahN;AGRiE=1HIj5=[I9j{?+J0k:@vJ@lz[mK*mq]dLunh^UMloY_LNcpP{COTqG|30",
+      "why": "167 characters, longer than the 166 bound"
+    },
+    {
+      "hash": "LEHV6nWB2y 8pyo0adR*.7kCMdnj",
+      "why": "a space, outside the 83-character alphabet (README hash, character 11 replaced)"
+    },
+    {
+      "hash": "LEHV6nWB2yé8pyo0adR*.7kCMdnj",
+      "why": "U+00E9, non-ASCII, outside the alphabet (README hash, character 11 replaced)"
+    },
+    {
+      "hash": "LEHV6nWB2y\"8pyo0adR*.7kCMdnj",
+      "why": "a double quote, outside the alphabet (README hash, character 11 replaced)"
+    },
+    {
+      "hash": "LEHV6nWB2yk8pyo0adR*.7kCMdnj00",
+      "why": "30 characters where the size flag (4x3) asks for 28"
+    },
+    {
+      "hash": "00TSUB",
+      "why": "1x1 with a DC of 0xFFFFFF + 1"
+    },
+    {
+      "hash": "100000~r",
+      "why": "2x1 with an AC of 6859, above 19^3 - 1"
+    }
+  ]
+}
