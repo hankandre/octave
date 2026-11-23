@@ -58,7 +58,7 @@ export async function ensureFixtures(
 // T8-07 (Product Owner ruling on item 6): setup creates the Jellyfin libraries without scanning them, so the runner
 // scans the library a selected wire test reads before the first pair runs. Only the tests on this list read a Jellyfin
 // library; a Jellyscale or mock pair starts no scan.
-export const READS_JELLYFIN_LIBRARY = ["player-capabilities"];
+export const READS_JELLYFIN_LIBRARY = ["player-capabilities", "artwork-header-and-cache"];
 const JELLYFIN_TARGETS = ["jellyfin-10-11", "jellyfin-12"];
 // The samples those tests look up, by file name (Jellyfin titles them from the NFO, so the name varies by server).
 export const SCANNED_SAMPLES = ["Synthetic H264 (2024).mkv", "Synthetic No Decoder (2024).mkv"];
@@ -84,11 +84,13 @@ export async function scanJellyfinLibraries(
     const user = credentials[`${target}_username`];
     const password = credentials[`${target}_password`];
     if (!origin || !user || !password) throw new Error(`no fixture credentials for ${target}; run pnpm fixture:setup`);
-    await scanOne(target, origin, user, password, { secrets, fetch, sleep, now, log });
+    // T3-11: the artwork test also needs a card with a Primary image, so the scan waits for one.
+    const pictured = pairs.some((pair) => pair.test === "artwork-header-and-cache" && pair.target === target);
+    await scanOne(target, origin, user, password, { secrets, fetch, sleep, now, log, pictured });
   }
 }
 
-async function scanOne(target, origin, user, password, { secrets, fetch, sleep, now, log }) {
+async function scanOne(target, origin, user, password, { secrets, fetch, sleep, now, log, pictured }) {
   const call = async (method, path, { token, body } = {}) => {
     const response = await fetch(`${origin}${path}`, {
       method,
@@ -120,7 +122,8 @@ async function scanOne(target, origin, user, password, { secrets, fetch, sleep, 
       busy = (Array.isArray(tasks) ? tasks : []).filter((task) => task.State !== "Idle").length;
       const movies = (items?.Items ?? []).filter((item) => item.Type === "Movie" && typeof item.Path === "string");
       listed = SCANNED_SAMPLES.filter((file) => movies.some((item) => item.Path.endsWith(`/${file}`))).length;
-      quietPolls = listed === SCANNED_SAMPLES.length && busy === 0 ? quietPolls + 1 : 0;
+      const hasPicture = !pictured || movies.some((item) => typeof item.ImageTags?.Primary === "string" && item.ImageTags.Primary !== "");
+      quietPolls = listed === SCANNED_SAMPLES.length && busy === 0 && hasPicture ? quietPolls + 1 : 0;
       if (quietPolls >= 2) {
         log(`tv wire: scanned the ${target} library; ${listed} sample(s) listed, scheduled tasks idle`);
         return;
