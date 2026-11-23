@@ -16,11 +16,14 @@ import expo.modules.kotlin.modules.ModuleDefinition
 //
 // Threading: each body hands the call to CommandQueue, this module's own single thread, and returns, so a command
 // never holds Expo's shared modules queue and commands run in the order they came. A command still queued when the
-// module is destroyed answers `unknown`. The engine marshals to the main thread its player needs; on destroy it is
-// stopped first, inline when Expo calls OnDestroy on the main thread.
+// module is destroyed answers `unknown`. The engine marshals to the main thread its player needs; on destroy the
+// module is marked destroyed, so the engine refuses any launch still on its way to the main thread, and the engine is
+// stopped, inline when Expo calls OnDestroy on the main thread.
 class OctavePlayerModule : Module() {
+    @Volatile
+    private var destroyed = false
     private val commands = CommandQueue()
-    private val seam = PlayerSeam(Media3Engine(context = { appContext.reactContext?.applicationContext }), RegistrySessionCheck) { event ->
+    private val seam = PlayerSeam(Media3Engine(context = { appContext.reactContext?.applicationContext }, closed = { destroyed }), RegistrySessionCheck) { event ->
         sendEvent("playerEvent", event)
     }
 
@@ -44,6 +47,7 @@ class OctavePlayerModule : Module() {
         View(OctavePlayerView::class) {}
 
         OnDestroy {
+            destroyed = true
             seam.stop()
             commands.close()
         }
