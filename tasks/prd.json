@@ -1,6 +1,6 @@
 {
   "product": "Octave",
-  "updated": "2026-11-22",
+  "updated": "2026-11-23",
   "rules": [
     "Pick the first task, in file order, whose status is todo and whose depends_on tasks all pass.",
     "Skip tasks with human set to true unless the owner is taking part; set them to blocked and state in evidence what the owner must decide or check.",
@@ -649,6 +649,51 @@
           "evidence": "commit 21b9b1b4 (fix) on 2636dd3f: follow-ups step fixes small lows, leaves go to tasks/backlog.jsonl, real-TV gates in result, unaccountedLows count; task-followups tests and pnpm check green"
         },
         {
+          "id": "T1-25",
+          "title": "Make PRODUCT.md describe the product and move its task lists out",
+          "domain": "Process",
+          "lane": "workflow",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "PRODUCT.md names no task id, task list or phase-by-phase roadmap, and points to tasks/prd.json for the plan (owner: docs/specs/decisions-owner-inbox-2026-11-23.md, 3)",
+            "Its principles, audience, scope, success measures and decided product questions stay, in product terms; no sentence of them changes meaning, and the PR lists every sentence removed or reworded so the owner can read the change",
+            "The features the launch scope review moved after launch (docs/research/launch-scope-2026-11-22.md) are not named in PRODUCT.md",
+            "Nothing the roadmap alone recorded is lost: the spec shows where tasks/prd.json or a decision record already holds each fact, and returns to the Product Owner any that neither holds",
+            "Every file that cites a PRODUCT.md section this task removes or renames is updated in the same PR"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T1-26",
+          "title": "Mark a backlog entry dismissed or deferred so a pass reads it once",
+          "domain": "Process",
+          "lane": "workflow",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "scripts/task-owner.mjs gains an operation that marks a backlog entry dismissed (not something Octave needs) or deferred (later, with what would bring it back), each with the pass date and the reason; the line stays in the file, and an entry with taken_by cannot be marked (owner: docs/specs/decisions-direction-2026-11-22.md, 4)",
+            "A later pass can reopen a marked entry with a reason, and an add can take a deferred one",
+            "scripts/check-backlog.mjs accepts the marks and refuses one without a date or a reason; pnpm lint:flow lets only a Product Owner pass set or clear them",
+            "A Product Owner pass is given only the entries with no taken_by and no mark, and the deferred ones with their conditions; its instructions and WORKFLOW.md section 2a say so in the same PR",
+            "The task marks nothing itself: the first pass after it carries over the dismissals and laters logged in tasks/product-owner-log.md",
+            "Tests cover each mark, a refused mark and a reopened entry"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T1-21",
           "title": "Let a Product Owner pass move finished phases out of tasks/prd.json",
           "domain": "Process",
@@ -788,6 +833,52 @@
             "No check is given up and CI is unchanged; a denied command still halts the run",
             "pnpm test:workflow covers a failing local check that stops the push",
             "WORKFLOW.md and the ship skill describe the step, in the same PR"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T1-27",
+          "title": "Say what got looser in a security-rule pull request, and check fixtures against the spec before the freeze",
+          "domain": "Process",
+          "lane": "workflow",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "A pull request that changes a security rule opens its body with one plain sentence saying what, if anything, got looser, or that nothing did; the ship skill and the PR template ask for it (owner: docs/specs/decisions-direction-2026-11-22.md, 3)",
+            "The spec says what counts as changing a security rule (at least the hard rules of AGENTS.md, docs/security.md, and a decision record on tokens or the network) and how the Ship step knows",
+            "Before the test-writer's tests are frozen, each fixture is checked against the spec (the addresses, ids and values the spec names); a mismatch stops the step before the freeze commit and names the fixture and the spec line",
+            "The spec reads the four corrections (T3-26, T8-22 twice, the T3-08 helper) and says which of them the check would have caught",
+            "No check is given up, the frozen-test rule is unchanged, and a denied command still halts the run",
+            "pnpm test:workflow covers a mismatch that stops the freeze; WORKFLOW.md describes both steps in the same PR"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T1-28",
+          "title": "Run a read-only direction review at each phase end and every ten merged tasks",
+          "domain": "Process",
+          "lane": "workflow",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [],
+          "acceptance": [
+            "A script builds a digest: the tasks merged since the last review with their evidence lines, the Product Owner log sections since then, the parked questions, the untaken backlog count, and the product's purpose from PRODUCT.md; it holds no server address, credential or owner's name",
+            "A review is due when a phase's tasks are all done or after 10 merged tasks since the last review, whichever comes first (owner: docs/specs/decisions-model-budget-2026-11-22.md, decision 6); a command says whether one is due and why",
+            "The review runs on Fable 5.2, reads the digest and not the repository, and writes one page: on track or drifting and why, how many of the merged tasks moved the product forward and how many were hardening or process, the three things that matter most next, and questions for the owner",
+            "It may append backlog lines; it edits no task, acceptance item or rule, and a test shows a run changes no other tracked file",
+            "An Opus 5.5 status note on the same digest closes each lane run",
+            "The spec says where the page is kept and how the owner sees it; WORKFLOW.md describes the review in the same PR; pnpm test:workflow covers due and not due"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -1383,7 +1474,8 @@
             "Opening a screen puts focus on its primary action, and Back returns to the previous screen with the same card focused",
             "Back on Home leaves the app without a question, and Back on another root screen goes Home",
             "The rail is hidden in the player and during sign-in",
-            "Routes are built and parsed in one module, and an unknown route shows the not-found state"
+            "Routes are built and parsed in one module, and an unknown route shows the not-found state",
+            "Right from the rail returns to the card that had focus before even after T3-08's row router pointed the rows' guides elsewhere: a test enters the rows from the rail after focus moved between rows"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -1902,7 +1994,8 @@
             "It covers: a row end to end, top to bottom, the rail in and out at several depths, and Up and Down across rows scrolled to different offsets",
             "It runs in the CI emulator job in under ten minutes and is required",
             "The same driver runs against a device serial for Shield checks, and never writes the serial or an address to disk",
-            "No script of the run sends keys with adb's monkey; the spec names the sender it uses and shows it raises no configuration change"
+            "No script of the run sends keys with adb's monkey; the spec names the sender it uses and shows it raises no configuration change",
+            "The oracle also checks that a row never scrolled opens at its first card after other rows were scrolled, and that no blur arrives without a focus"
           ],
           "verify": "pnpm check && pnpm tv:e2e",
           "status": "todo",
@@ -1938,7 +2031,8 @@
             "CI fails when the 1 GB emulator's memory after the scroll pass exceeds 280 MB in total or 200 MB of anonymous plus graphics memory as the emulator reports it",
             "The numbers the emulator cannot measure (GPU memory, real frame pacing) are marked as Shield-only in the output",
             "Shield check (owner): the script runs on the Shield and its results are stored with the commit it measured",
-            "PRODUCT.md's success measures take the numbers"
+            "PRODUCT.md's success measures take the numbers",
+            "The memory measure covers a thumb row at its draw distance (THUMB_ROW_DRAW_DISTANCE, 243 dp) beside a poster row at 150 dp, and the summary gives what each costs"
           ],
           "verify": "pnpm check && pnpm tv:e2e",
           "status": "todo",
@@ -2176,7 +2270,8 @@
             "Sign out revokes the token on the server and deletes the stored credential, even when the revoke request fails",
             "The stored credential is excluded from Android backup and from device-to-device transfer",
             "The token appears in no shared preference, React Native storage, log or event; a canary test reads all of them",
-            "docs/security.md describes the store in the same PR"
+            "docs/security.md describes the store in the same PR",
+            "In a development build a restored session is opened only on a server the development-server rule (T3-33) allows, and the scan that pins the one opener of a session covers the restore path"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
@@ -2370,7 +2465,9 @@
             "There is no prompt asking whether to resume, no row of library tiles, and nothing that plays by itself",
             "The backdrop follows the focused card after a 300 ms pause, and swaps without a fade under reduced motion",
             "Rows wait for their data before showing, so cards never reorder after they appear",
-            "Home builds no media URL and calls no player method"
+            "Home builds no media URL and calls no player method",
+            "The spec says where the hero's overview and quality facts come from, since the Home lists ask for card fields only (T5-02, D8), and a test covers what it adds",
+            "The spec says, from DESIGN.md's focus rules, where focus lands when it enters the rows from the hero, and a test shows T3-08's row router does not send it to a destination left from an earlier visit"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2404,7 +2501,7 @@
         },
         {
           "id": "T5-05",
-          "title": "Remove a title from Continue watching",
+          "title": "Open a short menu from a Continue watching card",
           "domain": "Catalog",
           "lane": "ui",
           "model": "sonnet",
@@ -2415,14 +2512,10 @@
             "T5-03"
           ],
           "acceptance": [
-            "Blocked on Jellyscale #233: the task starts when the server can hide a title from Continue watching for one account",
-            "Holding select on a Continue watching card opens a short menu (T5-01) that holds, in the owner's order and with the owner's labels (docs/specs/decisions-owner-chat-2026-11-22.md, 4): Remove from Continue watching, Mark as watched, Go to series (on an episode's card only), Details; Remove is at most two presses from the focused card",
+            "Holding select on a Continue watching card opens a short menu (T5-01); Menu or Info, on a remote that has one, opens the same menu (owner: docs/specs/decisions-direction-2026-11-22.md, 2)",
+            "The menu holds, in the owner's order and with the owner's labels (docs/specs/decisions-owner-chat-2026-11-22.md, 4): Mark as watched, Go to series (on an episode's card only), Details. Remove from Continue watching is left out until Jellyscale can hide a title (Jellyscale #233) and is added by a later task; this task does not wait for it",
             "Mark as watched marks the title watched, Go to series opens the episode's series page, and Details opens the title's details; Back closes the menu and returns focus to the card",
-            "After Remove the card leaves the row at once and focus moves to the next card",
-            "The title stays removed after a relaunch and on another device signed in to the same account",
-            "Remove keeps the saved position, and the title's own page still offers Resume",
-            "A failed request puts the card back and shows one sentence",
-            "Playing the title again returns it to the row"
+            "DESIGN.md 7.5 and section 9 say that Menu or Info on a Continue watching card opens this menu, in the same PR"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2921,7 +3014,8 @@
             "The H.264, HEVC and AV1 samples reach first frame on the CI emulator where it has a decoder, and a sample with no decoder ends in the typed cannot-play code",
             "Jellyscale wire test: a capture of a play from the pinned Jellyscale shows the header on every request, range requests included, no credential parameter, and only original-file URLs",
             "Media3's OkHttp data source is proven on the OkHttp version the one client uses: a test plays through it and shows that it reads neither response.networkResponse nor a header from response.request",
-            "apps/tv/native's NetworkPathsBytecodeTest runs compiled Media3 samples in place of the descriptors written by hand, and the ExoPlayer.Builder and DefaultMediaSourceFactory constructors and the UDP, RTSP and RTMP class names are re-read at the Media3 version adopted"
+            "apps/tv/native's NetworkPathsBytecodeTest runs compiled Media3 samples in place of the descriptors written by hand, and the ExoPlayer.Builder and DefaultMediaSourceFactory constructors and the UDP, RTSP and RTMP class names are re-read at the Media3 version adopted",
+            "Before the implement step, the spec's Dependencies section records the T8 phase dependency re-check from primary sources, with the date: Media3 and the pins the player path builds on (the Expo module core, OkHttp, the JUnit BOM, and the Gradle pins Dependabot does not read); a pin that cannot be verified returns as a question, and the task does not go to implement on it"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
           "status": "todo",
@@ -3532,7 +3626,8 @@
             "Values read pass T9-02's allowlist; a save changes only Octave's own keys and writes no token, URL or play-session id",
             "A failed read uses the defaults, and a failed save is reported to the caller so the screen can put the old value back",
             "Switching accounts switches the settings, and a second device on the same account reads what the first saved",
-            "Contract tests cover the three servers"
+            "Contract tests cover the three servers",
+            "A per-device Continue watching window left from before the owner's values (7 or 14) is read as 90 when the setting moves to the account"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -3814,7 +3909,8 @@
             "T8-23",
             "T9-04",
             "T9-05",
-            "T9-06"
+            "T9-06",
+            "T5-05"
           ],
           "acceptance": [
             "Shield check (owner): seven evenings of normal use against Jellyscale with a log of what was played and what went wrong",
@@ -4069,7 +4165,9 @@
             "A CI check fails when any native library in the bundle is not aligned for 16 KB pages, and names the library",
             "The app starts and plays a sample on a 16 KB-page emulator image",
             "The target API level is the one Play requires for TV on the release date, stated in the PR",
-            "The bundle's size and its native libraries are listed in the job summary"
+            "The bundle's size and its native libraries are listed in the job summary",
+            "The release bundle holds no react_native_dev_server_ip resource that names an address other than loopback, and a check fails when it does (the build machine's LAN address is local information)",
+            "The spec says from Android's documentation whether the target API level needs ACCESS_LOCAL_NETWORK for the app to reach a server on the home network; if it does, the permission and how the viewer is asked return to the Product Owner before a build is published"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
@@ -4526,7 +4624,8 @@
             "T3-29",
             "T3-30",
             "T3-31",
-            "T3-33"
+            "T3-33",
+            "T3-27"
           ],
           "acceptance": [
             "The spec lists every finding of the five reviews (plans 011-t3-24, 012-t3-25, 012-t3-28, 013-t3-29 and 011-t3-30 under docs/plans/active, and the backlog lines this task took) with whether it still holds on main; one already fixed is closed with the commit, and the rest are closed by the items below",
@@ -4538,7 +4637,10 @@
             "The dex check reports an entry whose CRC-32 does not match as damage in one ERROR tv apk dex: line, and counts a sink site once when the superclass walk finds it again; the source scan (pnpm lint:network) exempts only client sockets in DirectSocketFactory.kt and names the listening, datagram, factory, provider, MediaExtractor and MediaMetadataRetriever openers; the spec rules on a K4 twin for android.net.Network's opens and android.net.http",
             "scripts/check-adb-output.mjs gives a finding for a template-literal specifier, a re-exporting helper, an interpreter given as a literal program, and a shell option under a quoted key or in a variable, each with a test, or docs/security.md lists the one the spec shows cannot be read as not covered",
             "docs/security.md and ARCHITECTURE.md say what is built and no more: a stack overflow or out-of-memory error is never network; the debugOptimized run was the judge on a recorded cut; the inspector check also reads one debugger-only string; D8 covers what it reads; D0's bounds claim covers dex entries; and the decision 0005 bullet gives the path rule as built. The PR calls out every changed security rule",
-            "No frozen file changes: where a frozen test contradicts an item the task returns to the Product Owner. pnpm tv:apk:check still passes on the release APK the tv CI job builds, and the PR quotes its lines"
+            "No frozen file changes: where a frozen test contradicts an item the task returns to the Product Owner. pnpm tv:apk:check still passes on the release APK the tv CI job builds, and the PR quotes its lines",
+            "pnpm tv:wire runs the same dex, inspector and native inspector checks on the e2e APK before it installs it, as pnpm tv:e2e does",
+            "A release build's call that arrives before the session module has a React context is not refused under the development-server rule: the module reads the debuggable flag another way, or docs/security.md states the limit and a test pins that the call fails closed",
+            "The Jellyfin fixture servers bind to 127.0.0.1 as the Jellyscale fixture does; fixture-up.sh tells a taken port from another failure and retries only for a taken port; fixture-ports.mjs --check fails when the record is absent after a failed up"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
           "status": "todo",
