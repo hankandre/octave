@@ -6,6 +6,8 @@
 // query pairs in order, Authorization header and body text, byte for byte.
 //
 // trickplayTile is neither recorded nor replayed: T2-04 removes it (decision D5).
+// accountPreferences and saveAccountPreferences (T9-09) were never sent by the axios gateway: the Product Owner's
+// ruling of 2026-11-23 wrote their baseline from docs/specs/T9-09.md (D1, D2, D4), as the wire the two methods send.
 // The raw query string is compared as well as the decoded pairs, so FetchTransport reproduces axios's
 // encoding (`:`, `$`, `,`, `[` and `]` bare, a space as `+`); the port itself still carries decoded pairs.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
@@ -34,6 +36,14 @@ const ACCOUNT = {
     EnableNextEpisodeAutoPlay: true,
     OrderedViews: ["view-1"],
   },
+};
+// What the server answers for Octave's display preferences record (T9-09): a record id that is not the path's, one
+// reserved Jellyfin key, and two of Octave's keys. A save builds its body; it echoes none of this but Octave's values.
+const DISPLAY_PREFERENCES = {
+  Id: "golden-display-preferences-id",
+  Client: "octave",
+  SortBy: "SortName",
+  CustomPrefs: { chromecastVersion: "stable", "octave.continueWindow": "180", "octave.skipIntro": "auto" },
 };
 
 interface Captured {
@@ -97,6 +107,7 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   if (route === "GET /QuickConnect/Connect") return json(response, { Authenticated: true });
   if (route === "POST /Users/AuthenticateByName" || route === "POST /Users/AuthenticateWithQuickConnect") return json(response, AUTHENTICATION);
   if (route === "GET /Users/Me") return json(response, ACCOUNT);
+  if (route === "GET /DisplayPreferences/octave") return json(response, DISPLAY_PREFERENCES);
   if (route === "GET /Localization/Cultures" || route === "GET /Items/Latest" || route === "GET /Sessions") return json(response, []);
   if (method === "POST" && /^\/Items\/[^/]+\/PlaybackInfo$/.test(url.pathname)) {
     const answer = playbackInfoAnswers[Math.min(playbackInfoCalls, playbackInfoAnswers.length - 1)];
@@ -201,6 +212,8 @@ const scenarios: Scenario[] = [
   { name: "accountLanguageSettings", setup: "signed-in", run: (g) => g.accountLanguageSettings() },
   { name: "saveAccountLanguages", setup: "signed-in", run: (g) => g.saveAccountLanguages({ AudioLanguagePreference: "fra", PlayDefaultAudioTrack: false }) },
   { name: "languageCultures", setup: "signed-in", run: (g) => g.languageCultures() },
+  { name: "accountPreferences", setup: "signed-in", run: (g) => g.accountPreferences() },
+  { name: "saveAccountPreferences", setup: "signed-in", run: (g) => g.saveAccountPreferences({ autoPlay: { enabled: false, countdownSeconds: 5 } }) },
   { name: "setPlayed (mark)", setup: "signed-in", run: (g) => g.setPlayed("item-1", true) },
   { name: "setPlayed (unmark)", setup: "signed-in", run: (g) => g.setPlayed("item-1", false) },
   { name: "setFavorite (mark)", setup: "signed-in", run: (g) => g.setFavorite("item-1", true) },

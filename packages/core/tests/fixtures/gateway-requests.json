@@ -1,5 +1,5 @@
 {
- "note": "Requests the axios gateway (axios 1.21.1, @jellyfin/sdk 1.0.2) sent on origin/main 01724f3c, recorded 2026-11-21 before T2-04 changed anything, by driving each scenario of packages/core/src/jellyfin/gateway-wire-golden.test.ts against a local server that reports server Id golden-server-id. `query` is the raw query string as it arrived; `pairs` is the same decoded in order; `body` names an entry of `bodies` (the request text, byte for byte). trickplayTile is not recorded: T2-04 removes it. Do not edit by hand.",
+ "note": "Requests the axios gateway (axios 1.21.1, @jellyfin/sdk 1.0.2) sent on origin/main 01724f3c, recorded 2026-11-21 before T2-04 changed anything, by driving each scenario of packages/core/src/jellyfin/gateway-wire-golden.test.ts against a local server that reports server Id golden-server-id. `query` is the raw query string as it arrived; `pairs` is the same decoded in order; `body` names an entry of `bodies` (the request text, byte for byte). trickplayTile is not recorded: T2-04 removes it. Do not edit by hand. The accountPreferences and saveAccountPreferences scenarios and body b13 are not from that recording: the Product Owner's T9-09 ruling of 2026-11-23 wrote them from docs/specs/T9-09.md (D1, D2, D4) before the two gateway methods existed, as the wire those methods send.",
  "bodies": {
   "b1": "{\"Username\":\"golden-user\",\"Pw\":\"golden-password\"}",
   "b2": "{\"Secret\":\"golden-qc-secret\"}",
@@ -12,7 +12,8 @@
   "b9": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
   "b10": "{\"EnableDirectPlay\":false,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"MediaSourceId\":\"item-iso\",\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
   "b11": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"AudioStreamIndex\":1,\"MediaSourceId\":\"item-multitrack\",\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
-  "b12": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"MediaSourceId\":\"item-multitrack\",\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}"
+  "b12": "{\"EnableDirectPlay\":true,\"EnableDirectStream\":true,\"EnableTranscoding\":true,\"AllowVideoStreamCopy\":true,\"AllowAudioStreamCopy\":true,\"AutoOpenLiveStream\":false,\"AlwaysBurnInSubtitleWhenTranscoding\":false,\"UserId\":\"golden-user-id\",\"StartTimeTicks\":0,\"MaxStreamingBitrate\":1000000000,\"MediaSourceId\":\"item-multitrack\",\"DeviceProfile\":{\"Name\":\"Octave\",\"MaxStreamingBitrate\":1000000000,\"MaxStaticBitrate\":1000000000,\"DirectPlayProfiles\":[{\"Type\":\"Video\"},{\"Type\":\"Audio\"}],\"TranscodingProfiles\":[{\"Type\":\"Video\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"VideoCodec\":\"h264,hevc,av1,vp9\",\"AudioCodec\":\"aac,ac3,eac3,opus,flac,mp3\",\"EnableSubtitlesInManifest\":false},{\"Type\":\"Audio\",\"Container\":\"mp4\",\"Protocol\":\"hls\",\"Context\":\"Streaming\",\"AudioCodec\":\"aac\"}],\"ContainerProfiles\":[],\"CodecProfiles\":[],\"SubtitleProfiles\":[{\"Format\":\"srt\",\"Method\":\"External\"},{\"Format\":\"ass\",\"Method\":\"External\"},{\"Format\":\"ssa\",\"Method\":\"External\"},{\"Format\":\"vtt\",\"Method\":\"External\"},{\"Format\":\"sub\",\"Method\":\"External\"},{\"Format\":\"pgssub\",\"Method\":\"External\"},{\"Format\":\"srt\",\"Method\":\"Embed\"},{\"Format\":\"ass\",\"Method\":\"Embed\"},{\"Format\":\"ssa\",\"Method\":\"Embed\"},{\"Format\":\"pgssub\",\"Method\":\"Embed\"},{\"Format\":\"dvdsub\",\"Method\":\"Embed\"},{\"Format\":\"vtt\",\"Method\":\"Embed\"}]}}",
+  "b13": "{\"Id\":\"octave\",\"Client\":\"octave\",\"SortBy\":\"SortName\",\"SortOrder\":\"Ascending\",\"RememberIndexing\":false,\"RememberSorting\":false,\"ScrollDirection\":\"Horizontal\",\"ShowBackdrop\":true,\"ShowSidebar\":false,\"PrimaryImageHeight\":250,\"PrimaryImageWidth\":250,\"CustomPrefs\":{\"octave.continueWindow\":\"180\",\"octave.autoPlay\":\"false\",\"octave.autoPlayCountdown\":\"5\",\"octave.skipIntro\":\"auto\",\"octave.skipCredits\":\"button\"}}"
  },
  "scenarios": [
   {
@@ -1007,6 +1008,67 @@
      "query": "",
      "pairs": [],
      "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "accountPreferences",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/DisplayPreferences/octave",
+     "query": "userId=golden-user-id&client=octave",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "client",
+       "octave"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    }
+   ]
+  },
+  {
+   "name": "saveAccountPreferences",
+   "requests": [
+    {
+     "method": "GET",
+     "path": "/DisplayPreferences/octave",
+     "query": "userId=golden-user-id&client=octave",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "client",
+       "octave"
+      ]
+     ],
+     "body": null,
+     "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
+    },
+    {
+     "method": "POST",
+     "path": "/DisplayPreferences/octave",
+     "query": "userId=golden-user-id&client=octave",
+     "pairs": [
+      [
+       "userId",
+       "golden-user-id"
+      ],
+      [
+       "client",
+       "octave"
+      ]
+     ],
+     "body": "b13",
      "authorization": "MediaBrowser Client=\"Octave\", Device=\"Octave\", DeviceId=\"5ddaa8f60806de88affa7da2f45d6b6bc38a0583eb53b9ec515f77caf14f3765\", Version=\"0.0.0\", Token=\"golden-access-token\""
     }
    ]
