@@ -3155,10 +3155,10 @@
             "The app's composition fails when no device capability source is passed to the gateway; the full-capability default is never used in the app"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "Review fixes at commit 5678bcc0: per-read capability failures, 10 s probe limit, mpeg2/mpeg4 unnamed profiles, case-blind query judge. Own TV emulator API 36: tv:wire --task T8-07 both pairs pass; tv:e2e, pnpm check, tv:native:test (940, 0 failed), test:tripwire (fresh fixtures) pass. CI wire job pending. No-decoder sample negotiated, not played. Untested: no-decoder device play (T8-20, T10-08), hardware/HDR/passthrough reads on a Shield or real TV, other Android versions, Jellyfin 10.11 for T8-07."
+          "passes": true,
+          "evidence": "PR #323, commit 5678bcc0. CI run https://github.com/jellyscale-org/octave/actions/runs/45188174383: wire job summary has 'player-capabilities jellyscale T8-07 pass' and 'player-capabilities jellyfin-12 T8-07 pass', 13 pairs passed, no fail line; tripwire (rerun after Go proxy flake), tv, checks green. Local: pnpm check, tv:native:test 940/0, tv:e2e, tv:wire, tripwire pass. Untested: no-decoder device play (T8-20, T10-08), Shield/real-TV HDR and passthrough reads, other Android versions, Jellyfin 10.11."
         },
         {
           "id": "T8-23",
