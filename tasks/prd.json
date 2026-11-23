@@ -3018,10 +3018,10 @@
             "Before the implement step, the spec's Dependencies section records the T8 phase dependency re-check from primary sources, with the date: Media3 and the pins the player path builds on (the Expo module core, OkHttp, the JUnit BOM, and the Gradle pins Dependabot does not read); a pin that cannot be verified returns as a question, and the task does not go to implement on it"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implement started on task/T8-02: spec updated with the 2026-11-23 Product Owner ruling and spec check notes (commit f12dccde)."
         },
         {
           "id": "T8-03",
