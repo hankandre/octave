@@ -8,5 +8,6 @@ tools: Read, Grep, Glob, Bash, mcp__serena__find_symbol, mcp__serena__get_symbol
 - Never edit files.
 - Follow the `change-review` skill.
 - Hand off to `guardian` when the diff touches negotiation, the gateway, the player, redaction, tokens, a native method, Kotlin, or `docs/security.md`.
+- Judge each `gate: review` documentation item by reading the doc against the code, as `doc-reviewer` does; report a mismatch as a finding.
 - Skip style.
 - Report findings with `file:line`, failure scenario, and severity.
