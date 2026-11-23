@@ -1,9 +1,27 @@
 package dev.octave.buildcheck
 
+import androidx.media3.common.MediaLibraryInfo
 import dev.octave.buildcheck.samples.AddsANetworkInterceptor
 import dev.octave.buildcheck.samples.BuildsAClient
+import dev.octave.buildcheck.samples.BuildsAPlayerThenStatesItsSources
+import dev.octave.buildcheck.samples.BuildsAPlayerWithDefaults
+import dev.octave.buildcheck.samples.BuildsAPlayerWithEverything
+import dev.octave.buildcheck.samples.BuildsAPlayerWithRenderers
+import dev.octave.buildcheck.samples.BuildsAPlayerWithRenderersAndSources
+import dev.octave.buildcheck.samples.BuildsAPlayerWithRenderersThenStatesItsSources
+import dev.octave.buildcheck.samples.BuildsAPlayerWithSources
+import dev.octave.buildcheck.samples.BuildsDefaultSources
+import dev.octave.buildcheck.samples.BuildsDefaultSourcesOverADataSource
+import dev.octave.buildcheck.samples.BuildsDefaultSourcesOverADataSourceWithExtractors
+import dev.octave.buildcheck.samples.BuildsDefaultSourcesOverADataSourceWithSubtitles
+import dev.octave.buildcheck.samples.BuildsDefaultSourcesThenStatesTheDataSource
+import dev.octave.buildcheck.samples.BuildsDefaultSourcesWithExtractors
+import dev.octave.buildcheck.samples.BuildsTheDefaultDataSource
+import dev.octave.buildcheck.samples.BuildsTheDefaultHttpDataSource
+import dev.octave.buildcheck.samples.BuildsTheOkHttpDataSourceOutsideTheEngine
 import dev.octave.buildcheck.samples.CallsADefault
 import dev.octave.buildcheck.samples.DerivesAClient
+import dev.octave.buildcheck.samples.OpensUdp
 import dev.octave.buildcheck.samples.OpensAUrl
 import dev.octave.buildcheck.samples.ReadsAUrl
 import dev.octave.buildcheck.samples.SendsThroughACallFactory
@@ -25,7 +43,9 @@ class NetworkPathsBytecodeTest {
         return checkNotNull(checkNotNull(type.classLoader).getResourceAsStream(resource)) { "cannot read $resource" }.use { it.readBytes() }
     }
 
-    private fun violationsOf(type: Class<*>) = NetworkPathRules.check(ClassReferences.read(bytesOf(type)))
+    private fun compiled(type: Class<*>) = ClassReferences.read(bytesOf(type))
+
+    private fun violationsOf(type: Class<*>) = NetworkPathRules.check(compiled(type))
 
     private fun assertCaught(rule: String, type: Class<*>) {
         val found = violationsOf(type)
@@ -43,66 +63,64 @@ class NetworkPathsBytecodeTest {
         assertEquals(emptyList<NetworkViolation>(), violationsOf(CallsADefault::class.java))
     }
 
+    // T8-02 item 9: Media3's constructors and default paths as compiled calls (samples/Media3Samples.kt, Media3 at the
+    // player's pin), read the way octave_classes_reference_no_other_client reads Octave's classes.
     @Test
     fun media3_rules_by_descriptor() {
-        val context = "Landroid/content/Context;"
-        val renderers = "Landroidx/media3/exoplayer/RenderersFactory;"
-        val dataSources = "Landroidx/media3/datasource/DataSource\$Factory;"
-        val mediaSources = "Landroidx/media3/exoplayer/source/MediaSource\$Factory;"
-        val extractors = "Landroidx/media3/extractor/ExtractorsFactory;"
-        val subtitles = "Landroidx/media3/extractor/text/SubtitleParser\$Factory;"
-        val factory = "androidx/media3/exoplayer/source/DefaultMediaSourceFactory"
-        val builder = "androidx/media3/exoplayer/ExoPlayer\$Builder"
-
-        // DefaultMediaSourceFactory's five constructors (Media3 1.11.1): the two Context ones build Media3's default
-        // data source unless setDataSourceFactory follows.
-        for (descriptor in listOf("($context)V", "($context$extractors)V")) {
-            assertRules(setOf("K3"), probe(MemberRef(factory, "<init>", descriptor)))
-            assertRules(emptySet(), probe(MemberRef(factory, "<init>", descriptor), MemberRef(factory, "setDataSourceFactory", "($dataSources)L$factory;")))
-        }
-        for (descriptor in listOf("($dataSources)V", "($dataSources$extractors)V", "($dataSources$extractors$subtitles)V")) {
-            assertRules(emptySet(), probe(MemberRef(factory, "<init>", descriptor)))
-        }
-
-        // ExoPlayer.Builder's constructors: the ones without a MediaSource.Factory build the default one unless
+        // ExoPlayer.Builder: the constructors without a MediaSource.Factory build the default one unless
         // setMediaSourceFactory follows.
-        for (descriptor in listOf("($context)V", "($context$renderers)V")) {
-            assertRules(setOf("K6"), probe(MemberRef(builder, "<init>", descriptor)))
-            assertRules(emptySet(), probe(MemberRef(builder, "<init>", descriptor), MemberRef(builder, "setMediaSourceFactory", "($mediaSources)L$builder;")))
-        }
-        for (descriptor in listOf("($context$mediaSources)V", "($context$renderers$mediaSources)V")) {
-            assertRules(emptySet(), probe(MemberRef(builder, "<init>", descriptor)))
-        }
+        assertRules(setOf("K6"), compiled(BuildsAPlayerWithDefaults::class.java))
+        assertRules(setOf("K6"), compiled(BuildsAPlayerWithRenderers::class.java))
+        assertRules(emptySet(), compiled(BuildsAPlayerThenStatesItsSources::class.java))
+        assertRules(emptySet(), compiled(BuildsAPlayerWithRenderersThenStatesItsSources::class.java))
+        assertRules(emptySet(), compiled(BuildsAPlayerWithSources::class.java))
+        assertRules(emptySet(), compiled(BuildsAPlayerWithRenderersAndSources::class.java))
+        assertRules(emptySet(), compiled(BuildsAPlayerWithEverything::class.java))
 
-        // The default data sources and the paths that are not HTTP, by class name.
-        assertRules(setOf("K1"), probe(MemberRef("androidx/media3/datasource/DefaultHttpDataSource\$Factory", "<init>", "()V")))
+        // DefaultMediaSourceFactory: the two Context constructors build Media3's default data source unless
+        // setDataSourceFactory follows.
+        assertRules(setOf("K3"), compiled(BuildsDefaultSources::class.java))
+        assertRules(setOf("K3"), compiled(BuildsDefaultSourcesWithExtractors::class.java))
+        assertRules(emptySet(), compiled(BuildsDefaultSourcesThenStatesTheDataSource::class.java))
+        assertRules(emptySet(), compiled(BuildsDefaultSourcesOverADataSource::class.java))
+        assertRules(emptySet(), compiled(BuildsDefaultSourcesOverADataSourceWithExtractors::class.java))
+        assertRules(emptySet(), compiled(BuildsDefaultSourcesOverADataSourceWithSubtitles::class.java))
+
+        // The default data sources and UDP, compiled; the paths whose artifacts Octave does not adopt, by name.
+        assertRules(setOf("K1"), compiled(BuildsTheDefaultHttpDataSource::class.java))
+        assertRules(setOf("K2"), compiled(BuildsTheDefaultDataSource::class.java))
+        assertRules(setOf("K1"), compiled(OpensUdp::class.java))
         assertRules(setOf("K1"), probe(MemberRef("androidx/media3/datasource/HttpEngineDataSource\$Factory", "<init>", "()V")))
-        assertRules(setOf("K1"), probe(MemberRef("androidx/media3/datasource/UdpDataSource", "<init>", "()V")))
-        assertRules(setOf("K1"), probe(MemberRef("androidx/media3/exoplayer/rtsp/RtspMediaSource\$Factory", "<init>", "()V")))
-        assertRules(setOf("K1"), probe(MemberRef("androidx/media3/datasource/rtmp/RtmpDataSource\$Factory", "<init>", "()V")))
-        assertRules(setOf("K2"), probe(MemberRef("androidx/media3/datasource/DefaultDataSource\$Factory", "<init>", "($context)V")))
-        assertRules(setOf("K2"), probe(MemberRef("androidx/media3/datasource/DefaultDataSourceFactory", "<init>", "($context)V")))
-        // T8-02: K7 refuses Media3's OkHttp data source but for its factory's constructor from the engine's package.
+        assertRules(setOf("K1"), probe(MemberRef(RTSP_FACTORY, "<init>", "()V")))
+        assertRules(setOf("K1"), probe(MemberRef(RTMP_FACTORY, "<init>", "()V")))
+        assertRules(setOf("K2"), probe(MemberRef("androidx/media3/datasource/DefaultDataSourceFactory", "<init>", "(Landroid/content/Context;)V")))
+
+        // Media3's OkHttp data source: K7 refuses it outside the engine's package (Product Owner ruling of 2026-11-23).
+        assertRules(setOf("K7"), compiled(BuildsTheOkHttpDataSourceOutsideTheEngine::class.java))
         val okHttpFactory = MemberRef("androidx/media3/datasource/okhttp/OkHttpDataSource\$Factory", "<init>", "(Lokhttp3/Call\$Factory;)V")
         assertRules(emptySet(), probe(okHttpFactory, name = "dev/octave/player/media3/Probe"))
         assertRules(setOf("K7"), probe(okHttpFactory))
     }
 
+    // The RTSP and RTMP names are probes, not compiled calls, since their artifacts are not adopted; they were re-read
+    // in Media3's source at MEDIA3_NAMES_READ_AT, and this fails at a Media3 upgrade until they are read again.
+    @Test
+    fun media3_names_were_read_at_the_adopted_version() {
+        assertEquals(MEDIA3_NAMES_READ_AT, MediaLibraryInfo.VERSION, "re-read the RTSP and RTMP names, then move MEDIA3_NAMES_READ_AT")
+    }
+
     @Test
     fun every_rule_has_a_failing_and_a_passing_sample() {
         val samples: Map<String, Pair<ClassRefs, ClassRefs>> = mapOf(
-            "K1" to (probe(MemberRef("androidx/media3/datasource/DefaultHttpDataSource\$Factory", "<init>", "()V")) to
-                probe(MemberRef("androidx/media3/datasource/okhttp/OkHttpDataSource\$Factory", "<init>", "(Lokhttp3/Call\$Factory;)V"), name = "dev/octave/player/media3/Probe")),
-            "K2" to (probe(MemberRef("androidx/media3/datasource/DefaultDataSource\$Factory", "<init>", "(Landroid/content/Context;)V")) to
+            "K1" to (compiled(BuildsTheDefaultHttpDataSource::class.java) to compiled(BuildsDefaultSourcesOverADataSource::class.java)),
+            "K2" to (compiled(BuildsTheDefaultDataSource::class.java) to
                 probe(MemberRef("dev/octave/session/http/OctaveHttp", "callFactory", "(Ljava/lang/String;)Lokhttp3/Call\$Factory;"))),
-            "K3" to (probe(MemberRef("androidx/media3/exoplayer/source/DefaultMediaSourceFactory", "<init>", "(Landroid/content/Context;)V")) to
-                probe(MemberRef("androidx/media3/exoplayer/source/DefaultMediaSourceFactory", "<init>", "(Landroidx/media3/datasource/DataSource\$Factory;)V"))),
+            "K3" to (compiled(BuildsDefaultSources::class.java) to compiled(BuildsDefaultSourcesOverADataSource::class.java)),
             "K4" to (probe(MemberRef("okhttp3/OkHttpClient", "<init>", "()V")) to
                 probe(MemberRef("okhttp3/Call\$Factory", "newCall", "(Lokhttp3/Request;)Lokhttp3/Call;"))),
             "K5" to (probe(MemberRef("java/net/URL", "openConnection", "()Ljava/net/URLConnection;")) to
                 probe(MemberRef("java/net/URLEncoder", "encode", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"))),
-            "K6" to (probe(MemberRef("androidx/media3/exoplayer/ExoPlayer\$Builder", "<init>", "(Landroid/content/Context;)V")) to
-                probe(MemberRef("androidx/media3/exoplayer/ExoPlayer\$Builder", "<init>", "(Landroid/content/Context;Landroidx/media3/exoplayer/source/MediaSource\$Factory;)V"))),
+            "K6" to (compiled(BuildsAPlayerWithDefaults::class.java) to compiled(BuildsAPlayerWithSources::class.java)),
             "K7" to (probe(MemberRef("com/facebook/react/modules/network/OkHttpClientProvider", "setOkHttpClientFactory", "(Lcom/facebook/react/modules/network/OkHttpClientFactory;)V")) to
                 probe(MemberRef("expo/modules/kotlin/modules/Module", "<init>", "()V"))),
             "K8" to (probe(MemberRef("expo/modules/kotlin/devtools/ExpoNetworkInspectOkHttpNetworkInterceptor", "<init>", "()V")) to
@@ -207,5 +225,12 @@ class NetworkPathsBytecodeTest {
         }
         roots.forEach(::readRoot)
         return classes
+    }
+
+    private companion object {
+        // The Media3 version the RTSP and RTMP names below were re-read at in Media3's source (T8-02 item 9).
+        const val MEDIA3_NAMES_READ_AT = "1.11.1"
+        const val RTSP_FACTORY = "androidx/media3/exoplayer/rtsp/RtspMediaSource\$Factory"
+        const val RTMP_FACTORY = "androidx/media3/datasource/rtmp/RtmpDataSource\$Factory"
     }
 }
