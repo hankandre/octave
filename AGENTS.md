@@ -93,6 +93,8 @@ Dependencies
 ## Tests
 
 - Add a focused test with every behavior change.
+- Never write a test for documentation: no test reads a document, spec, instruction file, template or comment to check its wording. Test behavior and code only.
+- Check a documentation item by review (`gate: review`), not by a test.
 - Never skip, weaken, or delete a test to pass a check.
 - Never change or delete a frozen test (a file listed in `docs/specs/<TASK-ID>.tests.json`); report a wrong one and the Product Owner rules.
 - Never write an implementation, stub, or probe to prove a test can pass before the implement step.
@@ -122,6 +124,7 @@ Dependencies
 - Commit one milestone at a time with a Conventional Commit subject.
 - Never review your own change.
 - Never write long comments justifying a workaround; fix the cause or log it in the plan.
+- Keep `AGENTS.md`, `CLAUDE.md`, agent and skill files to short imperative instructions; put history and reasons in `docs/decisions/`, `docs/specs/` or the plan.
 - Record decisions in the active plan's decision log.
 - Propose a test, lint, or rule after the second correction for the same mistake.
 - Never claim a check passed without showing its output.
