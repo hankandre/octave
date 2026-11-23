@@ -914,7 +914,10 @@ export class JellyfinGateway {
       // video stream copy off; audio copy goes off too when the judged audio is what the device cannot play. The
       // request carries the stream indices and the pick, and is never repeated.
       const { source } = decision;
-      const audioCopyOff = decision.cannotPlay.audio;
+      // A decision made without the pick judged another track than the one this request carries; judge that one too.
+      const pickUnjudged = !carriesPick && streams.AudioStreamIndex !== undefined;
+      const audioCopyOff = decision.cannotPlay.audio
+        || (pickUnjudged && !sourcePlayability(source, capabilities, streams.AudioStreamIndex).audio);
       data = await this.playbackInfo(item.id, startPositionTicks, signal, source.Id, false, limit, streams, {
         AllowVideoStreamCopy: false,
         AllowAudioStreamCopy: !audioCopyOff,
