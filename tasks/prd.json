@@ -1673,10 +1673,10 @@
             "docs/security.md, Development builds, states the rule and names its tests in the same PR; the PR calls out the change, and the review includes a guardian"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "native-engineer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Milestones 1-5 on task/T3-33, last commit a1d7d3e9. pnpm check passed (vitest 3277, jest 2293, flow ok); pnpm tv:native:test 730 tests, 0 failed; item 1 class 13/0, item 3 class 3/0; pnpm tv:apk:check passes incl. allowlist step; pnpm tv:e2e on own emulator (API 36) passed; pnpm tv:wire --task T3-05 8 pairs passed. Control: the debug-variant probe APK fails the allowlist judge. Untested: Shield, real TVs, other Android versions."
         },
         {
           "id": "T3-26",
