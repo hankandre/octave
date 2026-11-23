@@ -1,0 +1,108 @@
+{
+  "server": "jellyscale",
+  "version": "12.4.0",
+  "sample": "hevc-hdr10",
+  "request": {
+    "EnableDirectPlay": true,
+    "AllowVideoStreamCopy": true,
+    "AllowAudioStreamCopy": true,
+    "MaxStreamingBitrate": 50000,
+    "MediaSourceIdNamed": false
+  },
+  "recorded": true,
+  "answer": {
+    "MediaSources": [
+      {
+        "Id": "item-hevc",
+        "Name": "Synthetic HEVC HDR10",
+        "Path": "Synthetic HEVC HDR10 (2024)/Synthetic HEVC HDR10 (2024).mkv",
+        "Container": "mkv",
+        "ETag": "id-2",
+        "VideoType": "VideoFile",
+        "Size": 115089,
+        "RunTimeTicks": 100210000,
+        "Bitrate": 91878,
+        "Protocol": "File",
+        "Type": "Default",
+        "TranscodingSubProtocol": "hls",
+        "IsRemote": false,
+        "ReadAtNativeFramerate": false,
+        "IgnoreDts": false,
+        "IgnoreIndex": false,
+        "GenPtsInput": false,
+        "SupportsTranscoding": true,
+        "SupportsDirectStream": false,
+        "SupportsDirectPlay": false,
+        "IsInfiniteStream": false,
+        "RequiresOpening": false,
+        "RequiresClosing": false,
+        "RequiresLooping": false,
+        "SupportsProbing": true,
+        "HasSegments": false,
+        "MediaStreams": [
+          {
+            "Index": 0,
+            "Type": "Video",
+            "IsDefault": false,
+            "IsForced": false,
+            "IsHearingImpaired": false,
+            "IsOriginal": false,
+            "IsExternal": false,
+            "IsInterlaced": false,
+            "IsTextSubtitleStream": false,
+            "SupportsExternalStream": false,
+            "Codec": "hevc",
+            "Profile": "Main 10",
+            "DisplayTitle": "720p HEVC HDR",
+            "Width": 1280,
+            "Height": 720,
+            "BitDepth": 10,
+            "AverageFrameRate": 24,
+            "ReferenceFrameRate": 24,
+            "ColorTransfer": "smpte2084",
+            "VideoRange": "HDR",
+            "VideoRangeType": "HDR10"
+          },
+          {
+            "Index": 1,
+            "Type": "Audio",
+            "IsDefault": false,
+            "IsForced": false,
+            "IsHearingImpaired": false,
+            "IsOriginal": true,
+            "IsExternal": false,
+            "IsInterlaced": false,
+            "IsTextSubtitleStream": false,
+            "SupportsExternalStream": false,
+            "Codec": "aac",
+            "Profile": "LC",
+            "Language": "eng",
+            "DisplayTitle": "English - AAC - Stereo",
+            "Channels": 2,
+            "SampleRate": 48000,
+            "VideoRange": "Unknown",
+            "VideoRangeType": "Unknown"
+          }
+        ],
+        "MediaAttachments": [],
+        "Formats": [],
+        "RequiredHttpHeaders": {},
+        "DefaultAudioStreamIndex": 1,
+        "DefaultSubtitleStreamIndex": -1,
+        "TranscodingUrl": "/videos/item-hevc/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-hevc&VideoCodec=h264&AudioCodec=aac,ac3,eac3,opus,flac,mp3&AudioStreamIndex=1&VideoBitrate=50000&AudioBitrate=32000&AudioSampleRate=48000&SegmentContainer=mp4&MinSegments=1&PlaySessionId=play-session-1&ApiKey=REDACTED&TranscodingMaxAudioChannels=2&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=1c191-18eab57b88eea782&MaxFramerate=24&TranscodeReasons=ContainerBitrateExceedsLimit",
+        "TranscodingContainer": "mp4"
+      }
+    ],
+    "PlaySessionId": "play-session-1"
+  },
+  "master": {
+    "status": 200,
+    "codecs": [
+      [
+        "avc1.640033",
+        "mp4a.40.2"
+      ]
+    ]
+  },
+  "transcodingInfo": null
+}

@@ -1,0 +1,107 @@
+{
+  "server": "jellyscale",
+  "version": "12.4.0",
+  "sample": "no-decoder",
+  "request": {
+    "EnableDirectPlay": true,
+    "AllowVideoStreamCopy": true,
+    "AllowAudioStreamCopy": true,
+    "MaxStreamingBitrate": 50000,
+    "MediaSourceIdNamed": false
+  },
+  "recorded": true,
+  "answer": {
+    "MediaSources": [
+      {
+        "Id": "item-no-decoder",
+        "Name": "Synthetic No Decoder",
+        "Path": "Synthetic No Decoder (2024)/Synthetic No Decoder (2024).mkv",
+        "Container": "mkv",
+        "ETag": "id-4",
+        "VideoType": "VideoFile",
+        "Size": 562722,
+        "RunTimeTicks": 100210000,
+        "Bitrate": 449234,
+        "Protocol": "File",
+        "Type": "Default",
+        "TranscodingSubProtocol": "hls",
+        "IsRemote": false,
+        "ReadAtNativeFramerate": false,
+        "IgnoreDts": false,
+        "IgnoreIndex": false,
+        "GenPtsInput": false,
+        "SupportsTranscoding": true,
+        "SupportsDirectStream": false,
+        "SupportsDirectPlay": false,
+        "IsInfiniteStream": false,
+        "RequiresOpening": false,
+        "RequiresClosing": false,
+        "RequiresLooping": false,
+        "SupportsProbing": true,
+        "HasSegments": false,
+        "MediaStreams": [
+          {
+            "Index": 0,
+            "Type": "Video",
+            "IsDefault": false,
+            "IsForced": false,
+            "IsHearingImpaired": false,
+            "IsOriginal": false,
+            "IsExternal": false,
+            "IsInterlaced": false,
+            "IsTextSubtitleStream": false,
+            "SupportsExternalStream": false,
+            "Codec": "msmpeg4v3",
+            "DisplayTitle": "360p MSMPEG4V3 SDR",
+            "Width": 640,
+            "Height": 360,
+            "BitDepth": 8,
+            "AverageFrameRate": 24,
+            "ReferenceFrameRate": 24,
+            "ColorTransfer": "",
+            "VideoRange": "SDR",
+            "VideoRangeType": "SDR"
+          },
+          {
+            "Index": 1,
+            "Type": "Audio",
+            "IsDefault": false,
+            "IsForced": false,
+            "IsHearingImpaired": false,
+            "IsOriginal": true,
+            "IsExternal": false,
+            "IsInterlaced": false,
+            "IsTextSubtitleStream": false,
+            "SupportsExternalStream": false,
+            "Codec": "aac",
+            "Profile": "LC",
+            "Language": "eng",
+            "DisplayTitle": "English - AAC - Stereo",
+            "Channels": 2,
+            "SampleRate": 48000,
+            "VideoRange": "Unknown",
+            "VideoRangeType": "Unknown"
+          }
+        ],
+        "MediaAttachments": [],
+        "Formats": [],
+        "RequiredHttpHeaders": {},
+        "DefaultAudioStreamIndex": 1,
+        "DefaultSubtitleStreamIndex": -1,
+        "TranscodingUrl": "/videos/item-no-decoder/master.m3u8?DeviceId=octave-fixtures&MediaSourceId=item-no-decoder&VideoCodec=h264&AudioCodec=aac,ac3,eac3,opus,flac,mp3&AudioStreamIndex=1&VideoBitrate=50000&AudioBitrate=32000&AudioSampleRate=48000&SegmentContainer=mp4&MinSegments=1&PlaySessionId=play-session-1&ApiKey=REDACTED&TranscodingMaxAudioChannels=2&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=89622-18eab57bb65a27ab&MaxFramerate=24&TranscodeReasons=VideoCodecNotSupported,ContainerBitrateExceedsLimit",
+        "TranscodingContainer": "mp4"
+      }
+    ],
+    "PlaySessionId": "play-session-1"
+  },
+  "master": {
+    "status": 200,
+    "codecs": [
+      [
+        "avc1.640033",
+        "mp4a.40.2"
+      ]
+    ]
+  },
+  "transcodingInfo": null
+}
