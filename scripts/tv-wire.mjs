@@ -36,7 +36,9 @@ const REAL_TARGETS = ["jellyfin-10-11", "jellyfin-12", "jellyscale"];
 
 // The player's wire tests (T8-02) whose captures are plays, judged by judgePlayerCapture, and the tests whose upstream
 // answers a 3xx on purpose.
-const PLAYS = ["player-original-file", "player-samples"];
+const PLAYS = ["player-original-file", "player-samples", "player-capabilities"];
+// The tests the emulator's decoder list is read for (T8-02 item 6, T8-07 item 8).
+const READS_DECODERS = ["player-samples", "player-capabilities"];
 const REDIRECTED = ["transport-redirect", "transport-canary", "player-redirect"];
 
 // What transport-probe-then-signed-in sends: the gateway's connect, login, userViews and logout.
@@ -166,8 +168,8 @@ export function judgeRun(input, { write }) {
     if (pair.target === "mock") counted.canaryOrigin = counts.canaryOrigin;
     if (pair.test === "transport-redirect") counted.redirector = counts.redirector;
     if (pair.test === "transport-private-lan-and-proxy") counted.privateLan = counts.privateLan;
-    if (pair.test === "player-samples") counted.decoders = pair.decoders ?? null;
-    if (pair.test === "player-redirect") counted.records = pair.records;
+    if (READS_DECODERS.includes(pair.test)) counted.decoders = pair.decoders ?? null;
+    if (pair.test === "player-redirect" || pair.test === "player-capabilities") counted.records = pair.records;
     const host = `127.0.0.1:${pair.devicePort}`;
     const errors = [...judgeWire({ pairs: [counted], lines })];
     if (pair.test === "transport-probe-then-signed-in") errors.push(...judgeCapture(pair.records, { expected: PROBE_THEN_SIGNED_IN, host, secrets: known }));
@@ -248,8 +250,8 @@ async function main(args) {
   const install = adb("install", "-r", E2E_APK);
   if (install.status !== 0) fail("adb install of the e2e APK failed");
 
-  // The emulator's decoder list, read once and read-only, for the player-samples judge (T8-02 item 6).
-  const decoders = selected.some((pair) => pair.test === "player-samples") ? readDecoderList(shell("dumpsys", "media.player").stdout) : null;
+  // The emulator's decoder list, read once and read-only, for the player-samples and player-capabilities judges.
+  const decoders = selected.some((pair) => READS_DECODERS.includes(pair.test)) ? readDecoderList(shell("dumpsys", "media.player").stdout) : null;
   const adbd = () => adbdOf(shell("ps", "-A", "-o", "PID,ELAPSED,NAME").stdout ?? "");
   const secrets = new Set([list.canary, list.password]);
   for (const target of REAL_TARGETS) if (credentials[`${target}_password`]) secrets.add(credentials[`${target}_password`]);
@@ -359,7 +361,7 @@ async function main(args) {
   // The kept lines and the final dump are both judged; only the counting attempt's kept lines are the app's lines.
   const result = judgeRun(
     {
-      pairs: selected.map((pair) => ({ ...pair, records: recorders.get(`${pair.test} ${pair.target}`).records, ...(pair.test === "player-samples" ? { decoders } : {}) })),
+      pairs: selected.map((pair) => ({ ...pair, records: recorders.get(`${pair.test} ${pair.target}`).records, ...(READS_DECODERS.includes(pair.test) ? { decoders } : {}) })),
       counts: mock.counts(),
       lines: wireLines(run.keptLines),
       logLines: [...earlier.keptLines, ...earlier.dump, ...run.keptLines, ...run.dump],

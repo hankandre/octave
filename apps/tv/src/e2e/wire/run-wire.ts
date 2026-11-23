@@ -4,8 +4,12 @@
 // listener is reported unreachable (under pnpm tv:e2e nothing is reversed, so every pair is). Lines hold fixed words
 // and counts only.
 import type { Crypto } from "@octave/core/src/ports/crypto";
-import { createGatewayFactory } from "../../host/gateway";
+import { createCapabilityProbe } from "../../host/device-capabilities";
+import { createAppGatewayFactory, createGatewayFactory } from "../../host/gateway";
 import { hostInstallId } from "../../host/host-gateway";
+import { createPlayerEngine, type PlayerNative } from "../../host/player-engine";
+import { loadPlayerModule } from "../../host/player-module";
+import * as playerCapabilities from "./player-capabilities";
 import { loadSessionModule } from "../../host/session-module";
 import { createSessionTransport } from "../../host/transport";
 import * as playerOriginalFile from "./player-original-file";
@@ -29,7 +33,11 @@ const TESTS: Record<string, (context: WireContext) => Promise<WireOutcome>> = {
   "player-original-file": playerOriginalFile.run,
   "player-samples": playerSamples.run,
   "player-redirect": playerRedirect.run,
+  "player-capabilities": playerCapabilities.run,
 };
+
+// The app's probe, as host-gateway.ts wires it: the player engine's initialize (the cast is player-run.ts's).
+const probe = createCapabilityProbe(() => createPlayerEngine(loadPlayerModule() as unknown as PlayerNative));
 
 export async function runWire(host: { crypto: Crypto; props: unknown }, log: (line: string) => void): Promise<void> {
   let index = 0;
@@ -44,9 +52,20 @@ export async function runWire(host: { crypto: Crypto; props: unknown }, log: (li
         const seam = new SeamRecorder(loadSessionModule());
         seam.add(host.props);
         const transport = createSessionTransport(seam.native);
-        const factory = createGatewayFactory({ crypto: host.crypto, transport, installId: hostInstallId });
-        outcome =
-          run === undefined ? { words: "outcome=no-device-test" } : await run({ base, list, crypto: host.crypto, transport, seam, gateway: (url) => factory(url) });
+        const made = { crypto: host.crypto, transport, installId: hostInstallId };
+        const factory = createAppGatewayFactory(made, probe);
+        // Only the three T8-02 player tests ask for this one (T8-07 D3).
+        const statingFull = createGatewayFactory(made);
+        const context: WireContext = {
+          base,
+          list,
+          crypto: host.crypto,
+          transport,
+          seam,
+          gateway: (url) => factory(url),
+          gatewayStatingFull: (url) => statingFull(url, { deviceCapabilities: { get: () => "full" } }),
+        };
+        outcome = run === undefined ? { words: "outcome=no-device-test" } : await run(context);
       } catch {
         outcome = { words: "outcome=threw" };
       }

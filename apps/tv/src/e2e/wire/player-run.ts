@@ -5,7 +5,7 @@
 import type { LibraryItem } from "@octave/core/src/domain/catalog";
 import type { PlaybackPlan } from "@octave/core/src/domain/playback";
 import { secondsToTicks } from "@octave/core/src/domain/playback";
-import type { PlayerEngine, PlayerEvent } from "@octave/core/src/domain/player-engine";
+import type { PlayerCapabilities, PlayerEngine, PlayerEvent } from "@octave/core/src/domain/player-engine";
 import type { JellyfinGateway } from "@octave/core/src/jellyfin/gateway";
 import { launchRequest } from "@octave/core/src/player/launch-request";
 import { createPlayerEngine, type PlayerNative } from "../../host/player-engine";
@@ -16,8 +16,11 @@ export const FIRST_FRAME_MS = 30_000;
 export const STEP_MS = 10_000;
 const POLL_MS = 100;
 
-// A signed-in gateway, or the outcome that ends the test.
-export async function signIn({ base, list, seam, gateway: build }: WireContext): Promise<JellyfinGateway | WireOutcome> {
+// A signed-in gateway, or the outcome that ends the test. `statingFull` picks the gateway whose host states no device
+// limit (T8-07 D3); every other test signs in with the app's probe-backed gateway.
+export async function signIn(context: WireContext, options: { statingFull?: true } = {}): Promise<JellyfinGateway | WireOutcome> {
+  const { base, list, seam } = context;
+  const build = options.statingFull ? context.gatewayStatingFull : context.gateway;
   let gateway: JellyfinGateway;
   try {
     gateway = await build(base);
@@ -48,9 +51,10 @@ export async function findMovie(gateway: JellyfinGateway, name: string): Promise
 // The plan's word: original for an original-file plan, else the conversion's play method.
 export const planWord = (plan: PlaybackPlan) => (plan.delivery === "static" ? "original" : plan.playMethod === "Transcode" ? "transcode" : "direct-stream");
 
-// The engine and every event it sent, in order.
+// The engine, its initialize answer, and every event it sent, in order.
 export class PlayerRig {
   readonly events: PlayerEvent[] = [];
+  capabilities: PlayerCapabilities = { probe: "failed" };
   private unsubscribe: (() => void) | undefined;
 
   private constructor(readonly engine: PlayerEngine) {}
@@ -59,7 +63,8 @@ export class PlayerRig {
     // The module's typed declaration names its argument shapes; the adapter takes plain maps and builds those shapes
     // itself (launchArgs), so the module is handed over as the adapter's view of it. T8-03 joins the two in the app.
     const rig = new PlayerRig(createPlayerEngine(loadPlayerModule() as unknown as PlayerNative));
-    context.seam.add(await rig.engine.initialize());
+    rig.capabilities = await rig.engine.initialize();
+    context.seam.add(rig.capabilities);
     rig.unsubscribe = await rig.engine.subscribe((event) => {
       context.seam.add(event);
       rig.events.push(event);

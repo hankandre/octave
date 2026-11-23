@@ -13,7 +13,7 @@ const SAMPLES: [string, string][] = [
 ];
 
 export async function run(context: WireContext): Promise<WireOutcome> {
-  const gateway = await signIn(context);
+  const gateway = await signIn(context, { statingFull: true });
   if (isOutcome(gateway)) return gateway;
   const rig = await PlayerRig.open(context);
   const words: string[] = [];

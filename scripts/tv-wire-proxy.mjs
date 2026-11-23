@@ -15,8 +15,15 @@
 // play session as the PlaySessionId value, which the server issued for that URL, so that one value is left out of the
 // URL's secret scan; anywhere else in a URL a play-session id is a secret like any other.
 //
+// T8-07 adds `playbackInfo` to every POST …/PlaybackInfo record and to no other: the six PlaybackInfo flags as the body
+// states them (a JSON boolean) and as the query states them (exactly one parameter whose value is true or false in
+// any case), each true, false or null, and the SHA-256 of the body's DeviceProfile without its MaxStreamingBitrate
+// (canonicalDigest), so the judge can tell that both requests carry the same flags in both places and the one
+// Octave profile. No other value of the body or query is kept.
+//
 // Also here: the global-proxy listener, which records the requests that arrive when the emulator's http_proxy names
 // it, and a health check for the fixture servers.
+import { createHash } from "node:crypto";
 import { createServer, request as httpRequest } from "node:http";
 import { safeRecord, safeUrlParts } from "./tv-wire-evidence.mjs";
 
@@ -57,6 +64,71 @@ export function staticTrue(rawUrl) {
   } catch {
     return false;
   }
+}
+
+// The flags of a PlaybackInfo request (packages/core/src/jellyfin/gateway.ts, PLAYBACK_INFO_FLAGS).
+const PLAYBACK_INFO_FLAG_NAMES = ["EnableDirectPlay", "EnableDirectStream", "EnableTranscoding", "AllowVideoStreamCopy", "AllowAudioStreamCopy", "AutoOpenLiveStream"];
+
+// JSON with object keys sorted at every level and no whitespace; arrays keep their order.
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value !== null && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+// The SHA-256 hex of the canonical JSON of `value`.
+export function canonicalDigest(value) {
+  return createHash("sha256").update(canonicalJson(value), "utf8").digest("hex");
+}
+
+function queryFlag(rawUrl, name) {
+  const mark = rawUrl.indexOf("?");
+  if (mark < 0) return null;
+  const values = rawUrl
+    .slice(mark + 1)
+    .split("#")[0]
+    .split("&")
+    .filter((part) => part !== "")
+    .map((part) => (part.includes("=") ? [part.slice(0, part.indexOf("=")), part.slice(part.indexOf("=") + 1)] : [part, null]))
+    .filter(([key]) => key === name)
+    .map(([, value]) => value);
+  if (values.length !== 1 || values[0] === null) return null;
+  let decoded;
+  try {
+    decoded = decodeURIComponent(values[0].replace(/\+/g, " ")).toLowerCase();
+  } catch {
+    return null;
+  }
+  return decoded === "true" ? true : decoded === "false" ? false : null;
+}
+
+// What the recorder keeps of a PlaybackInfo request: { body, query, profile } (see the header).
+export function playbackInfoFacts(body, rawUrl) {
+  let fields = null;
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) fields = parsed;
+  } catch {
+    // Not JSON: every body flag and the profile are null.
+  }
+  const bodyFlags = {};
+  const queryFlags = {};
+  for (const name of PLAYBACK_INFO_FLAG_NAMES) {
+    bodyFlags[name] = typeof fields?.[name] === "boolean" ? fields[name] : null;
+    queryFlags[name] = queryFlag(rawUrl, name);
+  }
+  const device = fields?.DeviceProfile;
+  let profile = null;
+  if (device !== null && typeof device === "object" && !Array.isArray(device)) {
+    const { MaxStreamingBitrate: _limit, ...rest } = device;
+    profile = canonicalDigest(rest);
+  }
+  return { body: bodyFlags, query: queryFlags, profile };
 }
 
 // The URL with the value of each PlaySessionId parameter that is a play session this run learned blanked, for the
@@ -103,6 +175,7 @@ export function startRecorder({ upstream, secrets, swap }) {
     let body = await readBody(incoming);
     const signIn = record.method === "POST" && url.pathname.endsWith("/Users/AuthenticateByName");
     const playbackInfo = record.method === "POST" && /\/PlaybackInfo$/i.test(url.pathname);
+    if (playbackInfo) record.playbackInfo = playbackInfoFacts(body.toString("utf8"), incoming.url ?? "/");
     if (signIn && swap) {
       try {
         const fields = JSON.parse(body.toString("utf8"));
