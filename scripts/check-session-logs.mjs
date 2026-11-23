@@ -25,6 +25,8 @@ const SOURCE_ROOTS = [
   { dir: "modules/session/src", ext: /\.(ts|tsx|mts)$/ },
   { dir: "modules/player/android/src/main", ext: /\.(kt|java)$/ },
   { dir: "modules/player/src", ext: /\.(ts|tsx|mts)$/ },
+  { dir: "modules/artwork/android/src/main", ext: /\.(kt|java)$/ },
+  { dir: "modules/artwork/src", ext: /\.(ts|tsx|mts)$/ },
   { dir: "apps/tv/src/host", ext: /\.(ts|tsx|mts)$/ },
 ];
 
