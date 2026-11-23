@@ -105,9 +105,9 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Owns:** playback attempts and cancellation; launch, first-frame, and end handling; retry; stop and Back; the session state reducer; next-episode auto-play, intro and credits skip from media segments, trickplay data; renegotiation for track and limit changes; stopping server conversions before a new play session for the same item.
 
-**Language.** Attempt, Operation, First frame, End reason (eof / stopped / quit / error), Retry, Up next, Segment (intro / outro / recap).
+**Language.** Attempt, Operation, First frame, End reason (eof / stopped / quit / error), Failure code (closed list, one copy-table row each), Retry, Up next, Segment (intro / outro / recap).
 
-**Today.** `PlaybackCoordinator` (`packages/core/src/player/coordinator.ts`), `playbackSessionReducer` (`packages/core/src/player/session-state.ts`), `packages/core/src/player/session-failure.ts`, `packages/core/src/domain/track-choice.ts`, `packages/core/src/domain/media-segments.ts`.
+**Today.** `PlaybackCoordinator` (`packages/core/src/player/coordinator.ts`), `playbackSessionReducer` (`packages/core/src/player/session-state.ts`), `packages/core/src/player/session-failure.ts`, `packages/core/src/domain/playback-failure.ts`, `packages/core/src/ports/failure-log.ts`, `packages/core/src/domain/track-choice.ts`, `packages/core/src/domain/media-segments.ts`.
 
 **Target.** `packages/core` (done in T2-02); the player screen in `modules/player` (T8-01) and `apps/tv` (T3-01).
 
