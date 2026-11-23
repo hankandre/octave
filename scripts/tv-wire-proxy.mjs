@@ -9,6 +9,12 @@
 // server's own (from tests/integration/.credentials), so the fixture password never reaches the device, and reads
 // the issued token from the answer so the judges know what to look for.
 //
+// T8-02 adds two booleans per request, `range` (a Range header was sent) and `staticTrue` (exactly one query parameter
+// named Static whose decoded value is "true"), and learns the PlaySessionId of every PlaybackInfo answer it relays:
+// each joins the run's secrets, so a play-session id in any logcat line fails the run. The stream URL carries its own
+// play session as the PlaySessionId value, which the server issued for that URL, so that one value is left out of the
+// URL's secret scan; anywhere else in a URL a play-session id is a secret like any other.
+//
 // Also here: the global-proxy listener, which records the requests that arrive when the emulator's http_proxy names
 // it, and a health check for the fixture servers.
 import { createServer, request as httpRequest } from "node:http";
@@ -33,16 +39,53 @@ export function describeAuthorization(value) {
   return { authorization: true, scheme, token: field !== null && field[1] !== "" };
 }
 
+// True when the query holds exactly one parameter named Static and its decoded value is "true".
+export function staticTrue(rawUrl) {
+  const mark = rawUrl.indexOf("?");
+  if (mark < 0) return false;
+  const values = rawUrl
+    .slice(mark + 1)
+    .split("#")[0]
+    .split("&")
+    .filter((part) => part !== "")
+    .map((part) => (part.includes("=") ? [part.slice(0, part.indexOf("=")), part.slice(part.indexOf("=") + 1)] : [part, null]))
+    .filter(([name]) => name === "Static")
+    .map(([, value]) => value);
+  if (values.length !== 1 || values[0] === null) return false;
+  try {
+    return decodeURIComponent(values[0].replace(/\+/g, " ")) === "true";
+  } catch {
+    return false;
+  }
+}
+
+// The URL with the value of each PlaySessionId parameter that is a play session this run learned blanked, for the
+// secret scan only.
+export function withoutOwnPlaySession(rawUrl, playSessions) {
+  if (playSessions.size === 0) return rawUrl;
+  return rawUrl.replace(/([?&]PlaySessionId=)([^&#]*)/g, (whole, name, value) => {
+    let decoded = value;
+    try {
+      decoded = decodeURIComponent(value);
+    } catch {
+      return whole;
+    }
+    return playSessions.has(decoded) ? name : whole;
+  });
+}
+
 // upstream: { port }; secrets: a Set the runner shares across recorders (known secrets, plus each issued token);
 // swap: { from: { user, password }, to: { user, password } } for a real server, or undefined.
 export function startRecorder({ upstream, secrets, swap }) {
   const records = [];
+  // The play sessions this recorder relayed; each is also in `secrets`.
+  const playSessions = new Set();
   const server = createServer({ keepAliveTimeout: 120_000 }, async (incoming, outgoing) => {
     const url = new URL(incoming.url ?? "/", "http://recorder.invalid");
     // The record holds a stand-in for a path, a query name, the Host or the scheme that holds a known secret, so
     // nothing the recorder keeps can leak one into the evidence; the upstream request still uses the real URL.
     const known = [...secrets];
-    const parts = safeUrlParts(incoming.url ?? "/", known);
+    const parts = safeUrlParts(withoutOwnPlaySession(incoming.url ?? "/", playSessions), known);
     const record = safeRecord(
       {
         method: incoming.method ?? "",
@@ -51,12 +94,15 @@ export function startRecorder({ upstream, secrets, swap }) {
         host: incoming.headers.host ?? "",
         status: null,
         retryAfter: null,
+        range: typeof incoming.headers.range === "string" && incoming.headers.range !== "",
+        staticTrue: staticTrue(incoming.url ?? "/"),
       },
       known,
     );
     records.push(record);
     let body = await readBody(incoming);
     const signIn = record.method === "POST" && url.pathname.endsWith("/Users/AuthenticateByName");
+    const playbackInfo = record.method === "POST" && /\/PlaybackInfo$/i.test(url.pathname);
     if (signIn && swap) {
       try {
         const fields = JSON.parse(body.toString("utf8"));
@@ -74,6 +120,17 @@ export function startRecorder({ upstream, secrets, swap }) {
       record.status = answer.statusCode ?? null;
       const retryAfter = answer.headers["retry-after"];
       record.retryAfter = typeof retryAfter === "string" ? retryAfter : null;
+      if (playbackInfo && record.status >= 200 && record.status < 300) {
+        try {
+          const playSession = JSON.parse(answerBody.toString("utf8")).PlaySessionId;
+          if (typeof playSession === "string" && playSession !== "") {
+            playSessions.add(playSession);
+            secrets.add(playSession);
+          }
+        } catch {
+          // No play session to learn.
+        }
+      }
       if (signIn && record.status >= 200 && record.status < 300) {
         try {
           const issued = JSON.parse(answerBody.toString("utf8")).AccessToken;

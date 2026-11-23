@@ -117,6 +117,14 @@ build "$av1" \
   -c:v libsvtav1 -preset 10 -crf 38 -pix_fmt yuv420p10le \
   "${aac_stereo[@]}" -metadata:s:a:0 language=eng -shortest
 
+# T8-02: a video no Android decoder plays. MS-MPEG-4 v3, an encoder built into ffmpeg, is muxed as V_MPEG4/MS/V3, a
+# Matroska codec id Media3's extractor does not list, so the engine finds no video track and ends the launch in
+# decoder-unavailable. Every fixture server offers it for direct play.
+nodecoder="$movies_dir/Synthetic No Decoder (2024)/Synthetic No Decoder (2024).mkv"
+build "$nodecoder" \
+  -f lavfi -i "$(pattern)" -f lavfi -i "$(tone 440)" \
+  -c:v msmpeg4v3 "${aac_stereo[@]}" -metadata:s:a:0 language=eng -shortest
+
 # Styled ASS subtitle, embedded in the mkv.
 ass_file="$work_dir/styled.ass"
 cat > "$ass_file" <<'ASS'
@@ -434,6 +442,7 @@ probe_value() { ffprobe -v error -select_streams "$2" -show_entries "$3" -of csv
 [ "$(probe_value "$hevc" v:0 stream=profile)" = "Main 10" ] || fail "HEVC is not Main 10"
 [ "$(probe_value "$hevc" v:0 stream=color_transfer)" = "smpte2084" ] || fail "HEVC transfer is not PQ"
 [ "$(probe_value "$av1" v:0 stream=codec_name)" = "av1" ] || fail "AV1 codec missing"
+[ "$(probe_value "$nodecoder" v:0 stream=codec_name)" = "msmpeg4v3" ] || fail "the no-decoder sample is not MS-MPEG-4 v3"
 [ "$(probe_value "$ass" s:0 stream=codec_name)" = "ass" ] || fail "ASS track missing"
 [ "$(probe_value "$multi" a stream=codec_name | tr '\n' ' ')" = "aac ac3 " ] || fail "multitrack audio missing"
 [ -f "$sidecar_dir/Synthetic Sidecar (2024).en.srt" ] || fail "srt sidecar missing"

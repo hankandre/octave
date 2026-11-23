@@ -21,17 +21,23 @@ import { openAdb } from "./tv-adb.mjs";
 import { E2E_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { clearEvidence, evidenceDir, writeEvidence, writeSummary } from "./tv-wire-evidence.mjs";
 import { openDevice } from "./tv-wire-device.mjs";
-import { judgeCapture, judgeLogcat, judgeRecords, judgeWire } from "./tv-wire-judge.mjs";
+import { judgeCapture, judgeLogcat, judgePlayerCapture, judgeRecords, judgeWire } from "./tv-wire-judge.mjs";
 import { describeLogKept, logKeptErrors, startLogKeeper } from "./tv-wire-logcat.mjs";
 import { startMock } from "./tv-wire-mock.mjs";
 import { proxyRequestsNamingTargets, startProxyListener, startRecorder } from "./tv-wire-proxy.mjs";
+import { readDecoderList } from "./tv-wire-decoders.mjs";
 import { ensureFixtures, readWireCredentials, upstreamPort } from "./tv-wire-fixtures.mjs";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
 const LIST = join(repo, "apps", "tv", "src", "e2e", "wire", "wire-tests.json");
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
-const RUN_MS = 240_000;
+const RUN_MS = 480_000;
 const REAL_TARGETS = ["jellyfin-10-11", "jellyfin-12", "jellyscale"];
+
+// The player's wire tests (T8-02) whose captures are plays, judged by judgePlayerCapture, and the tests whose upstream
+// answers a 3xx on purpose.
+const PLAYS = ["player-original-file", "player-samples"];
+const REDIRECTED = ["transport-redirect", "transport-canary", "player-redirect"];
 
 // What transport-probe-then-signed-in sends: the gateway's connect, login, userViews and logout.
 export const PROBE_THEN_SIGNED_IN = ["GET /System/Info/Public", "POST /Users/AuthenticateByName", "GET /UserViews", "POST /Sessions/Logout"];
@@ -160,11 +166,14 @@ export function judgeRun(input, { write }) {
     if (pair.target === "mock") counted.canaryOrigin = counts.canaryOrigin;
     if (pair.test === "transport-redirect") counted.redirector = counts.redirector;
     if (pair.test === "transport-private-lan-and-proxy") counted.privateLan = counts.privateLan;
+    if (pair.test === "player-samples") counted.decoders = pair.decoders ?? null;
+    if (pair.test === "player-redirect") counted.records = pair.records;
     const host = `127.0.0.1:${pair.devicePort}`;
     const errors = [...judgeWire({ pairs: [counted], lines })];
     if (pair.test === "transport-probe-then-signed-in") errors.push(...judgeCapture(pair.records, { expected: PROBE_THEN_SIGNED_IN, host, secrets: known }));
-    // The redirect and canary tests ask for a 3xx on purpose; the app must refuse it (their own judges), not avoid it.
-    else errors.push(...judgeRecords(pair.records, { host, secrets: known, redirects: ["transport-redirect", "transport-canary"].includes(pair.test) }));
+    else if (PLAYS.includes(pair.test)) errors.push(...judgeRecords(pair.records, { host, secrets: known }), ...judgePlayerCapture(pair.records));
+    // The redirect tests ask for a 3xx on purpose; the app must refuse it (their own judges), not avoid it.
+    else errors.push(...judgeRecords(pair.records, { host, secrets: known, redirects: REDIRECTED.includes(pair.test) }));
     return errors;
   });
   // Judged first, written second: the judges read the recorder's records, the writer replaces what still holds a secret.
@@ -239,6 +248,8 @@ async function main(args) {
   const install = adb("install", "-r", E2E_APK);
   if (install.status !== 0) fail("adb install of the e2e APK failed");
 
+  // The emulator's decoder list, read once and read-only, for the player-samples judge (T8-02 item 6).
+  const decoders = selected.some((pair) => pair.test === "player-samples") ? readDecoderList(shell("dumpsys", "media.player").stdout) : null;
   const adbd = () => adbdOf(shell("ps", "-A", "-o", "PID,ELAPSED,NAME").stdout ?? "");
   const secrets = new Set([list.canary, list.password]);
   for (const target of REAL_TARGETS) if (credentials[`${target}_password`]) secrets.add(credentials[`${target}_password`]);
@@ -348,7 +359,7 @@ async function main(args) {
   // The kept lines and the final dump are both judged; only the counting attempt's kept lines are the app's lines.
   const result = judgeRun(
     {
-      pairs: selected.map((pair) => ({ ...pair, records: recorders.get(`${pair.test} ${pair.target}`).records })),
+      pairs: selected.map((pair) => ({ ...pair, records: recorders.get(`${pair.test} ${pair.target}`).records, ...(pair.test === "player-samples" ? { decoders } : {}) })),
       counts: mock.counts(),
       lines: wireLines(run.keptLines),
       logLines: [...earlier.keptLines, ...earlier.dump, ...run.keptLines, ...run.dump],

@@ -29,6 +29,7 @@ The dvdsub and ISO samples (P10-02) are opt-in, because they need `python3` and 
 | `movies/Synthetic H264 (2024)/Synthetic H264 (2024).mkv` | H.264 High 8-bit, AAC stereo (eng) |
 | `movies/Synthetic HEVC HDR10 (2024)/Synthetic HEVC HDR10 (2024).mkv` | HEVC Main10, BT.2020 / PQ (smpte2084), mastering display and max-cll metadata |
 | `movies/Synthetic AV1 (2024)/Synthetic AV1 (2024).mkv` | AV1 (SVT-AV1), 10-bit |
+| `movies/Synthetic No Decoder (2024)/Synthetic No Decoder (2024).mkv` | MS-MPEG-4 v3 video (Matroska `V_MPEG4/MS/V3`, which Media3 does not read), AAC stereo (eng): the engine's typed `decoder-unavailable` (T8-02) |
 | `movies/Synthetic ASS (2024)/Synthetic ASS (2024).mkv` | Embedded styled ASS subtitle (eng) |
 | `movies/Synthetic Sidecar (2024)/Synthetic Sidecar (2024).mkv` and `.en.srt` | External SRT sidecar named `<video name>.<language>.srt` |
 | `movies/Synthetic Multitrack (2024)/Synthetic Multitrack (2024).mkv` | Two audio tracks: eng stereo AAC (default) and spa 5.1 AC-3 |

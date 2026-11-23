@@ -4,6 +4,9 @@
 //
 // - main: the probe (no LocalAddress), a password sign-in that issues the fixed canary as the token, GET /UserViews,
 //   the logout, and the /Wire/ routes the tests need: echo, 401 and 500 (each echoing the canary), redirect, stall.
+// - main, for the player's redirect test (T8-02 item 5): GET /Items finds one movie, POST /Items/{id}/PlaybackInfo
+//   offers it for direct play, and GET /Videos/{id}/stream answers a 302 to the canary origin with a credential
+//   parameter, which the one client must refuse.
 // - redirector: every answer is a 302 to the canary origin with a credential parameter.
 // - canaryOrigin: records every request; must stay at zero.
 // - privateLan: answers only GET /System/Info/Public, gives LocalAddress as http://10.0.2.2:<its port>, and counts the
@@ -15,6 +18,28 @@ const LOOPBACK = "127.0.0.1";
 const SERVER_ID = "0f3e9c1a7b5d4e2f8a6c0b9d1e3f5a7c";
 const USER_ID = "4b8e2d6f0a1c3e5f7b9d1f3a5c7e9b0d";
 const STALL_MS = 20_000;
+const MOVIE_ID = "7d3c1b9a5e2f4c6d8a0b2c4d6e8f0a1b";
+const PLAY_SESSION_ID = "2e4c6a8b0d1f3e5a7c9b1d3f5a7c9e0b";
+const MOVIE = { Id: MOVIE_ID, Name: "Synthetic H264", Type: "Movie", ProductionYear: 2024, RunTimeTicks: 100_000_000, UserData: { Played: false, PlaybackPositionTicks: 0 } };
+const PLAYBACK_INFO = {
+  MediaSources: [
+    {
+      Id: MOVIE_ID,
+      Path: "/media/movies/Synthetic H264 (2024)/Synthetic H264 (2024).mkv",
+      Protocol: "File",
+      Container: "mkv",
+      SupportsDirectPlay: true,
+      SupportsDirectStream: true,
+      SupportsTranscoding: true,
+      RunTimeTicks: 100_000_000,
+      MediaStreams: [
+        { Index: 0, Type: "Video", Codec: "h264", BitDepth: 8, Width: 640, Height: 360 },
+        { Index: 1, Type: "Audio", Codec: "aac", Channels: 2, Language: "eng", IsDefault: true },
+      ],
+    },
+  ],
+  PlaySessionId: PLAY_SESSION_ID,
+};
 
 function listen(handler) {
   const server = createServer({ keepAliveTimeout: 120_000 }, handler);
@@ -68,7 +93,11 @@ export async function startMock({ canary, user, password, canaryDevicePort }) {
       return send(response, 200, { AccessToken: canary, User: { Id: USER_ID, Name: "Wire User" }, ServerId: SERVER_ID, SessionInfo: { Id: "s" } });
     }
     if (!signedIn(request)) return send(response, 401, { Message: "sign in first" });
+    if (request.method === "POST" && path === `/Items/${MOVIE_ID}/PlaybackInfo`) return send(response, 200, PLAYBACK_INFO);
+    if (request.method === "GET" && path === `/Videos/${MOVIE_ID}/stream`) return send(response, 302, undefined, { Location: landing });
     switch (route) {
+      case "GET /Items":
+        return send(response, 200, { Items: [MOVIE], TotalRecordCount: 1 });
       case "GET /UserViews":
         return send(response, 200, { Items: [{ Id: "1a2b3c4d5e6f708192a3b4c5d6e7f809", Name: "Movies", CollectionType: "movies", Type: "CollectionFolder" }], TotalRecordCount: 1 });
       case "POST /Sessions/Logout":

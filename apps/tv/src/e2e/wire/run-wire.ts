@@ -8,6 +8,9 @@ import { createGatewayFactory } from "../../host/gateway";
 import { hostInstallId } from "../../host/host-gateway";
 import { loadSessionModule } from "../../host/session-module";
 import { createSessionTransport } from "../../host/transport";
+import * as playerOriginalFile from "./player-original-file";
+import * as playerRedirect from "./player-redirect";
+import * as playerSamples from "./player-samples";
 import { SeamRecorder } from "./seam-recorder";
 import * as canary from "./transport-canary";
 import * as errors from "./transport-errors";
@@ -23,6 +26,9 @@ const TESTS: Record<string, (context: WireContext) => Promise<WireOutcome>> = {
   "transport-canary": canary.run,
   "transport-errors": errors.run,
   "transport-private-lan-and-proxy": privateLan.run,
+  "player-original-file": playerOriginalFile.run,
+  "player-samples": playerSamples.run,
+  "player-redirect": playerRedirect.run,
 };
 
 export async function runWire(host: { crypto: Crypto; props: unknown }, log: (line: string) => void): Promise<void> {
