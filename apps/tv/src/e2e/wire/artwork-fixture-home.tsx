@@ -1,6 +1,7 @@
-// What the artwork wire tests draw (T3-11): a recording wrapper around the native artwork view, a strip of poster
-// cards for artwork-header-and-cache, and a fixture Home of T3-08's rows for artwork-canary. The wrapper hands every
-// prop object and every event payload to the test, which scans them on the device; nothing here logs.
+// What the artwork wire tests draw (T3-11, T3-39): a recording wrapper around the native artwork view, a strip of
+// poster cards for artwork-header-and-cache, and a fixture Home of T3-08's rows for artwork-canary and the T3-39 frame
+// measurement. The wrapper hands every prop object and every event payload to the test, which scans them on the device;
+// nothing here logs.
 import type { OctaveArtworkViewProps } from "@octave/artwork";
 import type { ImageRef } from "@octave/core/src/domain/catalog";
 import { useCallback, type ComponentType } from "react";
@@ -12,7 +13,7 @@ import { RowList, type RowSpec } from "../../design/rows/row-list";
 import type { RowMemory } from "../../design/rows/row-memory";
 import { px } from "../../design/scale";
 import { colors, space } from "../../design/tokens";
-import { FIXTURE_ITEM_IDS, FIXTURE_TAG } from "./artwork-fixture-ids";
+import { FIXTURE_ITEM_IDS, FIXTURE_ROW_COUNT, FIXTURE_ROW_LENGTH, FIXTURE_TAG, fixtureBlurHash } from "./artwork-fixture-ids";
 
 type StateEvent = Parameters<NonNullable<OctaveArtworkViewProps["onArtworkState"]>>[0];
 
@@ -58,17 +59,25 @@ export function PosterStrip({ artwork: Artwork, images }: { artwork: ArtworkComp
   );
 }
 
+// Every card carries its own BlurHash, except every third, which carries none, so both paths are on screen.
 const card = (itemId: string, index: number): CardItem => ({
   id: itemId,
   title: `Fixture title ${index + 1}`,
-  image: { itemId, type: "Primary", tag: FIXTURE_TAG },
+  image: index % 3 === 2 ? { itemId, type: "Primary", tag: FIXTURE_TAG } : { itemId, type: "Primary", tag: FIXTURE_TAG, blurHash: fixtureBlurHash(index) },
 });
 
-// Two rows of twelve: posters, then thumbs. The fourth poster is the id the mock answers 404 for.
-export const FIXTURE_ROWS: RowSpec[] = [
-  { id: "posters", title: "Fixture posters", variant: "poster", items: FIXTURE_ITEM_IDS.slice(0, 12).map(card) },
-  { id: "thumbs", title: "Fixture thumbs", variant: "thumb", items: FIXTURE_ITEM_IDS.slice(12).map((id, index) => card(id, index + 12)) },
-];
+// Eight rows of twelve, posters and thumbs in turn. The fourth poster of the first row is the id the mock answers 404
+// for. Eight rows are more than the screen holds, so a held Down scrolls rows off and their cards recycle.
+export const FIXTURE_ROWS: RowSpec[] = Array.from({ length: FIXTURE_ROW_COUNT }, (_, row) => {
+  const variant = row % 2 === 0 ? "poster" : "thumb";
+  const start = row * FIXTURE_ROW_LENGTH;
+  return {
+    id: `fixture-${row + 1}`,
+    title: `Fixture ${variant === "poster" ? "posters" : "thumbs"} ${row + 1}`,
+    variant,
+    items: FIXTURE_ITEM_IDS.slice(start, start + FIXTURE_ROW_LENGTH).map((id, index) => card(id, start + index)),
+  };
+});
 
 // The distance in dp between one card's start and the next in a row of this variant.
 export const rowStride = (variant: RowSpec["variant"]) => px(cardWidth(variant) + cardGap);
