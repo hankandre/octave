@@ -34,7 +34,7 @@ export type AppShellProps = {
 
 type Internals = {
   places: FocusPlaces;
-  screens: AppShellProps["screens"];
+  screens: () => AppShellProps["screens"];
   restore(routeKey: string): void;
 };
 
@@ -72,7 +72,7 @@ function ScreenHost({ route: stackRoute, navigation }: ScreenProps): ReactElemen
 
   if (internals === null) return <View />;
   const reporter = internals.places.reporterFor(routeKey);
-  const Screen = route.kind === "notFound" ? NotFoundScreen : internals.screens[route.kind];
+  const Screen = route.kind === "notFound" ? NotFoundScreen : internals.screens()[route.kind];
   return (
     <FocusPlaceContext.Provider value={reporter}>
       <Screen route={route} />
@@ -97,6 +97,8 @@ export function AppShell({ screens, libraries, account, initialPath = "/", icons
   const sync = useCallback(() => {
     const current = nav.isReady() ? nav.getCurrentRoute() : undefined;
     if (current === undefined) return;
+    // A new top screen is a new view tree: the old screen's tag is dead, so the rail's way back starts empty until the rail opens again.
+    if (topKey.current !== current.key) setReturnTag(undefined);
     topKey.current = current.key;
     const route = fromScreen(current.name, current.params);
     setTop(route);
@@ -135,7 +137,10 @@ export function AppShell({ screens, libraries, account, initialPath = "/", icons
     },
     [places],
   );
-  const internals = useMemo<Internals>(() => ({ places, screens, restore }), [places, screens, restore]);
+  // `screens` is read through a ref so a caller's inline object never rebuilds `internals`, which would drop every saved focus place.
+  const screensRef = useRef(screens);
+  screensRef.current = screens;
+  const internals = useMemo<Internals>(() => ({ places, screens: () => screensRef.current, restore }), [places, restore]);
 
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
@@ -178,7 +183,7 @@ export function AppShell({ screens, libraries, account, initialPath = "/", icons
     if (chrome !== "rail") return;
     const view = entryViews.current.get(currentKey);
     pointGuide(edge.current, view === undefined ? [] : [view]);
-  }, [chrome, currentKey]);
+  }, [chrome, currentKey, entries]);
 
   const initialState = useMemo(() => {
     const screen = toScreen(initial);
