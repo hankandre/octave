@@ -80,3 +80,21 @@ describe("row router, scrolled", () => {
     expect(destinations.b).toBe(before);
   });
 });
+
+describe("row router, clear and viewOf (T3-09)", () => {
+  it("viewOf gives the registered view and undefined for an unknown item", () => {
+    const { router, views } = setup();
+    expect(router.viewOf("a", "a-3")).toBe(views["a-3"]);
+    expect(router.viewOf("a", "nope")).toBeUndefined();
+  });
+
+  it("clear points every registered guide at nothing", () => {
+    const { router, destinations } = setup();
+    router.focused("b", 2);
+    expect(destinations.a).toHaveLength(1);
+    router.clear();
+    expect(destinations.a).toEqual([]);
+    expect(destinations.b).toEqual([]);
+    expect(destinations.c).toEqual([]);
+  });
+});

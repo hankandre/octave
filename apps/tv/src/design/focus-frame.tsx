@@ -22,6 +22,10 @@ export type FocusFrameProps = {
   /** Keeps the ring and lift while true, whatever the frame's own focus: a text field holds it while its input has focus. */
   holdFocus?: boolean;
   hasTVPreferredFocus?: boolean;
+  /** The pressable's view, for code that has to focus it or point a focus guide at it. */
+  viewRef?: (view: unknown) => void;
+  /** The tag of the view that Right moves focus to, when it is not the nearest one. */
+  nextFocusRight?: number;
   accessibilityLabel?: string;
   accessibilityRole?: AccessibilityRole;
   accessibilityState?: AccessibilityState;
@@ -56,6 +60,8 @@ export function FocusFrame({
   disabled = false,
   holdFocus = false,
   hasTVPreferredFocus,
+  viewRef,
+  nextFocusRight,
   accessibilityLabel,
   accessibilityRole,
   accessibilityState,
@@ -105,7 +111,9 @@ export function FocusFrame({
 
   return (
     <Pressable
+      ref={viewRef}
       testID={testID}
+      nextFocusRight={nextFocusRight}
       focusable={!disabled}
       disabled={disabled}
       hasTVPreferredFocus={hasTVPreferredFocus}
