@@ -325,9 +325,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm tv:prebuild
       - run: pnpm tv:e2e:build
-      # fixture:setup waits for each library scan, which never settles on an
-      # empty library, so the playable samples are generated as the tripwire job
-      # does. The wire tests read no media.
+      # fixture:setup waits for Jellyscale's library scan, which never settles on
+      # an empty library, and pnpm tv:wire scans the Jellyfin libraries itself
+      # (T3-11), so the samples are generated as the tripwire job does. The wire
+      # tests play samples (T8-02) and draw their posters (T3-11).
       - name: Generate samples with jellyfin-ffmpeg
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
