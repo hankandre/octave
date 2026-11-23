@@ -468,6 +468,9 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Playback error, the player did not stop (Back, Retry, or a track or limit change; owner decision 2026-11-19) | Couldn't stop playback | The player didn't close properly. Go back to try again, or quit Octave if you can still hear it. | Back to details (primary; it tries the stop again, then leaves) |
 | Playback error, unsafe stream | Playback could not start | Your server offered a stream address Octave won't use. | Back to details |
 | Playback error, other request failure | Playback could not start | Something went wrong starting playback. Try again. | Retry, Back to details |
+| Playback error, session ended | Playback stopped | Your session on {server} has ended. Sign in again to keep watching. | Sign in, Back to details |
+| Playback error, format not supported on this device | Playback stopped | This device can't play this video or audio format. | Back to details |
+| Playback error, audio output failed | Playback stopped | Couldn't play the sound on this device. Check the TV's audio output, then try again. | Retry, Back to details |
 | Progress report failed | n/a | Couldn't save your progress to {server}. Playback continues. | n/a |
 
 ## 11. Accessibility rules
