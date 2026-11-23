@@ -1,5 +1,6 @@
 // What run-wire.ts hands each wire test, and the helpers the tests share (T3-05).
 import type { JellyfinGateway } from "@octave/core/src/jellyfin/gateway";
+import type { ReactElement } from "react";
 import type { Crypto } from "@octave/core/src/ports/crypto";
 import type { Transport } from "@octave/core/src/ports/transport";
 import type { SeamRecorder } from "./seam-recorder";
@@ -20,6 +21,9 @@ export interface WireContext {
   // The same gateway with a host that states no device limit, for the T8-02 player tests only (T8-07 D3): they test
   // the engine behind such a host, and the engine's own refusal is the second guard.
   readonly gatewayStatingFull: (base: string) => Promise<JellyfinGateway>;
+  // Draws an element over the root's player view, or nothing; resolves once React has committed it (T3-11's artwork
+  // tests mount and unmount native views with it).
+  readonly show: (element: ReactElement | null) => Promise<void>;
 }
 
 // A test's outcome: the words of its result line, or unreachable when its first call found no listener.

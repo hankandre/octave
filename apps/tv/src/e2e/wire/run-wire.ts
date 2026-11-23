@@ -4,6 +4,7 @@
 // listener is reported unreachable (under pnpm tv:e2e nothing is reversed, so every pair is). Lines hold fixed words
 // and counts only.
 import type { Crypto } from "@octave/core/src/ports/crypto";
+import type { ReactElement } from "react";
 import { createCapabilityProbe } from "../../host/device-capabilities";
 import { createAppGatewayFactory, createGatewayFactory } from "../../host/gateway";
 import { hostInstallId } from "../../host/host-gateway";
@@ -12,6 +13,8 @@ import { loadPlayerModule } from "../../host/player-module";
 import * as playerCapabilities from "./player-capabilities";
 import { loadSessionModule } from "../../host/session-module";
 import { createSessionTransport } from "../../host/transport";
+import * as artworkCanary from "./artwork-canary";
+import * as artworkHeaderAndCache from "./artwork-header-and-cache";
 import * as playerOriginalFile from "./player-original-file";
 import * as playerRedirect from "./player-redirect";
 import * as playerSamples from "./player-samples";
@@ -34,12 +37,14 @@ const TESTS: Record<string, (context: WireContext) => Promise<WireOutcome>> = {
   "player-samples": playerSamples.run,
   "player-redirect": playerRedirect.run,
   "player-capabilities": playerCapabilities.run,
+  "artwork-header-and-cache": artworkHeaderAndCache.run,
+  "artwork-canary": artworkCanary.run,
 };
 
 // The app's probe, as host-gateway.ts wires it: the player engine's initialize (the cast is player-run.ts's).
 const probe = createCapabilityProbe(() => createPlayerEngine(loadPlayerModule() as unknown as PlayerNative));
 
-export async function runWire(host: { crypto: Crypto; props: unknown }, log: (line: string) => void): Promise<void> {
+export async function runWire(host: { crypto: Crypto; props: unknown; show: (element: ReactElement | null) => Promise<void> }, log: (line: string) => void): Promise<void> {
   let index = 0;
   for (const test of list.tests) {
     for (const target of test.targets) {
@@ -63,12 +68,14 @@ export async function runWire(host: { crypto: Crypto; props: unknown }, log: (li
           transport,
           seam,
           gateway: (url) => factory(url),
+          show: host.show,
           gatewayStatingFull: (url) => statingFull(url, { deviceCapabilities: { get: () => "full" } }),
         };
         outcome = run === undefined ? { words: "outcome=no-device-test" } : await run(context);
       } catch {
         outcome = { words: "outcome=threw" };
       }
+      await host.show(null);
       log("unreachable" in outcome ? `OCTAVE_WIRE unreachable ${tag}` : `OCTAVE_WIRE result ${tag} task=${test.task} ${outcome.words}`);
     }
   }
