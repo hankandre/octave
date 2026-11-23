@@ -2346,7 +2346,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "commit 4166b069: windows 30/90/180/365/all, default 90, cap 20 with hero counted (PO ruling), loadHome(clock), limit=20 on Resume/NextUp. Frozen home.test.ts 16-card case (line 41) and \"7\" (line 73, tsc error) still fail pnpm check; awaiting PO ruling."
+          "evidence": "commit 8938d25a: windows 30/90/180/365/all, default 90, cap 20 hero counted (PO ruling), loadHome(clock), limit=20. Frozen T5-02 cases moved by PO; pnpm check green. CI: none."
         },
         {
           "id": "T5-03",
