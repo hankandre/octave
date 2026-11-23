@@ -1673,10 +1673,10 @@
             "docs/security.md, Development builds, states the rule and names its tests in the same PR; the PR calls out the change, and the review includes a guardian"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "native-engineer",
-          "passes": false,
-          "evidence": "Review fixes in commit f08a9431 on task/T3-33 (allowlist call/bracket/default forms; debuggable-flag wiring test BuildServersTest). pnpm check passed (vitest 3277 + 2374, jest 152); pnpm tv:native:test 734 tests, 0 failed; pnpm tv:e2e on own emulator (API 36) passed. One low (no React context) logged to backlog. Pending Ship: PR Security rule change paragraph, CI tv:wire and tv:e2e. Untested: Shield, real TVs, other Android versions."
+          "passes": true,
+          "evidence": "PR #313, commits f08a9431 and 6ae5b832. pnpm check, pnpm tv:native:test (734 tests, 0 failed) and own-emulator tv:e2e passed. CI on PR head, run 45116064058: wire job (pnpm tv:wire) pass, tv job (pnpm tv:e2e) pass, checks pass. One low in backlog. Untested: Shield, real TVs, other Android versions."
         },
         {
           "id": "T3-26",
