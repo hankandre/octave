@@ -3021,7 +3021,7 @@
           "status": "in_progress",
           "owner": "native-engineer",
           "passes": false,
-          "evidence": "Implement started on task/T8-02: spec updated with the 2026-11-23 Product Owner ruling and spec check notes (commit f12dccde)."
+          "evidence": "Implemented on task/T8-02 through commit 6d6723af. Local: pnpm check pass (3449+2551 tests); tv:native:test 893/0; tv:build + tv:apk:check pass (dex: D4_EXCEPTIONS E1 used by invoke-direct); tv:e2e pass; test:tripwire pass; tv:wire --task T8-02 on own API 36 TV emulator: player-original-file, player-samples, player-redirect pass; full tv:wire 11 pairs pass. CI wire job on the PR head still due (items 5-8, gate: ci)."
         },
         {
           "id": "T8-03",
