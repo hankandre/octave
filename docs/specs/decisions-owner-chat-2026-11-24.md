@@ -21,3 +21,10 @@ The owner chose the recommended Tabler glyphs, one per rail entry:
 - No account: `user`
 
 A change later is a one-line edit in `apps/tv/src/shell/rail-icons.ts` and its entry in the glyph map.
+
+## 3. How long the progress-save notice stays in the player (T8-03)
+
+The owner chose "5 seconds in the top-centre pill".
+
+- When Octave cannot tell the server where playback stopped, the player shows "Couldn't save your progress to {server}. Playback continues." in the OSD pill at the top centre.
+- It stays 5 seconds, the same as the conversion line, the other message that no key causes (DESIGN.md §7.14).
