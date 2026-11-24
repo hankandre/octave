@@ -9,11 +9,8 @@ import { Animated, Easing, StyleSheet, View, type ViewStyle } from "react-native
 import type { ImageRef } from "@octave/core/src/domain/catalog";
 import { useReducedMotion } from "../design/motion";
 import { useArtwork } from "../design/rows";
-import { canvas, colors, colourAt, depth, motion } from "../design/tokens";
+import { backdropArt, canvas, colors, colourAt, depth, motion } from "../design/tokens";
 import { useDwell } from "./use-dwell";
-
-/** The art's opacity under the scrims (DESIGN.md §7.2: 35%). */
-const ART_OPACITY = 0.35;
 
 type Layer = { id: number; image: ImageRef; fade: boolean };
 type Scrim = typeof depth.scrimHero | typeof depth.scrimFloor;
@@ -68,7 +65,8 @@ export function AmbientBackdrop({ target }: { target: ImageRef | undefined }) {
   }, [settled, reduced]);
 
   const dropOlder = useCallback((id: number) => setLayers((current) => current.filter((layer) => layer.id >= id)), []);
-  const drop = useCallback((id: number) => setLayers((current) => current.filter((layer) => layer.id !== id)), []);
+  // A failed layer takes every older one with it: the backdrop never keeps another title's picture.
+  const drop = useCallback((id: number) => setLayers((current) => current.filter((layer) => layer.id > id)), []);
 
   return (
     <View testID="home-backdrop" pointerEvents="none" style={styles.fill}>
@@ -87,5 +85,5 @@ const fill = { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 } as c
 
 const styles = StyleSheet.create({
   fill,
-  art: { ...fill, opacity: ART_OPACITY },
+  art: { ...fill, opacity: backdropArt.opacity },
 });
