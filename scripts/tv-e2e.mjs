@@ -26,6 +26,7 @@ import { expectedPublicCount, runCleartextProbe } from "./tv-cleartext.mjs";
 import { installRefusal, probeStageDecision, readInstallFacts } from "./tv-install-guard.mjs";
 import { runInstallIdStage, stageRequired } from "./tv-install-id.mjs";
 import { runResolvedAddressProbe } from "./tv-resolved-address.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 const FIXTURES = fileURLToPath(new URL("../packages/core/tests/fixtures/", import.meta.url));
 const EVIDENCE = fileURLToPath(new URL("../release-evidence/tv/", import.meta.url));
@@ -146,14 +147,14 @@ async function main(args) {
     adbPath = platformTool(androidSdk(), "adb");
     aapt2 = newestBuildTool(androidSdk(), "aapt2");
   } catch (error) {
-    fail(error.message);
+    fail(hideHostPaths(error.message));
   }
   // Everything adb returns has the serial replaced by `[device]` (T3-30).
   let runner;
   try {
     runner = await openDeviceAdb({ adbPath, serial });
   } catch (error) {
-    fail(error.message);
+    fail(hideHostPaths(error.message));
   }
   const adb = (...rest) => runner.run(rest);
   const shell = (...rest) => adb("shell", ...rest);
@@ -172,14 +173,14 @@ async function main(args) {
       }
     }
   }
-  if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:e2e:build first`);
-  if (!existsSync(probeApk)) fail(`no cleartext probe APK at ${probeApk}; pass it after the APK or run pnpm tv:e2e:build`);
-  if (!existsSync(mapping)) fail(`no R8 mapping at ${mapping}; pass it after the probe APK or run pnpm tv:e2e:build`);
+  if (!existsSync(apk)) fail(`no APK at ${shownPath(apk)}; run pnpm tv:e2e:build first`);
+  if (!existsSync(probeApk)) fail(`no cleartext probe APK at ${shownPath(probeApk)}; pass it after the APK or run pnpm tv:e2e:build`);
+  if (!existsSync(mapping)) fail(`no R8 mapping at ${shownPath(mapping)}; pass it after the probe APK or run pnpm tv:e2e:build`);
   let network;
   try {
     network = judgeNetworkSecurity(readNetworkSecurity(aapt2, apk));
   } catch (error) {
-    network = [`ERROR tv apk: ${error.message}`];
+    network = [`ERROR tv apk: ${hideHostPaths(error.message)}`];
   }
   if (network.length > 0) {
     for (const error of network) console.error(error);
@@ -195,7 +196,7 @@ async function main(args) {
   try {
     allowlist = checkApkAllowlist(apk);
   } catch (error) {
-    allowlist = [`ERROR tv allowlist: ${error.message}`];
+    allowlist = [`ERROR tv allowlist: ${hideHostPaths(error.message)}`];
   }
   if (allowlist.length > 0) {
     for (const error of allowlist) console.error(error);
@@ -206,7 +207,7 @@ async function main(args) {
   try {
     signing = judgeCerts(readCerts(newestBuildTool(androidSdk(), "apksigner"), apk));
   } catch (error) {
-    signing = [`ERROR tv signing: ${error.message}`];
+    signing = [`ERROR tv signing: ${hideHostPaths(error.message)}`];
   }
   if (signing.length > 0) {
     for (const error of signing) console.error(error);
@@ -280,7 +281,7 @@ async function main(args) {
   }
 
   // Last: it clears the app's data and switches the backup transport on an emulator; it prints its own outcome.
-  const installId = await runInstallIdStage({ adbPath, serial, evidenceDir: EVIDENCE });
+  const installId = await runInstallIdStage({ adbPath, serial, evidenceDir: EVIDENCE, open: openDeviceAdb });
   if (installId.errors.length > 0) {
     for (const error of installId.errors) console.error(error);
     process.exit(1);

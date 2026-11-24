@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
 import { parseXmlTree, readXmlTree, resolveResourceFile } from "./tv-aapt2-xml.mjs";
 import { androidSdk, newestBuildTool } from "./tv-android-sdk.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 export { parseXmlTree, readXmlTree, resolveResourceFile };
 
@@ -112,7 +113,7 @@ export function judgeNetworkSecurity(facts) {
 export function readNetworkSecurity(aapt2, apk) {
   const dump = (...args) => {
     const child = spawnSync(aapt2, ["dump", ...args], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
-    if (child.status !== 0) throw new Error(`aapt2 dump ${args[0]} failed: ${(child.stderr || child.error?.message || "").trim()}`);
+    if (child.status !== 0) throw new Error(`aapt2 dump ${args[0]} failed: ${hideHostPaths((child.stderr || child.error?.message || "").trim())}`);
     return child.stdout;
   };
   const { configAttribute, usesCleartextTraffic, problems } = readManifestNetworkSecurity(dump("xmltree", apk, "--file", "AndroidManifest.xml"));
@@ -125,30 +126,30 @@ export function readNetworkSecurity(aapt2, apk) {
 function main(args) {
   const apk = args[0] ?? RELEASE_APK;
   if (!existsSync(apk)) {
-    console.error(`ERROR tv apk: no APK at ${apk}; run pnpm tv:prebuild and pnpm tv:build first`);
+    console.error(`ERROR tv apk: no APK at ${shownPath(apk)}; run pnpm tv:prebuild and pnpm tv:build first`);
     process.exit(1);
   }
   let aapt2;
   try {
     aapt2 = newestBuildTool(androidSdk(), "aapt2");
   } catch (error) {
-    console.error(`ERROR tv apk: ${error.message}`);
+    console.error(`ERROR tv apk: ${hideHostPaths(error.message)}`);
     process.exit(1);
   }
   const child = spawnSync(aapt2, ["dump", "badging", apk], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (child.status !== 0) {
-    console.error(`ERROR tv apk: aapt2 dump badging failed: ${(child.stderr || child.error?.message || "").trim()}`);
+    console.error(`ERROR tv apk: aapt2 dump badging failed: ${hideHostPaths((child.stderr || child.error?.message || "").trim())}`);
     process.exit(1);
   }
   const errors = checkBadging(child.stdout);
   for (const error of errors) console.error(error);
   if (errors.length > 0) process.exit(1);
-  console.log(`tv apk: ${apk} passes (arm64-v8a, leanback launcher, touchscreen not required)`);
+  console.log(`tv apk: ${shownPath(apk)} passes (arm64-v8a, leanback launcher, touchscreen not required)`);
   let facts;
   try {
     facts = readNetworkSecurity(aapt2, apk);
   } catch (error) {
-    console.error(`ERROR tv apk: ${error.message}`);
+    console.error(`ERROR tv apk: ${hideHostPaths(error.message)}`);
     process.exit(1);
   }
   const network = judgeNetworkSecurity(facts);

@@ -2,12 +2,13 @@
 // a path or throws an Error whose message is the reason, which the caller prints after its own `ERROR tv <area>:`.
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { shownPath } from "./tv-host-paths.mjs";
 
 export function androidSdk(env = process.env) {
   for (const name of ["ANDROID_HOME", "ANDROID_SDK_ROOT"]) {
     const dir = env[name];
     if (dir) {
-      if (!existsSync(dir)) throw new Error(`${name} is ${dir}, which does not exist`);
+      if (!existsSync(dir)) throw new Error(`${name} is ${shownPath(dir)}, which does not exist`);
       return dir;
     }
   }
@@ -32,11 +33,11 @@ export function newestBuildTool(sdk, tool) {
     const path = join(root, version, tool);
     if (existsSync(path)) return path;
   }
-  throw new Error(`no ${tool} under ${root}; install build-tools with sdkmanager`);
+  throw new Error(`no ${tool} under ${shownPath(root)}; install build-tools with sdkmanager`);
 }
 
 export function platformTool(sdk, tool) {
   const path = join(sdk, "platform-tools", tool);
-  if (!existsSync(path)) throw new Error(`no ${tool} under ${join(sdk, "platform-tools")}; install platform-tools with sdkmanager`);
+  if (!existsSync(path)) throw new Error(`no ${tool} under ${shownPath(join(sdk, "platform-tools"))}; install platform-tools with sdkmanager`);
   return path;
 }

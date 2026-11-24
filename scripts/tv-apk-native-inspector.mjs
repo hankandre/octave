@@ -9,6 +9,7 @@ import { pathToFileURL } from "node:url";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
 import { hasBytes, readElf } from "./tv-elf.mjs";
 import { readZipEntries } from "./tv-zip.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 export const DISPATCHER = "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent13handleRequestE";
 export const LOADER = "_ZN8facebook5react18jsinspector_modern14NetworkIOAgent25handleLoadNetworkResourceE";
@@ -115,14 +116,14 @@ export function main(args = [], system = {}) {
   const stderr = system.stderr ?? process.stderr;
   const apk = args[0] ?? RELEASE_APK;
   if (!existsSync(apk)) {
-    stderr.write(`${PREFIX} no APK at ${apk}; run pnpm tv:prebuild and pnpm tv:build first\n`);
+    stderr.write(`${PREFIX} no APK at ${shownPath(apk)}; run pnpm tv:prebuild and pnpm tv:build first\n`);
     return 1;
   }
   let entries;
   try {
     entries = readZipEntries(apk, (name) => LIBRARY.test(name));
   } catch (error) {
-    stderr.write(`${PREFIX} L0 ${apk} cannot be read as a zip: ${error instanceof Error ? error.message : String(error)}\n`);
+    stderr.write(`${PREFIX} L0 ${shownPath(apk)} cannot be read as a zip: ${hideHostPaths(error instanceof Error ? error.message : String(error))}\n`);
     return 1;
   }
   const libraries = entries.map((entry) => readLibraryFacts(entry.name, entry.bytes));
@@ -134,7 +135,7 @@ export function main(args = [], system = {}) {
   const abis = new Set(libraries.map((library) => library.abi));
   const inspectors = [...new Set(libraries.filter((library) => library.symbols.some((symbol) => symbol.defined && isDispatcher(symbol.name))).map((library) => library.name))];
   stdout.write(
-    `tv native inspector: ${apk} passes (${libraries.length} libraries in ${abis.size} ABIs; ${inspectors.join(", ")} defines the C++ inspector's network dispatcher in each and nothing calls it; no debugger-only string)\n`,
+    `tv native inspector: ${shownPath(apk)} passes (${libraries.length} libraries in ${abis.size} ABIs; ${inspectors.join(", ")} defines the C++ inspector's network dispatcher in each and nothing calls it; no debugger-only string)\n`,
   );
   return 0;
 }

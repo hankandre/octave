@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { ALLOWLIST_CANARY } from "./dev-allowlist.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
 import { zipEntries, zipEntryBytes } from "./tv-zip.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 const FORMS = [Buffer.from(ALLOWLIST_CANARY, "utf8"), Buffer.from(ALLOWLIST_CANARY, "utf16le")];
 
@@ -39,19 +40,19 @@ export function checkApkAllowlist(apk) {
 export function main(args = process.argv.slice(2)) {
   const apk = args[0] ?? RELEASE_APK;
   if (!existsSync(apk)) {
-    console.error(`ERROR tv allowlist: no APK at ${apk}; run pnpm tv:prebuild and pnpm tv:build first`);
+    console.error(`ERROR tv allowlist: no APK at ${shownPath(apk)}; run pnpm tv:prebuild and pnpm tv:build first`);
     return 1;
   }
   let errors;
   try {
     errors = checkApkAllowlist(apk);
   } catch (error) {
-    console.error(`ERROR tv allowlist: ${error.message}`);
+    console.error(`ERROR tv allowlist: ${hideHostPaths(error.message)}`);
     return 1;
   }
   for (const error of errors) console.error(error);
   if (errors.length > 0) return 1;
-  console.log(`tv allowlist: ${apk} passes (no entry holds the development-server allowlist canary)`);
+  console.log(`tv allowlist: ${shownPath(apk)} passes (no entry holds the development-server allowlist canary)`);
   return 0;
 }
 

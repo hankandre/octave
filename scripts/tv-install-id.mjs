@@ -5,12 +5,12 @@
 // other device (a real TV, or one that cannot be told apart) the stage is skipped after reading two properties by name:
 // no `pm clear`, no `bmgr`, no launch. In CI (GITHUB_ACTIONS) or with OCTAVE_INSTALL_ID_STAGE=required a skip fails.
 //
-// Every adb call goes through the runner openDeviceAdb returns (./tv-adb.mjs), which keeps the serial out of everything it
+// Every adb call goes through the runner openAdb returns (./tv-adb.mjs), which keeps the serial out of everything it
 // returns; this file starts no program itself. No line it writes or prints holds a serial, an id or a DeviceId.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
-import { openDeviceAdb } from "./tv-adb.mjs";
+import { openAdb } from "./tv-adb.mjs";
 
 const PREFIX = "OCTAVE_INSTALL ";
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
@@ -186,14 +186,14 @@ const realSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Runs the stage on the device `serial` names. Returns `{ outcome: "ran" | "skipped" | "failed", errors }` and writes
- * release-evidence/tv/e2e-install-id.txt. `open`, `sleep`, `print` and `launchMs` are for tests.
+ * release-evidence/tv/e2e-install-id.txt. `open` defaults to `openAdb`, which refuses a serial given as a name; `scripts/tv-e2e.mjs` passes `openDeviceAdb`. `sleep`, `print` and `launchMs` are for tests.
  */
 export async function runInstallIdStage({
   adbPath,
   serial,
   evidenceDir,
   env = process.env,
-  open = openDeviceAdb,
+  open = openAdb,
   sleep = realSleep,
   print = (line) => console.log(line),
   launchMs = LAUNCH_MS,

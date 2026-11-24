@@ -21,6 +21,7 @@ import { fileURLToPath } from "node:url";
 import { androidSdk, newestBuildTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
 import { readZipEntries } from "./tv-zip.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 export const RELEASE_MAPPING = fileURLToPath(new URL("../apps/tv/android/app/build/outputs/mapping/release/mapping.txt", import.meta.url));
 
@@ -97,9 +98,9 @@ export function judgeInspector({ descriptors, markers, mapping }) {
 /** Reads an APK's class descriptors with dexdump and its dex markers from the dex bytes. Throws on a failed read. */
 export function readApkFacts(apk, dexdump) {
   const dexFiles = readZipEntries(apk, (name) => /^classes\d*\.dex$/.test(name));
-  if (dexFiles.length === 0) throw new Error(`${apk} holds no classes.dex`);
+  if (dexFiles.length === 0) throw new Error(`${shownPath(apk)} holds no classes.dex`);
   const child = spawnSync(dexdump, ["-f", apk], { encoding: "utf8", maxBuffer: 1024 * 1024 * 1024 });
-  if (child.status !== 0) throw new Error(`dexdump -f failed: ${(child.stderr || child.error?.message || "").trim().slice(0, 300)}`);
+  if (child.status !== 0) throw new Error(`dexdump -f failed: ${hideHostPaths((child.stderr || child.error?.message || "").trim().slice(0, 300))}`);
   const opened = (child.stdout.match(/^Opened '/gm) ?? []).length;
   if (opened !== dexFiles.length) throw new Error(`dexdump opened ${opened} dex files, the APK holds ${dexFiles.length}`);
   const descriptors = [...child.stdout.matchAll(/^\s*Class descriptor\s*:\s*'([^']+)'/gm)].map((match) => match[1]);
@@ -111,14 +112,14 @@ export function main(args = process.argv.slice(2)) {
   const apk = args[0] ?? RELEASE_APK;
   const mappingPath = args.length === 0 ? RELEASE_MAPPING : (args[1] ?? null);
   if (!existsSync(apk)) {
-    console.error(`ERROR tv inspector: no APK at ${apk}; run pnpm tv:prebuild and pnpm tv:build first`);
+    console.error(`ERROR tv inspector: no APK at ${shownPath(apk)}; run pnpm tv:prebuild and pnpm tv:build first`);
     return 1;
   }
   let facts;
   try {
     facts = readApkFacts(apk, newestBuildTool(androidSdk(), "dexdump"));
   } catch (error) {
-    console.error(`ERROR tv inspector: ${error.message}`);
+    console.error(`ERROR tv inspector: ${hideHostPaths(error.message)}`);
     return 1;
   }
   const mapping = mappingPath !== null && existsSync(mappingPath) ? readFileSync(mappingPath, "utf8") : null;
@@ -126,7 +127,7 @@ export function main(args = process.argv.slice(2)) {
   for (const error of errors) console.error(error);
   if (errors.length > 0) return 1;
   console.log(
-    `tv inspector: ${apk} passes (${facts.dexCount} dex, ${facts.descriptors.length} classes, R8 release with its mapping; no class of ${INSPECTOR_PACKAGES.join(", ")} kept or renamed)`,
+    `tv inspector: ${shownPath(apk)} passes (${facts.dexCount} dex, ${facts.descriptors.length} classes, R8 release with its mapping; no class of ${INSPECTOR_PACKAGES.join(", ")} kept or renamed)`,
   );
   return 0;
 }

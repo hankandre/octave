@@ -17,6 +17,7 @@ import {
   serialKind,
   STAND_IN,
 } from "./tv-adb-addresses.mjs";
+import { hideHostPaths } from "./tv-host-paths.mjs";
 
 export const DEVICE_STAND_IN = STAND_IN;
 
@@ -143,7 +144,7 @@ export function openAdb({ adbPath, serial, addresses }) {
     throw new Error("a serial given as a name needs the addresses of its device learned first: open it with openDeviceAdb");
   }
   addresses ??= [];
-  const redact = (text) => redactAddresses(redactSerial(text, serial), addresses);
+  const redact = (text) => hideHostPaths(redactAddresses(redactSerial(text, serial), addresses));
   const argv = (args) => ["-s", serial, ...args];
 
   return {

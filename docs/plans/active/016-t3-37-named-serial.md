@@ -7,18 +7,20 @@ The TV scripts learn the addresses a named adb serial (host name, mDNS name, USB
 - [x] 1 Observe on the own emulator
 - [x] 2 `scripts/tv-adb-addresses.mjs`, the address pass
 - [x] 3 `openDeviceAdb`, the guard, the callers
-- [ ] 4 `scripts/tv-host-paths.mjs` and the path sites
+- [x] 4 `scripts/tv-host-paths.mjs` and the path sites
 - [ ] 5 Documents
 - [ ] 6 Device runs on the own emulator
 
 ## Progress
 
-- [x] 1  - [x] 2  - [x] 3
+- [x] 1  - [x] 2  - [x] 3  - [x] 4
 
 ## Decision log
 
 - 2026-11-24: Spec-check note 1 (an `other` serial): option (b). Option (a), refusing an `other` serial when `ip` exits non-zero, contradicts the frozen test "a USB-style serial that learns nothing is not refused", whose fake exits 1 for `ip` when it is given no answer. The case is named in the spec's Risks and in the new `docs/security.md` row's "Not covered" list.
 - 2026-11-24: Spec-check note 3: the frozen tests already give their fakes `emulator: true` (the T3-21 install guard) and the refusal test asserts `could not be learned`; the spec's Test plan now says so.
+
+- 2026-11-24: `scripts/tv-install-id.mjs` keeps `open = openAdb` as its default, and `scripts/tv-e2e.mjs` passes `open: openDeviceAdb`. The spec said the default becomes `openDeviceAdb`, but the frozen T4-09 test (`scripts/tv-install-id-stage.test.ts:224`) requires the file to import `openAdb`. A direct call without the learning fails closed for a named serial (the `openAdb` guard), and the stage still learns through the e2e call.
 
 ## Surprises & discoveries
 
