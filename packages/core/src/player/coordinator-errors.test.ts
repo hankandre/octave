@@ -116,6 +116,7 @@ describe("launch rejections", () => {
     const { gateway, fake, launch, coordinator } = setup();
     launch.mockImplementation(async () => {
       fake.emit({ kind: "loaded", snapshot });
+      fake.emit({ kind: "first-frame" });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
       throw failure;
     });
@@ -188,6 +189,7 @@ describe("a failed stop after the end", () => {
     stop.mockRejectedValueOnce(new Error(NATIVE_TEXT));
     await coordinator.start(item);
     fake.emit({ kind: "loaded", snapshot });
+    fake.emit({ kind: "first-frame" });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
     fake.emit({ kind: "ended", snapshot, reason: "eof" });
     await coordinator.flush();

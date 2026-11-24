@@ -84,6 +84,7 @@ function orderedGateway(order: string[], plans: PlaybackPlan[]) {
 async function playing(coordinator: PlaybackCoordinator, player: ReturnType<typeof fakePlayer>, gateway: { reportStart: ReturnType<typeof vi.fn> }) {
   await coordinator.start(item);
   player.emit({ kind: "loaded", snapshot });
+  player.emit({ kind: "first-frame" });
   await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
 }
 
@@ -137,12 +138,12 @@ describe("PlaybackCoordinator.renegotiate", () => {
     const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
 
-    await coordinator.renegotiate(50, { audioStreamIndex: 3 });
+    await coordinator.renegotiate(420_000_000, { audioStreamIndex: 3 });
     await coordinator.retry();
 
     expect(gateway.createPlaybackPlan.mock.calls[0]).toHaveLength(3);
     expect(gateway.createPlaybackPlan.mock.calls[2][3]).toEqual({ audioStreamIndex: 3, mediaSourceId: "source-a" });
-    expect(gateway.createPlaybackPlan.mock.calls[2][1]).toBe(50);
+    expect(gateway.createPlaybackPlan.mock.calls[2][1]).toBe(420_000_000);
   });
 
   it("Stop during a renegotiation cancels it without waiting for the server", async () => {
@@ -215,12 +216,12 @@ describe("PlaybackCoordinator.renegotiate", () => {
     const coordinator = new PlaybackCoordinator(gateway, player.engine, { onEvent: vi.fn(), onReportingError: vi.fn() }, new FakeClock());
     await playing(coordinator, player, gateway);
 
-    await expect(coordinator.renegotiate(50, { subtitleStreamIndex: 4 }, { audioStreamIndex: 1, subtitleStreamIndex: -1 }))
+    await expect(coordinator.renegotiate(420_000_000, { subtitleStreamIndex: 4 }, { audioStreamIndex: 1, subtitleStreamIndex: -1 }))
       .rejects.toThrow("The server refused.");
     await coordinator.retry();
 
     expect(gateway.createPlaybackPlan.mock.calls[1][3]).toEqual({ subtitleStreamIndex: 4, mediaSourceId: "source-a" });
     expect(gateway.createPlaybackPlan.mock.calls[2][3]).toEqual({ audioStreamIndex: 1, subtitleStreamIndex: -1, mediaSourceId: "source-a" });
-    expect(gateway.createPlaybackPlan.mock.calls[2][1]).toBe(50);
+    expect(gateway.createPlaybackPlan.mock.calls[2][1]).toBe(420_000_000);
   });
 });
