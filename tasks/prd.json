@@ -1964,10 +1964,10 @@
             "The application ID is cloud.jellyscale.octave (owner, 2026-11-22), changed in packages/core/src/domain/app-identity.ts, the one place that defines it; every test, fixture and document holding dev.octave.tv follows, and the Kotlin package names stay"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:build && pnpm tv:apk:check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 5fe8a994 on task/T3-21 (not pushed). pnpm check green (3920 core, 2776 scripts tests). tv:native:test 986 tests, 0 failed, key unset. tv:build with a throwaway key and tv:apk:check pass on the real APK (signed, not debug cert). Hand-run gradlew assembleRelease with the key inside a checkout fails at the guard. Review lows fixed: Gradle checkout refusal, CI key step, throwaway ignore. Open: items 1 and 5 owner gates (key, Shield uninstall); item 6 PR paragraph and tv CI job at Ship. Done-task records keep dev.octave.tv."
+          "passes": true,
+          "evidence": "PR #331 merged. Item 1: the owner's key sits outside every checkout (owner-given location, file seen there); the properties file is not made yet, so no build with the real key has run, and the owner has not yet confirmed OCTAVE_SIGNING_PROPERTIES is set. Build, guard and tests ran with throwaway keys. Item 5: on 2026-11-24 the Shield's package list held neither dev.octave.tv nor cloud.jellyscale.octave, so nothing needed uninstalling; recorded without serial or address. First real-key install still follows pnpm tv:build with the properties file."
         },
         {
           "id": "T3-17",
