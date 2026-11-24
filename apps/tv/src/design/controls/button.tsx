@@ -14,6 +14,9 @@ export type ButtonProps = {
   onPress: () => void;
   disabled?: boolean;
   hasTVPreferredFocus?: boolean;
+  onFocus?: () => void;
+  /** The button's view, for code that reports or points focus at it. */
+  viewRef?: (view: unknown) => void;
   testID?: string;
 };
 
@@ -38,9 +41,9 @@ function labelColour(variant: ButtonVariant, focused: boolean, disabled: boolean
   }
 }
 
-export function Button({ label, variant = "primary", onPress, disabled = false, hasTVPreferredFocus, testID }: ButtonProps) {
+export function Button({ label, variant = "primary", onPress, disabled = false, hasTVPreferredFocus, onFocus, viewRef, testID }: ButtonProps) {
   return (
-    <FocusFrame testID={testID} onPress={onPress} disabled={disabled} hasTVPreferredFocus={hasTVPreferredFocus} accessibilityRole="button" accessibilityLabel={label} contentStyle={[styles.box, fill[variant]]}>
+    <FocusFrame testID={testID} onPress={onPress} onFocus={onFocus} viewRef={viewRef} disabled={disabled} hasTVPreferredFocus={hasTVPreferredFocus} accessibilityRole="button" accessibilityLabel={label} contentStyle={[styles.box, fill[variant]]}>
       {({ focused }) => <Text style={[styles.label, { color: labelColour(variant, focused, disabled) }]}>{label}</Text>}
     </FocusFrame>
   );

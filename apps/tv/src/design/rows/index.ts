@@ -9,7 +9,7 @@ export type { LeftEdge } from "./left-edge";
 export { FocusPlaceContext, useFocusPlace } from "./focus-place-context";
 export type { FocusReporter, RowsHandle } from "./focus-place-context";
 export { RowList } from "./row-list";
-export type { RowListProps, RowSpec } from "./row-list";
+export type { RowListEntry, RowListProps, RowSpec } from "./row-list";
 export { createRowMemory, useRowMemory } from "./row-memory";
 export type { RowMemory } from "./row-memory";
 export { ROW_DRAW_DISTANCE, cardCentre, cardGap, cardWidth, nearestCardIndex, rowInsetStart } from "./row-geometry";

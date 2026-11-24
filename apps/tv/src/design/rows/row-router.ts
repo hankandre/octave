@@ -24,6 +24,11 @@ export type RowRouter = {
   viewOf(rowId: string, itemId: string): unknown;
   /** Point every registered guide at nothing (focus is entering the rows from outside them). */
   clear(): void;
+  /**
+   * Focus is about to enter the rows from outside them, at `x` (canvas px): point that row's guide at the card nearest `x`
+   * at the row's own scroll offset, and forget the last focused card so a later `scrolled()` does not re-point from it.
+   */
+  enter(rowId: string, x: number): void;
 };
 
 const keyOf = (rowId: string, itemId: string): string => `${rowId}\u0000${itemId}`;
@@ -51,6 +56,17 @@ export function createRowRouter(memory: RowMemory): RowRouter {
     },
     clear() {
       for (const guide of guides.values()) guide.setDestinations?.([]);
+    },
+    enter(rowId, x) {
+      last = null;
+      const row = rows.find((candidate) => candidate.id === rowId);
+      if (row === undefined || row.items.length === 0) return;
+      const guide = guides.get(rowId);
+      if (guide?.setDestinations === undefined) return;
+      const target = nearestCardIndex(row.variant, row.items.length, memory.get(rowId) / canvasScale(), x);
+      const item = row.items[target];
+      const view = item === undefined ? undefined : cards.get(keyOf(rowId, item.id));
+      guide.setDestinations(view === undefined ? [] : [view]);
     },
     scrolled(rowId) {
       if (last !== null && last.rowId === rowId) router.focused(rowId, last.index);
