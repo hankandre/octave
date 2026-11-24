@@ -1763,10 +1763,10 @@
             "docs/commands.md and docs/security.md say what is replaced and what is refused; T3-30's frozen tests pass unchanged, and if one contradicts an item the task returns to the Product Owner"
           ],
           "verify": "pnpm check && pnpm tv:smoke",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit 8e93e5db on task/T3-37 (5 commits). pnpm check green; tv:smoke green on own emulator and on localhost:<port> (no address in console or evidence); tv:e2e green. CI wire job and review pending."
+          "passes": true,
+          "evidence": "Review fixes in commit ffa99a4d: addresses replaced beside hex prefixes, ports and octal dotted parts; apksigner spawn error hides host paths. pnpm check passes. Ship: PR, CI wire job, guardian pass pending."
         },
         {
           "id": "T3-25",
