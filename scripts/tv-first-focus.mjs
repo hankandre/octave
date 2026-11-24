@@ -13,6 +13,7 @@ import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
 import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
 import { judgeDevServerWatch, startDevServerWatch } from "./tv-dev-server-watch.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 const EVIDENCE = fileURLToPath(new URL("../release-evidence/tv/", import.meta.url));
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
@@ -167,7 +168,7 @@ export async function smokeCli({ serial, adbPath, apk, port = 8081, evidence = E
   try {
     runner = await openDeviceAdb({ adbPath, serial });
   } catch (error) {
-    console.error(`ERROR tv focus: ${error.message}`);
+    console.error(`ERROR tv focus: ${hideHostPaths(error.message)}`);
     return 1;
   }
   const state = runner.run(["get-state"]);
@@ -189,7 +190,7 @@ export async function smokeCli({ serial, adbPath, apk, port = 8081, evidence = E
   try {
     errors = await runSmoke({ serial, adbPath, apk, port, evidence, onWatch: (started) => (watch = started) });
   } catch (error) {
-    errors = [`ERROR tv smoke: ${error.message}`];
+    errors = [`ERROR tv smoke: ${hideHostPaths(error.message)}`];
   }
   process.off("SIGINT", onSignal);
   process.off("SIGTERM", onSignal);
@@ -213,7 +214,7 @@ async function main(args) {
     fail(error.message);
   }
   const apk = args[0] ?? RELEASE_APK;
-  if (!existsSync(apk)) fail(`no APK at ${apk}; run pnpm tv:build first`);
+  if (!existsSync(apk)) fail(`no APK at ${shownPath(apk)}; run pnpm tv:build first`);
   process.exitCode = await smokeCli({ serial, adbPath, apk });
 }
 

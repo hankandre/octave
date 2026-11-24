@@ -16,6 +16,7 @@ import { PRODUCTION_LISTS } from "./tv-apk-dex-lists.mjs";
 import { judgeDex } from "./tv-apk-dex-judge.mjs";
 import { parseMapping, readMapping } from "./tv-apk-dex-mapping.mjs";
 import { REPO_ROOT, foreignPackages, packageProblems } from "./octave-module-packages.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 export { judgeDex, parseMapping };
 
@@ -139,8 +140,8 @@ export async function main(args = [], system = {}) {
   };
 
   const missing = [];
-  if (!existsSync(apk)) missing.push(`no release APK at ${apk}; run pnpm tv:build`);
-  if (!existsSync(mappingPath)) missing.push(`no R8 mapping at ${mappingPath}; run pnpm tv:build, which writes it beside the APK`);
+  if (!existsSync(apk)) missing.push(`no release APK at ${shownPath(apk)}; run pnpm tv:build`);
+  if (!existsSync(mappingPath)) missing.push(`no R8 mapping at ${shownPath(mappingPath)}; run pnpm tv:build, which writes it beside the APK`);
   if (missing.length > 0) return fail(missing);
 
   // D8: the dex check finds Octave's code by the dev.octave. prefix; a module outside it would be judged as a library.
@@ -150,28 +151,28 @@ export async function main(args = [], system = {}) {
   }
 
   // D0: a cut-short or damaged APK is one line, before any other rule adds to it.
-  const damaged = (what) => fail([`${apk} is truncated or damaged (${what}); run pnpm tv:build to rebuild it`]);
+  const damaged = (what) => fail([`${shownPath(apk)} is truncated or damaged (${what}); run pnpm tv:build to rebuild it`]);
   let apkDex;
   try {
     apkDex = readApkDex(apk);
   } catch (error) {
-    return damaged(error instanceof Error ? error.message : String(error));
+    return damaged(hideHostPaths(error instanceof Error ? error.message : String(error)));
   }
   if (apkDex.damage !== null) return damaged(apkDex.damage);
   const errors = [...apkDex.problems];
-  if (apkDex.dex.length === 0 && apkDex.problems.length === 0) errors.push(`${apk} holds no classes*.dex`);
+  if (apkDex.dex.length === 0 && apkDex.problems.length === 0) errors.push(`${shownPath(apk)} holds no classes*.dex`);
   const mapping = await readMapping(mappingPath);
-  if (!mapping.pgMapId) errors.push(`${mappingPath} has no pg_map_id line; it is not an R8 mapping`);
+  if (!mapping.pgMapId) errors.push(`${shownPath(mappingPath)} has no pg_map_id line; it is not an R8 mapping`);
   for (const dex of apkDex.dex) {
     const r8 = dex.markers.filter((marker) => marker.tool === "R8");
     if (r8.length === 0) errors.push(`${dex.name} has no R8 marker; the APK was not minified by R8`);
     else if (r8.every((marker) => marker.pgMapId === null)) {
-      errors.push(`${dex.name} has an R8 marker but no pg-map-id, so it cannot be matched to ${mappingPath}; run pnpm tv:build`);
+      errors.push(`${dex.name} has an R8 marker but no pg-map-id, so it cannot be matched to ${shownPath(mappingPath)}; run pnpm tv:build`);
     }
     for (const marker of dex.markers.filter((m) => m.pgMapId !== null)) {
       if (marker.pgMapId !== mapping.pgMapId) {
         errors.push(
-          `${dex.name} was built with mapping ${marker.pgMapId}, but ${mappingPath} is ${mapping.pgMapId ?? "unnamed"}: the mapping is from another build (for example after pnpm tv:e2e:build); run pnpm tv:build`,
+          `${dex.name} was built with mapping ${marker.pgMapId}, but ${shownPath(mappingPath)} is ${mapping.pgMapId ?? "unnamed"}: the mapping is from another build (for example after pnpm tv:e2e:build); run pnpm tv:build`,
         );
       }
     }
@@ -182,12 +183,12 @@ export async function main(args = [], system = {}) {
   try {
     dexdump = system.dexdump ?? defaultDexdump();
   } catch (error) {
-    return fail([error instanceof Error ? error.message : String(error)]);
+    return fail([hideHostPaths(error instanceof Error ? error.message : String(error))]);
   }
   const dump = readDexDump(dexdump, apk);
   const verdict = await judgeDex(dump.lines, mapping, lists);
   const exit = await dump.exit;
-  if (exit.code !== 0) errors.push(`dexdump exited ${exit.code}${exit.stderr ? `: ${exit.stderr.trim().split("\n")[0]}` : ""}`);
+  if (exit.code !== 0) errors.push(`dexdump exited ${exit.code}${exit.stderr ? `: ${hideHostPaths(exit.stderr.trim().split("\n")[0])}` : ""}`);
   if (verdict.stats.opened !== apkDex.dex.length) {
     errors.push(`dexdump opened ${verdict.stats.opened} dex files, but the APK holds ${apkDex.dex.length} (${apkDex.dex.map((d) => d.name).join(", ")})`);
   }
@@ -195,7 +196,7 @@ export async function main(args = [], system = {}) {
   if (errors.length > 0) return fail(errors);
   const { classes, sinkReferences, entryPoints, leftBeforeR8 } = verdict.stats;
   stdout.write(
-    `tv apk dex: ${apk} passes (${classes} classes in ${apkDex.dex.length} dex files, ${sinkReferences} sink references in ${entryPoints} listed entry points, 0 in Octave's code outside the one client)\n`,
+    `tv apk dex: ${shownPath(apk)} passes (${classes} classes in ${apkDex.dex.length} dex files, ${sinkReferences} sink references in ${entryPoints} listed entry points, 0 in Octave's code outside the one client)\n`,
   );
   // Decision log 27: a reference to a merged class whose originals are partly listed is refused before R8 instead.
   stdout.write(

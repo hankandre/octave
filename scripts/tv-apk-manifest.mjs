@@ -10,6 +10,7 @@ import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity
 import { parseXmlTree, readXmlTree, READING_MODES, resolveResourceFile } from "./tv-aapt2-xml.mjs";
 import { androidSdk, newestBuildTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 const RECEIVER_PERMISSION = `${ANDROID_APPLICATION_ID}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`;
 
@@ -202,7 +203,7 @@ export function checkManifest(dump, apk = RELEASE_APK) {
 function main(args) {
   const apk = args[0] ?? RELEASE_APK;
   if (!existsSync(apk)) {
-    console.error(`ERROR tv apk: no APK at ${apk}; run pnpm tv:prebuild and pnpm tv:build first`);
+    console.error(`ERROR tv apk: no APK at ${shownPath(apk)}; run pnpm tv:prebuild and pnpm tv:build first`);
     process.exit(1);
   }
   let errors;
@@ -211,20 +212,20 @@ function main(args) {
     const aapt2 = newestBuildTool(androidSdk(), "aapt2");
     const dump = (...dumpArgs) => {
       const child = spawnSync(aapt2, ["dump", ...dumpArgs], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
-      if (child.status !== 0) throw new Error(`aapt2 dump ${dumpArgs[0]} failed: ${(child.stderr || child.error?.message || "").trim()}`);
+      if (child.status !== 0) throw new Error(`aapt2 dump ${dumpArgs[0]} failed: ${hideHostPaths((child.stderr || child.error?.message || "").trim())}`);
       if (dumpArgs.includes("AndroidManifest.xml")) manifestText = child.stdout;
       return child.stdout;
     };
     errors = checkManifest(dump, apk);
   } catch (error) {
-    errors = [fail(error.message)];
+    errors = [fail(hideHostPaths(error.message))];
   }
   for (const error of errors) console.error(error);
   if (errors.length > 0) process.exit(1);
   const tree = parseXmlTree(manifestText, "manifest");
   const permissions = tree.children.filter((child) => child.name.startsWith("uses-permission")).length;
   const queries = tree.children.filter((child) => child.name === "queries").flatMap((child) => child.children).length;
-  console.log(`tv apk: ${apk}: ${permissions} permissions, ${queries} queries, backup off`);
+  console.log(`tv apk: ${shownPath(apk)}: ${permissions} permissions, ${queries} queries, backup off`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main(process.argv.slice(2));

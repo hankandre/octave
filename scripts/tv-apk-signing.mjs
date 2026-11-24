@@ -7,6 +7,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { androidSdk, newestBuildTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
+import { hideHostPaths, shownPath } from "./tv-host-paths.mjs";
 
 // The SHA-256 of the Expo template's public debug.keystore (apps/tv/android/app/debug.keystore after prebuild), from
 // `keytool -list -v -keystore apps/tv/android/app/debug.keystore -storepass android`.
@@ -52,7 +53,7 @@ export function readCerts(apksigner, apk) {
   const child = spawnSync(apksigner, ["verify", "--print-certs", apk], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
   if (child.error !== undefined) throw new Error(`could not run apksigner: ${child.error.message}`);
   const text = `${child.stdout}${child.stderr}`;
-  if (child.status !== 0) throw new Error(`apksigner did not verify the APK (exit ${child.status}): ${text.trim().split("\n")[0] ?? ""}`);
+  if (child.status !== 0) throw new Error(`apksigner did not verify the APK (exit ${child.status}): ${hideHostPaths(text.trim().split("\n")[0] ?? "")}`);
   return text;
 }
 
@@ -66,18 +67,18 @@ export function readBadging(aapt2, apk) {
 function main(args) {
   const apk = args[0] ?? RELEASE_APK;
   if (!existsSync(apk)) {
-    console.error(error(`no APK at ${apk}; run pnpm tv:prebuild and pnpm tv:build first`));
+    console.error(error(`no APK at ${shownPath(apk)}; run pnpm tv:prebuild and pnpm tv:build first`));
     process.exit(1);
   }
   let problems;
   try {
     problems = judgeCerts(readCerts(newestBuildTool(androidSdk(), "apksigner"), apk));
   } catch (caught) {
-    problems = [error(caught.message)];
+    problems = [error(hideHostPaths(caught.message))];
   }
   for (const problem of problems) console.error(problem);
   if (problems.length > 0) process.exit(1);
-  console.log(`tv signing: ${apk} is signed, and not with the debug certificate`);
+  console.log(`tv signing: ${shownPath(apk)} is signed, and not with the debug certificate`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
