@@ -83,7 +83,7 @@ describe("T3-34 item 4: the side rail's glyphs", () => {
   it("T3-34 item 4: railIcons gives a component for every RailIconName", () => {
     const names: RailIconName[] = ["search", "home", "movies", "tvshows", "boxsets", "settings", "account"];
     for (const name of names) {
-      expect(railIcons[name], `a glyph for ${name}`).toBeDefined();
+      expect([`a glyph for ${name}`, railIcons[name] !== undefined]).toEqual([`a glyph for ${name}`, true]);
     }
   });
 
