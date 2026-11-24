@@ -2528,7 +2528,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "Implemented, commit 1a99597e (branch task/T5-03): core home-hero, Home screen, backdrop, router entry. Items 1-10 green (check-red --expect green). pnpm check: all steps pass except typecheck, which fails on 3 frozen test files (home-backdrop:39, home-boundaries:3,4,95, home-screen:135). Not run: tv:wire, tripwire (no playback change), e2e (no emulator)."
+          "evidence": "Home built on branch task/T5-03, commit 52719aa0 (not pushed, no PR yet): core home-hero, Home screen, backdrop, router entry. Items 1-10 green (check-red --expect green); pnpm check exit 0 after the type-only frozen fixes. Not run: tv:wire, tripwire (no playback change), e2e (no emulator), tv:visual."
         },
         {
           "id": "T5-04",
