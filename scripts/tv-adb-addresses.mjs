@@ -5,13 +5,14 @@
 
 export const STAND_IN = "[device]";
 
-const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+const IPV4 = /^\d{1,4}(?:\.\d{1,4}){3}$/;
 
 /** The canonical key of an address text: `4:a.b.c.d`, `6:<url form>`, or null when it is no address. */
 export function canonicalAddress(text) {
   const bare = text.replace(/^\[|\]$/g, "").replace(/%.*$/, "");
   if (IPV4.test(bare)) {
-    const parts = bare.split(".").map(Number);
+    // A part above 255 may be an octal part (`0300`), the way inet_aton reads it.
+    const parts = bare.split(".").map((part) => (Number(part) <= 255 ? Number(part) : /^0[0-7]{1,3}$/.test(part) ? Number.parseInt(part, 8) : 256));
     return parts.every((part) => part <= 255) ? `4:${parts.join(".")}` : null;
   }
   if ((bare.match(/:/g) ?? []).length < 2) return null;
@@ -107,20 +108,41 @@ export function resolverAddresses(answers) {
 
 // An address token, longest first: an address in brackets, then a run of hex digits, colons and dots.
 const IPV6_TOKEN = /\[([0-9A-Fa-f:.]+)(?:%[^\]\s]*)?\]|([0-9A-Fa-f:.]*:[0-9A-Fa-f:.]*:[0-9A-Fa-f:.]*)(?:%[A-Za-z0-9_]+)?/g;
-const IPV4_TOKEN = /(?<!\d)(?<!\d\.)\d{1,3}(?:\.\d{1,3}){3}(?!\d)(?!\.\d)/g;
+const IPV4_TOKEN = /(?<!\d)(?<!\d\.)\d{1,4}(?:\.\d{1,4}){3}(?!\d)(?!\.\d)/g;
 
-// A run that holds an address: the run itself, or the run without trailing dots and colons or one leading colon (the end
-// of a sentence, a `:` that ends a label). Returns the canonical key and the part of the run it covers.
-function addressIn(run) {
-  let start = 0;
-  let end = run.length;
-  for (;;) {
-    const key = canonicalAddress(run.slice(start, end));
-    if (key !== null) return { key, start, end };
-    if (end > start && /[.:]/.test(run[end - 1])) end -= 1;
-    else if (start === 0 && run[0] === ":" && end > 1) start = 1;
-    else return null;
+// The longest piece of a run that is a wanted address. A piece starts at the run's start or beside a colon and ends at the
+// run's end or beside a colon or dot, so a `<hex>:` prefix, a `:<port>` suffix and trailing punctuation are cut off.
+function addressIn(run, keys) {
+  const starts = new Set([0]);
+  const ends = new Set([run.length]);
+  for (let i = 0; i < run.length; i += 1) {
+    if (run[i] === ":") {
+      starts.add(i);
+      starts.add(i + 1);
+    }
+    if (run[i] === ":" || run[i] === ".") {
+      ends.add(i);
+      ends.add(i + 1);
+    }
   }
+  let best = null;
+  for (const start of starts) {
+    for (const end of ends) {
+      if (end <= start || (best !== null && end - start <= best.end - best.start)) continue;
+      const key = canonicalAddress(run.slice(start, end));
+      if (key !== null && keys.has(key)) best = { start, end };
+    }
+  }
+  return best;
+}
+
+// `run` with each wanted address piece replaced; `reachedEnd` says the last piece ran to the end of the run.
+function redactRun(run, keys) {
+  const found = addressIn(run, keys);
+  if (found === null) return { text: run, reachedEnd: false };
+  const before = redactRun(run.slice(0, found.start), keys).text;
+  const after = redactRun(run.slice(found.end), keys);
+  return { text: `${before}${STAND_IN}${after.text}`, reachedEnd: found.end === run.length || after.reachedEnd };
 }
 
 /** `text` with every address token that stands for one of `addresses`, in any spelling, replaced by `[device]`. */
@@ -129,10 +151,9 @@ export function redactAddresses(text, addresses) {
   if (keys.size === 0) return text;
   const withoutV6 = text.replace(IPV6_TOKEN, (token, bracketed, run) => {
     if (bracketed !== undefined) return keys.has(canonicalAddress(bracketed) ?? "") ? STAND_IN : token;
-    const found = addressIn(run);
-    if (found === null || !keys.has(found.key)) return token;
-    const rest = run.slice(found.end);
-    return `${run.slice(0, found.start)}${STAND_IN}${rest}${rest === "" ? "" : token.slice(run.length)}`;
+    const redacted = redactRun(run, keys);
+    if (redacted.text === run) return token;
+    return `${redacted.text}${redacted.reachedEnd ? "" : token.slice(run.length)}`;
   });
   return withoutV6.replace(IPV4_TOKEN, (token) => (keys.has(canonicalAddress(token) ?? "") ? STAND_IN : token));
 }

@@ -51,7 +51,7 @@ export function judgeCerts(text) {
 // What `apksigner verify --print-certs <apk>` printed. Throws when apksigner could not run or exited non-zero.
 export function readCerts(apksigner, apk) {
   const child = spawnSync(apksigner, ["verify", "--print-certs", apk], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
-  if (child.error !== undefined) throw new Error(`could not run apksigner: ${child.error.message}`);
+  if (child.error !== undefined) throw new Error(`could not run apksigner: ${hideHostPaths(child.error.message)}`);
   const text = `${child.stdout}${child.stderr}`;
   if (child.status !== 0) throw new Error(`apksigner did not verify the APK (exit ${child.status}): ${hideHostPaths(text.trim().split("\n")[0] ?? "")}`);
   return text;
