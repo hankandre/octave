@@ -1,6 +1,6 @@
 // The artwork slot (T3-08). T3-11's native image view fills it. The component takes an `ImageRef` and the drawn size in
 // canvas px, never a URL, header or token, and reports a failed load through `onFailed`. The same provider carries the
-// played glyph, so a screen sets up one provider. With no provider the slot is empty and a card shows its title.
+// played glyph (with none, the card draws Tabler's check), so a screen sets up one provider. With no provider the slot is empty and a card shows its title.
 import { createContext, useContext, useMemo, type ComponentType, type ReactNode } from "react";
 import type { ImageRef } from "@octave/core/src/domain/catalog";
 import type { IconComponent } from "../icon";

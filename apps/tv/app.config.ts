@@ -46,6 +46,12 @@ const config: ExpoConfig = {
               path: "./assets/fonts/AtkinsonHyperlegibleMono.ttf",
               fontDefinitions: [{ weight: 500 }, { weight: 700 }],
             },
+            // The icons are Tabler's weight-300 font, the owner's light stroke (T3-34). The weight is in the file.
+            {
+              fontFamily: "TablerIcons",
+              path: "@tabler/icons-webfont/dist/fonts/tabler-icons-300.ttf",
+              fontDefinitions: [{ weight: 400 }],
+            },
           ],
         },
       },

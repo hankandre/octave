@@ -160,6 +160,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 - The rail is hidden in the player and in sign-in.
 - Accessibility: the rail is a navigation region labelled "Main"; the current entry is marked selected.
 - Owner's call: the rail's look (icons only when collapsed, the bar, the open width) and its entries.
+- **Rail icons** (Tabler names; owner, 2026-11-24, `docs/specs/decisions-owner-chat-2026-11-24.md` §2): Search `search`, Home `home`, Movies `movie`, Shows `device-tv`, Collections `stack-2`, Settings `settings`, no account `user`.
 
 ### 7.2 Ambient backdrop (`AmbientBackdrop`)
 
@@ -196,7 +197,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 | `thumb` (Continue watching) | 16:9, `thumbW`; Thumb, then Backdrop, then Primary | Series or title, then "S1 · E2 · 38 min left" | **Resume or play** in one press. Holding select opens the card's menu (7.4; until T5-05 builds it, the details). Menu or Info, where the remote has one, opens details |
 | `episode` | 16:9 | "2 · Title", time left | Play the episode |
 
-- Marks (top right, 24 px disc on a scrim): a check for played, a count for unplayed episodes. The played disc ships empty until the icon set lands (owner decision, 2026-11-22), and the check glyph comes with it. The progress bar sits at the bottom of the frame: a 4 px track at white .22 with an `artAccent` fill.
+- Marks (top right, 24 px disc on a scrim): a check for played, a count for unplayed episodes. The played disc shows Tabler's check (T3-34). The progress bar sits at the bottom of the frame: a 4 px track at white .22 with an `artAccent` fill.
 - Focus: the frame lifts by `lift` with `shadowLift`, plus a 3 px `focus` ring at a 3 px offset with a 1 px black .6 outer line so the ring reads on bright posters. The title goes from `text2` to `text1`.
 - Loading: while the picture loads, the frame shows a blurred preview of it, decoded from the image's BlurHash, and the picture fades in over it on `durSlow` with `easeInOut` (reduced motion: 120 ms, opacity only). A card with no BlurHash shows `surface2` until the picture appears. (Owner, 2026-11-23.)
 - Missing image: `surface2` with the title in `typeLabel`, centred. Never a broken image.
@@ -517,7 +518,7 @@ The owner accepted these look values for now, to be judged again on the Shield a
 - A skeleton never shimmers.
 - Cards (T3-08): 24 px between cards (`space5`), 24 px from the art to the title, 16 px (`space4`) from a row's title to its cards, and the subtitle and the missing-image title in `text2`.
 - The right edge of a row has a 96 px fading edge, so Android keeps the focused card 96 px in; the same margin applies on the left, with no fade.
-- The played mark's disc ships empty until the icon set is adopted. The owner chose Tabler as the icon set; a later task adopts it and adds the check glyph.
+- The played mark's disc shows Tabler's check (T3-34).
 - A focused card has the ring, the static lift and `shadowLift`, as §7.5 says; T3-12 and T3-18 measure the shadow's cost.
 
 ### Owner decisions, 2026-11-22, from the decision inbox
