@@ -6,7 +6,7 @@
 //
 // testIDs, with l the list's testID: l-list and l-row-<rowId> (each row's testID, so l-row-<rowId>-title and so on).
 import { FlashList } from "@shopify/flash-list";
-import { useCallback, useEffect, useMemo, useRef, type ReactElement } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactElement, type RefObject } from "react";
 import { StyleSheet, View } from "react-native";
 import { px } from "../scale";
 import { sizes } from "../tokens";
@@ -19,11 +19,19 @@ import { createRowRouter } from "./row-router";
 
 export type RowSpec = { id: string; title: string; variant: CardVariant; items: CardItem[] };
 
+/** What a screen's header (the hero) asks of the rows when focus is about to enter them from it. */
+export type RowListEntry = {
+  /** Down from the header at `x` (canvas px): point the first shown row at its card nearest `x`, and every other guide at nothing. */
+  fromHeader(x: number): void;
+};
+
 export type RowListProps = {
   rows: RowSpec[];
   memory: RowMemory;
   leftEdge?: "trap" | "open";
   header?: ReactElement;
+  /** Filled with the entry handle while the list is mounted. */
+  entryRef?: RefObject<RowListEntry | null>;
   onCardFocus?: (rowId: string, index: number) => void;
   onCardBlur?: (rowId: string, index: number) => void;
   onCardPress?: (rowId: string, index: number) => void;
@@ -33,7 +41,7 @@ export type RowListProps = {
 const keyOf = (row: RowSpec): string => row.id;
 const typeOf = (row: RowSpec): CardVariant => row.variant;
 
-export function RowList({ rows, memory, leftEdge, header, onCardFocus, onCardBlur, onCardPress, testID }: RowListProps) {
+export function RowList({ rows, memory, leftEdge, header, entryRef, onCardFocus, onCardBlur, onCardPress, testID }: RowListProps) {
   const shown = useMemo(() => rows.filter((row) => row.items.length > 0), [rows]);
   const router = useMemo(() => createRowRouter(memory), [memory]);
   router.update(shown);
@@ -48,6 +56,19 @@ export function RowList({ rows, memory, leftEdge, header, onCardFocus, onCardBlu
     place.rows({ clear: () => router.clear(), viewOf: (rowId, itemId) => router.viewOf(rowId, itemId), rows: () => shownRef.current });
     return () => place.rows(null);
   }, [place, router]);
+  useEffect(() => {
+    if (entryRef === undefined) return undefined;
+    entryRef.current = {
+      fromHeader: (x) => {
+        router.clear();
+        const first = shownRef.current[0];
+        if (first !== undefined) router.enter(first.id, x);
+      },
+    };
+    return () => {
+      entryRef.current = null;
+    };
+  }, [entryRef, router]);
   const reportFocus = useCallback(
     (rowId: string, index: number) => {
       const item = shownRef.current.find((row) => row.id === rowId)?.items[index];
