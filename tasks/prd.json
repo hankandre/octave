@@ -1766,7 +1766,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "T3-37 in progress on branch task/T3-37; spec approved, spec-check notes being resolved; no commit yet (commit ccdc6aa7 froze the tests)."
+          "evidence": "commit 8e93e5db on task/T3-37 (5 commits). pnpm check green; tv:smoke green on own emulator and on localhost:<port> (no address in console or evidence); tv:e2e green. CI wire job and review pending."
         },
         {
           "id": "T3-25",
