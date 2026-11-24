@@ -15,7 +15,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
-import { openAdb } from "./tv-adb.mjs";
+import { openDeviceAdb } from "./tv-adb.mjs";
 import { androidSdk, newestBuildTool, platformTool } from "./tv-android-sdk.mjs";
 import { checkApkAllowlist } from "./tv-apk-allowlist.mjs";
 import { judgeNetworkSecurity, readNetworkSecurity } from "./tv-apk-check.mjs";
@@ -149,7 +149,12 @@ async function main(args) {
     fail(error.message);
   }
   // Everything adb returns has the serial replaced by `[device]` (T3-30).
-  const runner = openAdb({ adbPath, serial });
+  let runner;
+  try {
+    runner = await openDeviceAdb({ adbPath, serial });
+  } catch (error) {
+    fail(error.message);
+  }
   const adb = (...rest) => runner.run(rest);
   const shell = (...rest) => adb("shell", ...rest);
 

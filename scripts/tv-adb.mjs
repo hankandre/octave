@@ -5,7 +5,18 @@
 // script that starts adb (scripts/check-adb-output.mjs).
 import { spawn, spawnSync } from "node:child_process";
 import { EventEmitter } from "node:events";
-import { ownAddresses, redactAddresses, STAND_IN } from "./tv-adb-addresses.mjs";
+import { lookup as dnsLookup } from "node:dns/promises";
+import {
+  hostName,
+  mdnsInstance,
+  ownAddresses,
+  parseIpAddresses,
+  parseMdnsAddresses,
+  redactAddresses,
+  resolverAddresses,
+  serialKind,
+  STAND_IN,
+} from "./tv-adb-addresses.mjs";
 
 export const DEVICE_STAND_IN = STAND_IN;
 
@@ -74,15 +85,64 @@ export function redactSerial(text, serial) {
   return redactAddresses(replaced, ownAddresses(serial));
 }
 
+const RESOLVER_TIMEOUT_MS = 5_000;
+const defaultLookup = (name) => dnsLookup(name, { all: true });
+
+// What adb prints for the learning calls is read here and never returned, logged or written: only the learned set leaves.
+function learnCall(adbPath, args) {
+  const result = spawnSync(adbPath, args, { encoding: "utf8", timeout: DEFAULT_TIMEOUT_MS, maxBuffer: DEFAULT_MAX_BUFFER });
+  return result.error || result.status !== 0 ? "" : (result.stdout ?? "");
+}
+
+async function resolve(lookup, name) {
+  let timer;
+  try {
+    const answers = await Promise.race([lookup(name), new Promise((_, reject) => (timer = setTimeout(() => reject(new Error("timeout")), RESOLVER_TIMEOUT_MS)))]);
+    return resolverAddresses(answers);
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * `openAdb` for any serial. A serial that names its device (a host name, an mDNS name from pairing, a USB serial) holds
+ * no address, so the addresses the device holds are learned first, from its own interfaces, adb's mDNS list and this
+ * host's resolver, and replaced in the runner's output in every spelling. A host or mDNS serial for which none is
+ * learned is refused with a message that names no form of the serial. An emulator or address serial learns nothing and
+ * makes no extra adb call.
+ */
+export async function openDeviceAdb({ adbPath, serial, lookup = defaultLookup }) {
+  if (typeof serial !== "string" || serial.length < MIN_FORM) return openAdb({ adbPath, serial, addresses: [] });
+  const kind = serialKind(serial);
+  if (kind === "emulator" || kind === "address") return openAdb({ adbPath, serial, addresses: [] });
+  const learned = new Set(parseIpAddresses(learnCall(adbPath, ["-s", serial, "shell", "ip", "-o", "addr", "show"])));
+  if (kind === "mdns") for (const address of parseMdnsAddresses(learnCall(adbPath, ["mdns", "services"]), mdnsInstance(serial))) learned.add(address);
+  if (kind === "host") for (const address of await resolve(lookup, hostName(serial))) learned.add(address);
+  if (learned.size === 0 && kind !== "other") {
+    throw new Error(
+      "the network addresses of the device ANDROID_SERIAL names could not be learned from the device, adb's mDNS list or this host's resolver, so they cannot be kept out of the output; connect the device and run again, or set ANDROID_SERIAL to <address>:<port>",
+    );
+  }
+  return openAdb({ adbPath, serial, addresses: [...learned] });
+}
+
 /**
  * The adb runner for one device: every call runs `<adbPath> -s <serial> <args…>` (the arguments never hold the serial),
  * and everything it returns is redacted. A failure to start, a timeout or a full buffer is a status or code of -1 and a
  * redacted stderr.
  */
-export function openAdb({ adbPath, serial, addresses = [] }) {
+export function openAdb({ adbPath, serial, addresses }) {
   if (typeof serial !== "string" || serial.length < MIN_FORM) {
     throw new Error(`the device serial is shorter than ${MIN_FORM} characters, too short to keep out of output safely`);
   }
+  // A host or mDNS serial holds no address: the addresses the device holds are learned first (`openDeviceAdb`), or its
+  // output could not be kept free of them.
+  if (addresses === undefined && ["host", "mdns"].includes(serialKind(serial))) {
+    throw new Error("a serial given as a name needs the addresses of its device learned first: open it with openDeviceAdb");
+  }
+  addresses ??= [];
   const redact = (text) => redactAddresses(redactSerial(text, serial), addresses);
   const argv = (args) => ["-s", serial, ...args];
 

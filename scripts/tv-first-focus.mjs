@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
-import { openAdb } from "./tv-adb.mjs";
+import { openDeviceAdb } from "./tv-adb.mjs";
 import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
 import { RELEASE_APK } from "./tv-apk-check.mjs";
 import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
@@ -92,7 +92,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = EVIDENCE, onWatch = () => undefined }) {
   // Everything adb returns has the serial replaced by `[device]` (T3-30), so nothing below can print or write it.
-  const runner = openAdb({ adbPath, serial });
+  const runner = await openDeviceAdb({ adbPath, serial });
   const adb = (...rest) => runner.run(rest);
   const shell = (...rest) => adb("shell", ...rest);
 
@@ -163,7 +163,14 @@ export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = E
  * wrong port and pass.
  */
 export async function smokeCli({ serial, adbPath, apk, port = 8081, evidence = EVIDENCE }) {
-  const state = openAdb({ adbPath, serial }).run(["get-state"]);
+  let runner;
+  try {
+    runner = await openDeviceAdb({ adbPath, serial });
+  } catch (error) {
+    console.error(`ERROR tv focus: ${error.message}`);
+    return 1;
+  }
+  const state = runner.run(["get-state"]);
   if (state.stdout.trim() !== "device") {
     console.error("ERROR tv focus: no device; ANDROID_SERIAL names no attached, booted device");
     return 1;

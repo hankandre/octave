@@ -17,7 +17,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
 import { androidSdk, platformTool } from "./tv-android-sdk.mjs";
-import { openAdb } from "./tv-adb.mjs";
+import { openDeviceAdb } from "./tv-adb.mjs";
 import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
 import { E2E_APK, buildTv, e2eApkIsCurrent } from "./tv-build.mjs";
 import { clearEvidence, evidenceDir, writeEvidence, writeSummary } from "./tv-wire-evidence.mjs";
@@ -247,7 +247,7 @@ async function main(args) {
     fail(error.message);
   }
   // Everything adb returns has the serial replaced by `[device]` (T3-30); `device` is taken by openDevice below.
-  const runner = openAdb({ adbPath, serial });
+  const runner = await openDeviceAdb({ adbPath, serial }).catch((error) => fail(error.message));
   const adb = (...rest) => runner.run(rest, { maxBuffer: 256 * 1024 * 1024 });
   const shell = (...rest) => adb("shell", ...rest);
   if (adb("get-state").stdout.trim() !== "device") fail("no device; ANDROID_SERIAL names no attached, booted device");
