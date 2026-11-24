@@ -1553,10 +1553,10 @@
             "The PR holds 1920×1080 captures of the controls with their icons"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "commit b5690daf: Tabler weight-300 font via expo-font, iconOf map, played check, rail icons. pnpm check exit 0; Jest design+shell 266 passed. Device build, APK size and 1920x1080 captures not run."
+          "passes": true,
+          "evidence": "commit 8555b866 (code: commit b5690daf): Tabler weight-300 font via expo-font, iconOf map, played check, rail icons. pnpm check exit 0. Own emulator (Android TV API 36): prebuild resolves the font under pnpm; tv:apk:check, tv:smoke, tv:e2e exit 0. Font entry deflated, 829,616 bytes; release APK 51,195,178 to 52,026,790 (+831,612). 1920x1080 before and after captures show every glyph as Tabler, no tofu; in release-evidence/tv/T3-34 for the PR. Not run: real TV, arm64."
         },
         {
           "id": "T3-35",
