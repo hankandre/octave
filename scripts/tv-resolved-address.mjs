@@ -7,7 +7,7 @@
 // is judged and one inside an HTTPS call is not (docs/specs/T3-20.md, "The emulator check").
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { openAdb } from "./tv-adb.mjs";
+import { openDeviceAdb } from "./tv-adb.mjs";
 import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
 import { PROBE_COMPONENT, PROBE_PACKAGE, asStatus, lastLine, parseInstrumentation, startHostServer } from "./tv-cleartext.mjs";
 
@@ -87,9 +87,9 @@ export function judgeResolvedAddress(report, served, expected) {
 // release-evidence/tv/e2e-resolved-address.txt. Returns { errors, report, served }. The probe package and the server
 // are removed whatever happens. No adb reverse: every connection of the check goes to 10.0.2.2.
 export async function runResolvedAddressProbe({ adbPath, serial, apk, evidenceDir }) {
-  const { server, served, port } = await startHostServer();
   // Its output holds no serial (T3-30).
-  const runner = openAdb({ adbPath, serial });
+  const runner = await openDeviceAdb({ adbPath, serial });
+  const { server, served, port } = await startHostServer();
   const adb = (args, timeoutMs = 60_000) => runner.runAsync(args, { timeoutMs });
   const errors = [];
   let report = {};

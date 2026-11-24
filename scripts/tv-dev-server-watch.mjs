@@ -12,7 +12,7 @@ import { lstatSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { openAdb } from "./tv-adb.mjs";
+import { openDeviceAdb } from "./tv-adb.mjs";
 
 const HOST = "127.0.0.1";
 const CONTROL_WAIT_MS = 5_000;
@@ -77,7 +77,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * or the reverse fails. `adb` is the path of the adb executable.
  */
 export async function startDevServerWatch({ adb, serial, port = 8081 }) {
-  const runner = openAdb({ adbPath: adb, serial });
   const runAdb = (args) => runner.runAsync(args);
   const lastOf = (run) => (run.stdout + run.stderr).trim().split("\n").pop() ?? "";
   let phase = "before";
@@ -112,6 +111,14 @@ export async function startDevServerWatch({ adb, serial, port = 8081 }) {
 
   claimOwner(port);
   const closeServer = () => new Promise((resolve) => server.close(() => resolve()));
+  let runner;
+  try {
+    runner = await openDeviceAdb({ adbPath: adb, serial });
+  } catch (error) {
+    await closeServer();
+    releaseOwner(port);
+    throw error;
+  }
   const reverse = await runAdb(["reverse", `tcp:${port}`, `tcp:${port}`]);
   if (reverse.code !== 0) {
     await runAdb(["reverse", "--remove", `tcp:${port}`]);

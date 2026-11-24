@@ -5,12 +5,12 @@
 // other device (a real TV, or one that cannot be told apart) the stage is skipped after reading two properties by name:
 // no `pm clear`, no `bmgr`, no launch. In CI (GITHUB_ACTIONS) or with OCTAVE_INSTALL_ID_STAGE=required a skip fails.
 //
-// Every adb call goes through the runner openAdb returns (./tv-adb.mjs), which keeps the serial out of everything it
+// Every adb call goes through the runner openDeviceAdb returns (./tv-adb.mjs), which keeps the serial out of everything it
 // returns; this file starts no program itself. No line it writes or prints holds a serial, an id or a DeviceId.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ANDROID_APPLICATION_ID } from "../packages/core/src/domain/app-identity.ts";
-import { openAdb } from "./tv-adb.mjs";
+import { openDeviceAdb } from "./tv-adb.mjs";
 
 const PREFIX = "OCTAVE_INSTALL ";
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
@@ -193,12 +193,12 @@ export async function runInstallIdStage({
   serial,
   evidenceDir,
   env = process.env,
-  open = openAdb,
+  open = openDeviceAdb,
   sleep = realSleep,
   print = (line) => console.log(line),
   launchMs = LAUNCH_MS,
 }) {
-  const runner = open({ adbPath, serial });
+  const runner = await open({ adbPath, serial });
   const shell = (args, options) => runner.run(["shell", ...args], options);
   const write = (lines) => {
     mkdirSync(evidenceDir, { recursive: true });

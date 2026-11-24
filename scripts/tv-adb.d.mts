@@ -13,4 +13,9 @@ export type AdbRunner = {
   };
   redact(text: string): string;
 };
-export function openAdb(options: { adbPath: string; serial: string }): AdbRunner;
+export function openAdb(options: { adbPath: string; serial: string; addresses?: string[] }): AdbRunner;
+export function openDeviceAdb(options: {
+  adbPath: string;
+  serial: string;
+  lookup?: (name: string) => Promise<{ address: string; family: number }[]>;
+}): Promise<AdbRunner>;

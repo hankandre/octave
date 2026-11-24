@@ -7,7 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { openAdb } from "./tv-adb.mjs";
+import { openDeviceAdb } from "./tv-adb.mjs";
 import { installRefusal, readInstallFacts } from "./tv-install-guard.mjs";
 
 const HOST_CLASSES = fileURLToPath(new URL("../packages/core/tests/fixtures/host-classes.json", import.meta.url));
@@ -124,9 +124,9 @@ export const lastLine = (result) => (result.stdout + result.stderr).trim().split
 // Installs and runs the probe on the device `serial` names, judges it, and writes release-evidence/tv/e2e-cleartext.txt.
 // Returns { errors, report, served }. The reverse rule, the probe package and the server are removed whatever happens.
 export async function runCleartextProbe({ adbPath, serial, apk, evidenceDir }) {
-  const { server, served, port } = await startHostServer();
   // Runs adb asynchronously, so the host server keeps answering while the probe runs; its output holds no serial (T3-30).
-  const runner = openAdb({ adbPath, serial });
+  const runner = await openDeviceAdb({ adbPath, serial });
+  const { server, served, port } = await startHostServer();
   const adb = (args, timeoutMs = PROBE_MS) => runner.runAsync(args, { timeoutMs });
   const errors = [];
   let report = {};
