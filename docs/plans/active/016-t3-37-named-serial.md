@@ -8,12 +8,12 @@ The TV scripts learn the addresses a named adb serial (host name, mDNS name, USB
 - [x] 2 `scripts/tv-adb-addresses.mjs`, the address pass
 - [x] 3 `openDeviceAdb`, the guard, the callers
 - [x] 4 `scripts/tv-host-paths.mjs` and the path sites
-- [ ] 5 Documents
+- [x] 5 Documents
 - [ ] 6 Device runs on the own emulator
 
 ## Progress
 
-- [x] 1  - [x] 2  - [x] 3  - [x] 4
+- [x] 1  - [x] 2  - [x] 3  - [x] 4  - [x] 5
 
 ## Decision log
 
