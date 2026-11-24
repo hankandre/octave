@@ -1763,10 +1763,10 @@
             "docs/commands.md and docs/security.md say what is replaced and what is refused; T3-30's frozen tests pass unchanged, and if one contradicts an item the task returns to the Product Owner"
           ],
           "verify": "pnpm check && pnpm tv:smoke",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "T3-37 in progress on branch task/T3-37; spec approved, spec-check notes being resolved; no commit yet (commit ccdc6aa7 froze the tests)."
         },
         {
           "id": "T3-25",
