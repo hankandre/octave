@@ -199,3 +199,12 @@ export const faces = {
 
 /** The black of the shadow tokens at a given alpha, as a colour string React Native parses. */
 export const blackAt = (alpha: number): string => `rgb(0 0 0 / ${alpha})`;
+
+/** A `#rrggbb` token at a given alpha, as a colour string React Native parses (a scrim stop is a token colour at an alpha). */
+export const colourAt = (hex: string, alpha: number): string => {
+  const [red, green, blue] = [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16));
+  return `rgb(${red} ${green} ${blue} / ${alpha})`;
+};
+
+/** The design canvas in px (DESIGN.md §6): a full-screen layer, such as the ambient backdrop, asks its art for this size. */
+export const canvas = { width: 1920, height: 1080 } as const;
