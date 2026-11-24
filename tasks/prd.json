@@ -1766,7 +1766,7 @@
           "status": "done",
           "owner": "implementer",
           "passes": true,
-          "evidence": "Review fixes in commit ffa99a4d: addresses replaced beside hex prefixes, ports and octal dotted parts; apksigner spawn error hides host paths. pnpm check passes. Ship: PR, CI wire job, guardian pass pending."
+          "evidence": "PR #335, commit 7a3158bd. Addresses a named serial resolves to are learned and replaced in any spelling; host/mDNS serial with no learnable address refused; SDK/APK/mapping paths print repo-relative or ~. pnpm check passes. CI run https://github.com/jellyscale-org/octave/actions/runs/45439922552: wire job passed, every pair printed pass."
         },
         {
           "id": "T3-25",
