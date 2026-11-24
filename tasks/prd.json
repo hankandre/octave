@@ -2525,10 +2525,10 @@
             "The spec says, from DESIGN.md's focus rules, where focus lands when it enters the rows from the hero, and a test shows T3-08's row router does not send it to a destination left from an earlier visit"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "Home built on branch task/T5-03, commit 52719aa0 (not pushed, no PR yet): core home-hero, Home screen, backdrop, router entry. Items 1-10 green (check-red --expect green); pnpm check exit 0 after the type-only frozen fixes. Not run: tv:wire, tripwire (no playback change), e2e (no emulator), tv:visual."
+          "passes": true,
+          "evidence": "Home built against fakes; review fixes in commit 55ca0cd6. pnpm check green (173 vitest files, jest home/design 195 plus resilience tests). Untested gates: tv:visual 1920x1080 captures, real-device focus, Jellyscale hero read of /Items/{id}; Home not mounted in App.tsx (backlog)."
         },
         {
           "id": "T5-04",
