@@ -132,7 +132,7 @@ describe("T5-03 item 2: Continue watching is the first row", () => {
     await renderHome(rig);
     await press(rowCard("continue-watching", 1));
     expect(rig.play).toHaveBeenCalledTimes(1);
-    expect(rig.play).toHaveBeenLastCalledWith({ itemId: "film-4", start: { kind: "resume", startPositionTicks: cwFilm.resumePositionTicks } });
+    expect(rig.play).toHaveBeenLastCalledWith({ itemId: "film-4", start: { kind: "resume", startPositionTicks: cwFilm.resumePositionTicks! } });
     await press(rowCard("continue-watching", 2));
     expect(rig.play).toHaveBeenCalledTimes(2);
     expect(rig.play).toHaveBeenLastCalledWith({ itemId: "next-ep", start: startOverChoice() });

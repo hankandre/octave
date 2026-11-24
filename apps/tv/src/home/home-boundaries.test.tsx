@@ -1,10 +1,16 @@
 // T5-03 item 8: Home builds no media URL and calls no player method. Home reaches the server only through the six reads of
 // HomeSource and HeroSource, and hands playback only `{ itemId, start }`. The import scan reads the screen's source files.
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it, jest } from "@jest/globals";
 import { screen } from "@testing-library/react-native";
 import { MINUTE, defaultLists, detailOf, makeRig, press, renderHome, rowCard } from "./test-support/home-doubles";
+
+// apps/tv has no Node type definitions, so the two Node modules the scan reads files with are typed here, by what it calls.
+declare const __dirname: string;
+const { readdirSync, readFileSync } = require("fs") as {
+  readdirSync(dir: string, options: { withFileTypes: true }): { name: string; isFile(): boolean }[];
+  readFileSync(path: string, encoding: "utf8"): string;
+};
+const { join } = require("path") as { join(...parts: string[]): string };
 
 jest.mock("@shopify/flash-list", () => require("../design/rows/test-support/flash-list-double"));
 

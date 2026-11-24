@@ -36,7 +36,7 @@ const advance = async (ms: number) => {
     jest.advanceTimersByTime(ms);
   });
 };
-const fades = () => timing.mock.calls.filter(([, config]) => [motion.durSlow, reducedMotion.durSlow].includes((config as { duration: number }).duration));
+const fades = () => timing.mock.calls.filter(([, config]) => ([motion.durSlow, reducedMotion.durSlow] as number[]).includes((config as { duration: number }).duration));
 
 describe("T5-03 item 6: the ambient backdrop", () => {
   it("T5-03 item 6: when Home is ready the backdrop shows the hero's backdrop at once, with no wait", async () => {
