@@ -14,15 +14,16 @@ describe("T3-34 item 3: the glyph map", () => {
   });
 
   it("T3-34 item 3: every entry equals the content of its rule in the weight-300 stylesheet", () => {
+    // Each pair carries its rule's name, so a failure says which entry differs (jest's expect takes no message).
     for (const name of namesOf()) {
-      expect(cssCodepoint(name), `.ti-${name}:before in tabler-icons-300.css`).toBe(glyphs[name]);
+      expect([`.ti-${name}:before in tabler-icons-300.css`, cssCodepoint(name)]).toEqual([`.ti-${name}:before in tabler-icons-300.css`, glyphs[name]]);
     }
   });
 
   it("T3-34 item 3: every codepoint is in the weight-300 font's cmap", () => {
     const ranges = cmapRanges();
     for (const name of namesOf()) {
-      expect(inRanges(ranges, glyphs[name]), `${name} is in the cmap`).toBe(true);
+      expect([`${name} is in the cmap`, inRanges(ranges, glyphs[name])]).toEqual([`${name} is in the cmap`, true]);
     }
   });
 
