@@ -2525,10 +2525,10 @@
             "The spec says, from DESIGN.md's focus rules, where focus lands when it enters the rows from the hero, and a test shows T3-08's row router does not send it to a destination left from an earlier visit"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "Implemented, commit 1a99597e (branch task/T5-03): core home-hero, Home screen, backdrop, router entry. Items 1-10 green (check-red --expect green). pnpm check: all steps pass except typecheck, which fails on 3 frozen test files (home-backdrop:39, home-boundaries:3,4,95, home-screen:135). Not run: tv:wire, tripwire (no playback change), e2e (no emulator)."
         },
         {
           "id": "T5-04",
