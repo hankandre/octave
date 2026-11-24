@@ -4,7 +4,7 @@
 // `nextFocusRight` is the tag of the content element that had focus before (`returnTag`), as the spike measured.
 //
 // The rail opens when any entry takes focus and closes when focus leaves every entry: a blur schedules a zero-delay check
-// that another entry's focus cancels. The icons come from a slot (`RailIconsProvider`) until the icon set lands (T3-34).
+// that another entry's focus cancels. The icons come from a slot (`RailIconsProvider`), filled by shell/rail-icons.ts.
 //
 // testIDs, with t the rail's testID: t, rail-guide, rail-entry-<key> (":" written "-"), rail-entry-<key>-label (open only)
 // and rail-entry-<key>-bar (the current entry only).

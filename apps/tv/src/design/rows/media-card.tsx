@@ -9,6 +9,7 @@ import { memo, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ImageRef } from "@octave/core/src/domain/catalog";
 import { FocusRing } from "../focus-frame";
+import { iconOf } from "../icon";
 import { useReducedMotion } from "../motion";
 import { px } from "../scale";
 import { textStyle } from "../text";
@@ -46,7 +47,8 @@ const PLAYED_ICON = sizes.markDisc - 2 * space.space1;
 
 function MediaCardView({ item, variant, onFocus, onBlur, onPress, hasTVPreferredFocus, viewRef, testID }: MediaCardProps) {
   const reduced = useReducedMotion();
-  const { component: Artwork, playedIcon: PlayedIcon } = useArtwork();
+  const { component: Artwork, playedIcon } = useArtwork();
+  const PlayedIcon = playedIcon ?? iconOf("check");
   const [focused, setFocused] = useState(false);
   const [failedFor, setFailedFor] = useState<string | null>(null);
 
@@ -104,7 +106,7 @@ function MediaCardView({ item, variant, onFocus, onBlur, onPress, hasTVPreferred
           )}
           {item.played === true ? (
             <View testID={`${testID}-played`} style={styles.played}>
-              {PlayedIcon ? <PlayedIcon size={px(PLAYED_ICON)} color={colors.text1} /> : null}
+              <PlayedIcon size={px(PLAYED_ICON)} color={colors.text1} />
             </View>
           ) : null}
           {showProgress ? (

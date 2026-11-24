@@ -2,6 +2,7 @@
 // (sign-in T4, Home T5-03, libraries T6-01, the player T8, Settings T9). Libraries and the account arrive with T4 and T6-01.
 import { FirstScreen } from "./first-screen/FirstScreen";
 import { AppShell } from "./shell";
+import { railIcons } from "./shell/rail-icons";
 
 const screens = {
   home: FirstScreen,
@@ -15,5 +16,5 @@ const screens = {
 };
 
 export default function App() {
-  return <AppShell screens={screens} libraries={[]} />;
+  return <AppShell screens={screens} libraries={[]} icons={railIcons} />;
 }
