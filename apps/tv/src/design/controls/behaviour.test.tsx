@@ -1,7 +1,8 @@
 // T3-06: the implementer's own behaviour tests for the controls (not frozen).
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, screen } from "@testing-library/react-native";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
+import { glyphs, iconOf } from "../icon";
 import { colors, motion } from "../tokens";
 import { Switch } from "./switch";
 import { Skeleton } from "./skeleton";
@@ -68,14 +69,10 @@ describe("Switch", () => {
 
 describe("IconButton", () => {
   it("gives its icon a size and the text1 colour", async () => {
-    const seen: { size: number; color: string }[] = [];
-    const Icon = ({ size, color }: { size: number; color: string }) => {
-      seen.push({ size, color });
-      return <View />;
-    };
-    await renderWith(<IconButton testID="ib" icon={Icon} accessibilityLabel="Search" onPress={jest.fn()} />, false);
-    expect(seen[0].size).toBeGreaterThan(0);
-    expect(seen[0].color).toBe(colors.text1);
+    await renderWith(<IconButton testID="ib" icon={iconOf("search")} accessibilityLabel="Search" onPress={jest.fn()} />, false);
+    const style = StyleSheet.flatten(screen.getByText(String.fromCodePoint(glyphs.search)).props.style);
+    expect(style.fontSize).toBeGreaterThan(0);
+    expect(style.color).toBe(colors.text1);
     await fireEvent(screen.getByTestId("ib"), "focus", { nativeEvent: {} });
   });
 });

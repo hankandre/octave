@@ -1,9 +1,9 @@
 // T3-08 implementer's own tests (not frozen): the card's F4 focus look, select, the failure reset, the played glyph,
 // row memory identity, the label and the geometry against hand-computed values.
 import { describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, render, renderHook, screen } from "@testing-library/react-native";
-import { View } from "react-native";
+import { act, fireEvent, render, renderHook, screen, within } from "@testing-library/react-native";
 import { ReducedMotionProvider } from "../motion";
+import { glyphs, iconOf } from "../icon";
 import { px } from "../scale";
 import { colors, motion, sizes } from "../tokens";
 import { flat, hasTransform, scaleOf } from "../test-support/harness";
@@ -76,16 +76,16 @@ describe("T3-08 card focus look", () => {
   });
 
   it("draws the played glyph inside the mark when the provider gives one", async () => {
-    const Glyph = ({ size, color }: { size: number; color: string }) => <View testID="glyph" style={{ width: size, backgroundColor: color }} />;
     await render(
       <ReducedMotionProvider value>
-        <ArtworkProvider playedIcon={Glyph}>
+        <ArtworkProvider playedIcon={iconOf("home")}>
           <MediaCard testID="c" item={cardPlayed} variant="thumb" />
         </ArtworkProvider>
       </ReducedMotionProvider>,
     );
-    expect(screen.getByTestId("glyph")).toBeTruthy();
-    expect(screen.getByTestId("c-played").queryAll((node) => node.props.testID === "glyph").length).toBeGreaterThan(0);
+    const glyph = within(screen.getByTestId("c-played")).getByText(String.fromCodePoint(glyphs.home));
+    expect(flat(glyph).color).toBe(colors.text1);
+    expect(screen.queryByText(String.fromCodePoint(glyphs.check))).toBeNull();
   });
 });
 
