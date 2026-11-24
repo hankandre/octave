@@ -19,11 +19,15 @@ import { addedCard, backdropOf, continueCard } from "./home-cards";
 import { HomeServicesContext, type HomeServices } from "./home-services";
 import { Hero } from "./hero";
 
-type State = { phase: "loading" } | { phase: "ready"; home: Home; next?: SeriesNextUp; detail?: ItemDetail };
-type Action = { type: "loaded"; home: Home; next?: SeriesNextUp } | { type: "detail"; detail: ItemDetail };
+type State = { phase: "loading" } | { phase: "failed" } | { phase: "ready"; home: Home; next?: SeriesNextUp; detail?: ItemDetail };
+type Action = { type: "reset" } | { type: "failed" } | { type: "loaded"; home: Home; next?: SeriesNextUp } | { type: "detail"; detail: ItemDetail };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
+    case "reset":
+      return state.phase === "loading" ? state : { phase: "loading" };
+    case "failed":
+      return { phase: "failed" };
     case "loaded":
       // Set once: the rows' cards never change while Home is mounted.
       if (state.phase === "ready") return state;
@@ -58,8 +62,11 @@ export function HomeScreen(_props: { route?: Route }) {
   useEffect(() => {
     if (services === undefined) return undefined;
     const controller = new AbortController();
-    load(services, controller.signal, dispatch).catch((error: unknown) => {
-      if (!controller.signal.aborted) throw error;
+    // New services start a new load: the old account's rows and hero are dropped first.
+    dispatch({ type: "reset" });
+    // A failed load leaves a plain surface and nothing thrown; the error's text goes nowhere (T5-04 owns the copy and the retry).
+    load(services, controller.signal, dispatch).catch(() => {
+      if (!controller.signal.aborted) dispatch({ type: "failed" });
     });
     return () => controller.abort();
   }, [services]);
