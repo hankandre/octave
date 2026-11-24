@@ -231,7 +231,7 @@ With several versions, the first DirectPlay source wins, then the first DirectSt
 
 - **First launch:** discover or enter a URL, then `GET /System/Info/Public` and check the version; sign in with Quick Connect (code and QR) or password; store the credential (T4-05); `POST /Sessions/Capabilities/Full`.
 - **Relaunch:** load the credential, then `GET /Users/Me`. On 401, sign in again.
-- **Home:** in parallel, `/UserViews`, `/UserItems/Resume`, `/Shows/NextUp`, the recently-played list, and one `/Items/Latest` for the Recently added row.
+- **Home:** in parallel, `/UserItems/Resume`, `/Shows/NextUp`, the recently-played list, and one `/Items/Latest` for the Recently added row; then `GET /Items/{heroId}` for the hero's overview and quality facts, and `GET /Shows/NextUp?seriesId=` when the hero is a series (T5-03).
 - **Play:** item detail; PlaybackInfo with the profile; accept a source or show a refusal; launch the engine with a token-free typed request; report start on first frame, then progress.
 - **Stop:** report stopped (with `Failed` on error), then refresh the affected rows.
 - **Logout:** `POST /Sessions/Logout`, then delete the credential.
