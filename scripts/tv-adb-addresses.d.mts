@@ -1,0 +1,11 @@
+export const STAND_IN: string;
+export type SerialKind = "emulator" | "address" | "mdns" | "host" | "other";
+export function canonicalAddress(text: string): string | null;
+export function serialKind(serial: string): SerialKind;
+export function ownAddresses(serial: string): string[];
+export function hostName(serial: string): string;
+export function mdnsInstance(serial: string): string;
+export function parseIpAddresses(text: string): string[];
+export function parseMdnsAddresses(text: string, instance: string): string[];
+export function resolverAddresses(answers: { address: string; family: number }[]): string[];
+export function redactAddresses(text: string, addresses: string[]): string;

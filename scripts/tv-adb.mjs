@@ -5,8 +5,9 @@
 // script that starts adb (scripts/check-adb-output.mjs).
 import { spawn, spawnSync } from "node:child_process";
 import { EventEmitter } from "node:events";
+import { ownAddresses, redactAddresses, STAND_IN } from "./tv-adb-addresses.mjs";
 
-export const DEVICE_STAND_IN = "[device]";
+export const DEVICE_STAND_IN = STAND_IN;
 
 // Every text replaced is at least this long, the serial and each form derived from it: replacing a shorter one
 // everywhere would shred ordinary output.
@@ -59,12 +60,18 @@ export function serialForms(serial) {
   return [...forms].sort((a, b) => b.length - a.length);
 }
 
+const MAPPED_PREFIX = /(?<![0-9A-Fa-f:])(?:(?:0{1,4}:){5}|::)ffff:\[device\]/gi;
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** `text` with every form of `serial` (any letter case) replaced by `[device]`. */
+/**
+ * `text` with every form of `serial` (any letter case) replaced by `[device]`, and then the serial's own address in any
+ * other spelling (`2001:0db8:0:0:0:0:0:7` for `[2001:db8::7]:5555`, `::ffff:c000:22c` for `192.0.2.44`).
+ */
 export function redactSerial(text, serial) {
   const pattern = new RegExp(serialForms(serial).map(escapeRegExp).join("|"), "gi");
-  return text.replace(pattern, DEVICE_STAND_IN);
+  // The substring pass leaves the prefix of an IPv4-mapped spelling (`::ffff:192.0.2.44`) in front of its stand-in.
+  const replaced = text.replace(pattern, DEVICE_STAND_IN).replace(MAPPED_PREFIX, DEVICE_STAND_IN);
+  return redactAddresses(replaced, ownAddresses(serial));
 }
 
 /**
@@ -72,11 +79,11 @@ export function redactSerial(text, serial) {
  * and everything it returns is redacted. A failure to start, a timeout or a full buffer is a status or code of -1 and a
  * redacted stderr.
  */
-export function openAdb({ adbPath, serial }) {
+export function openAdb({ adbPath, serial, addresses = [] }) {
   if (typeof serial !== "string" || serial.length < MIN_FORM) {
     throw new Error(`the device serial is shorter than ${MIN_FORM} characters, too short to keep out of output safely`);
   }
-  const redact = (text) => redactSerial(text, serial);
+  const redact = (text) => redactAddresses(redactSerial(text, serial), addresses);
   const argv = (args) => ["-s", serial, ...args];
 
   return {

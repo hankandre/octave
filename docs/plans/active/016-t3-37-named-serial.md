@@ -5,7 +5,7 @@
 The TV scripts learn the addresses a named adb serial (host name, mDNS name, USB serial) resolves to, replace them in every spelling, refuse a host or mDNS serial whose addresses cannot be learned, and print SDK and APK paths repository-relative or with the home directory as `~` (T3-37). Approach and decisions: `docs/specs/T3-37.md`.
 
 - [x] 1 Observe on the own emulator
-- [ ] 2 `scripts/tv-adb-addresses.mjs`, the address pass
+- [x] 2 `scripts/tv-adb-addresses.mjs`, the address pass
 - [ ] 3 `openDeviceAdb`, the guard, the callers
 - [ ] 4 `scripts/tv-host-paths.mjs` and the path sites
 - [ ] 5 Documents
@@ -13,7 +13,7 @@ The TV scripts learn the addresses a named adb serial (host name, mDNS name, USB
 
 ## Progress
 
-- [x] 1
+- [x] 1  - [x] 2
 
 ## Decision log
 
