@@ -229,7 +229,7 @@ export default [
   // name, so the network rules above stay in force on the same files.
   {
     files: ["apps/tv/src/**/*.{ts,tsx}"],
-    ignores: ["apps/tv/src/design/tokens.ts", "apps/tv/**/*.test.{ts,tsx}", "apps/tv/src/host/**", "apps/tv/src/e2e/**"],
+    ignores: ["apps/tv/src/design/tokens.ts", "apps/tv/**/*.test.{ts,tsx}", "apps/tv/src/**/test-support/**", "apps/tv/src/host/**", "apps/tv/src/e2e/**"],
     plugins: { octave: designTokens },
     rules: { "octave/design-tokens": "error" },
   },
