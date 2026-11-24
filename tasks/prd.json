@@ -1553,10 +1553,10 @@
             "The PR holds 1920×1080 captures of the controls with their icons"
           ],
           "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "implementer",
           "passes": false,
-          "evidence": ""
+          "evidence": "commit b5690daf: Tabler weight-300 font via expo-font, iconOf map, played check, rail icons. pnpm check exit 0; Jest design+shell 266 passed. Device build, APK size and 1920x1080 captures not run."
         },
         {
           "id": "T3-35",
