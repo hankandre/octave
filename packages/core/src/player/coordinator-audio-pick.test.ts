@@ -157,6 +157,7 @@ describe("PlaybackCoordinator audio pick (P17-08)", () => {
     await coordinator.start(item, undefined, PICK);
     const loaded = at(0, 2);
     await emit({ kind: "loaded", snapshot: loaded });
+    await emit({ kind: "first-frame" });
     await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalledWith(expect.objectContaining({ delivery }), loaded, signal));
   });
 

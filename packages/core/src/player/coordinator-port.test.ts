@@ -133,6 +133,7 @@ describe("the coordinator against the port-only fake", () => {
     const { gateway, fake, stop, onSessionEnded, coordinator } = setup([plan]);
     await coordinator.start(item);
     fake.emit({ kind: "loaded", snapshot });
+    fake.emit({ kind: "first-frame" });
     await coordinator.flush();
     await coordinator.stop();
     await coordinator.flush();
@@ -147,6 +148,7 @@ describe("the coordinator against the port-only fake", () => {
     const { gateway, fake, coordinator } = setup([first, second]);
     await coordinator.start(item);
     fake.emit({ kind: "loaded", snapshot });
+    fake.emit({ kind: "first-frame" });
     fake.emit({ kind: "error", code: "network" });
     await coordinator.flush();
     const next = await coordinator.retry();
@@ -164,6 +166,7 @@ describe("the coordinator against the port-only fake", () => {
     const { gateway, fake, onSessionEnded, coordinator } = setup([first, second]);
     await coordinator.start(item);
     fake.emit({ kind: "loaded", snapshot });
+    fake.emit({ kind: "first-frame" });
     await coordinator.flush();
     await coordinator.renegotiate(420_000_000, { audioStreamIndex: 2 });
     expect(gateway.reportStopped).toHaveBeenCalledWith(first, snapshot, signal, true);
