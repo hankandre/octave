@@ -1,0 +1,58 @@
+{
+  "task": "T5-03",
+  "files": [
+    "packages/core/src/domain/home-hero.test.ts",
+    "packages/core/src/jellyfin/home-hero-fixtures.test.ts",
+    "apps/tv/src/home/home-screen.test.tsx",
+    "apps/tv/src/home/home-backdrop.test.tsx",
+    "apps/tv/src/home/home-boundaries.test.tsx",
+    "apps/tv/src/home/home-focus-entry.test.tsx",
+    "apps/tv/src/home/test-support/home-doubles.tsx",
+    "apps/tv/src/design/rows/row-router-entry.test.tsx"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-screen.test.tsx", "-t", "T5-03 item 1:"],
+      "also": [["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/domain/home-hero.test.ts", "-t", "T5-03 item 1:"]]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-screen.test.tsx", "-t", "T5-03 item 2:"]
+    },
+    {
+      "item": 3,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-screen.test.tsx", "-t", "T5-03 item 3:"]
+    },
+    {
+      "item": 4,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-screen.test.tsx", "-t", "T5-03 item 4:"]
+    },
+    {
+      "item": 5,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-screen.test.tsx", "-t", "T5-03 item 5:"]
+    },
+    {
+      "item": 6,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-backdrop.test.tsx", "-t", "T5-03 item 6:"]
+    },
+    {
+      "item": 7,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-screen.test.tsx", "-t", "T5-03 item 7:"]
+    },
+    {
+      "item": 8,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-boundaries.test.tsx", "-t", "T5-03 item 8:"]
+    },
+    {
+      "item": 9,
+      "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/domain/home-hero.test.ts", "src/jellyfin/home-hero-fixtures.test.ts", "-t", "T5-03 item 9:"],
+      "also": [["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-screen.test.tsx", "-t", "T5-03 item 9:"]]
+    },
+    {
+      "item": 10,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/home/home-focus-entry.test.tsx", "-t", "T5-03 item 10:"],
+      "also": [["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/design/rows/row-router-entry.test.tsx", "-t", "T5-03 item 10:"]]
+    }
+  ]
+}
