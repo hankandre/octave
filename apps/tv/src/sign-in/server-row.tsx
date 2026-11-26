@@ -1,5 +1,6 @@
 // One server on the first sign-in step (DESIGN.md §7.20): its name and address, and for a found one who advertised it
-// and any conflict. Select chooses it.
+// and any conflict. Select chooses it. As a row it never scales: focus is the ring and a brighter fill.
+import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import type { ServerRow as ServerRowData } from "@octave/core/src/domain/server-choice";
 import { FocusFrame } from "../design/focus-frame";
@@ -19,16 +20,20 @@ type Props = {
 export function ServerRow({ row, onPress, hasTVPreferredFocus, viewRef, testID }: Props) {
   const advertised = row.kind === "found" ? `Advertised by ${row.advertisedBy}` : undefined;
   const conflict = row.kind === "found" && row.conflicting ? CONFLICT_LINE : undefined;
+  const [focused, setFocused] = useState(false);
   const label = [row.name, row.address, advertised, conflict].filter((part) => part !== undefined).join(", ");
   return (
     <FocusFrame
       testID={testID}
       onPress={onPress}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      still
       hasTVPreferredFocus={hasTVPreferredFocus}
       viewRef={viewRef}
       accessibilityRole="button"
       accessibilityLabel={label}
-      contentStyle={styles.box}
+      contentStyle={[styles.box, focused ? styles.boxFocused : undefined]}
     >
       <Text style={styles.name}>{row.name}</Text>
       <Text style={styles.address}>{row.address}</Text>
@@ -46,6 +51,7 @@ const styles = StyleSheet.create({
     borderRadius: px(radii.radiusControl),
     backgroundColor: colors.surface2,
   },
+  boxFocused: { backgroundColor: colors.surface3 },
   name: { ...textStyle("typeLabel"), color: colors.text1 },
   address: { ...textStyle("typeMono"), color: colors.text2 },
   advertised: { ...textStyle("typeMeta"), color: colors.text2 },

@@ -1,6 +1,7 @@
 // The shared focus, press and disabled primitive (DESIGN.md §5, §7.19). A `Pressable` that draws a two-tone focus
 // ring while focused, lifts to `motion.lift` over `durQuick`, and scales to `pressScale` over `durInstant` on select.
-// With reduced motion on, nothing scales: the ring still shows. Every control is built on it.
+// With reduced motion on, or in the `still` form for rows and fields (§9, "What lifts"), nothing scales: the ring
+// still shows. Every control is built on it.
 //
 // testIDs: `<testID>` is the Pressable (the element that takes focus and select), `<testID>-scale` the Animated.View
 // that holds the children and the transforms (no `transform` at rest), `<testID>-focus-ring` the inner ring, drawn
@@ -27,6 +28,8 @@ export type FocusFrameProps = FocusNeighbours & {
   onFocus?: () => void;
   onBlur?: () => void;
   disabled?: boolean;
+  /** Never lifts or scales on press: the form of a row or a field. */
+  still?: boolean;
   /** Keeps the ring and lift while true, whatever the frame's own focus: a text field holds it while its input has focus. */
   holdFocus?: boolean;
   hasTVPreferredFocus?: boolean;
@@ -66,6 +69,7 @@ export function FocusFrame({
   onFocus,
   onBlur,
   disabled = false,
+  still = false,
   holdFocus = false,
   hasTVPreferredFocus,
   viewRef,
@@ -91,10 +95,11 @@ export function FocusFrame({
   const lastChange = useRef<"focus" | "press">("focus");
 
   const isFocused = focused || holdFocus;
-  const target = reduced ? 1 : (isFocused ? motion.lift : 1) * (pressed ? motion.pressScale : 1);
+  const motionless = reduced || still;
+  const target = motionless ? 1 : (isFocused ? motion.lift : 1) * (pressed ? motion.pressScale : 1);
 
   useEffect(() => {
-    if (reduced) {
+    if (motionless) {
       scale.stopAnimation();
       scale.setValue(1);
       liftedRef.current = false;
@@ -117,7 +122,7 @@ export function FocusFrame({
       }
     });
     return () => animation.stop();
-  }, [target, reduced, scale]);
+  }, [target, motionless, scale]);
 
   const showRing = isFocused && !disabled;
 
@@ -161,7 +166,7 @@ export function FocusFrame({
         setPressed(false);
       }}
     >
-      <Animated.View testID={testID ? `${testID}-scale` : undefined} style={[contentStyle, lifted && !reduced ? { transform: [{ scale }] } : undefined]}>
+      <Animated.View testID={testID ? `${testID}-scale` : undefined} style={[contentStyle, lifted && !motionless ? { transform: [{ scale }] } : undefined]}>
         {typeof children === "function" ? children({ focused: showRing, pressed }) : children}
         {showRing ? <FocusRing radius={radius} testID={testID ? `${testID}-focus-ring` : undefined} /> : null}
       </Animated.View>
