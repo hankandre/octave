@@ -96,11 +96,25 @@ export const PUBLIC_HTTP_REFUSED_MESSAGE =
   "This address uses plain HTTP on the internet, so Octave will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name.";
 export const REDIRECT_REFUSED_MESSAGE =
   "The server answered with a redirect, which Octave does not follow. Enter the server's final address instead.";
+export const UNICODE_HOST_REFUSED_MESSAGE =
+  "This address uses characters Octave can't check. Type the server's plain address instead.";
 export const UNENCRYPTED_NOT_CONFIRMED_MESSAGE =
   "Confirm the unencrypted connection to this server before signing in.";
 
+// An https address that fails R1 is refused as written, before any parser sees it, so a device's partial IDNA cannot
+// change the answer; the native client refuses the same ones (T4-02 D9). Plain HTTP with such a host is public-http.
+function requirePlainAsciiHttps(address: string): void {
+  if (!/^https:/i.test(address) || hasPlainAsciiAuthority(address)) return;
+  const authority = /^https:\/\/([^/?#]*)/i.exec(address)?.[1] ?? "";
+  if ([...authority].some((character) => character > "\u007f")) {
+    throw new SignInFailure("unicode-host", UNICODE_HOST_REFUSED_MESSAGE);
+  }
+  throw new SignInFailure("invalid-address", "Enter a valid Jellyfin server URL.");
+}
+
 function normalizeServerUrl(input: string): { url: URL; hostClass: HostClass } {
   const candidate = input.trim();
+  requirePlainAsciiHttps(candidate);
   let url: URL;
   try {
     url = new URL(candidate);
@@ -237,7 +251,7 @@ export class JellyfinGateway {
     const version = data.Version;
     const parsed = parseServerVersion(version);
     if (!parsed || !isSupportedServerVersion(parsed)) {
-      throw new SignInFailure("unsupported-version", `Octave needs Jellyfin 10.11 or newer; this server reports ${version}.`);
+      throw new SignInFailure("unsupported-version", "Octave needs Jellyfin 10.11 or newer.");
     }
     if (this.needsConsentForPlainHttp() && !data.Id) {
       throw new SignInFailure("unexpected-response", "The server did not report its Id, so Octave cannot remember an unencrypted connection to it.");

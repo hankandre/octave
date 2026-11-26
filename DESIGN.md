@@ -349,7 +349,7 @@ Each step asks one question in `typeTitle`, with no eyebrow.
 2. **Approve this sign-in on your phone.** The origin chip (the server's address in Mono) under the heading. The Quick Connect code is the hero in `typeCode`, grouped ("482 913"), and **a QR code beside it** that opens the server's approval page on a phone that is already signed in. The step says what to do in one sentence: "Scan the code with your phone, or enter the code in Quick Connect." No primary button: "Use a password" is secondary (hidden when the server has no password sign-in) and "Change server" is quiet. The screen updates by itself when the phone approves.
 3. **Who is signing in?** (the fallback) The same origin chip, Username and Password fields, "Show password", "Change server", and "Sign in" (primary).
 
-The unencrypted-connection warning is a dialog over step 1. Cancel is primary and focused; Back cancels.
+The unencrypted-connection warning is a dialog over step 1. Under its title it shows the server's name and, on its own line, the server's address in `typeMono`. Cancel is primary and focused; Back cancels.
 
 The QR code's content, its size, and the sign-in screen's layout are the owner's call. What the QR code links to depends on the server: Jellyscale issue #118 tracks its approval link (T10-06).
 

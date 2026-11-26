@@ -1,6 +1,6 @@
 // The TV app's device test (T3-02): install the e2e APK on the emulator ANDROID_SERIAL names, start it through the
-// leanback launcher category, read the OCTAVE_E2E lines its root writes (the core's URL and DeviceId conformance
-// suites and the host checks, under Hermes) and judge them. judgeConformance() is the oracle; the lines go to
+// leanback launcher category, read the OCTAVE_E2E lines its root writes (the core's URL, DeviceId and server-address
+// conformance suites and the host checks, under Hermes) and judge them. judgeConformance() is the oracle; the lines go to
 // release-evidence/tv/e2e-conformance.txt. The e2e APK is built first when it is missing or older than its sources.
 // Before installing, the e2e APK's network security is judged (T3-15 item 1); after the conformance run, the module's
 // cleartext probe runs (T3-15 item 2, scripts/tv-cleartext.mjs), then the probe's resolved-address check (T3-20,
@@ -55,13 +55,19 @@ export function expectedCounts() {
   const read = (name) => JSON.parse(readFileSync(join(FIXTURES, name), "utf8"));
   const hosts = read("host-classes.json");
   const hls = read("hls-master-urls.json");
-  return { url: hosts.vectors.length + hls.vectors.length + hls.refusals.length, deviceId: read("device-ids.json").vectors.length };
+  const addresses = read("https-hosts.json");
+  return {
+    url: hosts.vectors.length + hls.vectors.length + hls.refusals.length,
+    deviceId: read("device-ids.json").vectors.length,
+    serverAddress: addresses.refused.length + addresses.accepted.length + addresses.invalidPunycode.length,
+  };
 }
 
 const fields = (text) => Object.fromEntries([...text.matchAll(/(\S+?)=(\S+)/g)].map(([, key, value]) => [key, value]));
 
 // Returns `ERROR tv e2e: <reason>` lines; empty only for exactly one finished run with Expo's URL under Hermes, every
-// URL and DeviceId vector passing at the expected counts, good random ids and a working Clock.
+// URL and DeviceId vector passing at the expected counts, no failing server-address vector (and, when a count is given,
+// every one reported), good random ids and a working Clock.
 export function judgeConformance(lines, expected) {
   const errors = [];
   const fail = (reason) => errors.push(`ERROR tv e2e: ${reason}`);
@@ -88,9 +94,11 @@ export function judgeConformance(lines, expected) {
     if (host.engine !== "hermes") fail(`the run was not under Hermes (engine=${host.engine ?? "missing"})`);
   }
 
-  const counted = (head, total, what) => {
+  const refuseFailLines = (head) => {
     const failures = withHead(`${head}-fail`);
     if (failures.length > 0) fail(`${failures.length} ${head}-fail line(s)`);
+  };
+  const counted = (head, total, what) => {
     const summaries = withHead(head).filter((message) => message !== `${head} threw`);
     if (summaries.length === 0) {
       if (!messages.includes(`${head} threw`)) fail(`no ${head} line`);
@@ -106,8 +114,10 @@ export function judgeConformance(lines, expected) {
       if (passed !== reported) fail(`${head} passed=${passed} of total=${reported}`);
     }
   };
+  for (const head of ["url", "device-id", "server-address"]) refuseFailLines(head);
   counted("url", expected.url, "the two shared URL files");
   counted("device-id", expected.deviceId, "device-ids.json");
+  if (expected.serverAddress !== undefined) counted("server-address", expected.serverAddress, "the lists of https-hosts.json");
 
   const crypto = withHead("crypto").filter((message) => message !== "crypto threw");
   if (crypto.length === 0) {
@@ -249,7 +259,7 @@ async function main(args) {
     for (const error of errors) console.error(error);
     process.exit(1);
   }
-  console.log(`tv e2e: url ${expected.url}/${expected.url}, device-id ${expected.deviceId}/${expected.deviceId}, host ok`);
+  console.log(`tv e2e: url ${expected.url}/${expected.url}, device-id ${expected.deviceId}/${expected.deviceId}, server-address ${expected.serverAddress}/${expected.serverAddress}, host ok`);
 
   // The two probe stages install a debuggable APK, so they run on an emulator only (T3-21 item 4).
   const probeStages = probeStageDecision({ emulator: facts.emulator, mustRun: stageRequired(process.env) });
