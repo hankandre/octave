@@ -8,7 +8,7 @@ import { secondsToTicks } from "@octave/core/src/domain/playback";
 import type { PlayerCapabilities, PlayerEngine, PlayerEvent } from "@octave/core/src/domain/player-engine";
 import type { JellyfinGateway } from "@octave/core/src/jellyfin/gateway";
 import { launchRequest } from "@octave/core/src/player/launch-request";
-import { createPlayerEngine, type PlayerNative } from "../../host/player-engine";
+import { createPlayerEngine } from "../../host/player-engine";
 import { loadPlayerModule } from "../../host/player-module";
 import { codeOf, UNREACHABLE, wait, type WireContext, type WireOutcome } from "./wire-context";
 
@@ -60,9 +60,7 @@ export class PlayerRig {
   private constructor(readonly engine: PlayerEngine) {}
 
   static async open(context: WireContext): Promise<PlayerRig> {
-    // The module's typed declaration names its argument shapes; the adapter takes plain maps and builds those shapes
-    // itself (launchArgs), so the module is handed over as the adapter's view of it. T8-03 joins the two in the app.
-    const rig = new PlayerRig(createPlayerEngine(loadPlayerModule() as unknown as PlayerNative));
+    const rig = new PlayerRig(createPlayerEngine(loadPlayerModule()));
     rig.capabilities = await rig.engine.initialize();
     context.seam.add(rig.capabilities);
     rig.unsubscribe = await rig.engine.subscribe((event) => {

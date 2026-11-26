@@ -2,7 +2,8 @@
 // then the core's conformance suites with the app's host adapters, once, writing the OCTAVE_E2E lines
 // scripts/tv-e2e.mjs judges; then the wire tests of pnpm tv:wire (T3-05), which write OCTAVE_WIRE
 // lines. It reaches only an e2e bundle (apps/tv/e2e-gate.js). It renders the player view full screen, so the player's
-// wire tests (T8-02) have a surface to draw on, and over it whatever a wire test shows (T3-11's artwork views).
+// wire tests (T8-02) have a surface to draw on, and over it whatever a wire test shows (T3-11's artwork views). Once the
+// wire run is done it shows the player screen's fixtures (T8-03 D15) for the captures.
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import { StyleSheet, View } from "react-native";
 import { hostClock } from "../host/clock";
@@ -12,6 +13,7 @@ import { loadPlayerView } from "../host/player-view";
 import { urlIsExpoBuiltin } from "../host/url";
 import { runConformance } from "./conformance-run";
 import { runInstallId } from "./install-id-run";
+import { showPlayerFixtures } from "./wire/player-fixture-screen";
 import { runWire } from "./wire/run-wire";
 
 // Hermes defines HermesInternal as an object; other engines leave it undefined.
@@ -35,7 +37,8 @@ export default function E2eRoot(props: Record<string, unknown>) {
     // The install-id run comes first, whatever its result: the stage waits only for its done line.
     void runInstallId({ crypto: hostCrypto, installId: hostInstallId }, log)
       .then(() => runConformance({ clock: hostClock, crypto: hostCrypto, urlSource: urlIsExpoBuiltin() ? "expo-builtin" : "other", engine }, log))
-      .then(() => runWire({ crypto: hostCrypto, props, show }, log));
+      .then(() => runWire({ crypto: hostCrypto, props, show }, log))
+      .then(() => showPlayerFixtures(show));
   }, [props, show]);
   return (
     <>

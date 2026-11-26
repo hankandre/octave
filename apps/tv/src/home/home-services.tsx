@@ -13,6 +13,8 @@ export type HomeServices = {
   window?: () => ContinueWindow | undefined;
   /** The playback use case (T8-03): an item id and where to start. Opening the player is its job, not Home's. */
   play(request: PlayRequest): void;
+  /** Names each title whose viewing has ended, once its reports settled; returns the unsubscribe. */
+  afterViewing?(listener: (itemId: string) => void): () => void;
 };
 
 export const HomeServicesContext = createContext<HomeServices | undefined>(undefined);

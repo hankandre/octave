@@ -1,7 +1,7 @@
 // The app's PlayerEngine (T8-01): the core's port over the player module's six native functions and its one event
 // (apps/tv/src/host/player-module.android.ts). It copies a launch into the module's argument map key by key, so a
 // field a caller added at run time does not cross, and it reads every answer and event back through the core's own
-// readers. It builds no URL and sends nothing itself.
+// readers. It builds no URL and sends nothing itself. The argument shapes are the module's own types.
 //
 // Errors are the core's PlayerEngineError, built from a code alone. A rejection, a non-object, an unknown code or a
 // missing shape becomes "unknown", and the native message, cause and stack are dropped.
@@ -16,19 +16,12 @@ import {
   type PlayerEvent,
 } from "@octave/core/src/domain/player-engine";
 import { playerEvent } from "@octave/core/src/player/player-event";
+import type { LaunchArgs, OctavePlayerNative, SeekArgs, SelectTrackArgs, SetPausedArgs, TrackArgs } from "@octave/player";
 
 type NativeMap = Record<string, unknown>;
 
-// The module's functions as the adapter calls them: at most one map in, one value out, which is checked before use.
-export interface PlayerNative {
-  initialize(): Promise<unknown>;
-  launch(args: NativeMap): Promise<unknown>;
-  setPaused(args: NativeMap): Promise<unknown>;
-  seek(args: NativeMap): Promise<unknown>;
-  selectTrack(args: NativeMap): Promise<unknown>;
-  stop(): Promise<unknown>;
-  addListener(eventName: "playerEvent", listener: (payload: unknown) => void): { remove(): void };
-}
+// The module's functions as the adapter calls them. Each answer is checked before use, whatever its declared type.
+export type PlayerNative = OctavePlayerNative;
 
 const FAILED: PlayerCapabilities = { probe: "failed" };
 
@@ -55,40 +48,44 @@ async function command(call: () => Promise<unknown>): Promise<void> {
   outcome(answer);
 }
 
-function trackArgs(track: MediaTrack): NativeMap {
-  const args: NativeMap = { index: track.index, type: track.type, displayTitle: track.displayTitle, external: track.external };
-  if (track.codec !== undefined) args.codec = track.codec;
-  if (track.language !== undefined) args.language = track.language;
-  if (track.deliveryUrl !== undefined) args.deliveryUrl = track.deliveryUrl;
-  if (track.title !== undefined) args.title = track.title;
-  if (track.channels !== undefined) args.channels = track.channels;
-  if (track.isDefault !== undefined) args.isDefault = track.isDefault;
-  if (track.isForced !== undefined) args.isForced = track.isForced;
-  if (track.isHearingImpaired !== undefined) args.isHearingImpaired = track.isHearingImpaired;
-  return args;
+function trackArgs(track: MediaTrack): TrackArgs {
+  const { codec, language, deliveryUrl, title, channels, isDefault, isForced, isHearingImpaired } = track;
+  return {
+    index: track.index,
+    type: track.type,
+    displayTitle: track.displayTitle,
+    external: track.external,
+    ...(codec === undefined ? {} : { codec }),
+    ...(language === undefined ? {} : { language }),
+    ...(deliveryUrl === undefined ? {} : { deliveryUrl }),
+    ...(title === undefined ? {} : { title }),
+    ...(channels === undefined ? {} : { channels }),
+    ...(isDefault === undefined ? {} : { isDefault }),
+    ...(isForced === undefined ? {} : { isForced }),
+    ...(isHearingImpaired === undefined ? {} : { isHearingImpaired }),
+  };
 }
 
 // The launch table of docs/specs/T8-01.md ("The launch request"), key by key.
-function launchArgs(request: LaunchRequest): NativeMap {
-  const args: NativeMap = {
-    kind: request.kind,
+function launchArgs(request: LaunchRequest): LaunchArgs {
+  const { audioStreamIndex, subtitleStreamIndex } = request;
+  const common = {
     sessionId: request.sessionId,
     startPositionSeconds: request.startPositionSeconds,
     tracks: request.tracks.map(trackArgs),
+    ...(audioStreamIndex === undefined ? {} : { audioStreamIndex }),
+    ...(subtitleStreamIndex === undefined ? {} : { subtitleStreamIndex }),
   };
-  if (request.audioStreamIndex !== undefined) args.audioStreamIndex = request.audioStreamIndex;
-  if (request.subtitleStreamIndex !== undefined) args.subtitleStreamIndex = request.subtitleStreamIndex;
   switch (request.kind) {
     case "original":
-      args.url = request.url;
-      break;
+      return { ...common, kind: "original", url: request.url };
     case "hls":
-      args.masterUrl = request.masterUrl;
-      args.serverUrl = request.serverUrl;
-      args.mediaKind = request.mediaKind;
-      break;
+      return { ...common, kind: "hls", masterUrl: request.masterUrl, serverUrl: request.serverUrl, mediaKind: request.mediaKind };
   }
-  return args;
+}
+
+function selectTrackArgs(type: SelectTrackArgs["type"], playerId: number | undefined): SelectTrackArgs {
+  return playerId === undefined ? { type } : { type, playerId };
 }
 
 export function createPlayerEngine(native: PlayerNative): PlayerEngine {
@@ -111,11 +108,11 @@ export function createPlayerEngine(native: PlayerNative): PlayerEngine {
 
     launch: (request) => command(() => native.launch(launchArgs(request))),
 
-    setPaused: (paused) => command(() => native.setPaused({ paused })),
+    setPaused: (paused) => command(() => native.setPaused({ paused } satisfies SetPausedArgs)),
 
-    seek: (positionSeconds) => command(() => native.seek({ positionSeconds })),
+    seek: (positionSeconds) => command(() => native.seek({ positionSeconds } satisfies SeekArgs)),
 
-    selectTrack: (type, playerId) => command(() => native.selectTrack(playerId === undefined ? { type } : { type, playerId })),
+    selectTrack: (type, playerId) => command(() => native.selectTrack(selectTrackArgs(type, playerId))),
 
     stop: () => command(() => native.stop()),
   };

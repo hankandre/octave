@@ -1,7 +1,8 @@
 // Home (T5-03, DESIGN.md §7.3, §7.4): the hero, then Continue watching, then Recently added, over the ambient backdrop.
 // Nothing is drawn until the four lists settle (and, for a Series hero, its next-episode read); then both rows appear at once
-// and their cards never change while Home is mounted. The hero's item read arrives later and changes only its facts and
-// overview, in slots of fixed height. Select on the hero or a Continue watching card hands `{ itemId, start }` to the playback
+// and none is added, removed or moved while Home is mounted: after a viewing, one item read gives that title's cards their
+// new play state (T8-03 D8). The hero's item read arrives later and changes only its facts and overview, in slots of fixed
+// height. Select on the hero or a Continue watching card hands `{ itemId, start }` to the playback
 // use case and does nothing else; Home builds no media URL and calls no player method.
 //
 // testIDs: home-rows (the RowList) and the hero's and backdrop's own ids (hero.tsx, ambient-backdrop.tsx).
@@ -9,6 +10,7 @@ import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useSta
 import { StyleSheet, View } from "react-native";
 import type { ImageRef, ItemDetail, SeriesNextUp } from "@octave/core/src/domain/catalog";
 import { loadHome, type Home } from "@octave/core/src/domain/home";
+import { withViewedProgress, type ViewedItem } from "@octave/core/src/domain/home-refresh";
 import { heroFacts, heroPlay, loadHeroDetail, loadHeroNext, playRequestOf } from "@octave/core/src/domain/home-hero";
 import { RowList, useRowMemory, type RowListEntry, type RowSpec } from "../design/rows";
 import { colors } from "../design/tokens";
@@ -20,7 +22,12 @@ import { HomeServicesContext, type HomeServices } from "./home-services";
 import { Hero } from "./hero";
 
 type State = { phase: "loading" } | { phase: "failed" } | { phase: "ready"; home: Home; next?: SeriesNextUp; detail?: ItemDetail };
-type Action = { type: "reset" } | { type: "failed" } | { type: "loaded"; home: Home; next?: SeriesNextUp } | { type: "detail"; detail: ItemDetail };
+type Action =
+  | { type: "reset" }
+  | { type: "failed" }
+  | { type: "loaded"; home: Home; next?: SeriesNextUp }
+  | { type: "detail"; detail: ItemDetail }
+  | { type: "viewed"; viewed: ViewedItem };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -29,12 +36,15 @@ function reducer(state: State, action: Action): State {
     case "failed":
       return { phase: "failed" };
     case "loaded":
-      // Set once: the rows' cards never change while Home is mounted.
+      // Set once: no card joins, leaves or moves while Home is mounted.
       if (state.phase === "ready") return state;
       return { phase: "ready", home: action.home, ...(action.next === undefined ? {} : { next: action.next }) };
     case "detail":
       if (state.phase !== "ready") return state;
       return { ...state, detail: action.detail };
+    case "viewed":
+      if (state.phase !== "ready") return state;
+      return { ...state, home: withViewedProgress(state.home, action.viewed) };
   }
 }
 
@@ -55,6 +65,16 @@ async function load(services: HomeServices, signal: AbortSignal, dispatch: (acti
   if (detail !== undefined) dispatch({ type: "detail", detail });
 }
 
+/** The viewed title's play state as the server now holds it. A failed read leaves the cards as they were. */
+function readViewed(services: HomeServices, itemId: string, signal: AbortSignal, dispatch: (action: Action) => void): void {
+  services.source
+    .itemDetail(itemId, signal)
+    .then(({ userData, runTimeTicks }) => {
+      if (!signal.aborted) dispatch({ type: "viewed", viewed: { itemId, userData, runTimeTicks } });
+    })
+    .catch(() => undefined);
+}
+
 export function HomeScreen(_props: { route?: Route }) {
   const services = useContext(HomeServicesContext);
   const [state, dispatch] = useReducer(reducer, { phase: "loading" });
@@ -70,6 +90,17 @@ export function HomeScreen(_props: { route?: Route }) {
     });
     return () => controller.abort();
   }, [services]);
+
+  const ready = state.phase === "ready";
+  useEffect(() => {
+    if (!ready) return undefined;
+    const controller = new AbortController();
+    const unsubscribe = services?.afterViewing?.((itemId) => readViewed(services, itemId, controller.signal, dispatch));
+    return () => {
+      unsubscribe?.();
+      controller.abort();
+    };
+  }, [ready, services]);
 
   if (services === undefined || state.phase !== "ready") return <View style={styles.screen} />;
   return <ReadyHome services={services} home={state.home} next={state.next} detail={state.detail} />;
