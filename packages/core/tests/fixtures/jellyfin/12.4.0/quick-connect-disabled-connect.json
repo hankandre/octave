@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/QuickConnect/Connect",
+    "queryNames": [
+      "secret"
+    ]
+  },
+  "status": 401,
+  "body": "Quick connect is disabled"
+}

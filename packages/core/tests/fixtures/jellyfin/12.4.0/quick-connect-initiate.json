@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/QuickConnect/Initiate",
+    "queryNames": []
+  },
+  "status": 200,
+  "body": {
+    "Authenticated": false,
+    "Secret": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "Code": "482913",
+    "DeviceId": "octave-fixtures-quick-connect",
+    "DeviceName": "ci",
+    "AppName": "Octave Tests",
+    "AppVersion": "0",
+    "DateAdded": "2026-11-26T19:13:08.2891311Z"
+  }
+}

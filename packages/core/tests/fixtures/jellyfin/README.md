@@ -13,6 +13,7 @@ Scrubbed answers from the two pinned fixture servers (`tests/integration/docker-
 | `record-account-language-fixtures.mjs` | `account-language-` |
 | `record-rating-fixtures.mjs` | `rating-` |
 | `record-home-fixtures.mjs` | `home-` (T5-02, recorded 2026-11-22 from Jellyfin 10.11.7 and 12.4.0) |
+| `record-quick-connect-fixtures.mjs` | `quick-connect-` (T4-03, recorded 2026-11-26 from Jellyfin 10.11.7 and 12.4.0: one `{ request, status, body }` file per answer, with Quick Connect on and then off; the secret and code are fixed fakes, and the approval call is not recorded) |
 | `record-display-preferences-fixtures.mjs` | `display-preferences` (T9-09, recorded 2026-11-23 from both servers and Jellyscale: one file per server holding steps S0 to S7 of the scene in `docs/specs/T9-09.md`, two devices of one account; answers 2xx, every `octave.` key kept) |
 
 ## Personal ratings (P16-13)

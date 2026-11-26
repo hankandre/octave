@@ -5,7 +5,7 @@
 // height. Select on the hero or a Continue watching card hands `{ itemId, start }` to the playback
 // use case and does nothing else; Home builds no media URL and calls no player method.
 //
-// testIDs: home-rows (the RowList) and the hero's and backdrop's own ids (hero.tsx, ambient-backdrop.tsx).
+// testIDs: screen-home (the screen's root, loaded or not), home-rows (the RowList) and the hero's and backdrop's own ids (hero.tsx, ambient-backdrop.tsx).
 import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import type { ImageRef, ItemDetail, SeriesNextUp } from "@octave/core/src/domain/catalog";
@@ -102,7 +102,7 @@ export function HomeScreen(_props: { route?: Route }) {
     };
   }, [ready, services]);
 
-  if (services === undefined || state.phase !== "ready") return <View style={styles.screen} />;
+  if (services === undefined || state.phase !== "ready") return <View testID="screen-home" style={styles.screen} />;
   return <ReadyHome services={services} home={state.home} next={state.next} detail={state.detail} />;
 }
 
@@ -156,7 +156,7 @@ function ReadyHome({ services, home, next, detail }: { services: HomeServices; h
     );
 
   return (
-    <View style={styles.screen}>
+    <View testID="screen-home" style={styles.screen}>
       <AmbientBackdrop target={target} />
       <RowList testID="home-rows" rows={rows} memory={memory} header={header} entryRef={entryRef} onCardFocus={onCardFocus} onCardPress={onCardPress} />
     </View>
