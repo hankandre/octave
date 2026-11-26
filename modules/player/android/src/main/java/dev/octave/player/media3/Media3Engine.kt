@@ -6,10 +6,12 @@ import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
+import dev.octave.player.PictureSlot
 import dev.octave.player.VideoSurfaceSlot
 import dev.octave.player.engine.CapabilityProbe
 import dev.octave.player.engine.EngineCore
 import dev.octave.player.engine.MainThreadGate
+import dev.octave.player.engine.PictureState
 import dev.octave.player.seam.Capabilities
 import dev.octave.player.seam.LaunchRequest
 import dev.octave.player.seam.PlaybackEngine
@@ -42,7 +44,7 @@ class Media3Engine(private val context: () -> Context?, private val closed: () -
     @Volatile
     private var listener: ((PlayerEvent) -> Unit)? = null
 
-    private val core: EngineCore = EngineCore(::newHandle) { event -> listener?.invoke(event) }
+    private val core: EngineCore = EngineCore(::newHandle, { event -> listener?.invoke(event) }, PictureSlot::publish)
     private var holdsSurface = false
     private var logsOff = false
 
@@ -91,6 +93,7 @@ class Media3Engine(private val context: () -> Context?, private val closed: () -
     private fun release() {
         main.removeCallbacks(positionTick)
         core.stop()
+        PictureSlot.publish(PictureState(awake = false))
         if (holdsSurface) {
             VideoSurfaceSlot.setListener(null)
             holdsSurface = false

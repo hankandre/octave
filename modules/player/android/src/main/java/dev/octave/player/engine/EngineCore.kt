@@ -10,10 +10,12 @@ import dev.octave.player.seam.TrackType
 
 // The engine's rules E1 to E11 (docs/specs/T8-02.md, "The engine core"), in plain Kotlin: one PlayerHandle per launch,
 // and the port's events from the handle's signals. It runs only on the main thread (Media3Engine's rule), so it holds
-// no lock. A launch emits at most one `loaded`, one `first-frame` and one `ended`.
+// no lock. A launch emits at most one `loaded`, one `first-frame` and one `ended`. `picture` hears the picture's awake
+// state whenever it changes (T8-04, D12).
 class EngineCore(
     private val newHandle: (LaunchRequest.Original) -> PlayerHandle,
     private val emit: (PlayerEvent) -> Unit,
+    private val picture: (PictureState) -> Unit = {},
 ) {
     private var handle: PlayerHandle? = null
     private var request: LaunchRequest.Original? = null
@@ -26,7 +28,12 @@ class EngineCore(
     private var seekPending = false
     private var ended = false
     private var failed = false
+    private var buffering = false
+    private var playing = false
     private var decoder = DecoderFacts.NONE
+
+    // The last awake state handed to `picture`; null before the first.
+    private var awake: Boolean? = null
 
     // Whether `candidate` is the current launch's handle; Media3Engine drops the signals of any other (E3a).
     fun isCurrent(candidate: PlayerHandle): Boolean = handle != null && handle === candidate
@@ -34,26 +41,36 @@ class EngineCore(
     // E1.
     fun launch(launch: LaunchRequest) {
         val original = launch as? LaunchRequest.Original ?: throw PlayerEngineException(PlayerErrorCode.UNSUPPORTED_REQUEST)
-        stop()
+        // The previous launch ends without a not-awake in between, so the screen does not blink between two launches.
+        endCurrent()
         loaded = false
         firstFrameSeen = false
         firstFrameSent = false
         seekPending = false
         ended = false
         failed = false
+        buffering = false
+        playing = false
         decoder = DecoderFacts.NONE
-        val next = newHandle(original)
-        handle = next
-        request = original
-        next.setSurface(surface)
-        next.prepare(original.url, (original.startPositionSeconds * 1000).toLong())
-        next.setPlayWhenReady(true)
+        try {
+            val next = newHandle(original)
+            handle = next
+            request = original
+            next.setSurface(surface)
+            next.prepare(original.url, (original.startPositionSeconds * 1000).toLong())
+            next.setPlayWhenReady(true)
+            playing = true
+        } finally {
+            publishPicture()
+        }
     }
 
     // E4.
     fun setPaused(paused: Boolean) {
         val current = live()
         current.setPlayWhenReady(!paused)
+        playing = !paused
+        publishPicture()
         emit(PlayerEvent.State(snapshot(current), "pause"))
     }
 
@@ -74,6 +91,11 @@ class EngineCore(
 
     // E9: clear the surface, stop, release, once; `ended` with reason `stopped` unless the launch already ended.
     fun stop() {
+        endCurrent()
+        publishPicture()
+    }
+
+    private fun endCurrent() {
         val current = handle ?: return
         val last = snapshot(current)
         handle = null
@@ -106,13 +128,15 @@ class EngineCore(
         val current = handle ?: return
         if (failed) return
         when (signal) {
-            EngineSignal.Buffering -> Unit
+            EngineSignal.Buffering -> bufferingChanged(current, true)
             EngineSignal.Ready -> {
-                if (!loaded) {
-                    loaded = true
-                    emit(PlayerEvent.Loaded(snapshot(current)))
-                    if (firstFrameSeen) sendFirstFrame()
+                if (loaded) {
+                    bufferingChanged(current, false)
+                    return
                 }
+                loaded = true
+                emit(PlayerEvent.Loaded(snapshot(current)))
+                if (firstFrameSeen) sendFirstFrame()
             }
             EngineSignal.FirstFrameRendered -> {
                 firstFrameSeen = true
@@ -128,6 +152,7 @@ class EngineCore(
             EngineSignal.Ended -> {
                 if (!ended) {
                     ended = true
+                    publishPicture()
                     emit(PlayerEvent.Ended("eof", snapshot(current)))
                 }
             }
@@ -138,6 +163,22 @@ class EngineCore(
             }
             is EngineSignal.Failed -> fail(PlaybackErrors.codeFor(signal.mediaCode, signal.causes))
         }
+    }
+
+    // D11: once loaded, the start and the end of a rebuffer each go out at once as a `property` state, so the screen's
+    // 500 ms rule is not measured from a tick. Before `loaded` and once the launch ended, nothing goes out.
+    private fun bufferingChanged(current: PlayerHandle, now: Boolean) {
+        if (!loaded || ended || buffering == now) return
+        buffering = now
+        emit(PlayerEvent.State(snapshot(current), "property"))
+    }
+
+    // D12: awake while a launch is current, has neither ended nor failed, and plays; buffering counts as playing.
+    private fun publishPicture() {
+        val next = handle != null && !ended && !failed && playing
+        if (awake == next) return
+        awake = next
+        picture(PictureState(next))
     }
 
     private fun sendFirstFrame() {
@@ -151,6 +192,8 @@ class EngineCore(
     private fun fail(code: PlayerErrorCode) {
         failed = true
         handle?.setPlayWhenReady(false)
+        playing = false
+        publishPicture()
         emit(PlayerEvent.Error(code))
         if (!ended) {
             ended = true
@@ -194,7 +237,7 @@ class EngineCore(
             ),
             video = null,
             audio = null,
-            bufferedSeconds = null,
+            bufferedSeconds = facts.bufferedMs?.let { it / 1000.0 },
         )
     }
 }
