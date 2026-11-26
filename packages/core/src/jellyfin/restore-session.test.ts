@@ -6,8 +6,9 @@
 // a probe that runs out of time reads as unreachable, with its sentence's code.
 //
 // The testing contract is in ./restore-test-support.ts.
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MemoryLanHttpConfirmations } from "../lan-http-confirmations";
+import { FakeClock } from "../ports/fake-clock";
 import { TransportError } from "../ports/transport";
 import { restoreSession } from "./restore-session";
 import {
@@ -30,10 +31,6 @@ import {
 } from "./restore-test-support";
 
 const TIMEOUT_MS = 5_000;
-
-afterEach(() => {
-  vi.useRealTimers();
-});
 
 function rig(transport = new RestoreTransport(), confirmations = new MemoryLanHttpConfirmations()) {
   const over = gatewaysOver(transport, confirmations);
@@ -112,7 +109,7 @@ describe("T4-05 item 2: a restore that cannot be validated is `unavailable`, kee
   const unmatched = [
     { name: "an unreachable server", probe: new TransportError("network"), failure: "unreachable" },
     { name: "another server id", probe: info(OTHER_ID), failure: "other" },
-    { name: "an answer with no server id", probe: info(undefined), failure: "other" },
+    { name: "an answer with no server id", probe: { status: 200, body: { ServerName: "Fixture Server", Version: "10.11.11" } }, failure: "other" },
     { name: "an unsupported version", probe: info(SERVER_ID, "10.10.7"), failure: "unsupported-version" },
     { name: "a redirect", probe: new TransportError("redirect"), failure: "redirect" },
     { name: "an unusable answer", probe: { status: 200, body: "<html>captive portal</html>" }, failure: "other" },
@@ -161,30 +158,34 @@ describe("T4-05 item 2: a restore that cannot be validated is `unavailable`, kee
   });
 
   it("T4-05 item 2: a probe that never answers reads as unreachable once its 5 s have passed", async () => {
-    vi.useFakeTimers();
+    const clock = new FakeClock();
     const transport = new RestoreTransport().script(PROBE, HANG);
-    transport.deadline = (request, expire) => void setTimeout(expire, request.timeoutMs);
+    transport.deadline = (request, expire) => void clock.after(request.timeoutMs, expire);
     let settled: Outcome | undefined;
 
     void run(transport, listing(restoredAt(HTTPS))).then((outcome) => {
       settled = outcome;
     });
-    await vi.advanceTimersByTimeAsync(TIMEOUT_MS);
+    await clock.advance(TIMEOUT_MS - 1);
+    expect(settled).toBeUndefined();
+    await clock.advance(1);
 
     expect(settled).toEqual({ kind: "unavailable", address: HTTPS, failure: "unreachable" });
     expect(transport.withSession()).toEqual([]);
   });
 
   it("T4-05 item 2: a validation that never answers reads as unreachable once its 5 s have passed, and the record is kept", async () => {
-    vi.useFakeTimers();
+    const clock = new FakeClock();
     const transport = new RestoreTransport().script(PROBE, info()).script(ME, HANG);
-    transport.deadline = (request, expire) => void setTimeout(expire, request.timeoutMs);
+    transport.deadline = (request, expire) => void clock.after(request.timeoutMs, expire);
     let settled: Outcome | undefined;
 
     void run(transport, listing(restoredAt(HTTPS))).then((outcome) => {
       settled = outcome;
     });
-    await vi.advanceTimersByTimeAsync(TIMEOUT_MS * 2);
+    await clock.advance(TIMEOUT_MS - 1);
+    expect(settled).toBeUndefined();
+    await clock.advance(1);
 
     expect(settled).toEqual({ kind: "unavailable", address: HTTPS, failure: "unreachable" });
     expect(transport.ended).toEqual([]);

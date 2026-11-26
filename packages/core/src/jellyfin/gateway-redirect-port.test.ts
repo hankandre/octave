@@ -106,6 +106,7 @@ const requestCalls: Record<string, Call> = {
   "saveAccountLanguages": (g) => g.saveAccountLanguages({ SubtitleMode: "None" }),
   "languageCultures": (g) => g.languageCultures(),
   "accountPreferences": (g) => g.accountPreferences(),
+  "sessionStanding": (g) => g.sessionStanding(),
   "saveAccountPreferences": (g) => g.saveAccountPreferences({ continueWindow: "30" }),
   "setPlayed": (g) => g.setPlayed("item-1", true),
   "setFavorite": (g) => g.setFavorite("item-1", false),

@@ -85,7 +85,9 @@ class StoreLockTest {
 
             assertEquals(1, first.size, "round $round: the first restore lists the account once")
             assertEquals(first.map { it["session"] }, second.map { it["session"] }, "round $round: both answer the same id")
-            assertEquals(held + 1, SessionRegistry.count(), "round $round: one session is opened")
+            // relaunch() closed every session this rig saw, the earlier rounds' restored ones included, so the records of
+            // rounds 0 to `round` all have no live entry and each is opened once (D4), by the two restores together.
+            assertEquals(held + round + 1, SessionRegistry.count(), "round $round: one session is opened for each record")
         }
     }
 
