@@ -218,7 +218,8 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 | Codebase search, CI log triage, commit messages, watching PRs, doc-gardening detection | **Haiku 5.5** | `scout`, `ci-triage` |
 | Refine + spec and spec check, routine tasks | **Opus 5.5** | `refiner`, `spec-checker` |
 | Refine + spec and spec check, high-risk tasks (native, security, architecture, decision records) | **Fable 5.2** | `refiner`, `spec-checker` with a spawn-time `model: fable` override |
-| Backlog triage, priorities, scope-level acceptance edits, frozen-test rulings (T1-12), and inline rulings on technical, placement, dependency and scope questions (T1-16); never task specs | **Fable 5.2** | `product-owner` |
+| Backlog triage, priorities, scope-level acceptance edits, direction, look and wording calls, and frozen-test rulings (T1-12); never task specs | **Fable 5.2** | `product-owner` |
+| Inline rulings on the routine technical, placement, dependency and scope questions a task run returns (T1-16) | **Opus 5.5** | `product-owner` |
 | Failing acceptance tests before implementation | **Sonnet 5.5**; Opus 5.5 for Kotlin | `test-writer` |
 | Kotlin, Expo native modules, Media3, the native HTTP client | **Opus 5.5** | `native-engineer` |
 | TypeScript implementation and tests | **Sonnet 5.5** | `implementer` |
@@ -239,7 +240,7 @@ The table above is the shape; these are the routes that answer today, recorded f
 | Gemini 4 Neon | `google/gemini-4-neon` | Per token against a **$20 per 30 days** Google budget. Escalation only: at most one run per task, for breadth (a large audit, a big diff, a long-context sweep). |
 | Gemini 4 Argon, Kimi K3.1, Grok 4.7, and the cheap families | `opencode-go/*` | Funded separately from Google. |
 
-A task run spends at most one Fable escalation and one Neon run outside the Product Owner pass, and says what more would buy before spending it. The Product Owner runs on Fable 5.2. Probe a route before relying on it when a phase starts or a budget changes.
+A task run spends at most one Fable escalation and one Neon run outside the Product Owner pass, and says what more would buy before spending it. The Product Owner runs on Fable 5.2 for its pass and its direction, architecture and frozen-test calls, and on Opus 5.5 for the routine inline rulings (owner, 2026-11-26: `docs/specs/decisions-owner-chat-2026-11-26.md` §1). Probe a route before relying on it when a phase starts or a budget changes.
 
 ### Rules
 
@@ -249,6 +250,8 @@ A task run spends at most one Fable escalation and one Neon run outside the Prod
 4. **Switch models only at task boundaries.** Prompt caches are per model.
 5. **Reviewer >= implementer on risky paths.** Native, policy, and security diffs get `guardian`.
 6. **Measure.** Note the model and approximate cost on each completed plan's retrospective.
+7. **Batch the rulings.** Ask once per stage: every question the check, the implement or the review raised, in one ask, each with a recommendation. A question an approved decision already answers is settled by citing it, not sent. Direction, architecture and frozen-test calls go to Fable; routine technical, placement, dependency and scope questions go to Opus.
+8. **Two rules the spec step holds.** A `gate:` token appears in an acceptance row only as that item's gate — prose that mentions one makes `scripts/check-red.mjs` read the whole item as gated. And the acceptance table matches the task's item count, re-read after any pass that edited the task.
 
 ### Wiring it up in Claude Code
 
@@ -280,7 +283,7 @@ Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatte
 | `guardian` | opus | Review of policy, native-method, token, and redaction changes |
 | `planner` | opus | Execution plans and decision records |
 | `test-writer` | sonnet | Failing acceptance tests and the manifest, before implementation |
-| `product-owner` | fable | Backlog triage, priorities, scope-level acceptance edits, frozen-test rulings, and inline rulings on task-run questions |
+| `product-owner` | fable | Backlog triage, priorities, scope-level acceptance edits, direction, look and wording calls, frozen-test rulings; routine inline rulings run on Opus |
 
 What the Claude Code docs say (https://code.claude.com/docs/en/sub-agents): the frontmatter `model` field accepts the aliases `sonnet`, `opus`, `haiku`, `fable`, a full model ID, or `inherit`; the spawn-time `model` parameter wins over the frontmatter, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's model; the spawn-time parameter takes only an alias.
 
