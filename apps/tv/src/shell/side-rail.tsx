@@ -6,6 +6,10 @@
 // The rail opens when any entry takes focus and closes when focus leaves every entry: a blur schedules a zero-delay check
 // that another entry's focus cancels. The icons come from a slot (`RailIconsProvider`), filled by shell/rail-icons.ts.
 //
+// A focused entry is a row (T3-40, DESIGN.md §9): the ring and a `surface3` fill, never a lift. The entries sit 16 canvas
+// px from the rail's four edges. The room for each ring is inside the box that would clip it, the scrolling list included
+// (shell/use-rail-reveal.ts).
+//
 // testIDs, with t the rail's testID: t, rail-guide, rail-entry-<key> (":" written "-"), rail-entry-<key>-label (open only)
 // and rail-entry-<key>-bar (the current entry only).
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
@@ -15,8 +19,9 @@ import type { IconComponent } from "../design/icon";
 import { useReducedMotion } from "../design/motion";
 import { px } from "../design/scale";
 import { textStyle } from "../design/text";
-import { colors, motion, sizes, space } from "../design/tokens";
+import { colors, motion, radii, sizes, space } from "../design/tokens";
 import type { RailEntry, RailIconName, RailKey } from "./rail-entries";
+import { useRailReveal } from "./use-rail-reveal";
 
 export type RailIcons = Partial<Record<RailIconName, IconComponent>>;
 
@@ -40,13 +45,15 @@ export type SideRailProps = {
 const idOf = (key: RailKey): string => `rail-entry-${key.replace(":", "-")}`;
 const ICON = space.space6;
 const EDGE_PAD = (sizes.railCollapsedW - sizes.hitMin) / 2;
+/** The scrolling list's padding above and below its entries: room for a ring, which the list would otherwise clip. */
+const LIST_ROOM = space.space2;
 
 type ItemProps = {
   entry: RailEntry;
   selected: boolean;
   open: boolean;
   nextFocusRight?: number;
-  onFocus(): void;
+  onFocus(key: RailKey): void;
   onBlur(): void;
   onPress(entry: RailEntry): void;
   registerEntry(key: RailKey, view: unknown): void;
@@ -58,6 +65,7 @@ function RailItem({ entry, selected, open, nextFocusRight, onFocus, onBlur, onPr
   const id = idOf(entry.key);
   const key = entry.key;
   const viewRef = useCallback((view: unknown) => registerEntry(key, view), [registerEntry, key]);
+  const [isFocused, setFocused] = useState(false);
   return (
     <FocusFrame
       testID={id}
@@ -67,10 +75,17 @@ function RailItem({ entry, selected, open, nextFocusRight, onFocus, onBlur, onPr
       accessibilityRole="button"
       accessibilityLabel={entry.label}
       accessibilityState={{ selected }}
-      onFocus={onFocus}
-      onBlur={onBlur}
+      still
+      onFocus={() => {
+        setFocused(true);
+        onFocus(key);
+      }}
+      onBlur={() => {
+        setFocused(false);
+        onBlur();
+      }}
       onPress={() => onPress(entry)}
-      contentStyle={styles.entry}
+      contentStyle={[styles.entry, isFocused ? styles.entryFocused : undefined]}
     >
       {({ focused }) => {
         const colour = focused || selected ? colors.text1 : colors.text2;
@@ -114,10 +129,15 @@ export function SideRail({ entries, current, onSelect, returnTag, onOpenChange, 
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = null;
   }, []);
-  const onFocus = useCallback(() => {
-    cancel();
-    change(true);
-  }, [cancel, change]);
+  const { listProps, entryFocused, entryLaidOut } = useRailReveal(px(LIST_ROOM));
+  const onFocus = useCallback(
+    (key: RailKey) => {
+      cancel();
+      change(true);
+      entryFocused(key);
+    },
+    [cancel, change, entryFocused],
+  );
   const onBlur = useCallback(() => {
     cancel();
     timer.current = setTimeout(() => {
@@ -177,8 +197,12 @@ export function SideRail({ entries, current, onSelect, returnTag, onOpenChange, 
     >
       <TVFocusGuideView testID="rail-guide" trapFocusLeft trapFocusUp trapFocusDown style={styles.guide}>
         <View style={styles.group}>{top.map(item)}</View>
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.group} showsVerticalScrollIndicator={false}>
-          {middle.map(item)}
+        <ScrollView {...listProps} style={styles.scroll} contentContainerStyle={[styles.group, styles.list]} showsVerticalScrollIndicator={false}>
+          {middle.map((entry) => (
+            <View key={entry.key} onLayout={(event) => entryLaidOut(entry.key, event.nativeEvent.layout.y)}>
+              {item(entry)}
+            </View>
+          ))}
         </ScrollView>
         <View style={styles.group}>{bottom.map(item)}</View>
       </TVFocusGuideView>
@@ -188,10 +212,13 @@ export function SideRail({ entries, current, onSelect, returnTag, onOpenChange, 
 
 const styles = StyleSheet.create({
   rail: { position: "absolute", top: 0, bottom: 0, left: 0, zIndex: 2, overflow: "hidden" },
-  guide: { flex: 1, paddingVertical: px(space.safeY), paddingHorizontal: px(EDGE_PAD) },
+  guide: { flex: 1, paddingVertical: px(EDGE_PAD) },
   scroll: { flex: 1 },
-  group: { gap: px(space.space2) },
-  entry: { height: px(sizes.hitMin), minWidth: px(sizes.hitMin), flexDirection: "row", alignItems: "center" },
+  // The side padding is on each group and not the guide, so the list spans the rail and its clip clears the rings.
+  group: { gap: px(space.space2), paddingHorizontal: px(EDGE_PAD) },
+  list: { paddingVertical: px(LIST_ROOM) },
+  entry: { height: px(sizes.hitMin), minWidth: px(sizes.hitMin), flexDirection: "row", alignItems: "center", borderRadius: px(radii.radiusControl) },
+  entryFocused: { backgroundColor: colors.surface3 },
   iconCell: { width: px(sizes.hitMin), height: px(sizes.hitMin), alignItems: "center", justifyContent: "center" },
   initial: textStyle("typeLabel"),
   label: { ...textStyle("typeLabel"), flex: 1, paddingRight: px(space.space4) },
