@@ -1,4 +1,5 @@
 // The sign-in step's sentences (DESIGN.md §10). A failure shows only these, never an error's or a server's text.
+import type { QuickConnectFailure } from "@octave/core/src/domain/quick-connect";
 import type { ServerChoiceFailure } from "@octave/core/src/domain/server-choice";
 
 export const UNENCRYPTED_COPY = {
@@ -10,6 +11,32 @@ export const UNENCRYPTED_COPY = {
 
 export const CONFLICT_LINE = "Another address on this network answered as this server.";
 export const LOADING_LINE = "Loading…";
+
+export const QUICK_CONNECT_COPY = {
+  heading: "Approve this sign-in on your phone",
+  scan: "Scan the code with your phone, or enter the code in Quick Connect.",
+  newCode: "Get a new code",
+  tryAgain: "Try again",
+} as const;
+
+export const PASSWORD_PENDING_COPY = { heading: "Who is signing in?", body: "Not available yet." } as const;
+
+export const CHANGE_SERVER_LABEL = "Change server";
+
+export const noLinkSentence = (address: string): string => `On your phone, open ${address} and enter this code in Quick Connect.`;
+
+export function quickConnectSentence(failure: QuickConnectFailure, address: string): string {
+  switch (failure) {
+    case "expired":
+      return "This code has expired. Get a new code to try again.";
+    case "refused":
+      return "The server didn't accept this code. Get a new code to try again.";
+    case "unreachable":
+    case "redirect":
+    case "other":
+      return signInSentence(failure, address);
+  }
+}
 
 export function signInSentence(failure: ServerChoiceFailure, address: string): string {
   switch (failure) {
