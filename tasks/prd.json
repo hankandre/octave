@@ -3103,10 +3103,10 @@
             "createPlayerEngine(loadPlayerModule()) typechecks without a cast: the player module's typed declaration and the app adapter's PlayerNative are one shape"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "PR #341. Core Viewing, playbackGatewayOf and home-refresh; engine position tick every 1 s (EngineCoreTickTest 11/11, tv:native:test 1027); player screen with the 5 s progress notice; SignedInApp. Wire test player-viewing on pinned Jellyscale: start=after-first-frame resume=at-reported resumed=within-10s, reports 0 / 9 / 12 paused / 12 / 17 / stop 25, all DirectPlay and 2xx. T8-02 and T8-07 green; CI tripwire and wire green. Item 3 met on the client's half (ruling 2026-11-24). No Shield or real-remote run."
         },
         {
           "id": "T8-04",
