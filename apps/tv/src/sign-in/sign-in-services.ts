@@ -23,7 +23,22 @@ export type ChosenServer = {
   address: string;
 };
 
-export type NextStepProps = { chosen: ChosenServer; changeServer(): void };
+/** What a finished sign-in hands the app: the gateway that now holds the session. */
+export type SignedIn = { gateway: JellyfinGateway; serverName: string };
+
+export type NextStepProps = {
+  chosen: ChosenServer;
+  changeServer(): void;
+  onSignedIn?(signedIn: SignedIn): void;
+  /** Hands over to the password step, when the flow has one. */
+  openPassword?(): void;
+};
+
+export type PasswordStepProps = {
+  chosen: ChosenServer;
+  changeServer(): void;
+  onSignedIn(signedIn: SignedIn): void;
+};
 
 export const SignInServicesContext = createContext<SignInServices | undefined>(undefined);
 

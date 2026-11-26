@@ -5,16 +5,18 @@ import { useEffect, useRef, type ComponentType } from "react";
 import { BackHandler, StyleSheet, View } from "react-native";
 import { colors } from "../design/tokens";
 import { SignInFlow } from "./sign-in-flow";
-import { SignInServicesContext, type NextStepProps, type SignInServices } from "./sign-in-services";
+import { SignInServicesContext, type NextStepProps, type PasswordStepProps, type SignedIn, type SignInServices } from "./sign-in-services";
 
 type Props = {
   services: SignInServices;
   nextStep: ComponentType<NextStepProps>;
+  passwordStep?: ComponentType<PasswordStepProps>;
+  onSignedIn?: (signedIn: SignedIn) => void;
 };
 
 const nothingToStop = () => false;
 
-export function SignInApp({ services, nextStep }: Props) {
+export function SignInApp({ services, nextStep, passwordStep, onSignedIn }: Props) {
   const flowBack = useRef<() => boolean>(nothingToStop);
   const stepBack = useRef<() => boolean>(nothingToStop);
   const leave = useRef(services.leave);
@@ -33,7 +35,7 @@ export function SignInApp({ services, nextStep }: Props) {
   return (
     <View style={styles.screen}>
       <SignInServicesContext.Provider value={services}>
-        <SignInFlow nextStep={nextStep} backRef={flowBack} stepBackRef={stepBack} />
+        <SignInFlow nextStep={nextStep} passwordStep={passwordStep} onSignedIn={onSignedIn} backRef={flowBack} stepBackRef={stepBack} />
       </SignInServicesContext.Provider>
     </View>
   );

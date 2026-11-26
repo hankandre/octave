@@ -98,6 +98,7 @@ export const sizes = {
   fieldBorderWidth: 2,
   markDisc: 24,
   cardProgressH: 4,
+  qrSize: 480,
 } as const;
 
 export const radii = {
