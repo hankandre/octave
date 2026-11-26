@@ -18,6 +18,8 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 - Change only a task's `status`, `owner`, `passes`, and `evidence` fields.
 - Keep evidence to 600 characters and name the PR or commit.
 - Append deferred or newly found work to `tasks/backlog.jsonl` as one JSON line (fields in `WORKFLOW.md` §2a); any agent or pull request may.
+- File every Jellyscale feature request as a GitHub issue on `jellyscale-org/jellyscale`, labelled `from:fluster`, for its Product Owner to evaluate; never edit the Jellyscale repository to request it.
+- Write each Jellyscale issue in general wording, with its evidence and what is unproven: that repository is public.
 - Leave adding, splitting, reordering, and dropping tasks to a Product Owner pass; `pnpm lint:flow` fails any other change.
 - Edit acceptance items only in a Product Owner pass. Scope edits need its logged reason; on-screen wording, look, and product direction need an owner approval file.
 - Treat every Product Owner decision as provisional: the owner can veto any of it.
