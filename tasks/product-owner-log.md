@@ -1383,3 +1383,56 @@ The T4-05 ruling (on branch task/T4-05, not yet on this branch, so its backlog l
 - Decided: T4-06 is that way, and it needs no move. It is already the first task of the ui lane that T4-05 unlocks, and its rail account entry opens "Who's watching?" with "Add account", which reaches another server or user without signing anyone out. Sign out and Remove stay with T9-05.
 - Not chosen: a control on the Settings placeholder. It would be built to be thrown away, and it would put a sign-out on screen before `DESIGN.md` 7.18's Accounts section has been built or judged.
 - For the coordinator: start T4-06 as soon as T4-05 passes, ahead of T5-04, and do not ship a build to the owner's TV between the two without saying that the only way to another account is clearing the app's data. T3-40 does not wait for either.
+
+## 2026-11-26 (Product Owner pass, third, scoped: the external design review)
+
+Focus: no task merged since the second pass of this date. This pass read only `docs/research/tv-design-review-2026-11-26.md`, the review the owner asked for, and wrote its own eleven backlog lines (424 to 434): it took 4 into two new tasks, placed 1 in a task that exists, deferred 6 and dismissed none; two findings that have no line were dismissed. It is a scoped pass: the rest of the backlog was not triaged.
+
+The owner asked for external design guidance and gave its precedence: a task's acceptance and `DESIGN.md`, then Android TV's guidance, then the `frontend-design` skill, then `impeccable`; a conflict with Android TV's guidance comes to the Product Owner. Every call below is written out in `docs/specs/decisions-product-owner-2026-11-26c.md`, which says plainly that the calls are the Product Owner's and not the owner's words. The delegation is `docs/specs/decisions-owner-chat-2026-11-25.md` (1). The owner can veto any of it.
+
+Checked against the sources and the captures before deciding: the layout page gives 27 dp top and bottom and notes "Most modern TVs no longer have overscan issues"; the quality checklist's TV-OV and TV-PC rows read as the review quotes them; `T4-04/after-password-wrong.png` shows the unfocused cream Sign in under a focused field, `T4-02/after-unencrypted-dialog.png` shows the server row's ring behind the dialog, and `T8-04/after-chrome-scrubber.png` shows the focused scrubber. The drawer's spec figures were not re-measured.
+
+### T3-40: kept as it is
+
+- Keep | section 1 of the review | no edit to T3-40's acceptance, spec or frozen tests; call 4 of `docs/specs/decisions-product-owner-2026-11-26b.md` stands | call 1 of the new decision file | why: the review does not overturn call 4's reason. The entries already sit 16 px from the left edge by the approved design, and Google's own drawer puts its items inside the margin (12 dp at the side, about 16 to 23 dp top and bottom), so 16 px from the top exposes an entry no more than 16 px from the left already does. TV-OV is met on a TV that does not crop. T3-40 is built on its branch and fixes three things the owner reported; the detached panel is a look nobody has seen on a TV and would hold those fixes back.
+- Later | "Consider drawing the open rail as a panel detached from the top and bottom of the screen, with the collapsed Search and account entries on the title-safe line, in place of T3-40's 16 px from the screen's edges" (line 429) | brings it back: the owner finds Search or the account too near the edge or cut off, or the Fire TV check (T11-08) holds Amazon's inner 90 per cent rule.
+
+### Tasks added
+
+- Do | "Make only a focused button light: an unfocused primary button's cream fill reads as focused on Google TV, where a focused button, list item and drawer item turn light" (line 424); "Drop the focus ring of a control behind an open dialog: the server row keeps its ring while the dialog's Cancel has focus" (line 425) | added T3-41, "Make only a focused button light, and show one focus ring under a dialog", in the ui lane after T5-08, depending on T3-40 | calls 2 and 3 | why: with focus on a field, the cream Sign in is the brightest thing on the screen, and on Google TV light means focused. It sits after T4-06, T5-04 and T5-08 because the product now is sign in, browse and play, and the button is shared, so later screens get the change for nothing; before T3-35 and the screens of T6 and T7, so they are captured once. The refiner should expect frozen T3-06 tests that read a primary's fill; those return for a ruling.
+- Do | "Make select pause and Left and Right seek 10 s while a title plays with the controls hidden, in place of only showing the controls" (line 426); "Make the focused scrubber unmistakable from three metres: today only the track thickens by 4 px and a 16 px thumb appears" (line 427) | added T8-27, "Pause and seek straight from the picture, and make the focused scrubber clear", in the player lane straight after T8-04 and before T8-05 | calls 4 and 5 | why: TV-PC is in the checklist's lowest tier and is what every TV video app teaches; pausing takes two presses today, and the owner is watching on it now. One small task and not two, because both are the player's chrome and both replace a T8-04 call. Before T8-05, so hold to scrub is specified once on the final keys. The refiner should expect frozen T8-04 tests that pin the old keys; those return for a ruling. T8-04 is not edited: it is marked on what it built, and T8-27 supersedes its first two items.
+
+### Look and direction calls, for the owner's veto
+
+- **Only a focused button is light** (call 2). A primary at rest is `surface3` with a weight-700 label; focused, a primary, secondary or danger button is `text1` with an `onLight` label. Replaces `DESIGN.md` 3.1's "Primary buttons are light". Cost: at rest a primary and a secondary differ only by weight and place. A veto drops T3-41's first three items and keeps the fourth.
+- **From the bare picture, select pauses and Left and Right seek 10 s** (call 4). Replaces two rules of `DESIGN.md` 7.14 and two T8-04 calls of this date. Skip, then Play now, still come first for select; Up and Down only show the controls; press to step and hold to scrub stays.
+- **The focused scrubber's thumb is 24 px with the focus ring** (call 5). Replaces the T8-04 call that the scrubber shows focus by its track and thumb alone. Not taken: bolder time labels or a brighter track.
+- **The rail's 16 px stays** (call 1), as above.
+
+### Tasks edited
+
+- Edited T8-05, `depends_on` and `acceptance` | approval: `docs/specs/decisions-product-owner-2026-11-26c.md` (4) | its first item gains "whether the controls were showing or not", and it now depends on T8-27 | why: with call 4 a held arrow from the bare picture must scrub, not repeat 10 s seeks. The other six items are unchanged.
+- Edited T5-04, `acceptance` | scope edit | "Commit 1920x1080 captures of Home loaded with fixture artwork, so look calls on browse screens rest on pixels and not on the sign-in and player captures" (line 428) | one item added: the pull request holds captures of each state and of the loaded Home with fixture artwork | why: call 6. The tool marks a line taken only through an add, so line 428 stays open in the file and is decided here.
+
+### The distinctiveness finding
+
+- Decided (call 6): no further look call on Home, a library or a title's page is made from the sign-in and player captures. The owner's TV with their own library is the first evidence; T5-04 adds Home's captures with fixture artwork for reviewers, and a title's page gets its own from T7-01. The review's "generic" rests on screens with no artwork, where Octave's identity cannot show. T3-35 keeps its place.
+- Later | "Consider the bars mark on the sign-in steps as the one brand moment there" (line 434) | brings it back: T3-35 builds the mark; then it is a look call for the owner.
+
+### Deferred
+
+- Later | "Consider larger rail entries, a wider gap and a wider open rail: 64 px entries with 8 px gaps and a 400 px open width against Google's drawer spec of 48 dp items, 12 dp gaps and 220 dp minimum" (line 430) | brings it back: the owner finds the entries cramped or the rings crowded after T3-40. The rail's look is the owner's call and they like it.
+- Later | "Consider setting a quiet button's text on its column's left edge: Search again and Change server start 32 px right of every heading and row" (line 431) | the review's fix puts the button's box outside the title-safe inset, which section 9 forbids. Brings it back: the owner notices it.
+- Later | "Consider a two-pane sign-in with narrower fields: the steps use the left half of the screen and the username field is 1,728 px wide" (line 432) | sign-in is seen once and the owner found it acceptable. Brings it back: the owner's call on the sign-in screen's layout (T1-08).
+- Later | "Remove or make deliberate the faint fills behind the player's loading disc and status line" (line 433) | brings it back: T3-35 replaces the ring there, or the owner sees a smudge on the TV.
+
+### Dismissed
+
+- Dismiss | finding 5's count: the rail holds more than five or six entries and scrolls | one entry per library is the owner's decision of 2026-11-20.
+- Dismiss | finding 9, the ring's corner gap | it is T3-40, and the review confirms its arithmetic.
+
+### For the owner, on the TV (none blocks)
+
+1. With T3-40 installed and the rail open: do Search and the account sit too near the screen's edges, or is anything cut off? Default: keep them 16 px from every edge.
+2. On the password step, with a field selected: does the bright "Sign in" button look selected? Default: yes, so only a focused button will be light (T3-41).
+3. While watching with nothing on screen: should select pause at once, and Left and Right jump 10 s at once? Default: yes (T8-27).
