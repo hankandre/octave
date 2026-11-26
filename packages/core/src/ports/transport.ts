@@ -1,9 +1,10 @@
 // How the core reaches a Jellyfin or Jellyscale server (decision 0005). The core holds an opaque session id and
 // never a token: the host's transport owns the token, builds the Authorization header, and follows no redirect.
-// The core's port is a subset of the native session surface (signIn, request, endSession); restoreSessions and
-// sessionEnded arrive with T4-05. Android implements it in Kotlin (modules/session, adapted by
-// apps/tv/src/host/transport.ts; T3-05); adapters/fetch-transport.ts is the reference implementation for Node tests
-// and the tripwire.
+// The core's port is a subset of the native session surface (signIn, request, endSession); restoreSessions is the
+// separate SessionRestore port (T4-05), and sessionEnded arrives with T4-08. Android implements both in Kotlin
+// (modules/session, adapted by apps/tv/src/host/transport.ts; T3-05, T4-05), where the stored credential is an
+// encrypted record only Kotlin reads; adapters/fetch-transport.ts is the reference implementation for Node tests and
+// the tripwire, and keeps nothing across a restart.
 
 // Opaque: made by the transport at sign-in. Not derived from the token; means nothing to the server.
 export type SessionId = string;
@@ -60,6 +61,23 @@ export interface Transport {
   request(request: TransportRequest): Promise<TransportResponse>;
   // Always ends the session locally. Rejects only to report that the server logout failed.
   endSession(session: SessionId, options: { readonly timeoutMs: number }): Promise<void>;
+}
+
+// A session the transport holds for a stored sign-in (T4-05): opened from its record at launch, or held since a sign-in
+// in this process. It holds no token. `server` is the base URL the sign-in was made to.
+export interface RestoredSession {
+  readonly session: SessionId;
+  readonly server: string;
+  readonly deviceId: string;
+  readonly userId: string;
+  readonly serverId: string;
+  readonly userName?: string;
+}
+
+// Lists the stored sessions, newest record first, opening each that is not open yet. It sends nothing; the core
+// validates (jellyfin/restore-session.ts). A store that cannot be read gives an empty list.
+export interface SessionRestore {
+  restoreSessions(): Promise<readonly RestoredSession[]>;
 }
 
 // The only routes a transport sends without a session. Each is tokenless.

@@ -18,7 +18,7 @@ import { redactTransportError } from "../transport-error";
 import { toBrowseCards, toEpisodeCards, toGenres, toNextEpisode, toHomeLibraries, toMediaCards, toRecentPlays, toRecentlyAdded, toSearchCards, toSearchHints, toSeasons, toSeriesNextUp } from "./cards";
 import { stripCredentialQuery } from "./credential-query";
 import type { Crypto } from "../ports/crypto";
-import { TransportError, type QueryPair, type SessionId, type SignInCredential, type SignInResult, type Transport, type TransportResponse, type TransportTarget } from "../ports/transport";
+import { TransportError, type QueryPair, type RestoredSession, type SessionId, type SignInCredential, type SignInResult, type Transport, type TransportResponse, type TransportTarget } from "../ports/transport";
 import { toQuery } from "./query";
 import { deriveDeviceId } from "./device-id";
 import { limitIsOnlyReason } from "./client-limit";
@@ -239,11 +239,12 @@ export class JellyfinGateway {
 
   // The unauthenticated probe. For a private-LAN HTTP server it also reports
   // whether the user still has to confirm the unencrypted connection.
-  async connect(signal?: AbortSignal): Promise<ServerConnection> {
+  // A restore at launch gives it a shorter deadline (T4-05, Q7).
+  async connect(signal?: AbortSignal, timeoutMs: number = CONTROL_REQUEST_TIMEOUT_MS): Promise<ServerConnection> {
     const { data } = await this.get<ServerInfo>("/System/Info/Public", {
       deviceId: UNAUTHENTICATED_DEVICE_ID,
       signal,
-      timeout: CONTROL_REQUEST_TIMEOUT_MS,
+      timeout: timeoutMs,
     });
     if (!data || typeof data !== "object" || typeof data.Version !== "string") {
       throw new SignInFailure("unexpected-response", "The server returned an unexpected public-info response. Check the URL and reverse-proxy routing.");
@@ -376,6 +377,49 @@ export class JellyfinGateway {
     this.userName = result.userName ?? fallbackName;
     this.deviceId = deviceId;
     return { userId: result.userId, username: this.userName };
+  }
+
+  // Takes a session the transport restored from its store (T4-05, D6). It throws unless the record names this
+  // gateway's server and the last connect() on this gateway answered with the record's server id, so no request
+  // carrying the session leaves before the server at this origin has answered as the one the sign-in was made on. For
+  // a private-LAN http:// server that match stands in for the confirmation at launch (Q11); nothing is written to the
+  // confirmation store, so a later sign-in asks again. It sends nothing.
+  adopt(restored: RestoredSession): void {
+    if (this.session) throw new Error("This gateway already holds a session.");
+    let server: string;
+    try {
+      server = normalizeServerUrl(restored.server).url.toString().replace(/\/$/, "");
+    } catch {
+      throw new Error("The restored session names another server.");
+    }
+    if (server !== this.serverUrl) throw new Error("The restored session names another server.");
+    if (!this.serverId || this.serverId !== restored.serverId) throw new Error("The server did not answer as the one the sign-in was made on.");
+    this.session = restored.session;
+    this.userId = restored.userId;
+    this.userName = restored.userName ?? "Jellyfin user";
+    this.deviceId = restored.deviceId;
+  }
+
+  // Whether the server still accepts the session (T4-05, D6): GET /Users/Me. A 2xx is "valid". A 401 is asked once
+  // more, and a second 401 is "revoked". Anything else throws, as every other call does.
+  async sessionStanding(signal?: AbortSignal, timeoutMs: number = CONTROL_REQUEST_TIMEOUT_MS): Promise<"valid" | "revoked"> {
+    if ((await this.meStatus(signal, timeoutMs)) !== 401) return "valid";
+    if ((await this.meStatus(signal, timeoutMs)) !== 401) return "valid";
+    return "revoked";
+  }
+
+  // The status of GET /Users/Me: a 2xx or a 401; any other answer throws.
+  private async meStatus(signal: AbortSignal | undefined, timeoutMs: number): Promise<number> {
+    const { session } = this.requireSession();
+    let response: TransportResponse;
+    try {
+      response = await this.transport.request({ target: { session }, method: "GET", path: "/Users/Me", timeoutMs, signal });
+    } catch (error) {
+      throw this.failure(error);
+    }
+    if (isRedirectStatus(response.status)) throw redirectRefused();
+    if (response.status === 401 || (response.status >= 200 && response.status < 300)) return response.status;
+    throw redactTransportError(new TransportError("status", response.status));
   }
 
   // The signed-in user's display name, or undefined when signed out. Display only.
