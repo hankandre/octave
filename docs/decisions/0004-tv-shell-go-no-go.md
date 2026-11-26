@@ -228,3 +228,7 @@ F1 measured 328 MB, over the target. Fast bursts: 0 of 12 diverged with a row dr
 - T0-01 to T0-04 are still `in_progress`. Each has an owner Shield check that is not done.
 - T1-01 and T1-02 are marked done in the draft task list, although T0-05 says no task in T1 or later starts before this record is accepted. The owner may want to say whether that stands.
 - This record contains no address, serial, token or play-session ID. The spikes reached their servers through `adb reverse` on loopback.
+
+## Note, 2026-11-26 (T8-04): the player chrome risk is open again
+
+The table under "Did 0003's conditions for changing the stack fire?" marks decision 0003's risk "the player chrome ends up native anyway" as accepted already, because 0003 item 1 made the player screen native. Decision 0003's amendment of 2026-11-26 reads "native" as the player's view, decoding, surface and wake state, with the controls in React Native. That answer no longer holds: whether the controls stay in React Native depends on the amendment's two reopening findings, and its remedy is one native key source, not a Kotlin chrome. No text above is changed.

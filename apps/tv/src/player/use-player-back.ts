@@ -5,11 +5,10 @@
 // The only reader of the hardware Back on this screen. It registers after the shell's listener, so it is called first.
 import { useCallback, useEffect, useRef } from "react";
 import { BackHandler } from "react-native";
-import { logFailure } from "@octave/core/src/player/session-failure";
 import type { ShellApi } from "../shell/shell-context";
 import type { PlayerServices } from "./player-services";
 
-export function usePlayerBack({ viewing, log }: Pick<PlayerServices, "viewing" | "log">, close: ShellApi["close"]): () => void {
+export function usePlayerBack({ viewing }: Pick<PlayerServices, "viewing">, close: ShellApi["close"]): () => void {
   const busy = useRef(false);
 
   const back = useCallback(() => {
@@ -19,8 +18,8 @@ export function usePlayerBack({ viewing, log }: Pick<PlayerServices, "viewing" |
     const secondTry = phase === "failed" && session.failure === "stop-failed";
     viewing.leave().then(
       () => close?.(),
-      (error: unknown) => {
-        logFailure(error, log);
+      // The viewing has logged why the stop failed.
+      () => {
         if (secondTry) {
           close?.();
           return;
@@ -28,7 +27,7 @@ export function usePlayerBack({ viewing, log }: Pick<PlayerServices, "viewing" |
         busy.current = false;
       },
     );
-  }, [viewing, log, close]);
+  }, [viewing, close]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {

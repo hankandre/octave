@@ -7,7 +7,7 @@
 // a control of the chrome, or else the focus holder, an invisible element over the picture.
 //
 // testIDs: player-screen, player-view, player-osd (player-osd.tsx), player-failure (player-failure.tsx).
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { PLAYBACK_FAILURE_COPY } from "@octave/core/src/domain/playback-failure";
 import { failureAction } from "@octave/core/src/player/session-failure";
@@ -51,9 +51,19 @@ function useOnceNotice(warned: boolean): boolean {
 
 type Layer = "loading" | "picture" | "failure";
 
-function layerOf({ phase, session }: ViewingState): Layer {
+/** The layer the state asks for, or none while it is idle: the viewing is being left. */
+function layerOf({ phase, session }: ViewingState): Layer | undefined {
+  if (phase === "idle") return undefined;
   if (phase === "loading") return "loading";
   return phase === "failed" && session.failure !== undefined ? "failure" : "picture";
+}
+
+/** The layer on screen. A viewing being left keeps its layer until the player has stopped and the screen closes. */
+function useLayer(viewing: PlayerServices["viewing"]): Layer {
+  const asked = useViewingValue(viewing, layerOf);
+  const kept = useRef<Layer>("picture");
+  if (asked !== undefined) kept.current = asked;
+  return kept.current;
 }
 
 type ViewName = ChromeViewName | "holder" | "loadingBack" | "failure";
@@ -69,7 +79,7 @@ function Player({ services }: { services: PlayerServices }) {
   const { viewing, PlayerView, serverName, log } = services;
   const { close } = useShell();
   const phase = useViewingValue(viewing, (state) => state.phase);
-  const layer = useViewingValue(viewing, layerOf);
+  const layer = useLayer(viewing);
   const failure = useViewingValue(viewing, (state) => state.session.failure);
   const title = useViewingValue(viewing, (state) => state.title);
   const paused = useViewingValue(viewing, (state) => state.session.snapshot?.paused === true);

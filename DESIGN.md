@@ -409,6 +409,7 @@ Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here
 | Search | Mic button, or the remote's voice key | Voice input |
 | Player | Play/Pause | Play or pause |
 | Player | Arrows | Wake the chrome on the scrubber; then Left and Right seek 10 s, Up and Down move between zones |
+| Player, scrubber focused | Select | Pause or resume |
 | Player | Hold Left or Right, then select or Back | Scrub with the preview; select commits, Back returns |
 | Player, chrome hidden | Select | Skip, else Play now, else show the controls |
 

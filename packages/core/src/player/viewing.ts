@@ -167,6 +167,7 @@ export class Viewing {
     const run = this.running;
     if (!run) return this.stopFailed ? this.retryStop() : this.settled;
     run.controller.abort();
+    this.dropSeeks();
     this.setPhase(run, "idle");
     return this.conclude(run, () => (run.started ? this.stopCoordinator() : run.earlier));
   }
@@ -178,6 +179,7 @@ export class Viewing {
     const run = this.running;
     if (!run) return this.stopFailed ? this.reportFailedStop(this.latest, this.retryStop()) : Promise.resolve();
     run.controller.abort();
+    this.dropSeeks();
     this.setPhase(run, "idle");
     const stopped = run.started ? this.stopCoordinator() : Promise.resolve();
     // The conclusion waits for the same stop, then flushes and announces; its rejection is `stopped`'s own.
@@ -319,6 +321,9 @@ export class Viewing {
     if (!run) return;
     // An error event alone ends nothing, so only the code is kept; the session's end sets the phase.
     if (event.kind === "error") this.dispatch(run, failureAction(new PlayerEngineError(playerErrorCode(event.code)), this.log));
+    // The coordinator stops the player itself when a session ends, and this is how it says that stop failed: the
+    // coordinator still holds the player, so the next Back or stop has to ask it again.
+    if (event.kind === "error" && event.code === "stop-failed") this.stopFailed = true;
     // After the failure, so the reducer's code for the event wins: a failed stop is not an engine code.
     this.dispatch(run, { type: "event", event });
     if (event.kind === "state") this.retireIntent(run, event.cause);
@@ -345,6 +350,12 @@ export class Viewing {
       default:
         break;
     }
+  }
+
+  // A viewing that is being left has no seek to wait for.
+  private dropSeeks(): void {
+    this.seeks.clear();
+    this.publishSeekingTo();
   }
 
   private publishSeekingTo(): void {

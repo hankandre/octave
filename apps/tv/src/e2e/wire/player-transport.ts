@@ -40,6 +40,23 @@ const landedNear = (seconds: number) => (state: ViewingState) => {
   return landed ? true : undefined;
 };
 
+// While paused, sends Right and then Left and says whether the position held. On Play or Pause they only move focus to
+// Forward and back; on the scrubber each seeks, and the two cancel out, so every state in between is watched.
+async function arrowsHoldStill({ press }: WireContext, viewing: Viewing): Promise<boolean> {
+  const from = positionOf(viewing.state()) ?? Number.NaN;
+  let moved = false;
+  const unsubscribe = viewing.subscribe(() => {
+    const state = viewing.state();
+    const away = Math.abs((positionOf(state) ?? Number.NaN) - from) > NEAR_SECONDS;
+    if (state.seekingTo !== undefined || away) moved = true;
+  });
+  press("DPAD_RIGHT");
+  press("DPAD_LEFT");
+  await wait(SETTLE_MS);
+  unsubscribe();
+  return !moved;
+}
+
 async function drive(context: WireContext, viewing: Viewing, closed: Promise<void>, words: string[]): Promise<void> {
   const { press, readWindow } = context;
   await awaitState(viewing, FIRST_FRAME_MS, "first", (state) => (state.session.firstFrameReady ? true : undefined));
@@ -75,6 +92,7 @@ async function drive(context: WireContext, viewing: Viewing, closed: Promise<voi
   press("DPAD_CENTER");
   await awaitState(viewing, STEP_MS, "centre-pause", pausedIs(true));
   words.push("centre=paused");
+  words.push(`down=${(await arrowsHoldStill(context, viewing)) ? "play-pause" : "elsewhere"}`);
   press("MEDIA_PLAY_PAUSE");
   await awaitState(viewing, STEP_MS, "resume", pausedIs(false));
   words.push("resume=ok");
@@ -87,6 +105,7 @@ async function drive(context: WireContext, viewing: Viewing, closed: Promise<voi
   press("DPAD_CENTER");
   await awaitState(viewing, STEP_MS, "focused", pausedIs(true));
   words.push("centre-wake=focused");
+  words.push(`centre-wake=${(await arrowsHoldStill(context, viewing)) ? "play-pause" : "elsewhere"}`);
   press("MEDIA_PLAY_PAUSE");
   await awaitState(viewing, STEP_MS, "resume-again", pausedIs(false));
   readWindow("playing");

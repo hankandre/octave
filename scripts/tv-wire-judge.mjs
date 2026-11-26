@@ -20,7 +20,8 @@
 //   fail, the second start where the first stopped, and only original-file media requests.
 // - judgeTransportCapture(records, tokens, { keys, windows }): player-transport's playstate reports, its result words,
 //   the keys the runner sent and its reads of the window (T8-04, D13): an arrow that wakes the controls seeks nothing,
-//   two seeks forward and one back while paused, every pause and resume from the keys that make one, a stop by Back
+//   two seeks forward and one back while paused, every pause and resume from the keys that make one, no movement from
+//   the arrows sent after a centre press, a stop by Back
 //   before the file's end, original-file media requests only, and the screen kept on only while playing.
 // - judgeWire({ pairs, lines }): the app's OCTAVE_WIRE lines against the selected pairs and the host's counts
 //   (items 2, 4, 6 and 9); WIRE_JUDGES holds the rule per test id.
@@ -329,14 +330,15 @@ export function judgeViewingCapture(records, said) {
 const TRANSPORT_KEYS = [
   ...["DPAD_RIGHT", "MEDIA_PLAY_PAUSE"],
   ...["DPAD_RIGHT", "DPAD_RIGHT", "DPAD_LEFT"],
-  ...["DPAD_DOWN", "DPAD_CENTER", "DPAD_CENTER", "MEDIA_PLAY_PAUSE"],
-  ...["DPAD_CENTER", "DPAD_CENTER", "MEDIA_PLAY_PAUSE"],
+  ...["DPAD_DOWN", "DPAD_CENTER", "DPAD_CENTER", "DPAD_RIGHT", "DPAD_LEFT", "MEDIA_PLAY_PAUSE"],
+  ...["DPAD_CENTER", "DPAD_CENTER", "DPAD_RIGHT", "DPAD_LEFT", "MEDIA_PLAY_PAUSE"],
   "BACK",
 ];
 // A word may be said twice (centre, centre-wake), so the result line's tokens are held, not one value per name.
 const TRANSPORT_WORDS = [
   ...["outcome=ok", "wake=no-seek", "pause=ok", "seek=+20", "back=-10"],
-  ...["centre=resumed", "centre=paused", "resume=ok", "centre-wake=shown", "centre-wake=focused", "stop=back"],
+  ...["centre=resumed", "centre=paused", "down=play-pause", "resume=ok"],
+  ...["centre-wake=shown", "centre-wake=focused", "centre-wake=play-pause", "stop=back"],
 ];
 // An arrow that seeked lands at 10 s or later, whatever it seeked from.
 const WAKE_UNDER_SECONDS = 10;
@@ -392,6 +394,20 @@ function seekErrors(run) {
   return [`the first paused run moved by ${moved.join(", ")} s, expected ${SEEK_OFFSETS.join(", ")}`];
 }
 
+// The second and third paused runs: Right and Left from Play or Pause move only focus, where on the scrubber they would
+// move the position.
+function stillErrors(runs) {
+  return [
+    ["second", runs[1]],
+    ["third", runs[2]],
+  ].flatMap(([name, run]) => {
+    if (run === undefined) return [];
+    const positions = distinctPositions(run);
+    if (positions.length === 1) return [];
+    return [`the ${name} paused run moved (${positions.join(", ")} s), so focus was not on Play or Pause`];
+  });
+}
+
 function transportReportErrors(reports) {
   const calls = reports.map(call);
   const inShape = calls[0] === PLAYING_CALL && calls.at(-1) === STOPPED_CALL && calls.slice(1, -1).every((sent) => sent === PROGRESS_CALL);
@@ -401,6 +417,7 @@ function transportReportErrors(reports) {
   const runs = pausedRuns(progress.map((record) => record.report));
   const errors = wakeErrors(progress);
   if (runs.length > 0) errors.push(...seekErrors(runs[0]));
+  errors.push(...stillErrors(runs));
   if (runs.length !== PAUSED_RUNS) errors.push(`the progress posts hold ${runs.length} paused run(s), expected ${PAUSED_RUNS}`);
   if (progress.at(-1)?.report?.paused !== false) errors.push("the last progress post before the stop was not playing");
   if (stop?.failed !== false) errors.push("the stop did not say it had not failed");
