@@ -52,13 +52,22 @@ export type FocusFrameProps = FocusNeighbours & {
 const ringInset = focus.focusOffset + focus.focusRingWidth;
 const edgeInset = ringInset + focus.focusEdgeWidth;
 
-/** The two-tone focus ring, drawn whenever it is rendered. It sits outside its parent's box, which the parent must not clip. */
-export function FocusRing({ radius, testID }: { radius: keyof typeof radii; testID?: string }) {
+/** Places an overlay `distance` dp outside its parent's padding box on all four sides. */
+function outsetBy(distance: number): ViewStyle {
+  return { top: -distance, right: -distance, bottom: -distance, left: -distance };
+}
+
+/**
+ * The two-tone focus ring, drawn whenever it is rendered. It sits outside its parent's box, which the parent must not
+ * clip. An absolute child is placed from inside the parent's border, so a bordered parent passes its `borderWidth`
+ * (dp) to keep the offset measured from its outer edge (DESIGN.md §7.19).
+ */
+export function FocusRing({ radius, borderWidth = 0, testID }: { radius: keyof typeof radii; borderWidth?: number; testID?: string }) {
   const frameRadius = px(radii[radius]);
   return (
     <>
-      <View pointerEvents="none" style={[styles.overlay, styles.edge, { borderRadius: frameRadius + edgeInset }]} />
-      <View testID={testID} pointerEvents="none" style={[styles.overlay, styles.ring, { borderRadius: frameRadius + ringInset }]} />
+      <View pointerEvents="none" style={[styles.overlay, styles.edge, outsetBy(px(edgeInset) + borderWidth), { borderRadius: frameRadius + edgeInset }]} />
+      <View testID={testID} pointerEvents="none" style={[styles.overlay, styles.ring, outsetBy(px(ringInset) + borderWidth), { borderRadius: frameRadius + ringInset }]} />
     </>
   );
 }
@@ -125,6 +134,7 @@ export function FocusFrame({
   }, [target, motionless, scale]);
 
   const showRing = isFocused && !disabled;
+  const boxBorderWidth = StyleSheet.flatten(contentStyle)?.borderWidth ?? 0;
 
   return (
     <Pressable
@@ -168,7 +178,7 @@ export function FocusFrame({
     >
       <Animated.View testID={testID ? `${testID}-scale` : undefined} style={[contentStyle, lifted && !motionless ? { transform: [{ scale }] } : undefined]}>
         {typeof children === "function" ? children({ focused: showRing, pressed }) : children}
-        {showRing ? <FocusRing radius={radius} testID={testID ? `${testID}-focus-ring` : undefined} /> : null}
+        {showRing ? <FocusRing radius={radius} borderWidth={boxBorderWidth} testID={testID ? `${testID}-focus-ring` : undefined} /> : null}
       </Animated.View>
     </Pressable>
   );
@@ -177,18 +187,10 @@ export function FocusFrame({
 const styles = StyleSheet.create({
   overlay: { position: "absolute" },
   ring: {
-    top: -px(ringInset),
-    right: -px(ringInset),
-    bottom: -px(ringInset),
-    left: -px(ringInset),
     borderColor: colors.focus,
     borderWidth: px(focus.focusRingWidth),
   },
   edge: {
-    top: -px(edgeInset),
-    right: -px(edgeInset),
-    bottom: -px(edgeInset),
-    left: -px(edgeInset),
     borderColor: colors.focusEdge,
     borderWidth: px(focus.focusEdgeWidth),
   },
