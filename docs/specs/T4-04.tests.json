@@ -1,0 +1,39 @@
+{
+  "task": "T4-04",
+  "files": [
+    "packages/core/src/domain/password-sign-in.test.ts",
+    "packages/core/src/domain/sign-in-methods.test.ts",
+    "apps/tv/src/sign-in/test-support/password-doubles.tsx",
+    "apps/tv/src/sign-in/password-step.test.tsx",
+    "apps/tv/src/sign-in/password-route.test.tsx"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/sign-in/password-route.test.tsx", "-t", "T4-04 item 1:"]
+    },
+    {
+      "item": 2,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/sign-in/password-step.test.tsx", "-t", "T4-04 item 2:"],
+      "note": "The device half (the system keyboard opens, and its action key moves on or signs in) is D10's evidence, quoted at verify."
+    },
+    {
+      "item": 3,
+      "run": ["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/domain/password-sign-in.test.ts", "-t", "T4-04 item 3:"],
+      "also": [["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/sign-in/password-step.test.tsx", "src/sign-in/password-route.test.tsx", "-t", "T4-04 item 3:"]]
+    },
+    {
+      "item": 4,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/sign-in/password-step.test.tsx", "src/sign-in/password-route.test.tsx", "-t", "T4-04 item 4:"]
+    },
+    {
+      "item": 5,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/sign-in/password-route.test.tsx", "-t", "T4-04 item 5:"],
+      "also": [["pnpm", "--filter", "@octave/core", "exec", "vitest", "run", "src/domain/sign-in-methods.test.ts", "-t", "T4-04 item 5:"]]
+    },
+    {
+      "item": 6,
+      "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/sign-in/password-step.test.tsx", "src/sign-in/password-route.test.tsx", "-t", "T4-04 item 6:"]
+    }
+  ]
+}
