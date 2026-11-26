@@ -32,21 +32,29 @@ in answering questions about screens that do not exist yet.
 
 **Decision.** Route by what is reachable and funded, not by the published price table alone.
 
-- **Product Owner and judgement escalations: Fable 5.2**, through the Anthropic Max plan (`claude-agent/fable`).
-  The `anthropic/*` provider is out of API credit and is not used.
-- **Routine work: Sonnet 5.5** (`claude-agent/sonnet`); **mechanical work** (commit messages, PR bodies, merge
-  reports, log triage, running checks): **Haiku 5.5** (`claude-agent/haiku`); **Kotlin, guardian review and
-  plans: Opus 5.5** (`claude-agent/opus`).
+- **The Anthropic Max plan carries the work.** It is a flat subscription, so its models cost nothing per
+  token; its limit is a usage window. **Sonnet 5.5** (`claude-agent/sonnet`) is the default for tests,
+  implementation and review; **Opus 5.5** (`claude-agent/opus`) for Kotlin, native work, guardian review and
+  plans; **Haiku 5.5** (`claude-agent/haiku`) for mechanical work; **Fable 5.2** (`claude-agent/fable`) for the
+  Product Owner and judgement escalations.
+- **The `opencode-go` quota is finite and belongs to the coordinator.** The main session runs on it and stage
+  work does not: no Argon, Kimi or Grok for a stage when a Max-plan model can do it.
+- **The free tiers carry grunt work.** `opencode/*` (OpenCode Zen) and `nvidia/*` answer at zero cost
+  (`opencode/deepseek-v4.1-flash-free`, `opencode/big-pickle` and `nvidia/stepfun-ai/step-5-preview` were
+  confirmed by probe); use them for mechanical work that needs no judgement.
 - **Google is budgeted at $20 per 30 days, so `google/gemini-4-neon` is an escalation model only**: a large
   cross-file audit, a big diff review, a long-context sweep. At most one Neon run per task.
 - **Escalation is capped per task**: at most one Fable escalation and one Neon run outside the Product Owner
   pass. A run that needs more says what the extra would buy before spending it.
-- `commandcode/*` and `claude-agent/claude-*` are not usable (invalid token; the full model names are not
-  exposed by that provider — its aliases are `fable`, `opus`, `sonnet`, `haiku`).
+- **State-of-the-art judgement models make the decisions**: Fable 5.2, or Neon where breadth beats depth.
+  Implementation goes to the strongest model that does it well (Opus 5.5), down to Sonnet 5.5 for cost.
+- `anthropic/*`, `commandcode/*` and the full `claude-agent/claude-*` names are not usable (no API credit,
+  invalid token, and the provider exposes only the aliases `fable`, `opus`, `sonnet`, `haiku`).
 
-**Why.** The Max plan is a flat subscription, so Claude models cost nothing per token; the Google budget is
-small and per token, so Neon is spent only where breadth beats depth. The API key path to Anthropic fails on
-credit, which is why the routing names providers rather than models.
+**Why.** The Max plan is flat, so Claude models cost nothing at the margin while the `opencode-go` quota and
+the Google budget are both finite; spending a finite bucket where a flat-plan model is at least as good buys
+nothing. The exception is the coordinator, which the owner keeps on `opencode-go` so the Max plan's usage
+window stays for the work.
 
 **Re-check.** When a phase starts or a budget changes, confirm each route with a one-line probe before relying
 on it (`AGENTS.md`, "Re-check every dependency when a phase starts").
