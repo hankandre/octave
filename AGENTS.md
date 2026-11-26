@@ -86,6 +86,7 @@ Dependencies
 ## Design
 
 - Follow `DESIGN.md` for every UI change.
+- Load the `frontend-design` and `impeccable` skills for every UI spec, implementation and review; `DESIGN.md` and the task's acceptance win over both.
 - Use the design tokens; never hard-code colours, sizes, radii, or durations.
 - Build screens from the shared controls; never use a platform picker or dialog the D-pad cannot style or focus.
 - Make every screen work with the D-pad, select, and Back alone, and honour reduced motion.
