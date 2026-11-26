@@ -251,6 +251,8 @@ function sources(): { path: string; code: string }[] {
 }
 
 const inE2e = (path: string) => path.startsWith("apps/tv/src/e2e/");
+// A test-support/ folder holds test doubles only tests import; like a *.test.* file it is not the app (Product Owner, 2026-11-26, T4-02).
+const inTestSupport = (path: string) => path.includes("/test-support/");
 
 describe("T8-07 item 9: the app cannot be composed without a device capability source", () => {
   it.each([
@@ -276,8 +278,8 @@ describe("T8-07 item 9: the app cannot be composed without a device capability s
     expect(stripComments("const url = \"http://x\"; createGatewayFactory(host)")).toContain("createGatewayFactory(host)");
   });
 
-  it("T8-07 item 9: outside e2e/, only host/gateway.ts calls createGatewayFactory or names deviceCapabilities", () => {
-    const outside = sources().filter((file) => !inE2e(file.path));
+  it("T8-07 item 9: outside e2e/ and test-support/, only host/gateway.ts calls createGatewayFactory or names deviceCapabilities", () => {
+    const outside = sources().filter((file) => !inE2e(file.path) && !inTestSupport(file.path));
     expect(outside.length).toBeGreaterThan(0);
     expect(outside.filter((file) => /\bcreateGatewayFactory\s*\(/.test(file.code)).map((file) => file.path)).toEqual(["apps/tv/src/host/gateway.ts"]);
     expect(outside.filter((file) => /\bdeviceCapabilities\b/.test(file.code)).map((file) => file.path)).toEqual(["apps/tv/src/host/gateway.ts"]);
