@@ -38,8 +38,8 @@ function homeScreenFor({ source, clock, viewing }: HomeParts): ComponentType<{ r
         source,
         clock,
         play(request) {
-          viewing.play(request);
-          open({ kind: "play", id: request.itemId });
+          // A second select before the player is up is ignored, so it must not push a second player.
+          if (viewing.play(request)) open({ kind: "play", id: request.itemId });
         },
         afterViewing: (listener) => viewing.afterViewing(listener),
       }),
