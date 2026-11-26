@@ -15,6 +15,8 @@ export type Action = { id: string; label: string; onPress: () => void; variant?:
 export type DialogProps = {
   visible: boolean;
   title: string;
+  /** What the dialog is about, under the title: a name and, on its own line, an address in `typeMono`. */
+  detail?: { name: string; address: string };
   message?: string;
   icon?: IconComponent;
   actions: Action[];
@@ -24,7 +26,7 @@ export type DialogProps = {
   testID?: string;
 };
 
-export function Dialog({ visible, title, message, icon: Icon, actions, initialFocus, onDismiss, testID }: DialogProps) {
+export function Dialog({ visible, title, detail, message, icon: Icon, actions, initialFocus, onDismiss, testID }: DialogProps) {
   const { show, opacity } = useFade(visible);
   if (!show) return null;
   const first = initialFocus ?? actions[actions.length - 1]?.id;
@@ -34,6 +36,12 @@ export function Dialog({ visible, title, message, icon: Icon, actions, initialFo
         <TVFocusGuideView trapFocusUp trapFocusDown trapFocusLeft trapFocusRight style={styles.panel}>
           {Icon ? <Icon size={px(sizes.emptyIcon)} color={colors.text2} /> : null}
           <Text style={styles.title}>{title}</Text>
+          {detail ? (
+            <View>
+              <Text style={styles.name}>{detail.name}</Text>
+              <Text style={styles.address}>{detail.address}</Text>
+            </View>
+          ) : null}
           {message ? <Text style={styles.message}>{message}</Text> : null}
           <View style={styles.actions}>
             {actions.map((action) => (
@@ -68,6 +76,8 @@ const styles = StyleSheet.create({
     boxShadow: [{ offsetX: px(sheet.offsetX), offsetY: px(sheet.offsetY), blurRadius: px(sheet.blur), spreadDistance: px(sheet.spread), color: blackAt(sheet.alpha) }],
   },
   title: { ...textStyle("typeDialogTitle"), color: colors.text1 },
+  name: { ...textStyle("typeBody"), color: colors.text1 },
+  address: { ...textStyle("typeMono"), color: colors.text2 },
   message: { ...textStyle("typeBody"), color: colors.text2 },
   actions: { flexDirection: "row", justifyContent: "flex-end", gap: px(space.space4) },
 });

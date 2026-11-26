@@ -1,6 +1,7 @@
 export type SignInFailureKind =
   | "invalid-address"
   | "public-http"
+  | "unicode-host"
   | "redirect"
   | "unsupported-version"
   | "unexpected-response"

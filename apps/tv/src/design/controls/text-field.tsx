@@ -3,13 +3,13 @@
 // the frame keeps its ring while the input has focus, even if the frame itself blurs.
 // `testID` is the focusable frame, `<testID>-input` the native input.
 import { useRef, useState, type ComponentRef } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 import { FocusFrame } from "../focus-frame";
 import { px } from "../scale";
 import { textStyle } from "../text";
 import { colors, radii, sizes, space } from "../tokens";
 
-export type TextFieldProps = {
+export type TextFieldProps = Pick<TextInputProps, "onSubmitEditing" | "returnKeyType" | "keyboardType" | "autoCapitalize" | "autoCorrect"> & {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
@@ -19,10 +19,12 @@ export type TextFieldProps = {
   secureTextEntry?: boolean;
   disabled?: boolean;
   hasTVPreferredFocus?: boolean;
+  /** The frame's view, for code that points focus at the field. */
+  viewRef?: (view: unknown) => void;
   testID?: string;
 };
 
-export function TextField({ label, value, onChangeText, onFocus, helper, error, secureTextEntry, disabled = false, hasTVPreferredFocus, testID }: TextFieldProps) {
+export function TextField({ label, value, onChangeText, onFocus, helper, error, secureTextEntry, disabled = false, hasTVPreferredFocus, viewRef, testID, ...inputProps }: TextFieldProps) {
   const [inputFocused, setInputFocused] = useState(false);
   const input = useRef<ComponentRef<typeof TextInput>>(null);
   return (
@@ -35,10 +37,12 @@ export function TextField({ label, value, onChangeText, onFocus, helper, error, 
         disabled={disabled}
         holdFocus={inputFocused}
         hasTVPreferredFocus={hasTVPreferredFocus}
+        viewRef={viewRef}
         accessibilityLabel={label}
         contentStyle={styles.box}
       >
         <TextInput
+          {...inputProps}
           ref={input}
           testID={testID ? `${testID}-input` : undefined}
           focusable={false}

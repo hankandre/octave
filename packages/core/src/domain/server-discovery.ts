@@ -27,8 +27,8 @@ export interface DiscoveryResult {
   dropped: number;
 }
 
-// Port for finding servers on the local network. Only the desktop shell has
-// one; browser development mode cannot send UDP.
+// Port for finding servers on the local network. The TV app gives the sign-in
+// step a source that finds none until the native one lands (T4-01).
 export interface ServerDiscovery {
   discover(): Promise<DiscoveryResult>;
 }
