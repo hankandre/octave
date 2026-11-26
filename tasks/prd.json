@@ -1430,6 +1430,34 @@
           "evidence": "commit 00f5730c on task/T3-09 (shell, rail, Back, routes, not-found; review fixes). pnpm check green. Own-emulator smoke passed earlier; 20x50 fixture runs and real Left/Right/Back focus on a TV not done (backlogged). PR pending."
         },
         {
+          "id": "T3-40",
+          "title": "Fix the focus ring's corners and the side rail's cropped rings and padding",
+          "domain": "App Shell & Presentation",
+          "lane": "ui",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-06",
+            "T3-09"
+          ],
+          "acceptance": [
+            "A focused control's ring keeps the same gap from the control at its corners as along its sides, on a bordered control too: the ring's corner radius is the control's radius plus the ring's offset, all in dp",
+            "A rail entry never scales, on focus or on press; focused, it shows the ring and a surface3 fill (docs/specs/decisions-product-owner-2026-11-26b.md, 2)",
+            "With the rail open, the whole ring of every entry is drawn: neither the rail's edge nor the scrolling group of library entries cuts it, for the first and the last entry of each group too",
+            "A focused entry's ring covers no part of the entry above or below it",
+            "The entries sit the same distance from the rail's top and bottom as from its sides, 16 px on the canvas (docs/specs/decisions-product-owner-2026-11-26b.md, 4)",
+            "The bar on the current entry, the entries' order, and the keys that open and close the rail are unchanged",
+            "DESIGN.md sections 6, 7.1, 9 and 12 say the same in the same PR (gate: review)",
+            "The PR shows before and after captures at 1920x1080 of the open rail with Search, Home and the last entry focused, and of a focused button"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-36",
           "title": "Keep the activity and its focus when an input device connects",
           "domain": "Distribution",
@@ -3065,7 +3093,7 @@
         },
         {
           "id": "T8-04",
-          "title": "Build the native player screen: transport, scrubber and the remote's keys",
+          "title": "Build the player screen: transport, scrubber and the remote's keys",
           "domain": "App Shell & Presentation",
           "lane": "player",
           "model": "opus",
@@ -3083,9 +3111,34 @@
             "The top bar shows Back and the title; an episode shows the series name, S1 E2 and the episode title",
             "The remote's play-pause key and the centre key pause and resume, and Back stops and returns to the screen the viewer came from with the same card focused",
             "Loading shows the title over its backdrop with Opening the original file, and Buffering shows only after 500 ms",
-            "Colours, sizes and durations come from the design tokens' native export; a test fails when a token value differs from the TypeScript source",
             "The screen stays awake while playing and may sleep while paused for the system's timeout",
             "When the stop fails on Back, the player screen stays up and shows the copy table's Couldn't stop playback row with its action, where today the failure reaches only the failure log (DESIGN.md section 10; docs/specs/decisions-product-owner-2026-11-26.md, 4)"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T8-05",
+          "title": "Hold to scrub with the remote",
+          "domain": "App Shell & Presentation",
+          "lane": "player",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T8-04"
+          ],
+          "acceptance": [
+            "Holding Left or Right for half a second pauses the picture and moves a pending position in growing steps, never more than a fiftieth of the duration per step",
+            "The select key commits the pending position; Back returns to where playback was",
+            "A single press still moves exactly 10 s",
+            "Elapsed and remaining time follow the pending position while scrubbing",
+            "One seek reaches the engine per commit, not one per step",
+            "Holding select on the back 10 or forward 10 button for half a second scrubs the same way, in that button's direction; releasing select commits the pending position with one seek and playback goes on as it was before the hold; a single press of either button still moves exactly 10 s (docs/specs/decisions-product-owner-2026-11-26b.md, 6)",
+            "DESIGN.md 7.14 says what holding the two buttons does, in the same PR (gate: review)"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
@@ -3331,30 +3384,6 @@
             "During a direct play, a picked audio track this device cannot decode is not switched to inside the engine: the sheet asks the core's sourcePlayability with the picked index first, and such a pick negotiates again (T8-23, D9)"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T8-05",
-          "title": "Hold to scrub with the remote",
-          "domain": "App Shell & Presentation",
-          "lane": "player",
-          "model": "opus",
-          "skill": "native-player",
-          "human": false,
-          "depends_on": [
-            "T8-04"
-          ],
-          "acceptance": [
-            "Holding Left or Right for half a second pauses the picture and moves a pending position in growing steps, never more than a fiftieth of the duration per step",
-            "The select key commits the pending position; Back returns to where playback was",
-            "A single press still moves exactly 10 s",
-            "Elapsed and remaining time follow the pending position while scrubbing",
-            "One seek reaches the engine per commit, not one per step"
-          ],
-          "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
           "owner": null,
           "passes": false,
