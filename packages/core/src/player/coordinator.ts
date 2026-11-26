@@ -59,6 +59,8 @@ export interface CoordinatorCallbacks {
   onSessionEnded?(reason: PlaybackEndReason): void;
   // A converted session's plan after the server confirmed copy or encode.
   onPlanConfirmed?(plan: PlaybackPlan): void;
+  // A plan is known and about to be launched. Called once per attempt that reaches the launch.
+  onPlan?(plan: PlaybackPlan): void;
   // The picked audio track is not the one the player started with. Called once per attempt.
   onAudioPickNotApplied?(): void;
 }
@@ -302,6 +304,7 @@ export class PlaybackCoordinator {
     this.previousPlan = plan;
     this.plan = plan;
     this.unsubscribe = unsubscribe;
+    this.callbacks.onPlan?.(plan);
     // A converted launch can spend seconds checking playlists before it
     // resolves. Back, Stop, or a newer attempt asks the engine to stop at
     // once, which cancels a pending launch, instead of waiting it out.
