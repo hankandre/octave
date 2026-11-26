@@ -2472,7 +2472,8 @@
             "A failed row shows one sentence and Retry in its place, and Retry reloads only that row",
             "A lost connection shows a plain sentence naming the server, never a status code or transport message",
             "Each state takes focus on its action and works with the D-pad alone",
-            "A Home whose whole load fails, or whose every list fails, shows the lost-connection state with Retry focused, in place of the plain surface T5-03 left: the sentence is \"Couldn't reach {server}. Check that the server is on, then try again.\", and the task adds its row to DESIGN.md's copy table in the same PR (docs/specs/decisions-product-owner-2026-11-26.md, 1)"
+            "A Home whose whole load fails, or whose every list fails, shows the lost-connection state with Retry focused, in place of the plain surface T5-03 left: the sentence is \"Couldn't reach {server}. Check that the server is on, then try again.\", and the task adds its row to DESIGN.md's copy table in the same PR (docs/specs/decisions-product-owner-2026-11-26.md, 1)",
+            "The PR holds 1920x1080 captures of each state and of the loaded Home with fixture artwork made for the fixture: the hero, Continue watching and Recently added, with a card focused (gate: review)"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2498,6 +2499,31 @@
             "Focus on return follows DESIGN.md section 9: the card that was focused when it is still there, else the card now at its place, else Home's opening focus; the rows keep their order and nothing else on Home moves",
             "A viewing that ended with its title unfinished still patches that title's cards in place, as T8-03 built, with no reload of the rows",
             "A failed read leaves Home as it was and shows no error of its own"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-41",
+          "title": "Make only a focused button light, and show one focus ring under a dialog",
+          "domain": "App Shell & Presentation",
+          "lane": "ui",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-40"
+          ],
+          "acceptance": [
+            "A primary button that does not hold focus is drawn with a surface3 fill and a text1 label in weight 700, so no unfocused button is the brightest thing on a screen (docs/specs/decisions-product-owner-2026-11-26c.md, 2)",
+            "A focused primary, secondary or danger button takes the text1 fill with an onLight label, with the ring and the lift it has today; a quiet button is unchanged",
+            "A disabled button never takes the light fill, and every label keeps a contrast of 4.5:1 on its fill",
+            "While a dialog is open no control behind it shows a focus ring; when the dialog closes, focus and its ring return to the control that had them (docs/specs/decisions-product-owner-2026-11-26c.md, 3)",
+            "DESIGN.md sections 3.1, 7.19 and 12 say the same in the same PR (gate: review)",
+            "The PR shows before and after captures at 1920x1080 of the password step with a field focused, of the unencrypted-connection dialog, and of a primary beside a secondary with each focused in turn"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -3121,8 +3147,8 @@
           "evidence": ""
         },
         {
-          "id": "T8-05",
-          "title": "Hold to scrub with the remote",
+          "id": "T8-27",
+          "title": "Pause and seek straight from the picture, and make the focused scrubber clear",
           "domain": "App Shell & Presentation",
           "lane": "player",
           "model": "opus",
@@ -3132,7 +3158,33 @@
             "T8-04"
           ],
           "acceptance": [
-            "Holding Left or Right for half a second pauses the picture and moves a pending position in growing steps, never more than a fiftieth of the duration per step",
+            "While a title plays with the controls hidden, the select key pauses and shows the controls with focus on Play or Pause, and select again resumes (docs/specs/decisions-product-owner-2026-11-26c.md, 4)",
+            "While a title plays with the controls hidden, a single press of Left or Right moves exactly 10 s back or forward and shows the controls with focus on the scrubber; Up and Down show the controls with focus on the scrubber and do not seek",
+            "Before the first frame the keys still do nothing but Back, and the remote's play-pause key behaves as it does today",
+            "The focused scrubber's thumb is 24 px and carries the two-tone focus ring, and the track still grows; unfocused it is as today (docs/specs/decisions-product-owner-2026-11-26c.md, 5)",
+            "DESIGN.md sections 7.14, 9 and 12 say the same in the same PR, and keep Skip, then Play now, ahead of pause for the select key (gate: review)",
+            "The PR shows before and after captures at 1920x1080 of the controls with the scrubber focused and with it not focused"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T8-05",
+          "title": "Hold to scrub with the remote",
+          "domain": "App Shell & Presentation",
+          "lane": "player",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T8-04",
+            "T8-27"
+          ],
+          "acceptance": [
+            "Holding Left or Right for half a second pauses the picture and moves a pending position in growing steps, never more than a fiftieth of the duration per step, whether the controls were showing or not (docs/specs/decisions-product-owner-2026-11-26c.md, 4)",
             "The select key commits the pending position; Back returns to where playback was",
             "A single press still moves exactly 10 s",
             "Elapsed and remaining time follow the pending position while scrubbing",
