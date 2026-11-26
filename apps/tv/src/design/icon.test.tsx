@@ -9,8 +9,9 @@ import { cmapRanges, cssCodepoint, inRanges } from "./test-support/tabler-font";
 const namesOf = () => Object.keys(glyphs) as IconName[];
 
 describe("T3-34 item 3: the glyph map", () => {
-  it("T3-34 item 3: holds the eight names a screen uses", () => {
-    expect(namesOf().sort()).toEqual(["check", "device-tv", "home", "movie", "search", "settings", "stack-2", "user"]);
+  // A later screen adds its own names (docs/specs/T3-34.md, Approach 2); the two cases below check every entry.
+  it("T3-34 item 3: holds the eight names T3-34's screens use", () => {
+    expect(namesOf()).toEqual(expect.arrayContaining(["check", "device-tv", "home", "movie", "search", "settings", "stack-2", "user"]));
   });
 
   it("T3-34 item 3: every entry equals the content of its rule in the weight-300 stylesheet", () => {
