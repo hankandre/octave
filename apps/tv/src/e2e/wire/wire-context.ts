@@ -24,7 +24,14 @@ export interface WireContext {
   // Draws an element over the root's player view, or nothing; resolves once React has committed it (T3-11's artwork
   // tests mount and unmount native views with it).
   readonly show: (element: ReactElement | null) => Promise<void>;
+  // Asks the runner to send the remote's key (T8-04): one app line, which the runner answers with one adb key event.
+  readonly press: (key: WireKey) => void;
+  // Asks the runner to read whether the app's window holds the keep-screen-on flag, in the state the app is in.
+  readonly readWindow: (state: "paused" | "playing") => void;
 }
+
+// The closed list of scripts/tv-wire-keys.mjs, which fails the run on any other name.
+export type WireKey = "DPAD_UP" | "DPAD_DOWN" | "DPAD_LEFT" | "DPAD_RIGHT" | "DPAD_CENTER" | "MEDIA_PLAY_PAUSE" | "BACK";
 
 // A test's outcome: the words of its result line, or unreachable when its first call found no listener.
 export type WireOutcome = { readonly words: string } | { readonly unreachable: true };

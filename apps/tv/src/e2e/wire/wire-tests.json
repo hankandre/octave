@@ -19,6 +19,7 @@
     { "id": "player-capabilities", "task": "T8-07", "targets": ["jellyscale", "jellyfin-12"] },
     { "id": "artwork-header-and-cache", "task": "T3-11", "targets": ["mock", "jellyfin-10-11", "jellyfin-12", "jellyscale"] },
     { "id": "artwork-canary", "task": "T3-11", "targets": ["mock"] },
-    { "id": "player-viewing", "task": "T8-03", "targets": ["jellyscale"] }
+    { "id": "player-viewing", "task": "T8-03", "targets": ["jellyscale"] },
+    { "id": "player-transport", "task": "T8-04", "targets": ["jellyscale"] }
   ]
 }
