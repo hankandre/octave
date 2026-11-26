@@ -26,6 +26,10 @@
 // JSON type is right, and its PlayMethod only when it is DirectPlay, DirectStream or Transcode; each is else null.
 // Nothing else of the body is kept, so no id is.
 //
+// T4-03 learns the Secret of every 2xx POST /QuickConnect/Initiate answer: it joins the run's secrets, so it fails the
+// run in a logcat line, in any evidence file and in a URL. The poll sends it in its query by the API's design, so that one
+// value, the `secret` parameter of a GET whose path ends /QuickConnect/Connect, is left out of the URL's secret scan.
+//
 // Also here: the global-proxy listener, which records the requests that arrive when the emulator's http_proxy names
 // it, and a health check for the fixture servers.
 import { createHash } from "node:crypto";
@@ -171,19 +175,41 @@ export function reportFacts(body) {
   };
 }
 
-// The URL with the value of each PlaySessionId parameter that is a play session this run learned blanked, for the
-// secret scan only.
-export function withoutOwnPlaySession(rawUrl, playSessions) {
-  if (playSessions.size === 0) return rawUrl;
-  return rawUrl.replace(/([?&]PlaySessionId=)([^&#]*)/g, (whole, name, value) => {
+// `rawUrl` with each value `parameter` matches blanked when, decoded once, it is exactly one of `own`. A value that
+// does not decode is kept.
+function blankOwnValues(rawUrl, parameter, own) {
+  return rawUrl.replace(parameter, (whole, name, value) => {
     let decoded = value;
     try {
       decoded = decodeURIComponent(value);
     } catch {
       return whole;
     }
-    return playSessions.has(decoded) ? name : whole;
+    return own.has(decoded) ? name : whole;
   });
+}
+
+// The URL with the value of each PlaySessionId parameter that is a play session this run learned blanked, for the
+// secret scan only.
+export function withoutOwnPlaySession(rawUrl, playSessions) {
+  return blankOwnValues(rawUrl, /([?&]PlaySessionId=)([^&#]*)/g, playSessions);
+}
+
+// The Quick Connect poll's URL with its own learned secret blanked, for the secret scan only (T4-03 D12). The secret
+// under another name, on another method or on another path stays.
+export function withoutOwnQuickConnectSecret(method, rawUrl, ownSecrets) {
+  const isPoll = method === "GET" && rawUrl.split("?")[0].endsWith("/QuickConnect/Connect");
+  return isPoll ? blankOwnValues(rawUrl, /([?&]secret=)([^&#]*)/g, ownSecrets) : rawUrl;
+}
+
+// A non-empty string field of a JSON answer, or undefined.
+function answerField(body, name) {
+  try {
+    const value = JSON.parse(body.toString("utf8"))[name];
+    return typeof value === "string" && value !== "" ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 // upstream: { port }; secrets: a Set the runner shares across recorders (known secrets, plus each issued token);
@@ -192,12 +218,15 @@ export function startRecorder({ upstream, secrets, swap }) {
   const records = [];
   // The play sessions this recorder relayed; each is also in `secrets`.
   const playSessions = new Set();
+  // The Quick Connect secrets this recorder relayed; each is also in `secrets`.
+  const quickConnectSecrets = new Set();
   const server = createServer({ keepAliveTimeout: 120_000 }, async (incoming, outgoing) => {
     const url = new URL(incoming.url ?? "/", "http://recorder.invalid");
     // The record holds a stand-in for a path, a query name, the Host or the scheme that holds a known secret, so
     // nothing the recorder keeps can leak one into the evidence; the upstream request still uses the real URL.
     const known = [...secrets];
-    const parts = safeUrlParts(withoutOwnPlaySession(incoming.url ?? "/", playSessions), known);
+    const scanned = withoutOwnQuickConnectSecret(incoming.method ?? "", withoutOwnPlaySession(incoming.url ?? "/", playSessions), quickConnectSecrets);
+    const parts = safeUrlParts(scanned, known);
     const record = safeRecord(
       {
         method: incoming.method ?? "",
@@ -215,6 +244,7 @@ export function startRecorder({ upstream, secrets, swap }) {
     let body = await readBody(incoming);
     const signIn = record.method === "POST" && url.pathname.endsWith("/Users/AuthenticateByName");
     const playbackInfo = record.method === "POST" && /\/PlaybackInfo$/i.test(url.pathname);
+    const initiate = record.method === "POST" && url.pathname.endsWith("/QuickConnect/Initiate");
     if (playbackInfo) record.playbackInfo = playbackInfoFacts(body.toString("utf8"), incoming.url ?? "/");
     if (record.method === "POST" && REPORT_PATH.test(url.pathname)) record.report = reportFacts(body.toString("utf8"));
     if (signIn && swap) {
@@ -234,25 +264,17 @@ export function startRecorder({ upstream, secrets, swap }) {
       record.status = answer.statusCode ?? null;
       const retryAfter = answer.headers["retry-after"];
       record.retryAfter = typeof retryAfter === "string" ? retryAfter : null;
-      if (playbackInfo && record.status >= 200 && record.status < 300) {
-        try {
-          const playSession = JSON.parse(answerBody.toString("utf8")).PlaySessionId;
-          if (typeof playSession === "string" && playSession !== "") {
-            playSessions.add(playSession);
-            secrets.add(playSession);
-          }
-        } catch {
-          // No play session to learn.
-        }
-      }
-      if (signIn && record.status >= 200 && record.status < 300) {
-        try {
-          const issued = JSON.parse(answerBody.toString("utf8")).AccessToken;
-          if (typeof issued === "string" && issued !== "") secrets.add(issued);
-        } catch {
-          // No token to learn.
-        }
-      }
+      const succeeded = record.status >= 200 && record.status < 300;
+      // Learned before the app has the answer, so nothing it does with a value goes unwatched.
+      const learn = (name, own) => {
+        const value = answerField(answerBody, name);
+        if (value === undefined) return;
+        own?.add(value);
+        secrets.add(value);
+      };
+      if (succeeded && playbackInfo) learn("PlaySessionId", playSessions);
+      if (succeeded && initiate) learn("Secret", quickConnectSecrets);
+      if (succeeded && signIn) learn("AccessToken");
       const back = { ...answer.headers, "content-length": String(answerBody.length) };
       delete back["transfer-encoding"];
       outgoing.writeHead(answer.statusCode ?? 502, back);

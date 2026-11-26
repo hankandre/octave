@@ -15,6 +15,12 @@ export const READS_JELLYFIN_LIBRARY: readonly string[];
 export const SCANNED_SAMPLES: readonly string[];
 export const SCAN_LIMIT_MS: number;
 export function scanTargetsOf(pairs: { test: string; target: string }[]): string[];
+export function openQuickConnectApprover(options: {
+  pairs: { test: string; target: string }[];
+  credentials: Record<string, string>;
+  secrets: Set<string>;
+  fetch?: (url: string, init: RequestInit) => Promise<Response>;
+}): { errors: string[]; answer: (lines: string[]) => Promise<void>; describe: () => string[] };
 export function scanJellyfinLibraries(
   pairs: { test: string; target: string }[],
   options: {
