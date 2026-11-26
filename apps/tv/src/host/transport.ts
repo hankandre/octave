@@ -1,5 +1,5 @@
 // The app's Transport (T3-05): the core's port over the session module's three native functions (decision 0005 and
-// its T3-05 amendment). It flattens each call into the module's argument map and turns the module's result map back
+// its T3-05 amendment). createSessionRestore (T4-05) is the core's SessionRestore port over the fourth, restoreSessions. It flattens each call into the module's argument map and turns the module's result map back
 // into the port's answer. It builds no URL and no header and sends nothing itself: Kotlin's one OkHttp client does.
 //
 // Errors are the core's TransportError, built from a code alone. A rejection, a non-object, an unknown code or a
@@ -11,6 +11,8 @@
 import type { OctaveSessionNative } from "@octave/session";
 import {
   TransportError,
+  type RestoredSession,
+  type SessionRestore,
   type SignInRequest,
   type SignInResult,
   type Transport,
@@ -26,6 +28,7 @@ export interface SessionNative {
   signIn(args: NativeMap): Promise<unknown>;
   request(args: NativeMap): Promise<unknown>;
   endSession(args: NativeMap): Promise<unknown>;
+  restoreSessions?(): Promise<unknown>;
 }
 
 const CODES: readonly TransportErrorCode[] = ["network", "timeout", "redirect", "cancelled", "refused", "unexpected-response", "status"];
@@ -164,6 +167,48 @@ export function createSessionTransport(native: SessionNative | OctaveSessionNati
       const error = errorOf(answer);
       if (error) throw error;
       if (!isMap(answer)) throw new TransportError("refused");
+    },
+  };
+}
+
+const SESSION_ID = /^[0-9a-f]{32}$/;
+
+// One listed session, or undefined unless every field has its type, the required strings are not empty and the id is
+// 32 lower-case hex digits. Only the named fields are copied.
+function restoredOf(value: unknown): RestoredSession | undefined {
+  if (!isMap(value)) return undefined;
+  const { session, server, deviceId, userId, serverId, userName } = value;
+  if (typeof session !== "string" || !SESSION_ID.test(session)) return undefined;
+  const required = [server, deviceId, userId, serverId];
+  if (!required.every((field) => typeof field === "string" && field !== "")) return undefined;
+  if (userName !== undefined && typeof userName !== "string") return undefined;
+  return {
+    session,
+    server: server as string,
+    deviceId: deviceId as string,
+    userId: userId as string,
+    serverId: serverId as string,
+    ...(typeof userName === "string" ? { userName } : {}),
+  };
+}
+
+// The core's SessionRestore over restoreSessions (T4-05 D6). It keeps only well-formed entries, in the module's order
+// (newest record first), and answers an empty list for a rejection or any other shape. It never rejects.
+export function createSessionRestore(native: SessionNative | OctaveSessionNative): SessionRestore {
+  const session = native as SessionNative;
+  return {
+    async restoreSessions(): Promise<readonly RestoredSession[]> {
+      let answer: unknown;
+      try {
+        answer = await session.restoreSessions?.();
+      } catch {
+        return [];
+      }
+      if (!isMap(answer) || !Array.isArray(answer.sessions)) return [];
+      return answer.sessions.flatMap((entry: unknown) => {
+        const restored = restoredOf(entry);
+        return restored === undefined ? [] : [restored];
+      });
     },
   };
 }

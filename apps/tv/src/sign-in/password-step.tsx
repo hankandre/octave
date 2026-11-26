@@ -1,5 +1,7 @@
 // Sign-in by username and password (T4-04 D5, D8, DESIGN.md §7.20 step 3). The password is state only while it is
-// typed: it is emptied when the request returns, and it reaches the core only as `login`'s argument.
+// typed: it is emptied when the request returns, and it reaches the core only as `login`'s argument. After a confirmed
+// revoke at launch (T4-05 D8, Q6) Username opens filled with the account's name, focus opens on Password, and the empty
+// password is held until a field is edited; no sentence says why.
 //
 // testIDs: sign-in-password-step, sign-in-username and sign-in-password (their inputs end in -input),
 // sign-in-show-password, sign-in-status, sign-in-failure, sign-in-submit, sign-in-change-server.
@@ -76,17 +78,23 @@ function mayRepeat(sentPassword: string, failure: PasswordSignInFailure): boolea
 
 export function PasswordStep(props: PasswordStepProps) {
   const { attempt, isBusy, signIn } = usePasswordSignIn(props);
-  const [username, setUsername] = useState("");
+  const prefilled = props.initialUsername !== undefined;
+  const [username, setUsername] = useState(props.initialUsername ?? "");
   const [password, setPassword] = useState("");
   const [shown, setShown] = useState(false);
-  // True while the password is empty because this step emptied it: sending it could count against the account. Only
-  // an edit clears it, never this step's own clearing.
-  const [isHeld, setHeld] = useState(false);
+  // True while the password is empty because this step emptied it, or because the step opened for an account the server
+  // ended: sending it could count against the account. Only an edit clears it, never this step's own clearing.
+  const [isHeld, setHeld] = useState(prefilled);
   // Whether the field holds something the viewer typed since the last send. It is no copy of the password.
   const hasTypedSinceSend = useRef(false);
   const usernameView = useRef<unknown>(null);
   const passwordView = useRef<unknown>(null);
   const changeServerView = useRef<unknown>(null);
+
+  // With the name already filled, focus opens on Password.
+  useEffect(() => {
+    if (prefilled) focusView(passwordView.current);
+  }, [prefilled]);
 
   // A field may report the text it already shows, which is no edit and lifts nothing. The text is stored either way:
   // `username` and `password` are the last drawn ones, which a second change before the next draw does not match.
@@ -138,7 +146,7 @@ export function PasswordStep(props: PasswordStepProps) {
           autoCapitalize="none"
           autoCorrect={false}
           importantForAutofill="no"
-          hasTVPreferredFocus
+          hasTVPreferredFocus={!prefilled}
           viewRef={(view) => {
             usernameView.current = view;
           }}
@@ -156,6 +164,7 @@ export function PasswordStep(props: PasswordStepProps) {
           autoCapitalize="none"
           autoCorrect={false}
           importantForAutofill="no"
+          hasTVPreferredFocus={prefilled}
           viewRef={(view) => {
             passwordView.current = view;
           }}

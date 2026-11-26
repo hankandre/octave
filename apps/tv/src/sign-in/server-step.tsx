@@ -19,7 +19,7 @@ import { ServerList } from "./server-list";
 import { SignInServicesContext, type ChosenServer, type SignInServices } from "./sign-in-services";
 import { SignInStepFrame } from "./sign-in-step-frame";
 import { UnencryptedDialog } from "./unencrypted-dialog";
-import { useServerChoice } from "./use-server-choice";
+import { useServerChoice, type Opening } from "./use-server-choice";
 import { useServerSearch } from "./use-server-search";
 
 // The smoke test's oracle reads these two lines (scripts/tv-first-focus.mjs). Each holds a fixed testID and nothing else.
@@ -28,7 +28,9 @@ const reportFocus = (testID: "sign-in-search-again" | "sign-in-address") => cons
 type Props = {
   /** The control that takes focus on arrival; without it, the first row, or Search again. */
   entry?: ControlId;
-  onChosen: (chosen: ChosenServer, returnTo: ControlId) => void;
+  /** A server to ask the unencrypted-connection question about on arrival (T4-05 D8): the dialog opens at once. */
+  opening?: Opening;
+  onChosen: (chosen: ChosenServer, returnTo?: ControlId) => void;
   /** Given the step's Back: true when it stopped a running probe. */
   backRef: MutableRefObject<() => boolean>;
 };
@@ -38,11 +40,15 @@ export function ServerStep(props: Props) {
   return services === undefined ? null : <Step services={services} {...props} />;
 }
 
-function Step({ services, entry, onChosen, backRef }: Props & { services: SignInServices }) {
+function Step({ services, entry, opening, onChosen, backRef }: Props & { services: SignInServices }) {
   const { register, focus } = useControlFocus();
   const { found, search } = useServerSearch(services.discovery);
-  const { status, question, isBusy, choose, cancel, connect, decline } = useServerChoice({ services, onChosen, focus });
   const [remembered] = useState(() => services.remembered.list());
+  const rows = listServers(remembered, found ?? []);
+  const listed = rows.length > 0;
+  const firstControl: ControlId = rows[0] === undefined ? "search" : rowControl(rows[0]);
+  const preferred = entry ?? firstControl;
+  const { status, question, isBusy, choose, cancel, connect, decline } = useServerChoice({ services, onChosen, focus, opening, openingFocus: preferred });
   const [revealed, setRevealed] = useState(entry === "field");
   const [address, setAddress] = useState("");
 
@@ -50,10 +56,6 @@ function Step({ services, entry, onChosen, backRef }: Props & { services: SignIn
     backRef.current = cancel;
   }, [backRef, cancel]);
 
-  const rows = listServers(remembered, found ?? []);
-  const listed = rows.length > 0;
-  const firstControl: ControlId = rows[0] === undefined ? "search" : rowControl(rows[0]);
-  const preferred = entry ?? firstControl;
   const searching = found === undefined && !listed;
 
   const chooseRow = (row: ServerRow) => {

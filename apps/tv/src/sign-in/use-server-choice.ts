@@ -1,5 +1,6 @@
 // Choosing a server (T4-02 D5, D6, D8a): the probe, the unencrypted-connection question and the hand-off. While a probe
-// runs or the question is open, another choice is ignored.
+// runs or the question is open, another choice is ignored. The step may open with the question already asked about a
+// server it was given (T4-05 D8, Q13); answering it does what answering it after a probe does.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ServerConnection } from "@octave/core/src/domain/server-connection";
 import type { JellyfinGateway } from "@octave/core/src/jellyfin/gateway";
@@ -8,20 +9,31 @@ import { rowControl, type ControlId } from "./controls";
 import { LOADING_LINE, signInSentence } from "./sign-in-copy";
 import type { ChosenServer, SignInServices } from "./sign-in-services";
 
-type Question = { gateway: JellyfinGateway; connection: ServerConnection; from: ControlId };
+/** `from` is the control that asked; undefined for the question the step opened with. */
+type Question = { gateway: JellyfinGateway; connection: ServerConnection; from?: ControlId };
+
+export type Opening = { gateway: JellyfinGateway; connection: ServerConnection };
 
 type Options = {
   services: SignInServices;
-  /** `returnTo` is the control Back from a later step lands on. */
-  onChosen: (chosen: ChosenServer, returnTo: ControlId) => void;
+  /** `returnTo` is the control Back from a later step lands on; undefined leaves the step's usual opening focus. */
+  onChosen: (chosen: ChosenServer, returnTo?: ControlId) => void;
   focus: (control: ControlId) => void;
+  /** The question to open with. */
+  opening?: Opening;
+  /** Where focus goes when the opening question is declined: the step's usual opening focus. */
+  openingFocus: ControlId;
 };
 
-export function useServerChoice({ services, onChosen, focus }: Options) {
+export function useServerChoice({ services, onChosen, focus, opening, openingFocus }: Options) {
   const [status, setStatus] = useState<string | undefined>(undefined);
-  const [question, setQuestion] = useState<Question | undefined>(undefined);
+  const [question, setQuestion] = useState<Question | undefined>(opening);
   const running = useRef<AbortController | undefined>(undefined);
-  const asking = useRef<Question | undefined>(undefined);
+  const asking = useRef<Question | undefined>(opening);
+  const fallbackFocus = useRef(openingFocus);
+  useEffect(() => {
+    fallbackFocus.current = openingFocus;
+  }, [openingFocus]);
 
   const ask = useCallback((next: Question | undefined) => {
     asking.current = next;
@@ -110,7 +122,7 @@ export function useServerChoice({ services, onChosen, focus }: Options) {
     const asked = asking.current;
     if (asked === undefined) return;
     ask(undefined);
-    focus(asked.from);
+    focus(asked.from ?? fallbackFocus.current);
   }, [ask, focus]);
 
   return { status, question, isBusy, choose, cancel, connect, decline };
