@@ -344,9 +344,10 @@ describe("PlaybackCoordinator", () => {
 
     await coordinator.start(item);
     player.emit({ kind: "loaded", snapshot });
+    player.emit({ kind: "first-frame" });
     player.emit({ kind: "state", snapshot: { ...snapshot, positionSeconds: 43 } });
 
-    await vi.waitFor(() => expect(onEvent).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(onEvent).toHaveBeenCalledTimes(3));
     finishReport();
     await coordinator.stop();
   });
