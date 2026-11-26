@@ -332,6 +332,7 @@ describe("redaction canary: PlaybackCoordinator", () => {
       }, new FakeClock());
       await coordinator.start(item);
       player.emit({ kind: "loaded", snapshot });
+      player.emit({ kind: "first-frame" });
       await vi.waitFor(() => expect(gateway.reportStart).toHaveBeenCalled());
       player.emit({ kind: "state", snapshot: { ...snapshot, paused: true }, cause: "pause" });
       await vi.waitFor(() => expect(gateway.reportProgress).toHaveBeenCalled());
