@@ -229,6 +229,18 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 | Coordinator (starts lanes, not tasks; one fresh session per lane run, with the advisor off: `docs/commands.md`, Coordinator) | **Sonnet 5.5** | main session |
 | Escalation after two failed attempts at the same problem | one tier up; **Fable 5.2** after Opus | any |
 
+### Which providers this machine can reach (2026-11-25)
+
+The table above is the shape; these are the routes that answer today, recorded from one-line probes (owner, `docs/specs/decisions-owner-chat-2026-11-25.md` §2).
+
+| Tier | Route | Note |
+|---|---|---|
+| Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5 | `claude-agent/fable`, `claude-agent/opus`, `claude-agent/sonnet`, `claude-agent/haiku` | The Anthropic Max plan. `anthropic/*` is out of API credit; `commandcode/*` rejects its token; the `claude-agent` aliases are the only names it exposes. |
+| Gemini 4 Neon | `google/gemini-4-neon` | Per token against a **$20 per 30 days** Google budget. Escalation only: at most one run per task, for breadth (a large audit, a big diff, a long-context sweep). |
+| Gemini 4 Argon, Kimi K3.1, Grok 4.7, and the cheap families | `opencode-go/*` | Funded separately from Google. |
+
+A task run spends at most one Fable escalation and one Neon run outside the Product Owner pass, and says what more would buy before spending it. The Product Owner runs on Fable 5.2. Probe a route before relying on it when a phase starts or a budget changes.
+
 ### Rules
 
 1. **Effort before model.** Try a stronger model at lower effort before a cheaper model at high effort.
@@ -242,7 +254,7 @@ Relative API list prices (per million input/output tokens, as of 2026-10):
 
 `.claude/workflows/task.js` runs tasks in order through Spec, Check, Tests, Implement, Review, and Ship. Start it with the Workflow tool (`args: {tasks: ["T3-01", "T3-02"], risk: "routine" | "high", native: false}`). It builds each task's worktree as `../octave-<TASK-ID>` on the branch `task/<TASK-ID>` from the repository name. Its tests: `pnpm test:workflow`.
 
-- The owner makes every look, wording, and direction call; the Product Owner approves scope-level acceptance edits, and the owner can veto them. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the owner answers them in one sitting.
+- Until the owner ends the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), the Product Owner makes every look, wording, and direction call, and the owner is asked only for UX/UI feedback during dogfooding. The Product Owner approves scope-level acceptance edits, and the owner can veto them. Before a batch, a Fable pass collects the batch's design questions into `docs/specs/decisions-<phase>.md` and the owner answers them in one sitting.
 - A task whose spec still needs a new design call is parked with its questions, and the run moves on.
 - The spec check blocks only on critical or high issues; medium and low issues go to the implementer.
 - Native work (Kotlin under `modules/` or `apps/tv/android`, from T3-01) routes to `native-engineer`, and any diff on a high-risk path adds a `guardian` review.
