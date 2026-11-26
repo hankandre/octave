@@ -14,7 +14,7 @@ pnpm samples:generate            # skips samples that already exist
 bash scripts/generate-samples.sh --force   # rebuild everything
 ```
 
-Requires `ffmpeg` and `ffprobe` with libx264, libx265, libsvtav1, and the `ass`, `srt`, `aac`, and `ac3` encoders. Each clip is 10 seconds. The script verifies the results with ffprobe and prints a summary table.
+Requires `ffmpeg` and `ffprobe` with libx264, libx265, libsvtav1, and the `ass`, `srt`, `aac`, and `ac3` encoders. Each clip is 10 seconds, except `Synthetic Show S01E01.mkv`, which is 60 seconds so that a device test can watch, pause and stop it (T8-03). A copy of it made before that is 10 seconds and fails the script's check: delete the file, run the script again, and rescan the libraries. The script verifies the results with ffprobe and prints a summary table.
 
 Folder and file names follow the Jellyfin naming docs: [movies](https://jellyfin.org/docs/general/server/media/movies/) and [shows](https://jellyfin.org/docs/general/server/media/shows/).
 
@@ -43,7 +43,7 @@ The dvdsub and ISO samples (P10-02) are opt-in, because they need `python3` and 
 | `movies/*/<name>.nfo` for H264, AV1, Multitrack, ASS, and Extras; `shows/Synthetic Show/tvshow.nfo` | Kodi-style NFO files giving genres, people, and a collection name (see below) |
 | `staging/Synthetic Show S01E03.mkv` | A third episode outside both libraries; the discovery recorder copies it into `Season 01` for one scene and removes it |
 | `staging/Synthetic Languages (2024)/Synthetic Languages (2024).mkv` and `.nfo` | One H.264 video, four audio tracks, and twelve SRT subtitle tracks in eight languages (P17-01), outside both libraries; the account-language recorder copies the folder into `movies/` for one run and removes it (see below) |
-| `shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv`, `S01E02.mkv` | Two regular episodes |
+| `shows/Synthetic Show/Season 01/Synthetic Show S01E01.mkv`, `S01E02.mkv` | Two regular episodes; S01E01 is 60 s, S01E02 10 s |
 | `shows/Synthetic Show/Season 00/Synthetic Show S00E01.mkv` | A special, for the specials default in the browse screen |
 
 ## Discovery metadata
