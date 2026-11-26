@@ -24,6 +24,9 @@ export type SignedInAppProps = {
   clock: Clock;
   /** Fills the artwork slot of Home and the player. T4-03 passes `createNativeArtwork` with the signed-in session. */
   Artwork?: ArtworkComponent;
+  /** Signs out: the gateway's logout, then the account's settings leave, then sign-in's first step (T4-05 D7). No
+   * screen calls it yet (T4-06, T9-05). */
+  signOut?: () => Promise<void>;
 };
 
 // The app has no sink for filtered failure reasons yet, so they are dropped here.

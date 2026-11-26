@@ -1,18 +1,24 @@
 // The sign-in steps and the hand-off between them (T4-02 D8, T4-03 D7, T4-04 D6, D7): the server step, then the later
 // step it is given, which may hand over to the password step. Both draw the chosen server's address through the frame.
+// After a confirmed revoke at launch (T4-05 D8) the flow starts on that server: past the server step, or on it with the
+// unencrypted-connection question open when the server needs it; the user's name waits for that server's password step.
 import { useCallback, useContext, useEffect, useReducer, type ComponentType, type MutableRefObject } from "react";
 import { DEFAULT_SIGN_IN_METHODS, type SignInMethods } from "@octave/core/src/domain/sign-in-methods";
 import type { ControlId } from "./controls";
 import { ServerStep } from "./server-step";
-import { ChosenServerContext, SignInServicesContext, type ChosenServer, type NextStepProps, type PasswordStepProps, type SignedIn } from "./sign-in-services";
+import { ChosenServerContext, SignInServicesContext, type ChosenServer, type NextStepProps, type PasswordStepProps, type SignedIn, type SignInStart } from "./sign-in-services";
 
-type Chosen = { chosen: ChosenServer; methods: SignInMethods; returnTo: ControlId };
+/** `returnTo` is the server step's control Back lands on; without it, the step's usual opening focus. */
+type Chosen = { chosen: ChosenServer; methods: SignInMethods; returnTo?: ControlId };
 
 /** Whether the viewer chose the password step, or the server left no other. */
 type PasswordFrom = "quick-connect" | "skipped";
 
+/** The unencrypted-connection question the server step opens with, asked once (T4-05 D8, Q13). */
+type Opening = Pick<SignInStart, "gateway" | "connection">;
+
 type State =
-  | { step: "server"; returnTo?: ControlId }
+  | { step: "server"; returnTo?: ControlId; opening?: Opening }
   | ({ step: "next" } & Chosen)
   | ({ step: "password"; from: PasswordFrom } & Chosen);
 
@@ -52,10 +58,19 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+// The first state: the server step, or the next step for a start whose server needs no confirmation.
+function initialState(start: SignInStart | undefined, methodsOf: ((chosen: ChosenServer) => SignInMethods) | undefined): State {
+  if (start === undefined) return { step: "server" };
+  if (start.connection.needsUnencryptedConfirmation) return { step: "server", opening: { gateway: start.gateway, connection: start.connection } };
+  const chosen = { gateway: start.gateway, serverName: start.connection.name, address: start.gateway.serverUrl };
+  return { step: "next", chosen, methods: methodsOf?.(chosen) ?? DEFAULT_SIGN_IN_METHODS };
+}
+
 type Props = {
   nextStep: ComponentType<NextStepProps>;
   passwordStep?: ComponentType<PasswordStepProps>;
   onSignedIn?: (signedIn: SignedIn) => void;
+  start?: SignInStart;
   /** Given the flow's Back: false only on the first step with nothing to stop. */
   backRef: MutableRefObject<() => boolean>;
   /** Given the server step's Back. */
@@ -64,14 +79,15 @@ type Props = {
 
 const ignoreSignIn = () => undefined;
 
-export function SignInFlow({ nextStep: NextStep, passwordStep: PasswordStep, onSignedIn = ignoreSignIn, backRef, stepBackRef }: Props) {
-  const [state, dispatch] = useReducer(reducer, { step: "server" });
+export function SignInFlow({ nextStep: NextStep, passwordStep: PasswordStep, onSignedIn = ignoreSignIn, start, backRef, stepBackRef }: Props) {
   const signInMethods = useContext(SignInServicesContext)?.signInMethods;
+  const [state, dispatch] = useReducer(reducer, undefined, () => initialState(start, signInMethods));
+  // The question is asked once, when the flow opens on the server step for that start.
   const changeServer = useCallback(() => dispatch({ type: "change-server" }), []);
   const openPassword = useCallback(() => dispatch({ type: "open-password" }), []);
   const choosePassword = useCallback(() => dispatch({ type: "choose-password" }), []);
   const onChosen = useCallback(
-    (chosen: ChosenServer, returnTo: ControlId) => dispatch({ type: "chosen", chosen, methods: signInMethods?.(chosen) ?? DEFAULT_SIGN_IN_METHODS, returnTo }),
+    (chosen: ChosenServer, returnTo?: ControlId) => dispatch({ type: "chosen", chosen, methods: signInMethods?.(chosen) ?? DEFAULT_SIGN_IN_METHODS, returnTo }),
     [signInMethods],
   );
 
@@ -84,15 +100,16 @@ export function SignInFlow({ nextStep: NextStep, passwordStep: PasswordStep, onS
   }, [backRef, stepBackRef, state.step]);
 
   if (state.step === "server") {
-    return <ServerStep entry={state.returnTo} onChosen={onChosen} backRef={stepBackRef} />;
+    return <ServerStep entry={state.returnTo} opening={state.opening} onChosen={onChosen} backRef={stepBackRef} />;
   }
   const shared = { chosen: state.chosen, changeServer, onSignedIn };
+  const initialUsername = start?.username !== undefined && state.chosen.address === start.gateway.serverUrl ? start.username : undefined;
   // One value draws both routes to the password step.
   const passwordOffered = PasswordStep !== undefined && state.methods.password === "offered";
   return (
     <ChosenServerContext.Provider value={state.chosen}>
       {state.step === "password" && PasswordStep !== undefined ? (
-        <PasswordStep {...shared} />
+        <PasswordStep {...shared} {...(initialUsername === undefined ? {} : { initialUsername })} />
       ) : (
         <NextStep {...shared} openPassword={passwordOffered ? openPassword : undefined} choosePassword={passwordOffered ? choosePassword : undefined} />
       )}

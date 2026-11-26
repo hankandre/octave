@@ -3,6 +3,7 @@
 import { createContext } from "react";
 import type { ServerDiscovery } from "@octave/core/src/domain/server-discovery";
 import type { SignInMethods } from "@octave/core/src/domain/sign-in-methods";
+import type { ServerConnection } from "@octave/core/src/domain/server-connection";
 import type { JellyfinGateway } from "@octave/core/src/jellyfin/gateway";
 import type { LanHttpConfirmationStore } from "@octave/core/src/lan-http-confirmations";
 import type { RememberedServers } from "@octave/core/src/remembered-servers";
@@ -43,7 +44,13 @@ export type PasswordStepProps = {
   chosen: ChosenServer;
   changeServer(): void;
   onSignedIn(signedIn: SignedIn): void;
+  /** The account's name after a confirmed revoke (T4-05 D8): Username starts filled, focus opens on Password, and an
+   * empty password is held until a field is edited. */
+  initialUsername?: string;
 };
+
+/** Where sign-in starts after a restore found the stored session revoked (T4-05 D8): that server, and the user's name. */
+export type SignInStart = { gateway: JellyfinGateway; connection: ServerConnection; username?: string };
 
 export const SignInServicesContext = createContext<SignInServices | undefined>(undefined);
 
