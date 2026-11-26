@@ -18,6 +18,7 @@ import * as artworkHeaderAndCache from "./artwork-header-and-cache";
 import * as playerOriginalFile from "./player-original-file";
 import * as playerRedirect from "./player-redirect";
 import * as playerSamples from "./player-samples";
+import * as playerViewing from "./player-viewing";
 import { SeamRecorder } from "./seam-recorder";
 import * as canary from "./transport-canary";
 import * as errors from "./transport-errors";
@@ -39,6 +40,7 @@ const TESTS: Record<string, (context: WireContext) => Promise<WireOutcome>> = {
   "player-capabilities": playerCapabilities.run,
   "artwork-header-and-cache": artworkHeaderAndCache.run,
   "artwork-canary": artworkCanary.run,
+  "player-viewing": playerViewing.run,
 };
 
 // The app's probe, as host-gateway.ts wires it: the player engine's initialize.
