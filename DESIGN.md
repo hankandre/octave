@@ -349,7 +349,7 @@ Each step asks one question in `typeTitle`, with no eyebrow.
 2. **Approve this sign-in on your phone.** The origin chip (the server's address in Mono) under the heading. The Quick Connect code is the hero in `typeCode`, grouped ("482 913"), and **a QR code beside it** that opens the server's approval page on a phone that is already signed in. The step says what to do in one sentence: "Scan the code with your phone, or enter the code in Quick Connect." No primary button: "Use a password" is secondary (hidden when the server has no password sign-in) and "Change server" is quiet. The screen updates by itself when the phone approves.
 3. **Who is signing in?** (the fallback) The same origin chip, Username and Password fields, "Show password", "Change server", and "Sign in" (primary).
 
-The unencrypted-connection warning is a dialog over step 1. Under its title it shows the server's name and, on its own line, the server's address in `typeMono`. Cancel is primary and focused; Back cancels.
+The unencrypted-connection warning is a dialog over step 1. Under its title it shows the server's name and, on its own line, the server's address in `typeMono`. Its actions are "Connect without encryption" (secondary), then "Cancel", primary last (7.16). Cancel is primary and focused; Back cancels.
 
 The QR code's content, its size, and the sign-in screen's layout are the owner's call. What the QR code links to depends on the server: Jellyscale issue #118 tracks its approval link (T10-06).
 
@@ -449,6 +449,11 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Sign-in, refused plain HTTP | n/a | This address uses plain HTTP on the internet, so Octave will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name. | n/a |
 | Sign-in, HTTPS address with a Unicode host | n/a | This address uses characters Octave can't check. Type the server's plain address instead. | n/a |
 | Sign-in, anything else | n/a | Something went wrong. Try again. | n/a |
+| Sign-in, redirect | n/a | The server answered with a redirect, which Octave does not follow. Enter the server's final address instead. | n/a |
+| Sign-in, unsupported version | n/a | This server's version isn't supported. Octave needs Jellyfin 10.11 or newer. | n/a |
+| Sign-in, not an address | n/a | That isn't a server address. Type it like 192.168.1.5:8096 or media.example.com. | n/a |
+| Sign-in, found server answered differently | n/a | The server at this address is not the one that answered on your network. Octave did not connect. Enter the server's address yourself. | n/a |
+| Sign-in, unencrypted connection (dialog) | This server uses an unencrypted connection | Your password and sign-in token will travel across your network without encryption. Anyone else on this network could read them and use your account. Continue only on a network you trust, such as your home network. | Connect without encryption / Cancel |
 | Series, no episodes | n/a | This series has no episodes yet. | n/a |
 | Next episode error | n/a | Couldn't load your next episode. | Retry |
 | Detail, watched or favorite toast | n/a | Marked as watched. / Marked as unwatched. / Added to favorites. / Removed from favorites. | n/a |
@@ -575,6 +580,20 @@ Made under the owner's delegation (`docs/specs/decisions-owner-chat-2026-11-25.m
 - Icons: `arrow-left`, `player-play`, `player-pause`, `rewind-backward-10`, `rewind-forward-10`.
 - Wording: "S1 · E2 {title}"; "Loading…" before a plan and "Opening the original file…" after; for TalkBack, "Player controls", "Seek", "Rewind 10 seconds" and "Forward 10 seconds".
 - The picture's frame in its own shape is a later task, so a film that is not 16:9 may be drawn stretched until then.
+
+### Product Owner calls, 2026-11-26 (T4-02)
+
+These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The reasons are in `docs/specs/T4-02.md`.
+
+- **C1. Copy.** The sign-in rows of section 10 for a redirect, an unsupported version, text that is not an address, a found server that answered differently, and the unencrypted-connection dialog. The "not an address" sentence is new wording. The dialog does not say that Octave will remember the choice, because the choice is kept for one launch only.
+- **C2. Back on the first sign-in step.** While a server is being probed, Back cancels the probe and stays on the step. After "Enter address" reveals the field, Back does what it does on the rest of the step, and the field stays. With nothing to stop, Back leaves the app without a question.
+- **C3.** Remembered servers have no section title.
+- **C4.** The conflict line on a found server: "Another address on this network answered as this server."
+- **C5.** There is no Connect button: the keyboard's action key submits the address.
+- **C6.** "Loading…" is the status line while a probe runs.
+- **C7.** A typed address with no scheme gets `http://` for this device or a home-network host, and `https://` otherwise.
+- **C8.** A search of the network that fails shows nothing; the address field shows, as when no server is found.
+- **C9.** The origin chip is `typeMono` on `surface2` at `radiusPill`, holding the full normalised address.
 
 ### Awaiting the owner
 
