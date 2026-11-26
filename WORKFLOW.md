@@ -238,7 +238,7 @@ The table above is the shape; these are the routes that answer today, recorded f
 |---|---|---|
 | Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5 | `claude-agent/fable`, `claude-agent/opus`, `claude-agent/sonnet`, `claude-agent/haiku` | The Anthropic Max plan. `anthropic/*` is out of API credit; `commandcode/*` rejects its token; the `claude-agent` aliases are the only names it exposes. |
 | Gemini 4 Neon | `google/gemini-4-neon` | Per token against a **$20 per 30 days** Google budget. Escalation only: at most one run per task, for breadth (a large audit, a big diff, a long-context sweep). |
-| Gemini 4 Argon, Kimi K3.1, Grok 4.7, and the cheap families | `opencode-go/*` | Funded separately from Google. |
+| Gemini 4 Argon, Kimi K3.1, Grok 4.7, and the cheap families | `opencode-go/*` | Not used: the quota ran out on 2026-11-26. The coordinator runs on the Anthropic plan. |
 
 A task run spends at most one Fable escalation and one Neon run outside the Product Owner pass, and says what more would buy before spending it. The Product Owner runs on Fable 5.2 for its pass and its direction, architecture and frozen-test calls, and on Opus 5.5 for the routine inline rulings (owner, 2026-11-26: `docs/specs/decisions-owner-chat-2026-11-26.md` §1). Probe a route before relying on it when a phase starts or a budget changes.
 
