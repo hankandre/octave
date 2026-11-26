@@ -10,6 +10,8 @@ export interface CaptureRecord {
   status: number | null;
   retryAfter: string | null;
   secretInUrl: boolean;
+  /** On the Quick Connect Initiate and sign-in records only: the recorder learned the answer's secret value. */
+  learned?: boolean;
 }
 export interface WirePair {
   test: string;

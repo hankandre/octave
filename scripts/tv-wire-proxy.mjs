@@ -26,14 +26,21 @@
 // JSON type is right, and its PlayMethod only when it is DirectPlay, DirectStream or Transcode; each is else null.
 // Nothing else of the body is kept, so no id is.
 //
-// T4-03 learns the Secret of every 2xx POST /QuickConnect/Initiate answer: it joins the run's secrets, so it fails the
-// run in a logcat line, in any evidence file and in a URL. The poll sends it in its query by the API's design, so that one
-// value, the `secret` parameter of a GET whose path ends /QuickConnect/Connect, is left out of the URL's secret scan.
+// T4-03 learns the Secret of every 2xx POST /QuickConnect/Initiate answer and the AccessToken of every 2xx
+// POST /Users/AuthenticateWithQuickConnect answer: each joins the run's secrets, so it fails the run in a logcat line,
+// in any evidence file and in a URL. The poll sends the secret in its query by the API's design, so that one value, the
+// `secret` parameter of a GET whose path ends /QuickConnect/Connect, is left out of the URL's secret scan. Those two
+// records say `learned`, true or false, so the judge fails a run whose leak checks had nothing to look for.
+//
+// The app asks for compressed answers and a real server sends them (Jellyfin compresses JSON), so the recorder reads
+// each value from a decompressed copy and relays the answer's own bytes. Asking the upstream for identity instead would
+// have meant the wire test no longer ran the compressed path the app runs.
 //
 // Also here: the global-proxy listener, which records the requests that arrive when the emulator's http_proxy names
 // it, and a health check for the fixture servers.
 import { createHash } from "node:crypto";
 import { createServer, request as httpRequest } from "node:http";
+import { brotliDecompressSync, gunzipSync, inflateSync } from "node:zlib";
 import { safeRecord, safeUrlParts } from "./tv-wire-evidence.mjs";
 
 const LOOPBACK = "127.0.0.1";
@@ -202,10 +209,19 @@ export function withoutOwnQuickConnectSecret(method, rawUrl, ownSecrets) {
   return isPoll ? blankOwnValues(rawUrl, /([?&]secret=)([^&#]*)/g, ownSecrets) : rawUrl;
 }
 
-// A non-empty string field of a JSON answer, or undefined.
-function answerField(body, name) {
+const DECODERS = new Map([
+  ["identity", (body) => body],
+  ["gzip", gunzipSync],
+  ["deflate", inflateSync],
+  ["br", brotliDecompressSync],
+]);
+
+// A non-empty string field of a JSON answer sent with `encoding` (its Content-Encoding), or undefined.
+function answerField(body, encoding, name) {
   try {
-    const value = JSON.parse(body.toString("utf8"))[name];
+    const decode = DECODERS.get((encoding ?? "identity").trim().toLowerCase());
+    if (decode === undefined) return undefined;
+    const value = JSON.parse(decode(body).toString("utf8"))[name];
     return typeof value === "string" && value !== "" ? value : undefined;
   } catch {
     return undefined;
@@ -243,6 +259,7 @@ export function startRecorder({ upstream, secrets, swap }) {
     records.push(record);
     let body = await readBody(incoming);
     const signIn = record.method === "POST" && url.pathname.endsWith("/Users/AuthenticateByName");
+    const quickConnectSignIn = record.method === "POST" && url.pathname.endsWith("/Users/AuthenticateWithQuickConnect");
     const playbackInfo = record.method === "POST" && /\/PlaybackInfo$/i.test(url.pathname);
     const initiate = record.method === "POST" && url.pathname.endsWith("/QuickConnect/Initiate");
     if (playbackInfo) record.playbackInfo = playbackInfoFacts(body.toString("utf8"), incoming.url ?? "/");
@@ -267,14 +284,16 @@ export function startRecorder({ upstream, secrets, swap }) {
       const succeeded = record.status >= 200 && record.status < 300;
       // Learned before the app has the answer, so nothing it does with a value goes unwatched.
       const learn = (name, own) => {
-        const value = answerField(answerBody, name);
-        if (value === undefined) return;
+        const value = answerField(answerBody, answer.headers["content-encoding"], name);
+        if (value === undefined) return false;
         own?.add(value);
         secrets.add(value);
+        return true;
       };
       if (succeeded && playbackInfo) learn("PlaySessionId", playSessions);
-      if (succeeded && initiate) learn("Secret", quickConnectSecrets);
+      if (succeeded && initiate) record.learned = learn("Secret", quickConnectSecrets);
       if (succeeded && signIn) learn("AccessToken");
+      if (succeeded && quickConnectSignIn) record.learned = learn("AccessToken");
       const back = { ...answer.headers, "content-length": String(answerBody.length) };
       delete back["transfer-encoding"];
       outgoing.writeHead(answer.statusCode ?? 502, back);

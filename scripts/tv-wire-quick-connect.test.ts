@@ -2,7 +2,8 @@
 // T4-03 items 3 and 9, the host half of the wire test sign-in-quick-connect (docs/specs/T4-03.md, D12): what the judge
 // accepts, and how the recorder treats the Quick Connect secret. The device half is `pnpm tv:wire --task T4-03`.
 // Jellyfin's secret is 64 hex characters, written in uppercase by the server's source; both cases are held here.
-import { createServer, type Server } from "node:http";
+import { createServer, request, type Server } from "node:http";
+import { gzipSync } from "node:zlib";
 import { afterEach, describe, expect, it } from "vitest";
 import { judgeQuickConnectCapture, judgeLogcat, judgeRecords, type CaptureRecord } from "./tv-wire-judge.mjs";
 import { startRecorder, withoutOwnQuickConnectSecret } from "./tv-wire-proxy.mjs";
@@ -14,6 +15,8 @@ const POLL = "/QuickConnect/Connect";
 const PORT = 47320;
 const HOST = `127.0.0.1:${PORT}`;
 const SAID = { outcome: "ok", home: "shown" };
+const TOKEN = "9f8e7d6c5b4a39281706f5e4d3c2b1a0";
+const LEARNED_FROM = ["/QuickConnect/Initiate", "/Users/AuthenticateWithQuickConnect"];
 
 const TOKENLESS = ["/System/Info/Public", "/QuickConnect/Enabled", "/QuickConnect/Initiate", POLL, "/Users/AuthenticateWithQuickConnect"];
 
@@ -29,6 +32,7 @@ function rec(method: string, path: string, extra: Partial<CaptureRecord> = {}): 
     status: 200,
     retryAfter: null,
     secretInUrl: false,
+    ...(LEARNED_FROM.includes(path) ? { learned: true } : {}),
     ...extra,
   };
 }
@@ -76,6 +80,16 @@ describe("T4-03 item 3: the judge of a Quick Connect sign-in's capture", () => {
   it("fails a sign-in with no poll before it", () => {
     const records = goodCapture().filter((record) => record.path !== POLL);
     expect(judge(records).join("\n")).toContain("no poll followed the Initiate");
+  });
+
+  it.each([
+    ["secret", 2],
+    ["token", 5],
+  ])("fails when the recorder learned no %s, so no leak check could find it", (what, index) => {
+    const records = goodCapture();
+    records[index] = { ...records[index], learned: false } as CaptureRecord;
+
+    expect(judge(records)).toEqual([expect.stringContaining(`learned no ${what}`)]);
   });
 
   it.each([
@@ -178,5 +192,65 @@ describe("T4-03 item 3: a learned secret fails the run everywhere but its own po
     const run = await recordingOf(UPPER, 401);
 
     expect([...run.secrets]).toEqual([]);
+  });
+});
+
+describe("T4-03 item 3: the recorder learns the secret and the token from compressed answers", () => {
+  const closers: Array<() => Promise<unknown>> = [];
+  afterEach(async () => {
+    for (const close of closers.splice(0).reverse()) await close();
+  });
+
+  /** A recorder in front of a server that gzips its JSON when asked, as Jellyfin does. */
+  async function compressedRecording() {
+    const answers: Record<string, unknown> = {
+      "/QuickConnect/Initiate": { Secret: UPPER, Code: CODE },
+      "/Users/AuthenticateWithQuickConnect": { AccessToken: TOKEN },
+    };
+    const upstream = createServer((incoming, outgoing) => {
+      const plain = Buffer.from(JSON.stringify(answers[incoming.url ?? ""] ?? {}));
+      const wantsGzip = String(incoming.headers["accept-encoding"] ?? "").includes("gzip");
+      const body = wantsGzip ? gzipSync(plain) : plain;
+      const encoding: Record<string, string> = wantsGzip ? { "content-encoding": "gzip" } : {};
+      outgoing.writeHead(200, { "content-type": "application/json", "content-length": String(body.length), connection: "close", ...encoding });
+      outgoing.end(body);
+    });
+    await new Promise<void>((done) => upstream.listen(0, "127.0.0.1", done));
+    closers.push(() => new Promise((done) => upstream.close(done)));
+    const address = upstream.address();
+    if (address === null || typeof address === "string") throw new Error("the upstream has no port");
+    const secrets = new Set<string>();
+    const recorder = await startRecorder({ upstream: { port: address.port }, secrets });
+    closers.push(recorder.close);
+    // node:http, unlike fetch, leaves the answer compressed, so the relayed encoding can be read.
+    const post = (path: string) =>
+      new Promise<string | undefined>((resolve, reject) => {
+        const sent = request({ host: "127.0.0.1", port: recorder.port, method: "POST", path, headers: { "accept-encoding": "gzip" } }, (answer) => {
+          answer.resume();
+          answer.on("end", () => resolve(answer.headers["content-encoding"]));
+        });
+        sent.on("error", reject);
+        sent.end();
+      });
+    return { secrets, post, records: recorder.records };
+  }
+
+  it("learns both values and relays the answer still compressed", async () => {
+    const run = await compressedRecording();
+
+    expect(await run.post("/QuickConnect/Initiate")).toBe("gzip");
+    await run.post("/Users/AuthenticateWithQuickConnect");
+
+    expect([...run.secrets]).toEqual([UPPER, TOKEN]);
+    expect(run.records.map((record) => record.learned)).toEqual([true, true]);
+  });
+
+  it("fails a logcat line that holds the token the Quick Connect sign-in issued", async () => {
+    const run = await compressedRecording();
+
+    await run.post("/Users/AuthenticateWithQuickConnect");
+
+    const logcat = [`11-26 10:00:00.000  100  100 I ReactNativeJS: signed in with ${TOKEN}`];
+    expect(judgeLogcat(logcat, [...run.secrets])).toEqual(["ERROR wire logcat: line 1 holds a known secret"]);
   });
 });
