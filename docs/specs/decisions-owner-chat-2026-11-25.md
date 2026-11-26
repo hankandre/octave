@@ -58,3 +58,23 @@ window stays for the work.
 
 **Re-check.** When a phase starts or a budget changes, confirm each route with a one-line probe before relying
 on it (`AGENTS.md`, "Re-check every dependency when a phase starts").
+
+## 3. Where Gemini 4 Neon sits
+
+**Decision.** Neon reviews; it does not build. Its one standing slot is the **review sweep of a high-risk task**: one
+run per task, after the guardian, on a task that touches native code, the token boundary, negotiation, or another
+invariant. It reads the spec, the acceptance items, the diff and the files the spec names, and returns findings
+only — severity, `file:line`, the claim, and the rule or spec line it breaks. No style, no re-planning, no code.
+Its second slot is a one-off cross-cutting audit a task asks for, such as a repo-wide sweep of media-URL builders
+or token paths.
+
+It is not used for implementation, test writing, or mechanical work: those are proven on the Max plan, and the
+Google budget is $20 per 30 days.
+
+**Cost.** One review sweep reads roughly 150k to 300k tokens and writes 10k to 20k, so about $0.60 to $1.20 at
+$3/$15; a repo-wide audit is about double. One sweep per high-risk task is sustainable inside the budget. If a
+month's spend approaches the cap, the sweep stops and the task ships on the Opus guardian alone.
+
+**Measurement.** Each sweep records how many findings it returned and how many survived checking (precision), in
+the task's pull request beside the guardian's findings. The first is T8-03's review, run beside the Opus guardian
+on the same diff so the two can be compared.
