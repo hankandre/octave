@@ -1,0 +1,9 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/QuickConnect/Enabled",
+    "queryNames": []
+  },
+  "status": 200,
+  "body": false
+}
