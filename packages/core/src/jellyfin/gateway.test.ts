@@ -101,12 +101,23 @@ describe("JellyfinGateway direct-play contract", () => {
     });
   });
 
-  it.each(["10.10.7", "", "abc", "10", "10.x.1", "v12.4.0"])("rejects Jellyfin version %j", async (version) => {
+  it.each(["10.10.7", "", "abc", "10", "10.x.1", "v12.4.0", "10.10.7-canary"])("rejects Jellyfin version %j", async (version) => {
     const transport = new FakeTransport();
     transport.responses.set("GET /System/Info/Public", { Version: version });
-    await expect(new JellyfinGateway("https://media.test", webCrypto, transport).connect()).rejects.toThrow(
-      `Octave needs Jellyfin 10.11 or newer; this server reports ${version}.`,
+    const failure: Error = await new JellyfinGateway("https://media.test", webCrypto, transport).connect().then(
+      () => expect.fail("the version was accepted"),
+      (error: Error) => error,
     );
+    // The fixed sentence names 10.11, so "10" and "" cannot be searched for: every own property is pinned instead.
+    const held = Object.getOwnPropertyNames(failure)
+      .filter((property) => property !== "stack")
+      .map((property) => [property, Reflect.get(failure, property)]);
+    expect(Object.fromEntries(held)).toEqual({
+      kind: "unsupported-version",
+      message: "Octave needs Jellyfin 10.11 or newer.",
+      name: "SignInFailure",
+    });
+    expect(failure.stack).not.toContain("canary");
   });
 
   it("returns the stable user ID and applies control request cancellation", async () => {
