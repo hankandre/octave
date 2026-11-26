@@ -1,6 +1,7 @@
 // The composition root: sign-in until a session exists, then the signed-in app (T4-03 D8). Nothing is stored yet
 // (T4-05), so every launch starts at sign-in's first step.
 import { AppRoot } from "./app-root";
+import { ReducedMotionProvider } from "./design/motion";
 import { hostClock } from "./host/clock";
 import { hostSignedInParts } from "./host/host-signed-in";
 import { hostSignInServices } from "./host/host-sign-in";
@@ -13,5 +14,9 @@ function SignIn({ onSignedIn }: { onSignedIn(signedIn: SignedIn): void }) {
 }
 
 export default function App() {
-  return <AppRoot signIn={SignIn} signedInParts={hostSignedInParts} />;
+  return (
+    <ReducedMotionProvider>
+      <AppRoot signIn={SignIn} signedInParts={hostSignedInParts} />
+    </ReducedMotionProvider>
+  );
 }
