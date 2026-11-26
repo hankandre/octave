@@ -46,6 +46,15 @@ class Media3Engine(private val context: () -> Context?, private val closed: () -
     private var holdsSurface = false
     private var logsOff = false
 
+    // The position report (T8-03, D4): one runnable on `main`, reposted every second until release or close.
+    private val positionTick = object : Runnable {
+        override fun run() {
+            if (closed()) return
+            core.tick()
+            main.postDelayed(this, POSITION_TICK_MILLIS)
+        }
+    }
+
     private val probe = CapabilityProbe { DevicePlatformReader.read(if (closed()) null else context()) }
 
     override fun capabilities(): Capabilities = probe.probe()
@@ -66,6 +75,8 @@ class Media3Engine(private val context: () -> Context?, private val closed: () -
             holdsSurface = true
         }
         core.launch(request)
+        main.removeCallbacks(positionTick)
+        main.postDelayed(positionTick, POSITION_TICK_MILLIS)
     }
 
     override fun setPaused(paused: Boolean) = gate.run { core.setPaused(paused) }
@@ -77,6 +88,7 @@ class Media3Engine(private val context: () -> Context?, private val closed: () -
     override fun stop() = gate.runEvenWhenClosed(::release)
 
     private fun release() {
+        main.removeCallbacks(positionTick)
         core.stop()
         if (holdsSurface) {
             VideoSurfaceSlot.setListener(null)
@@ -92,5 +104,6 @@ class Media3Engine(private val context: () -> Context?, private val closed: () -
 
     private companion object {
         const val MAIN_WAIT_MILLIS = 10_000L
+        const val POSITION_TICK_MILLIS = 1000L
     }
 }
