@@ -87,6 +87,14 @@ class EngineCore(
         }
     }
 
+    // The position report (T8-03, D4): Media3Engine calls this once a second. Nothing goes out with no launch, before
+    // `loaded`, or once the launch ended or failed.
+    fun tick() {
+        val current = handle ?: return
+        if (!loaded || ended || failed) return
+        emit(PlayerEvent.State(snapshot(current), "property"))
+    }
+
     // The view's current surface, or null when it went; the handle has it at once.
     fun surface(next: Any?) {
         surface = next
