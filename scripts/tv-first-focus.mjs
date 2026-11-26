@@ -1,6 +1,7 @@
 // The first-focus smoke test (T3-01 item 4): install the release APK on the emulator ANDROID_SERIAL names, start it
-// through the leanback launcher category, send no key until the first tile reports focus, then send exactly one Right
-// and require the second tile to take focus. judgeFirstFocus() is the oracle; the transcript and a screenshot of the
+// through the leanback launcher category, send no key until the opening screen's first control reports focus, then send
+// exactly one Down and require the next control to take focus. The release app opens on sign-in's server step with no
+// server found: Search again, with the Server URL field under it (T4-03 D10). judgeFirstFocus() is the oracle; the transcript and a screenshot of the
 // first screen go to release-evidence/tv/. The development server watch (T3-19 item 2) runs around the app start and
 // fails the run on any connection from the app to the development server port; see scripts/tv-dev-server-watch.mjs.
 // Run: ANDROID_SERIAL=<emulator> node scripts/tv-first-focus.mjs [apk]   (pnpm tv:smoke)
@@ -21,6 +22,11 @@ const FIRST_FOCUS_MS = 30_000;
 const AFTER_PRESS_MS = 5_000;
 const SETTLE_MS = 1_500;
 
+const OPENING_CONTROL = "sign-in-search-again";
+const NEXT_CONTROL = "sign-in-address";
+const PRESS = "1 DOWN";
+const PRESS_KEYCODE = "20";
+
 // A logcat line in any column format: `... <pid> <tid> <priority> <tag>: <message>`.
 const LOGCAT = /\d+\s+\d+\s+[VDIWEFA]\s+([^:]*?)\s*:\s?(.*)$/;
 
@@ -29,14 +35,14 @@ function parse(line) {
   const match = LOGCAT.exec(line);
   if (match === null) return { kind: "other" };
   const [, tag, message] = match;
-  const focus = /^OCTAVE_FOCUS (tile-\d+)$/.exec(message.trim());
-  if (tag === "ReactNativeJS" && focus !== null) return { kind: "focus", tile: focus[1] };
-  if (tag === "OCTAVE_PRESS" && message.trim() === "1 RIGHT") return { kind: "press" };
+  const focus = /^OCTAVE_FOCUS ([a-z0-9-]+)$/.exec(message.trim());
+  if (tag === "ReactNativeJS" && focus !== null) return { kind: "focus", control: focus[1] };
+  if (tag === "OCTAVE_PRESS" && message.trim() === PRESS) return { kind: "press" };
   return { kind: "other" };
 }
 
-// Returns `ERROR tv focus: <reason>` lines; empty only when tile-0 held focus before the one press and tile-1 is the
-// first focus after it.
+// Returns `ERROR tv focus: <reason>` lines; empty only when the opening control held focus before the one press and the
+// next control is the first focus after it.
 export function judgeFirstFocus(lines) {
   const events = lines.map(parse);
   const errors = [];
@@ -49,7 +55,7 @@ export function judgeFirstFocus(lines) {
   }
 
   const presses = events.flatMap((event, index) => (event.kind === "press" ? [index] : []));
-  const focuses = events.flatMap((event, index) => (event.kind === "focus" ? [{ index, tile: event.tile }] : []));
+  const focuses = events.flatMap((event, index) => (event.kind === "focus" ? [{ index, control: event.control }] : []));
   if (presses.length === 0) {
     fail("no press marker; the smoke test sends exactly one press");
     if (focuses.length === 0) fail("no focus line arrived");
@@ -67,13 +73,13 @@ export function judgeFirstFocus(lines) {
     return errors;
   }
   if (before.length === 0) {
-    fail(`the first focus (${after[0].tile}) came only after the press: a priming press; tile-0 must hold focus before the press`);
+    fail(`the first focus (${after[0].control}) came only after the press: a priming press; ${OPENING_CONTROL} must hold focus before the press`);
     return errors;
   }
-  const held = before[before.length - 1].tile;
-  if (held !== "tile-0") fail(`${held} held focus before the press, not tile-0`);
-  if (after.length === 0) fail("no focus line after the press; Right must move focus to tile-1");
-  else if (after[0].tile !== "tile-1") fail(`the first focus after the press is ${after[0].tile}, not tile-1`);
+  const held = before[before.length - 1].control;
+  if (held !== OPENING_CONTROL) fail(`${held} held focus before the press, not ${OPENING_CONTROL}`);
+  if (after.length === 0) fail(`no focus line after the press; Down must move focus to ${NEXT_CONTROL}`);
+  else if (after[0].control !== NEXT_CONTROL) fail(`the first focus after the press is ${after[0].control}, not ${NEXT_CONTROL}`);
   return errors;
 }
 
@@ -119,7 +125,7 @@ export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = E
     }
 
     const logcat = () => shell("logcat", "-d", "-v", "threadtime", "ReactNativeJS:I", "OCTAVE_PRESS:I", "*:S").stdout.split("\n").filter(Boolean);
-    // Send no key until the first tile reports focus, or the wait runs out (the judge then names the failure).
+    // Send no key until a control reports focus, or the wait runs out (the judge then names the failure).
     for (const deadline = Date.now() + FIRST_FOCUS_MS; Date.now() < deadline; await sleep(250)) {
       if (logcat().some((line) => parse(line).kind === "focus")) break;
     }
@@ -129,8 +135,8 @@ export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = E
     const screen = runner.bytes(["exec-out", "screencap", "-p"]);
     if (screen.status === 0) writeFileSync(join(evidence, "first-screen.png"), screen.stdout);
 
-    shell("log", "-t", "OCTAVE_PRESS", "1 RIGHT");
-    shell("input", "keyevent", "22");
+    shell("log", "-t", "OCTAVE_PRESS", PRESS);
+    shell("input", "keyevent", PRESS_KEYCODE);
     for (const deadline = Date.now() + AFTER_PRESS_MS; Date.now() < deadline; await sleep(250)) {
       const events = logcat().map(parse);
       const press = events.findIndex((event) => event.kind === "press");
@@ -198,7 +204,7 @@ export async function smokeCli({ serial, adbPath, apk, port = 8081, evidence = E
     for (const error of errors) console.error(error);
     return 1;
   }
-  console.log("tv focus: tile-0 took focus with no key, and one Right moved it to tile-1");
+  console.log(`tv focus: ${OPENING_CONTROL} took focus with no key, and one Down moved it to ${NEXT_CONTROL}`);
   console.log("tv smoke: the release app opened no connection to the development server port while it started");
   return 0;
 }
