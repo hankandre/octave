@@ -355,9 +355,17 @@ Each step asks one question in `typeTitle`, with no eyebrow.
    - **With no approval link** (a loopback server, which a phone cannot open) the code shows alone, with "On your phone, open {address} and enter this code in Quick Connect."
    - **While loading** (before the code, and while signing in) the step says "Loading…"; while signing in the code stays.
    - **A failure** removes the code and shows one sentence and, except after a redirect, one focused button: "Get a new code" after an expired or refused code, "Try again" when the server is unreachable or something else went wrong. "Change server" is always last.
-   - **Focus** opens on "Change server", the step's only control until "Use a password" is built (T4-04), which then goes before it and takes the opening focus.
-   - **With Quick Connect off or not built** the step is skipped and step 3 opens. Until step 3 is built (T4-04), its place shows "Who is signing in?", "Not available yet." and "Change server", focused.
-3. **Who is signing in?** (the fallback) The same origin chip, Username and Password fields, "Show password", "Change server", and "Sign in" (primary).
+   - **Focus** opens on "Use a password", which sits before "Change server" and after a failure's button; a failure focuses its own button, and after "Get a new code" or "Try again" focus returns to "Use a password". It is drawn while the first check loads. After a redirect it is not drawn, because a password would meet the same redirect. Where the password is hidden, "Change server" takes the opening focus.
+   - **With Quick Connect off or not built** the step is skipped and step 3 opens.
+3. **Who is signing in?** (the fallback) Top to bottom: the heading and the same origin chip, the Username field, the Password field, a "Show password" row, the status or failure line, "Sign in" (primary) and "Change server" (quiet, last).
+   - **Fields.** Both use the system keyboard, neither scales on focus, and neither capitalises, corrects or is offered to Android autofill. The username is sent as typed.
+   - **Show password** is a labelled switch with "On" or "Off", off every time the step opens. While it is on, the keyboard treats the Password field as an ordinary field, so it may underline, suggest or learn what is typed, and offers its microphone (section 12, T4-04, C12).
+   - **Focus** opens on Username.
+   - **Keys.** Username's action key is "Next": it moves focus to Password, the keyboard closes and select opens it again. Password's action key is "Go" and signs in, as "Sign in" does. With an empty username nothing is sent and focus goes to Username. An empty password is sent, since an account may have none.
+   - **While signing in** the status line says "Loading…", the fields stay enabled and a second press does nothing.
+   - **A failure** shows one sentence (section 10), keeps the username, clears the password and focuses Password; after a redirect it focuses "Change server".
+   - **After a failure, an empty password is not sent** until the viewer changes Username or Password; any edit counts, even one that leaves the password empty. Until then "Sign in" and "Go" send nothing, the sentence stays and focus goes to Password. One exception: when the failed try was itself sent with an empty password, and the failure was neither a wrong name or password nor a refused account, it may be sent again as it is. A cancelled sign-in is not a failure.
+   - **Back** returns to step 2, with a new code and focus on "Use a password", when "Use a password" opened this step; when the server left no other step, it returns to step 1. "Change server" always returns to step 1. Leaving during a sign-in cancels it. (Pressed before the server has said it has no Quick Connect, "Use a password" takes two Backs to reach step 1.)
 
 The unencrypted-connection warning is a dialog over step 1. Under its title it shows the server's name and, on its own line, the server's address in `typeMono`. Its actions are "Connect without encryption" (secondary), then "Cancel", primary last (7.16). Cancel is primary and focused; Back cancels.
 
@@ -455,14 +463,14 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Search, error | n/a | Couldn't load search results. | Retry |
 | Search, more results error | n/a | Couldn't load more results. | Retry |
 | Sign-in, Quick Connect | Approve this sign-in on your phone | Scan the code with your phone, or enter the code in Quick Connect. | Use a password |
-| Sign-in, Quick Connect off | n/a | Quick Connect is off on this server. Ask its owner to turn it on, or use a password. | Use a password |
+| Sign-in, Quick Connect off (not shown: T4-04 C11) | n/a | Quick Connect is off on this server. Ask its owner to turn it on, or use a password. Not shown: the password step opens directly, the action means nothing there, and a server with no Quick Connect at all would make the sentence untrue. | Use a password |
 | Sign-in, Quick Connect, loading | n/a | Loading… | n/a |
 | Sign-in, Quick Connect, no approval link | Approve this sign-in on your phone | On your phone, open {address} and enter this code in Quick Connect. | n/a |
 | Sign-in, Quick Connect, code expired | n/a | This code has expired. Get a new code to try again. | Get a new code |
 | Sign-in, Quick Connect, code refused | n/a | The server didn't accept this code. Get a new code to try again. | Get a new code |
 | Sign-in, Quick Connect, unreachable or anything else | n/a | The "Sign-in, unreachable" or "Sign-in, anything else" sentence. | Try again |
-| Sign-in, password step not built yet | Who is signing in? | Not available yet. | Change server |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
+| Sign-in, account refused | n/a | This account can't sign in right now. Try again later. If it still doesn't work, ask the server's owner. | n/a |
 | Sign-in, unreachable | n/a | Couldn't reach {address}. Check the address and that the server is running. | n/a |
 | Sign-in, refused plain HTTP | n/a | This address uses plain HTTP on the internet, so Octave will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name. | n/a |
 | Sign-in, HTTPS address with a Unicode host | n/a | This address uses characters Octave can't check. Type the server's plain address instead. | n/a |
@@ -628,6 +636,23 @@ These are the Product Owner's calls under the delegation (`docs/specs/decisions-
 - **C6.** The code is grouped three and three, and TalkBack reads it digit by digit.
 - **C7.** The password step's placeholder is "Who is signing in?", "Not available yet." and "Change server", with no "Quick Connect is off" sentence.
 - **C8.** A failure removes the code from the screen.
+
+### Product Owner calls, 2026-11-26 (T4-04)
+
+These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The reasons are in `docs/specs/T4-04.md`.
+
+- **C1. Layout.** The password step reads top to bottom: "Who is signing in?" and the origin chip; Username; Password; the Show password row; the status or failure line; Sign in (primary); Change server (quiet, last, as on the Quick Connect step).
+- **C2. Opening focus** is the Username field, not Sign in: over two empty fields, Sign in does nothing useful.
+- **C3. Keys.** Username's action key is "Next" and moves focus to Password; the keyboard closes and select opens it again, an extra press to judge on the TV. Password's action key is "Go" and signs in.
+- **C4. An empty username** sends nothing and focuses Username, with no sentence. An empty password is sent. The username is sent as typed. **Narrowed:** after a failed sign-in, an empty password is not sent until the viewer changes Username or Password (any edit counts, even one that leaves the password empty). Until then Sign in and "Go" send nothing, the failure sentence stays and focus goes to Password. When the failed try was itself sent with an empty password and the answer was not a 401 or a 403, it may be sent again with no edit. A cancelled sign-in is not a failure. To judge: after a wrong password, a press on Sign in does nothing until a field is edited, and says nothing new; a viewer whose account has no password, and who got a 401 or a 403, must change a field first. Restoring "an empty password is always sent" would cost this: on Jellyfin's default, each such press is one of three tries before the account is disabled for everyone.
+- **C5. While signing in** the status line says "Loading…", a second press does nothing and the fields stay enabled.
+- **C6. Failures.** A 403 gets a new sentence: "This account can't sign in right now. Try again later. If it still doesn't work, ask the server's owner." After any failure the password is cleared, the username kept and focus goes to Password; a redirect focuses Change server. The sentence is `text1` with no icon, as on the Quick Connect step.
+- **C7. "Use a password"** on the Quick Connect step is secondary, between a failure's retry and Change server, and takes the opening focus. It is hidden after a redirect. After "Get a new code" or "Try again", focus goes to it.
+- **C8. Show password** is a row with the label "Show password" and a switch showing "On" or "Off", off every time the step opens.
+- **C9. Back to Quick Connect.** Back from a password step opened by "Use a password" returns to the Quick Connect step with a new code, focus on "Use a password".
+- **C10. Back during a sign-in** cancels it and leaves the step.
+- **C11. No "Quick Connect is off" sentence.** The password step does not show it; its row in section 10 is marked not shown.
+- **C12. Autofill and a shown password.** Neither field is offered to Android autofill. While Show password is on, the field asks for a visible password, which react-native-tvos 0.88.1 does not pass to the keyboard, so the keyboard sees an ordinary field and may suggest or learn what is typed while the password is shown. Vetoing Show password removes that exposure; the fix that keeps it is a React Native patch (backlog).
 
 ### Awaiting the owner
 
