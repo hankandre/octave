@@ -7,8 +7,14 @@
 // - `OCTAVE_RESOLVE <component>`: the last line of `cmd package resolve-activity --brief -c
 //   android.intent.category.LEANBACK_LAUNCHER <id>`, written by the script before `am start`.
 // - logcat lines, in whatever column format logcat prints: a focus line has the tag `ReactNativeJS` and the message
-//   `OCTAVE_FOCUS tile-<n>`; the press marker has the tag `OCTAVE_PRESS` and the message `1 RIGHT`. The judge reads the
-//   tag and the message, not the time, pid or priority columns.
+//   `OCTAVE_FOCUS <id>`, the id a control's fixed testID (lower-case letters, digits and hyphens); the press marker has
+//   the tag `OCTAVE_PRESS` and the message `1 DOWN`. The judge reads the tag and the message, not the time, pid or
+//   priority columns.
+//
+// The release build opens on the sign-in server step (T4-03 item 9; Product Owner ruling of 2026-11-26, T4-03 Spec).
+// With no server found, Search again holds the opening focus and the Server URL field is under it, so the oracle
+// names those two controls and the one press is Down. Until that ruling it named the placeholder's tile-0 and tile-1
+// and one Right.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,8 +31,12 @@ async function loadJudge(): Promise<JudgeFirstFocus> {
 
 const RESOLVED = "OCTAVE_RESOLVE cloud.jellyscale.octave/dev.octave.tv.MainActivity";
 // `adb logcat` default (threadtime) format.
-const focus = (tile: number, time = "10:00:01.000") => `11-21 ${time}  4321  4377 I ReactNativeJS: OCTAVE_FOCUS tile-${tile}`;
-const press = (time = "10:00:02.000") => `11-21 ${time}  5000  5000 I OCTAVE_PRESS: 1 RIGHT`;
+const OPENING = "sign-in-search-again";
+const NEXT = "sign-in-address";
+// 0 is the opening control, 1 the control one Down moves to, 2 another control of the same screen.
+const CONTROLS = [OPENING, NEXT, "sign-in-enter-address"];
+const focus = (control: number, time = "10:00:01.000") => `11-21 ${time}  4321  4377 I ReactNativeJS: OCTAVE_FOCUS ${CONTROLS[control]}`;
+const press = (time = "10:00:02.000") => `11-21 ${time}  5000  5000 I OCTAVE_PRESS: 1 DOWN`;
 const noise = "11-21 10:00:00.500  4321  4377 I ReactNativeJS: Running \"main\" with {\"rootTag\":11}";
 
 function expectFailure(errors: string[], reason: RegExp): void {
@@ -36,7 +46,7 @@ function expectFailure(errors: string[], reason: RegExp): void {
 }
 
 describe("judgeFirstFocus", () => {
-  it("T3-01 item 4: passes tile-0 focused before the one press and tile-1 first after it", async () => {
+  it("T3-01 item 4: passes the opening control focused before the one press and the next control first after it", async () => {
     const judge = await loadJudge();
     expect(judge([RESOLVED, noise, focus(0), press(), focus(1, "10:00:02.300")])).toEqual([]);
   });
@@ -45,9 +55,9 @@ describe("judgeFirstFocus", () => {
     const judge = await loadJudge();
     const lines = [
       RESOLVED,
-      "     1795255201.000  4321  4377 I ReactNativeJS: OCTAVE_FOCUS tile-0",
-      "     1795255202.000  5000  5000 I OCTAVE_PRESS: 1 RIGHT",
-      "     1795255202.300  4321  4377 I ReactNativeJS: OCTAVE_FOCUS tile-1",
+      `     1795255201.000  4321  4377 I ReactNativeJS: OCTAVE_FOCUS ${OPENING}`,
+      "     1795255202.000  5000  5000 I OCTAVE_PRESS: 1 DOWN",
+      `     1795255202.300  4321  4377 I ReactNativeJS: OCTAVE_FOCUS ${NEXT}`,
     ];
     expect(judge(lines)).toEqual([]);
   });
@@ -57,19 +67,35 @@ describe("judgeFirstFocus", () => {
     expectFailure(judge([RESOLVED, noise, press(), focus(0, "10:00:02.300")]), /priming|before the press/i);
   });
 
-  it("T3-01 item 4: fails a priming press even when a later line reaches tile-1", async () => {
+  it("T3-01 item 4: fails a priming press even when a later line reaches the next control", async () => {
     const judge = await loadJudge();
     expectFailure(judge([RESOLVED, press(), focus(0, "10:00:02.300"), focus(1, "10:00:02.400")]), /priming|before the press/i);
   });
 
-  it("T3-01 item 4: fails when the press leaves focus on tile-0", async () => {
+  it("T3-01 item 4: fails when the press leaves focus on the opening control", async () => {
     const judge = await loadJudge();
-    expectFailure(judge([RESOLVED, focus(0), press()]), /tile-1/);
+    expectFailure(judge([RESOLVED, focus(0), press()]), /sign-in-address/);
   });
 
-  it("T3-01 item 4: fails when the first focus line after the press is not tile-1", async () => {
+  it("T3-01 item 4: fails when the first focus line after the press is not the next control", async () => {
     const judge = await loadJudge();
-    expectFailure(judge([RESOLVED, focus(0), press(), focus(2, "10:00:02.300"), focus(1, "10:00:02.400")]), /tile-1/);
+    expectFailure(judge([RESOLVED, focus(0), press(), focus(2, "10:00:02.300"), focus(1, "10:00:02.400")]), /sign-in-address/);
+  });
+
+  it("T3-01 item 4: fails when another control held focus before the press", async () => {
+    const judge = await loadJudge();
+    expectFailure(judge([RESOLVED, focus(2), press(), focus(1, "10:00:02.300")]), /sign-in-search-again/);
+  });
+
+  it("T3-01 item 4: fails the placeholder's tiles and its Right press", async () => {
+    const judge = await loadJudge();
+    const lines = [
+      RESOLVED,
+      "11-21 10:00:01.000  4321  4377 I ReactNativeJS: OCTAVE_FOCUS tile-0",
+      "11-21 10:00:02.000  5000  5000 I OCTAVE_PRESS: 1 RIGHT",
+      "11-21 10:00:02.300  4321  4377 I ReactNativeJS: OCTAVE_FOCUS tile-1",
+    ];
+    expect(judge(lines).length).toBeGreaterThanOrEqual(1);
   });
 
   it("T3-01 item 4: fails when no focus line arrives", async () => {
@@ -104,7 +130,7 @@ describe("judgeFirstFocus", () => {
 
   it("T3-01 item 4: does not count a focus line under another tag", async () => {
     const judge = await loadJudge();
-    const spoofed = "11-21 10:00:01.000  6000  6000 I ActivityManager: OCTAVE_FOCUS tile-0";
+    const spoofed = `11-21 10:00:01.000  6000  6000 I ActivityManager: OCTAVE_FOCUS ${OPENING}`;
     expectFailure(judge([RESOLVED, spoofed, press(), focus(0, "10:00:02.300")]), /priming|before the press/i);
   });
 });
