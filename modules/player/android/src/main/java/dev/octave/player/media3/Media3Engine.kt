@@ -74,8 +74,9 @@ class Media3Engine(private val context: () -> Context?, private val closed: () -
             VideoSurfaceSlot.setListener { surface -> core.surface(surface) }
             holdsSurface = true
         }
-        core.launch(request)
+        // Removed first: a launch that throws must not leave the previous one's runnable reposting.
         main.removeCallbacks(positionTick)
+        core.launch(request)
         main.postDelayed(positionTick, POSITION_TICK_MILLIS)
     }
 

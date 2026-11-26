@@ -234,7 +234,7 @@ With several versions, the first DirectPlay source wins, then the first DirectSt
 - **Relaunch:** load the credential, then `GET /Users/Me`. On 401, sign in again.
 - **Home:** in parallel, `/UserItems/Resume`, `/Shows/NextUp`, the recently-played list, and one `/Items/Latest` for the Recently added row; then `GET /Items/{heroId}` for the hero's overview and quality facts, and `GET /Shows/NextUp?seriesId=` when the hero is a series (T5-03).
 - **Play:** item detail; PlaybackInfo with the profile; accept a source or show a refusal; launch the engine with a token-free typed request; report start on first frame, then progress.
-- **Stop:** report stopped (with `Failed` on error); once the report has settled, Home reads that one item and patches every shown card with its id through `withViewedProgress` (`packages/core/src/domain/home-refresh.ts`), told by the viewing's `afterViewing`. The rows are not loaded again, and no card moves, joins or leaves; a failed read leaves the cards as they were. A series card is not patched after one of its episodes is played.
+- **Stop:** report stopped (with `Failed` on error); once the viewing has ended, whether or not that report arrived (the viewing waits for its reports only up to their deadlines, and a player that did not stop sends none), Home reads that one item and patches every shown card with its id through `withViewedProgress` (`packages/core/src/domain/home-refresh.ts`), told by the viewing's `afterViewing`. The rows are not loaded again, and no card moves, joins or leaves; a failed read leaves the cards as they were. A series card is not patched after one of its episodes is played.
 - **Logout:** `POST /Sessions/Logout`, then delete the credential.
 
 ### Transport

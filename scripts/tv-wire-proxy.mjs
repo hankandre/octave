@@ -22,8 +22,9 @@
 // Octave profile. No other value of the body or query is kept.
 //
 // T8-03 adds `report` to every POST /Sessions/Playing, /Sessions/Playing/Progress and /Sessions/Playing/Stopped record
-// and to no other: the whole seconds of the body's PositionTicks and its IsPaused, Failed and PlayMethod, each read
-// only when its JSON type is right and else null. Nothing else of the body is kept, so no id is.
+// and to no other: the whole seconds of the body's PositionTicks and its IsPaused and Failed, each read only when its
+// JSON type is right, and its PlayMethod only when it is DirectPlay, DirectStream or Transcode; each is else null.
+// Nothing else of the body is kept, so no id is.
 //
 // Also here: the global-proxy listener, which records the requests that arrive when the emulator's http_proxy names
 // it, and a health check for the fixture servers.
@@ -149,6 +150,8 @@ export function playbackInfoFacts(body, rawUrl) {
 // The playstate posts the recorder keeps report facts of.
 const REPORT_PATH = /\/Sessions\/Playing(?:\/Progress|\/Stopped)?$/;
 const TICKS_PER_SECOND = 10_000_000;
+// The only play methods kept: any other string could carry anything into the evidence.
+const PLAY_METHODS = new Set(["DirectPlay", "DirectStream", "Transcode"]);
 
 // What the recorder keeps of a playstate post: { position, paused, failed, method } (see the header).
 export function reportFacts(body) {
@@ -164,7 +167,7 @@ export function reportFacts(body) {
     position: ticks === null ? null : Math.floor(ticks / TICKS_PER_SECOND),
     paused: read("IsPaused", "boolean"),
     failed: read("Failed", "boolean"),
-    method: read("PlayMethod", "string"),
+    method: PLAY_METHODS.has(fields?.PlayMethod) ? fields.PlayMethod : null,
   };
 }
 

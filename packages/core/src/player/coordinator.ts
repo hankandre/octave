@@ -315,7 +315,7 @@ export class PlaybackCoordinator {
       return plan;
     } catch (error) {
       if (this.isCurrentAttempt(attempt, controller)) {
-        // Let a queued "loaded" event report the start first, then end the
+        // Let a queued "first-frame" event report the start first, then end the
         // session as failed so a reported start always gets a stopped report.
         await this.eventQueue;
         await this.finish("error", this.snapshot);
