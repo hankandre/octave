@@ -20,7 +20,7 @@ async function build() {
   const chosen = await chooseServer(LAN, transport);
   await chosen.gateway.authenticateWithQuickConnect("0".repeat(64));
 
-  const playerModule = {} as PlayerNative;
+  const playerModule = {} as ReturnType<Parameters<typeof createSignedInParts>[0]["loadPlayerModule"]>;
   const playerView = View as ComponentType<PlayerViewProps>;
   const artworkView = (() => null) as unknown as ReturnType<Parameters<typeof createSignedInParts>[0]["loadArtworkView"]>;
   const engine = createFakePlayerEngine().engine;
