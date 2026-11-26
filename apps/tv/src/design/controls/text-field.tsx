@@ -18,13 +18,15 @@ export type TextFieldProps = Pick<TextInputProps, "onSubmitEditing" | "returnKey
   error?: string;
   secureTextEntry?: boolean;
   disabled?: boolean;
+  /** Shows focus with the ring alone: for a field that fills its column (DESIGN.md §9, "What lifts"). */
+  still?: boolean;
   hasTVPreferredFocus?: boolean;
   /** The frame's view, for code that points focus at the field. */
   viewRef?: (view: unknown) => void;
   testID?: string;
 };
 
-export function TextField({ label, value, onChangeText, onFocus, helper, error, secureTextEntry, disabled = false, hasTVPreferredFocus, viewRef, testID, ...inputProps }: TextFieldProps) {
+export function TextField({ label, value, onChangeText, onFocus, helper, error, secureTextEntry, disabled = false, still, hasTVPreferredFocus, viewRef, testID, ...inputProps }: TextFieldProps) {
   const [inputFocused, setInputFocused] = useState(false);
   const input = useRef<ComponentRef<typeof TextInput>>(null);
   return (
@@ -35,6 +37,7 @@ export function TextField({ label, value, onChangeText, onFocus, helper, error, 
         onPress={() => input.current?.focus()}
         onFocus={onFocus}
         disabled={disabled}
+        still={still}
         holdFocus={inputFocused}
         hasTVPreferredFocus={hasTVPreferredFocus}
         viewRef={viewRef}

@@ -87,6 +87,7 @@ function Step({ services, entry, onChosen, backRef }: Props & { services: SignIn
       <TextField
         key="field"
         testID="sign-in-address"
+        still
         label="Server URL"
         value={address}
         onChangeText={setAddress}
@@ -125,12 +126,12 @@ function Step({ services, entry, onChosen, backRef }: Props & { services: SignIn
     <View testID="sign-in-server-step" style={styles.step}>
       <SignInStepFrame heading="Where is your server?">
         {searching ? (
-          <View style={styles.content}>
+          <View style={styles.skeletons}>
             <Skeleton height={sizes.controlH} />
             <Skeleton height={sizes.controlH} />
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.content}>
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
             {listed ? <ServerList key="rows" rows={rows} preferred={preferred} register={register} onChoose={chooseRow} /> : null}
             {listed ? [enterAddress, field, statusLine, searchButton] : [searchButton, field, statusLine]}
           </ScrollView>
@@ -147,8 +148,11 @@ function Step({ services, entry, onChosen, backRef }: Props & { services: SignIn
 
 const styles = StyleSheet.create({
   step: { flex: 1 },
-  // Room for a focused control's ring and lift inside the scroll view's clip.
-  content: { gap: px(space.space5), padding: px(space.space4) },
+  skeletons: { gap: px(space.space5), paddingVertical: px(space.space4) },
+  // The scroll view reaches past the column on both sides and its content pads back by as much: the column keeps the
+  // heading's edges, and the clip leaves room for a ring and a button's lift (DESIGN.md §9, "Room for focus").
+  scroll: { marginHorizontal: -px(space.space5) },
+  content: { gap: px(space.space5), paddingHorizontal: px(space.space5), paddingVertical: px(space.space4) },
   button: { alignSelf: "flex-start" },
   status: { ...textStyle("typeBody"), color: colors.text1 },
 });
