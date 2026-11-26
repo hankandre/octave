@@ -2087,10 +2087,10 @@
             "A plain-HTTP server name that resolves outside the home network (T3-20) shows the copy table's refused-plain-HTTP sentence, the same as a public plain-HTTP address, and gets no sentence of its own (docs/specs/decisions-product-owner-2026-11-26.md, 2)"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "PR #345 (merged; CI checks, tv incl. tv:native:test, and wire pass). On main 28e8f580: check-red T4-02 --expect green 1-12; App.tsx mounting came with T4-03 (#347). Marked late. Untested on a real TV or remote: keyboard action key submitting the address, keyboard look and Back, focus moves, the plain-HTTP dialog at distance. Confirmations and remembered servers last one launch (R5)."
         },
         {
           "id": "T4-09",
