@@ -1,6 +1,6 @@
 {
   "product": "Octave",
-  "updated": "2026-11-23",
+  "updated": "2026-11-26",
   "rules": [
     "Pick the first task, in file order, whose status is todo and whose depends_on tasks all pass.",
     "Skip tasks with human set to true unless the owner is taking part; set them to blocked and state in evidence what the owner must decide or check.",
@@ -658,12 +658,12 @@
           "human": false,
           "depends_on": [],
           "acceptance": [
-            "The spec step returns no open question for the owner when its recommended option reuses wording, look or behaviour the owner already approved: it takes the option, cites the approval in the spec (the approval file and section, the DESIGN.md row, or the done task's acceptance item), and the run goes on (owner, 2026-11-23)",
-            "Every approval a spec reused is listed in the task's result and in the pull request body, so the owner can veto it; a spec still parks for a call the owner has not made, and an option that changes approved wording, even by a word, is a new call",
-            "The Check step and the inline Product Owner step treat a look or wording question the same way: one whose answer is an approval they can cite is answered with the citation and is not returned in forOwner",
-            "pnpm test:workflow covers a spec result with a cited reuse, which does not park, and one with a new call, which does",
-            "DESIGN.md's status line and its Awaiting the owner list (section 12) drop the calls the owner has settled (the rail's look and entries, the posters beside it and what Back does on Home, approved with T1-08 on 2026-11-20; what Menu or Info does on a Continue watching card, docs/specs/decisions-direction-2026-11-22.md, 2) and keep what is still open",
-            "WORKFLOW.md and the task workflow's prompts state the rule in the same PR; no check is given up and a denied command still halts the run"
+            "WORKFLOW.md states the rule: a spec returns no question for the owner when its recommended option reuses wording, look or behaviour the owner already approved; it takes the option and cites the approval in the spec (the approval file and section, the DESIGN.md row, or the done task's acceptance item) (owner, 2026-11-23)",
+            "Every approval a spec reused is listed in the task's result and in the pull request body, so the owner can veto it; an option that changes approved wording, even by a word, is a new call",
+            "The refiner, spec-checker and product-owner agent files carry the rule as short instructions: a look or wording question whose answer is an approval they can cite is answered with the citation",
+            "The rule says who takes a new call: the Product Owner while the delegation of docs/specs/decisions-owner-chat-2026-11-25.md (1) lasts, and the owner once it ends",
+            "DESIGN.md's status line and its Awaiting the owner list (section 12) drop the calls the owner has settled (the rail's look and entries, the posters beside it and what Back does on Home, approved with T1-08 on 2026-11-20; what Menu or Info does on a Continue watching card, docs/specs/decisions-direction-2026-11-22.md, 2) and keep what is still open; a call the Product Owner answered under the delegation stays listed and is marked as answered by the Product Owner, so the owner can revisit it",
+            "The task changes neither .claude/workflows/task.js nor its tests, because the flow is run by hand; no check is given up and a denied command still halts a run"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -785,83 +785,6 @@
           "owner": "implementer",
           "passes": true,
           "evidence": "commit 57fe922c: scripts/pipeline-cost.mjs, docs/research/pipeline-cost.md, spec notes resolved. pnpm check passes; frozen tests for items 1-3 green; item 4 held by fresh-context review (no stage changed). Lows logged in docs/plans/active/014 (commit c195bdcf)."
-        },
-        {
-          "id": "T1-22",
-          "title": "Run the workflow's mechanical gates as commands, not one agent each",
-          "domain": "Process",
-          "lane": "workflow",
-          "model": "sonnet",
-          "skill": "verify",
-          "human": false,
-          "depends_on": [
-            "T1-20",
-            "T1-21",
-            "T3-27"
-          ],
-          "acceptance": [
-            "The branch sync, the red gate, the frozen-test gate, the green gate and the fixture teardown of .claude/workflows/task.js no longer start one agent each: each command runs inside the coordinator or inside the agent of the step before or after it (owner: docs/specs/decisions-owner-chat-2026-11-22.md, 6; docs/research/pipeline-cost.md, option 1); the spec says where each one runs and why",
-            "No check is given up: the same commands run with the same arguments, each result is decided from the command's own JSON by the decide functions of today, and a failing or unreadable result stops or retries the run as it does today",
-            "A gate that judges an agent's work does not take its result from that agent's own account of it; the spec says how each result reaches the run unchanged",
-            "A denied command still halts the run and is reported",
-            "The spec says whether the ruling-log and lane-state checks, which are relayed by an agent in the same way, move too, and why",
-            "pnpm test:workflow covers each gate's new path, a failing result and a denied command among them",
-            "WORKFLOW.md describes the gates as they then run, in the same PR"
-          ],
-          "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T1-23",
-          "title": "Hand Ship's wait for CI to a polling loop or the scout model",
-          "domain": "Process",
-          "lane": "workflow",
-          "model": "sonnet",
-          "skill": "verify",
-          "human": false,
-          "depends_on": [
-            "T1-22"
-          ],
-          "acceptance": [
-            "The Ship agent no longer holds the wait for CI: once the PR is open and auto-merge is on, the wait is a polling loop or the scout model (owner: docs/specs/decisions-owner-chat-2026-11-22.md, 6; docs/research/pipeline-cost.md, option 2); the spec picks one and says why",
-            "No check is given up: the merge rule, the required checks and auto-merge are unchanged; a red check still returns each failing check and its cause to the Fix CI step; a branch that is behind or in conflict is still handled as the ship skill says",
-            "The CI-dependent acceptance steps, the task's done status and evidence, and the cleanup after the merge still happen; the spec says which agent does each",
-            "The wait has a limit, and the spec says what the run returns when it is reached; a denied command still halts the run",
-            "pnpm test:workflow covers a green, a red and a still-pending result of the wait",
-            "WORKFLOW.md's model table and the ship skill say who waits, in the same PR"
-          ],
-          "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T1-24",
-          "title": "Run pnpm check and the frozen gate locally before Ship",
-          "domain": "Process",
-          "lane": "workflow",
-          "model": "sonnet",
-          "skill": "verify",
-          "human": false,
-          "depends_on": [
-            "T1-23"
-          ],
-          "acceptance": [
-            "Before the Ship step pushes, the run runs pnpm check and the frozen-test gate on the task branch as it will be pushed, after the sync's rebase; a failure goes to the fix step and not to CI (owner: docs/specs/decisions-owner-chat-2026-11-22.md, 6; docs/research/pipeline-cost.md, option 6)",
-            "The spec first reads the Fix CI runs of the merged tasks and says which failures a local run would have caught, since the report leaves that unverified; it also says what already runs before Ship today (the implementer's verify, the frozen-test gate and the green gate) and adds only what is missing",
-            "No check is given up and CI is unchanged; a denied command still halts the run",
-            "pnpm test:workflow covers a failing local check that stops the push",
-            "WORKFLOW.md and the ship skill describe the step, in the same PR"
-          ],
-          "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
         },
         {
           "id": "T1-27",
@@ -1559,36 +1482,6 @@
           "evidence": "PR #336: Tabler weight-300 font via expo-font, iconOf map, played check, rail icons. pnpm check exit 0. Own emulator (Android TV API 36): prebuild resolves the font under pnpm; tv:apk:check, tv:smoke, tv:e2e exit 0. Font entry deflated, 829,616 bytes; release APK 51,195,178 to 52,026,790 (+831,612). 1920x1080 before and after captures show every glyph as Tabler, no tofu. Not run: real TV, arm64."
         },
         {
-          "id": "T3-35",
-          "title": "Build the Signal loader and the bars mark",
-          "domain": "App Shell & Presentation",
-          "lane": "ui",
-          "model": "sonnet",
-          "skill": "change-review",
-          "human": false,
-          "depends_on": [
-            "T3-06",
-            "T3-08",
-            "T3-09",
-            "T3-34"
-          ],
-          "acceptance": [
-            "The loader is the D1 bars with the motion the owner gave (docs/specs/decisions-owner-chat-2026-11-22.md, 3; DESIGN.md 7.17): the brass bar is a beacon; every pulse, about 1.5 s apart, sends a wave across the whole name octave; each letter lights as the wave reaches it, o first and e last, then fades back; the next pulse repeats the sweep",
-            "When what was loading is ready the whole name lights and holds; the spec says how long it holds before the content shows and which caller signals ready",
-            "A bars-only form (the pulse and the rings, no name) is used where space is tight; the spec lists which place uses which form",
-            "The brass colour is the owner's: the spec reads it from docs/specs/decisions-owner-chat-2026-11-22.md (3) or a later decisions file that names this task; if no file holds the answer the task parks at its Spec step with that one question. The colour, the pulse period and the timings of the wave, the fade and the rings are design tokens, and no component holds a literal",
-            "It is one shared component and replaces the ring wherever DESIGN.md shows a loading indicator",
-            "Reduced motion shows the still mark with \"Loading…\", and nothing flashes more than three times a second",
-            "The status sentence beside it is unchanged",
-            "The PR holds 1920×1080 captures of each form: mid-sweep, lit and held, bars only, and reduced motion"
-          ],
-          "verify": "pnpm check",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
           "id": "T3-11",
           "title": "Load artwork natively through the authenticated client",
           "domain": "Catalog",
@@ -2083,7 +1976,8 @@
             "The numbers the emulator cannot measure (GPU memory, real frame pacing) are marked as Shield-only in the output",
             "Shield check (owner): the script runs on the Shield and its results are stored with the commit it measured",
             "PRODUCT.md's success measures take the numbers",
-            "The memory measure covers a thumb row at its draw distance (THUMB_ROW_DRAW_DISTANCE, 243 dp) beside a poster row at 150 dp, and the summary gives what each costs"
+            "The memory measure covers a thumb row at its draw distance (THUMB_ROW_DRAW_DISTANCE, 243 dp) beside a poster row at 150 dp, and the summary gives what each costs",
+            "The janky-frame measure records the janky count and the 50th percentile beside the janky share and the 90th percentile, names the key source and the key rate it really reached, and holds a screen that does not redraw by itself during the window (T3-39, item 7)"
           ],
           "verify": "pnpm check && pnpm tv:e2e",
           "status": "todo",
@@ -2189,7 +2083,8 @@
             "An https address typed with a host that is not plain ASCII is refused before any request with the copy table's sentence \"This address uses characters Octave can't check. Type the server's plain address instead.\"; the same address typed in its punycode (xn--) form is accepted; the core and the native client refuse the same addresses",
             "The found servers come from a discovery source the screen is given; until T4-01 supplies the native one the app's source finds none, so the address field shows (DESIGN.md section 7.20, step 1)",
             "The unsupported-version failure carries a code only: the gateway puts no Version string from the server in it, and the screen shows the copy table's sentence",
-            "A signed-out viewer never reaches Home or the rail by pressing Back on a sign-in step; the spec states what Back does on each step from DESIGN.md, a case DESIGN.md does not answer goes to the owner, and where a test T3-09 froze requires go-home from sign-in the task returns it to the Product Owner"
+            "A signed-out viewer never reaches Home or the rail by pressing Back on a sign-in step; the spec states what Back does on each step from DESIGN.md, a case DESIGN.md does not answer goes to the owner, and where a test T3-09 froze requires go-home from sign-in the task returns it to the Product Owner",
+            "A plain-HTTP server name that resolves outside the home network (T3-20) shows the copy table's refused-plain-HTTP sentence, the same as a public plain-HTTP address, and gets no sentence of its own (docs/specs/decisions-product-owner-2026-11-26.md, 2)"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2241,7 +2136,8 @@
             "The TV never opens a browser",
             "When the server gives no approval link, the code shows alone with the address to open on a phone",
             "On a server with Quick Connect off or not built, the step is skipped and password sign-in opens",
-            "Contract tests cover Jellyfin 10.11 and 12.4"
+            "Contract tests cover Jellyfin 10.11 and 12.4",
+            "A finished sign-in mounts SignedInApp from App.tsx with the signed-in gateway and the server's name, the player engine and its view, the host clock and the native artwork provider, so a release build reaches Home and plays from it; the password sign-in of T4-04 opens Home the same way, and pnpm tv:smoke's first-focus oracle still passes (T8-03, D11)"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2265,7 +2161,8 @@
             "Username and password are typed with the system on-screen keyboard; the select key on the last field submits",
             "A wrong name or password shows the copy table's sentence and keeps the username",
             "The password is never logged, stored or kept in React state after the request returns",
-            "The password route is drawn from one sign-in-methods value that defaults to offered, so a server that later says it has no password sign-in can hide it (T10-06)"
+            "The password route is drawn from one sign-in-methods value that defaults to offered, so a server that later says it has no password sign-in can hide it (T10-06)",
+            "A Show password control on the password step shows the typed password while it is on, and is off whenever the step opens (DESIGN.md 7.20, step 3; docs/specs/decisions-product-owner-2026-11-26.md, 3)"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2546,7 +2443,63 @@
             "Loading shows skeleton rows shaped like the real ones, only after 150 ms",
             "A failed row shows one sentence and Retry in its place, and Retry reloads only that row",
             "A lost connection shows a plain sentence naming the server, never a status code or transport message",
-            "Each state takes focus on its action and works with the D-pad alone"
+            "Each state takes focus on its action and works with the D-pad alone",
+            "A Home whose whole load fails, or whose every list fails, shows the lost-connection state with Retry focused, in place of the plain surface T5-03 left: the sentence is \"Couldn't reach {server}. Check that the server is on, then try again.\", and the task adds its row to DESIGN.md's copy table in the same PR (docs/specs/decisions-product-owner-2026-11-26.md, 1)"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T5-08",
+          "title": "Keep Home true after a viewing ends",
+          "domain": "Catalog",
+          "lane": "ui",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T8-03"
+          ],
+          "acceptance": [
+            "When a viewing ends with its title finished, Home reads Continue watching again on return, so the finished title leaves the row and its next episode, when there is one, takes its place, without a restart",
+            "The hero follows: it is picked again from the refreshed row, and a hero that is a series shows its episode's new state",
+            "Reads made after viewings apply in order: an older answer never replaces a newer one",
+            "Focus on return follows DESIGN.md section 9: the card that was focused when it is still there, else the card now at its place, else Home's opening focus; the rows keep their order and nothing else on Home moves",
+            "A viewing that ended with its title unfinished still patches that title's cards in place, as T8-03 built, with no reload of the rows",
+            "A failed read leaves Home as it was and shows no error of its own"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T3-35",
+          "title": "Build the Signal loader and the bars mark",
+          "domain": "App Shell & Presentation",
+          "lane": "ui",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-06",
+            "T3-08",
+            "T3-09",
+            "T3-34"
+          ],
+          "acceptance": [
+            "The loader is the D1 bars with the motion the owner gave (docs/specs/decisions-owner-chat-2026-11-22.md, 3; DESIGN.md 7.17): the brass bar is a beacon; every pulse, about 1.5 s apart, sends a wave across the whole name octave; each letter lights as the wave reaches it, o first and e last, then fades back; the next pulse repeats the sweep",
+            "When what was loading is ready the whole name lights and holds; the spec says how long it holds before the content shows and which caller signals ready",
+            "A bars-only form (the pulse and the rings, no name) is used where space is tight; the spec lists which place uses which form",
+            "The brass colour is the owner's: the spec reads it from docs/specs/decisions-owner-chat-2026-11-22.md (3) or a later decisions file that names this task; if no file holds the answer the task parks at its Spec step with that one question. The colour, the pulse period and the timings of the wave, the fade and the rings are design tokens, and no component holds a literal",
+            "It is one shared component and replaces the ring wherever DESIGN.md shows a loading indicator",
+            "Reduced motion shows the still mark with \"Loading…\", and nothing flashes more than three times a second",
+            "The status sentence beside it is unchanged",
+            "The PR holds 1920×1080 captures of each form: mid-sweep, lit and held, bars only, and reduced motion"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2824,7 +2777,8 @@
             "Badges say what the file is in words: 4K, HDR10, Dolby Vision, the audio format, and styled or image subtitles; at most five",
             "A title that is no longer on the server shows the copy table's item-gone state",
             "The first action hands the title and the start choice (resume or start over) to the playback use case in one press; the page builds no media URL",
-            "Back returns to the card that opened the page"
+            "Back returns to the card that opened the page",
+            "Start over starts at the beginning even for a title this viewing has already played: the start choice bypasses Viewing's replayed-title start rule (T8-03)"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -2922,7 +2876,8 @@
             "The audio control opens on the account's preferred language, and its label is never shortened",
             "Play, Resume and Start over start with the picked version and audio track",
             "A pick never turns a direct play into a conversion: when either the answer naming the pick or the plain answer direct plays, the plan direct plays",
-            "The pick is forgotten when the page is left and is never saved"
+            "The pick is forgotten when the page is left and is never saved",
+            "When the picked audio track is dropped because this device cannot play it and the original plays with the default audio, the plan says so and the player shows the copy table's sentence for a picked audio track that was not applied (DESIGN.md section 10; docs/specs/decisions-product-owner-2026-11-26.md, 5)"
           ],
           "verify": "pnpm --filter @octave/core test && pnpm check",
           "status": "todo",
@@ -3129,31 +3084,8 @@
             "The remote's play-pause key and the centre key pause and resume, and Back stops and returns to the screen the viewer came from with the same card focused",
             "Loading shows the title over its backdrop with Opening the original file, and Buffering shows only after 500 ms",
             "Colours, sizes and durations come from the design tokens' native export; a test fails when a token value differs from the TypeScript source",
-            "The screen stays awake while playing and may sleep while paused for the system's timeout"
-          ],
-          "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
-          "owner": null,
-          "passes": false,
-          "evidence": ""
-        },
-        {
-          "id": "T8-05",
-          "title": "Hold to scrub with the remote",
-          "domain": "App Shell & Presentation",
-          "lane": "player",
-          "model": "opus",
-          "skill": "native-player",
-          "human": false,
-          "depends_on": [
-            "T8-04"
-          ],
-          "acceptance": [
-            "Holding Left or Right for half a second pauses the picture and moves a pending position in growing steps, never more than a fiftieth of the duration per step",
-            "The select key commits the pending position; Back returns to where playback was",
-            "A single press still moves exactly 10 s",
-            "Elapsed and remaining time follow the pending position while scrubbing",
-            "One seek reaches the engine per commit, not one per step"
+            "The screen stays awake while playing and may sleep while paused for the system's timeout",
+            "When the stop fails on Back, the player screen stays up and shows the copy table's Couldn't stop playback row with its action, where today the failure reaches only the failure log (DESIGN.md section 10; docs/specs/decisions-product-owner-2026-11-26.md, 4)"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
@@ -3393,11 +3325,36 @@
             "Choosing an audio track the conversion lacks, or changing subtitles while they are burned in, negotiates again at the current position with the picked indices in body and query",
             "The old session is stopped as failed so the server leaves the play state alone, and its encoding is deleted before the new request",
             "Playback continues within 10 s of where it was",
-            "A direct play never renegotiates for a track change",
+            "A direct play never renegotiates for a change to a track this device can play",
             "A failed renegotiation shows the playback error with Retry and Back",
-            "Jellyscale wire test: the renegotiated session's requests to the pinned Jellyscale carry the header, and the old encoding is gone"
+            "Jellyscale wire test: the renegotiated session's requests to the pinned Jellyscale carry the header, and the old encoding is gone",
+            "During a direct play, a picked audio track this device cannot decode is not switched to inside the engine: the sheet asks the core's sourcePlayability with the picked index first, and such a pick negotiates again (T8-23, D9)"
           ],
           "verify": "pnpm check && pnpm tv:native:test && pnpm tv:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T8-05",
+          "title": "Hold to scrub with the remote",
+          "domain": "App Shell & Presentation",
+          "lane": "player",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T8-04"
+          ],
+          "acceptance": [
+            "Holding Left or Right for half a second pauses the picture and moves a pending position in growing steps, never more than a fiftieth of the duration per step",
+            "The select key commits the pending position; Back returns to where playback was",
+            "A single press still moves exactly 10 s",
+            "Elapsed and remaining time follow the pending position while scrubbing",
+            "One seek reaches the engine per commit, not one per step"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -3581,6 +3538,30 @@
             "What was not checked (Dolby Vision, passthrough, other devices) is listed as untested"
           ],
           "verify": "pnpm check && pnpm tv:e2e",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T8-26",
+          "title": "T8 hardening: hold the media-URL rule by lint and tighten the viewing's wire judge",
+          "domain": "Security & Redaction",
+          "lane": "tv-scripts",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T8-03"
+          ],
+          "acceptance": [
+            "A lint rule fails any file of apps/tv outside e2e that imports jellyfin/hls-url, player/launch-request or jellyfin/device-profile, calls buildStaticStreamUrl or writes a media path literal; pnpm lint runs it",
+            "With the lint in place the two source scans T8-03 froze are retired: apps/tv/src/player/media-url-boundaries.test.tsx, and the cast scan of apps/tv/src/host/player-engine-shape.test.tsx, whose typed joined check stays. The task returns both to the Product Owner as frozen-test changes and changes no frozen file itself",
+            "The player-viewing wire judge fails a capture that holds no GET /UserItems/Resume, and fails a first viewing whose first unpaused progress post carries a position under 8 s; the task returns the frozen judge and its test to the Product Owner for the change",
+            "pnpm tv:wire still passes player-viewing against the pinned Jellyscale, and the PR quotes its line",
+            "No rule gets looser, and the PR's first sentence says so"
+          ],
+          "verify": "pnpm check && pnpm tv:wire",
           "status": "todo",
           "owner": null,
           "passes": false,
