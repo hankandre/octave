@@ -64,10 +64,14 @@ function outsetBy(distance: number): ViewStyle {
  */
 export function FocusRing({ radius, borderWidth = 0, testID }: { radius: keyof typeof radii; borderWidth?: number; testID?: string }) {
   const frameRadius = px(radii[radius]);
+  // Each overlay's radius is the control's plus the overlay's own distance from the control's outer edge, in dp, so the
+  // corners keep the gap the sides keep. A border moves where the overlay is placed from, not that distance.
+  const ringOut = px(ringInset);
+  const edgeOut = px(edgeInset);
   return (
     <>
-      <View pointerEvents="none" style={[styles.overlay, styles.edge, outsetBy(px(edgeInset) + borderWidth), { borderRadius: frameRadius + edgeInset }]} />
-      <View testID={testID} pointerEvents="none" style={[styles.overlay, styles.ring, outsetBy(px(ringInset) + borderWidth), { borderRadius: frameRadius + ringInset }]} />
+      <View pointerEvents="none" style={[styles.overlay, styles.edge, outsetBy(edgeOut + borderWidth), { borderRadius: frameRadius + edgeOut }]} />
+      <View testID={testID} pointerEvents="none" style={[styles.overlay, styles.ring, outsetBy(ringOut + borderWidth), { borderRadius: frameRadius + ringOut }]} />
     </>
   );
 }
