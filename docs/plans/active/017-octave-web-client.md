@@ -181,6 +181,11 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 
 ## Surprises & discoveries
 
+- Chrome can play slower than real time without firing `waiting` or reporting a dropped frame, so milestone 4's watchdog must also measure media seconds per wall second while buffer is ahead.
+- With hls.js 1.7.4, `maxBufferLength` is a floor: a byte budget needs it small (tested: 8 s, 80 MB, 4 s back buffer). The unlimited default back buffer drove the defaults into the quota.
+- A copy has one rendition: below the link rate it stalls every segment or two, so the engine must renegotiate.
+- Untested: a copy segment of 12 s at 112 Mbps (about 168 MB, from sources with far-apart keyframes) is larger than Chrome's whole quota.
+
 - Progressive MP4 is not merely unreliable in MSE: Chrome errors and Firefox fails silently (`docs/research/web-client.md` §1).
 - Browser buffers are ten seconds at 4K remux bitrates, so a bitrate ceiling is a capability, not an optimisation.
 - No web API can request or confirm audio passthrough, so lossless audio cannot reach an AVR from a browser.
@@ -193,5 +198,14 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - The DeviceId needs SHA-256 and plain HTTP has no `crypto.subtle`.
 
 ## Validation evidence
+
+**Milestone 0 (b), partly done, 2026-11-26** (`docs/research/web-playback-spike.md`).
+
+- 33 runs, 1,513 playlist and segment requests: every one carried the header, none had a token in its URL, none came from the media element (checked again from the raw results).
+- Firefox 159 on Linux played a 4K copy in real time up to the highest rates tested: 112 Mbps H.264 and 121 Mbps HEVC.
+- Chrome 157 on Linux played 4K H.264 below real time at every rate (0.97x at 17 Mbps, 0.62x at 112 Mbps), with a full buffer and no stall event or dropped frame. Software decode is the likely cause and is not proven.
+- `QuotaExceededError` never stopped playback: hls.js evicted and carried on.
+- Open: Safari, iPhone and iPad; Chrome and Edge with a hardware decoder. So no bitrate ceiling is written down for them.
+- (c), the service-worker experiment, has not run.
 
 ## Outcome & retrospective
