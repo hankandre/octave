@@ -7,7 +7,9 @@ import {
   PRE_SIGN_IN_ROUTES,
   TransportError,
   type QueryPair,
+  type RestoredSession,
   type SessionId,
+  type SessionRestore,
   type SignInRequest,
   type SignInResult,
   type Transport,
@@ -34,6 +36,7 @@ interface Session {
   readonly server: string;
   readonly deviceId: string;
   readonly token: string;
+  readonly account?: Omit<RestoredSession, "session" | "server" | "deviceId">;
 }
 
 const REDACTED = "[redacted]";
@@ -61,7 +64,8 @@ function parseJson(text: string): unknown {
   }
 }
 
-export class FetchTransport implements Transport {
+// It implements SessionRestore over its live sessions only: nothing is stored, so after a restart it lists nothing.
+export class FetchTransport implements Transport, SessionRestore {
   readonly #client: ClientIdentity;
   readonly #crypto: Crypto;
   readonly #clock: Clock;
@@ -95,7 +99,10 @@ export class FetchTransport implements Transport {
       throw new TransportError("unexpected-response");
     }
     const session = this.#crypto.randomId();
-    this.#sessions.set(session, { server, deviceId: request.deviceId, token });
+    const userName = typeof data?.User?.Name === "string" ? data.User.Name : undefined;
+    const serverId = typeof data?.ServerId === "string" && data.ServerId !== "" ? data.ServerId : undefined;
+    const account = serverId === undefined ? undefined : { userId, serverId, ...(userName === undefined ? {} : { userName }) };
+    this.#sessions.set(session, { server, deviceId: request.deviceId, token, ...(account ? { account } : {}) });
     return {
       session,
       userId,
@@ -138,6 +145,15 @@ export class FetchTransport implements Transport {
     if (isRedirectStatus(answer.status)) throw new TransportError("redirect");
     const body = parseJson(answer.text);
     return { status: answer.status, body: token === undefined ? body : this.#strip(body, token) };
+  }
+
+  // The live sessions whose sign-in named a server id, newest first, as the native module lists sessions with a record.
+  async restoreSessions(): Promise<readonly RestoredSession[]> {
+    const listed: RestoredSession[] = [];
+    for (const [session, entry] of this.#sessions) {
+      if (entry.account) listed.unshift({ session, server: entry.server, deviceId: entry.deviceId, ...entry.account });
+    }
+    return listed;
   }
 
   async endSession(session: SessionId, options: { readonly timeoutMs: number }): Promise<void> {
