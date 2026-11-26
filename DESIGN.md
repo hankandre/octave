@@ -350,11 +350,18 @@ Each step asks one question in `typeTitle`, with no eyebrow.
 
 1. **Where is your server?** Saved servers first, then "On this network": servers found on the home network as large rows (name, address in `typeMono`, "Advertised by {ip}", and any conflict in `danger`), with focus on the first. "Enter address" (secondary) reveals the Server URL field; "Search again" is quiet. Without any found server, the field shows.
 2. **Approve this sign-in on your phone.** The origin chip (the server's address in Mono) under the heading. The Quick Connect code is the hero in `typeCode`, grouped ("482 913"), and **a QR code beside it** that opens the server's approval page on a phone that is already signed in. The step says what to do in one sentence: "Scan the code with your phone, or enter the code in Quick Connect." No primary button: "Use a password" is secondary (hidden when the server has no password sign-in) and "Change server" is quiet. The screen updates by itself when the phone approves.
+   - **The code** is grouped three and three, and TalkBack reads it digit by digit.
+   - **The QR code** holds the approval link, `{server}/web/#/quickconnect?code={code}`, and never the Quick Connect secret, a token or a password. It sits to the right of the code with its top level with the code's: `onLight` modules on a `text1` field with a four-module quiet zone, error correction M. It is at most `qrSize` wide; modules are whole dp, so on a 1080p TV a 33-module code is 410 px wide with 10 px modules.
+   - **With no approval link** (a loopback server, which a phone cannot open) the code shows alone, with "On your phone, open {address} and enter this code in Quick Connect."
+   - **While loading** (before the code, and while signing in) the step says "Loading…"; while signing in the code stays.
+   - **A failure** removes the code and shows one sentence and, except after a redirect, one focused button: "Get a new code" after an expired or refused code, "Try again" when the server is unreachable or something else went wrong. "Change server" is always last.
+   - **Focus** opens on "Change server", the step's only control until "Use a password" is built (T4-04), which then goes before it and takes the opening focus.
+   - **With Quick Connect off or not built** the step is skipped and step 3 opens. Until step 3 is built (T4-04), its place shows "Who is signing in?", "Not available yet." and "Change server", focused.
 3. **Who is signing in?** (the fallback) The same origin chip, Username and Password fields, "Show password", "Change server", and "Sign in" (primary).
 
 The unencrypted-connection warning is a dialog over step 1. Under its title it shows the server's name and, on its own line, the server's address in `typeMono`. Its actions are "Connect without encryption" (secondary), then "Cancel", primary last (7.16). Cancel is primary and focused; Back cancels.
 
-The QR code's content, its size, and the sign-in screen's layout are the owner's call. What the QR code links to depends on the server: Jellyscale issue #118 tracks its approval link (T10-06).
+The QR code's content, its size, and the sign-in screen's layout are the owner's call; the Product Owner decided them under the delegation (section 12, T4-03), for the owner's veto. What the QR code links to depends on the server: Jellyscale issue #118 tracks its approval link (T10-06).
 
 ### 7.21 Accounts (`AccountPicker`)
 
@@ -449,6 +456,12 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Search, more results error | n/a | Couldn't load more results. | Retry |
 | Sign-in, Quick Connect | Approve this sign-in on your phone | Scan the code with your phone, or enter the code in Quick Connect. | Use a password |
 | Sign-in, Quick Connect off | n/a | Quick Connect is off on this server. Ask its owner to turn it on, or use a password. | Use a password |
+| Sign-in, Quick Connect, loading | n/a | Loading… | n/a |
+| Sign-in, Quick Connect, no approval link | Approve this sign-in on your phone | On your phone, open {address} and enter this code in Quick Connect. | n/a |
+| Sign-in, Quick Connect, code expired | n/a | This code has expired. Get a new code to try again. | Get a new code |
+| Sign-in, Quick Connect, code refused | n/a | The server didn't accept this code. Get a new code to try again. | Get a new code |
+| Sign-in, Quick Connect, unreachable or anything else | n/a | The "Sign-in, unreachable" or "Sign-in, anything else" sentence. | Try again |
+| Sign-in, password step not built yet | Who is signing in? | Not available yet. | Change server |
 | Sign-in, 401 | n/a | That username and password didn't work. | n/a |
 | Sign-in, unreachable | n/a | Couldn't reach {address}. Check the address and that the server is running. | n/a |
 | Sign-in, refused plain HTTP | n/a | This address uses plain HTTP on the internet, so Octave will not connect. Use HTTPS, or HTTP only for this device or a private home-network address such as 192.168.x.x, a name.local name, or a name.home.arpa name. | n/a |
@@ -602,6 +615,19 @@ These are the Product Owner's calls under the delegation (`docs/specs/decisions-
 - **C10. Rows and fields do not lift.** A row or a field shows focus with the ring and, for a row, a `surface3` fill; it never scales. Art and compact controls keep the lift. A column of rows shares its heading's left edge, and no container clips a ring, a lift or a shadow (section 9, "What lifts" and "Room for focus"; `tasks/product-owner-log.md`, "2026-11-26, T4-02 ruling, Captures"). The first captures of the server step showed a lifted row cut off at both ends. This applies to every list the app draws later: pickers, menus, chapters and Settings.
 - **C11. The ring's offset on a bordered control.** The 3 px offset is measured from the control's outer edge, border included (7.19). The retaken capture showed the Server URL field's ring 1 px from the field, because the field's 2 px border used up 2 of the 3 px. This reads the existing rule; it adds no value.
 - **C12. A field's cursor.** The cursor is `text1`, not the platform's teal; selected text is marked with `fillSecondary` and a selection handle is `text1` (7.19). `focus` was not chosen: section 3.1 keeps it for the ring alone.
+
+### Product Owner calls, 2026-11-26 (T4-03)
+
+These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The reasons are in `docs/specs/T4-03.md`.
+
+- **C1.** The heading "Approve this sign-in on your phone" and the sentence beside the QR code, "Scan the code with your phone, or enter the code in Quick Connect.", are the "Sign-in, Quick Connect" row of section 10.
+- **C2.** The no-link sentence: "On your phone, open {address} and enter this code in Quick Connect." (new wording). To judge: on a loopback server, the only no-link case today, the address is the TV's own and a phone cannot open it.
+- **C3.** "This code has expired. Get a new code to try again." and "The server didn't accept this code. Get a new code to try again.", each with the button "Get a new code" (new wording); "Try again" for unreachable and other.
+- **C4.** Opening focus is on "Change server", the step's only control until T4-04's "Use a password", which then goes before it and takes the opening focus. To judge: a select pressed by habit on this step returns to step 1.
+- **C5.** The QR code may be 480 canvas px (`qrSize`) including a four-module quiet zone, not 360: `onLight` modules on a `text1` field, to the right of the code with its top level with the code's, error correction M. As drawn, modules are whole dp: on a 1080p TV a 33-module code has 10 px modules and is 410 px wide, about 6.3 mm a module on a 55-inch panel. Reasoned, not measured; the owner judges it from the sofa.
+- **C6.** The code is grouped three and three, and TalkBack reads it digit by digit.
+- **C7.** The password step's placeholder is "Who is signing in?", "Not available yet." and "Change server", with no "Quick Connect is off" sentence.
+- **C8.** A failure removes the code from the screen.
 
 ### Awaiting the owner
 
