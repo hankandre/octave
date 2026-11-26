@@ -368,6 +368,14 @@ Each step asks one question in `typeTitle`, with no eyebrow.
    - **After a failure, an empty password is not sent** until the viewer changes Username or Password; any change of a field's text counts, even one that leaves the password empty. Until then "Sign in" and "Go" send nothing, the sentence stays and focus goes to Password. One exception: when the failed try was itself sent with an empty password, and the failure was neither a wrong name or password nor a refused account, it may be sent again as it is. A cancelled sign-in is not a failure. A password typed while a sign-in runs is cleared with the answer; after a failure it counts as one the step emptied, so it is held too.
    - **Back** returns to step 2, with a new code and focus on "Use a password", when "Use a password" opened this step; when the server left no other step, it returns to step 1. "Change server" always returns to step 1. Leaving during a sign-in drops its answer and ends a session that arrives late. The request itself is not stopped: the password still reaches the server, and a wrong one is still counted. (Pressed before the server has said it has no Quick Connect, "Use a password" takes two Backs to reach step 1.)
 
+**At launch, with a stored sign-in** (T4-05; the Product Owner's calls below). Octave opens Home with no sign-in screen once the server has answered as the one the sign-in was made on and has accepted the session. Until then the screen is "Loading…" alone on `surface0`, and no sign-in control is drawn.
+
+- **The server did not answer, or not as expected** (unreachable or out of time, a redirect, an unsupported version, another server, anything else): the step's own sentence for that failure (section 10), `text1`, no icon, read as the screen's heading, then "Try again" (primary, focused) and "Change server" (quiet, last). No new words. "Try again" checks again behind "Loading…". "Change server" opens step 1 and keeps the stored sign-in. Nothing is tried again by itself.
+- **The server ended the sign-in** (two refusals): sign-in opens on that server with no sentence saying why. Over HTTPS or loopback it opens on step 2; Back and "Change server" go to step 1. For a private-LAN `http://` server it opens on step 1 with the unencrypted-connection warning already open for that server, Cancel focused; "Connect without encryption" goes on to step 2, and Cancel or Back closes it and leaves step 1 with its usual opening focus.
+- **On the password step after that return**, Username holds the account's name, focus opens on Password, and an empty password is not sent until a field is edited.
+- **Back** on "Loading…" and on the couldn't-check screen leaves the app.
+- **Only the newest stored sign-in** is tried; choosing another server and signing in makes that one the newest.
+
 The unencrypted-connection warning is a dialog over step 1. Under its title it shows the server's name and, on its own line, the server's address in `typeMono`. Its actions are "Connect without encryption" (secondary), then "Cancel", primary last (7.16). Cancel is primary and focused; Back cancels.
 
 The QR code's content, its size, and the sign-in screen's layout are the owner's call; the Product Owner decided them under the delegation (section 12, T4-03), for the owner's veto. What the QR code links to depends on the server: Jellyscale issue #118 tracks its approval link (T10-06).
@@ -480,6 +488,8 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Sign-in, unsupported version | n/a | This server's version isn't supported. Octave needs Jellyfin 10.11 or newer. | n/a |
 | Sign-in, not an address | n/a | That isn't a server address. Type it like 192.168.1.5:8096 or media.example.com. | n/a |
 | Sign-in, found server answered differently | n/a | The server at this address is not the one that answered on your network. Octave did not connect. Enter the server's address yourself. | n/a |
+| Launch, checking a stored sign-in | n/a | Loading… | n/a |
+| Launch, a stored sign-in that could not be checked (T4-05) | n/a | The sentence of the matching sign-in row: "Sign-in, unreachable" (a timeout too), "Sign-in, redirect", "Sign-in, unsupported version", or "Sign-in, anything else" (another server answering included). | Try again, Change server |
 | Sign-in, unencrypted connection (dialog) | This server uses an unencrypted connection | Your password and sign-in token will travel across your network without encryption. Anyone else on this network could read them and use your account. Continue only on a network you trust, such as your home network. | Connect without encryption / Cancel |
 | Series, no episodes | n/a | This series has no episodes yet. | n/a |
 | Next episode error | n/a | Couldn't load your next episode. | Retry |
@@ -664,6 +674,18 @@ These are the Product Owner's calls under the delegation (`docs/specs/decisions-
 - **3. Nothing crops a rail entry's ring**, and it covers no neighbour, in the scrolling group and at the rail's edges (section 9, "Room for focus").
 - **4. The rail's padding is 16 px on all four sides**, in place of the 54 px title-safe inset above and below (section 6). To judge on the Shield: whether Search and the account sit too near the edge.
 - **5. The bar on the current entry stays.**
+
+### Product Owner calls, 2026-11-26 (T4-05)
+
+These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The ruling is in `tasks/product-owner-log.md`, "2026-11-26, T4-05 ruling, Spec and Check".
+
+- **Q4. No Home before the server answers.** Home opens from a stored sign-in only after the server answered, in this launch, as the one the sign-in was made on and accepted the session. A server that is off at launch costs one press on "Try again".
+- **Q6. Back after the server ended the sign-in.** Username filled, focus on Password, the empty password held until an edit, and no sentence saying why. The opening focus departs from T4-04 C2 on this route only.
+- **Q7. While checking.** "Loading…" alone; five seconds each for the server's answer and the session's; no second try by itself; Back leaves the app.
+- **Q10. No sign-out control yet.** A viewer whose stored sign-in works reaches sign-in only by clearing the app's data until T4-06 or T9-05.
+- **Q11. No warning at launch over plain HTTP at home.** A stored sign-in to a private-LAN `http://` server opens without the unencrypted-connection warning when the server answers as the same server; a new sign-in to it asks again.
+- **Q12. The couldn't-check screen.** The matching sign-in sentence, "Try again" (primary, focused) and "Change server" (quiet, last); no new words.
+- **Q13. The warning on the way back.** When the server ends a plain-HTTP sign-in at launch, step 1 opens with the warning open, Cancel focused.
 
 ### Awaiting the owner
 

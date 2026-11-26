@@ -1,7 +1,8 @@
 // The first-focus smoke test (T3-01 item 4): install the release APK on the emulator ANDROID_SERIAL names, start it
 // through the leanback launcher category, send no key until the opening screen's first control reports focus, then send
 // exactly one Down and require the next control to take focus. The release app opens on sign-in's server step with no
-// server found: Search again, with the Server URL field under it (T4-03 D10). judgeFirstFocus() is the oracle; the transcript and a screenshot of the
+// server found: Search again, with the Server URL field under it (T4-03 D10); on an emulator the app's data is cleared
+// after the install, so no stored sign-in opens Home (T4-05 D10). judgeFirstFocus() is the oracle; the transcript and a screenshot of the
 // first screen go to release-evidence/tv/. The development server watch (T3-19 item 2) runs around the app start and
 // fails the run on any connection from the app to the development server port; see scripts/tv-dev-server-watch.mjs.
 // Run: ANDROID_SERIAL=<emulator> node scripts/tv-first-focus.mjs [apk]   (pnpm tv:smoke)
@@ -106,10 +107,14 @@ export async function runSmoke({ serial, adbPath, apk, port = 8081, evidence = E
   const watch = await startDevServerWatch({ adb: adbPath, serial, port });
   onWatch(watch);
   try {
-    const refusal = installRefusal(await readInstallFacts((args) => adb(...args), apk));
+    const facts = await readInstallFacts((args) => adb(...args), apk);
+    const refusal = installRefusal(facts);
     if (refusal !== null) throw new SmokeFailure(refusal);
     const install = adb("install", "-r", apk);
     if (install.status !== 0) throw new SmokeFailure(`ERROR tv focus: adb install failed: ${(install.stdout + install.stderr).trim().split("\n").pop()}`);
+    // A stored sign-in would open Home, not sign-in's first step (T4-05 D10, Q8). Only an emulator's data is cleared; on
+    // any other device nothing is cleared, and a TV that holds a sign-in fails the unchanged oracle.
+    if (facts.emulator === true) shell("pm", "clear", ANDROID_APPLICATION_ID);
     shell("am", "force-stop", ANDROID_APPLICATION_ID);
     shell("logcat", "-c");
 
