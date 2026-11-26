@@ -58,7 +58,7 @@ Re-verify, 2026-11-22, at 4665615f on a fresh read-only `fluster_tv` (API 36) em
 - `ANDROID_SERIAL=emulator-5584 pnpm tv:wire --task T3-05`, with `release-evidence/wire` removed first (so it cannot be a stale file): eight `pass` lines and no `fail` line in `summary.txt`, including `transport-probe-then-signed-in jellyscale T3-05 pass`; logcat clean; global proxy saw 0 requests naming a wire target; `http_proxy` back to `:0`; Compose project `octave-8b8377b9f2`.
 - `pnpm test:tripwire`: Tripwire passed (Jellyfin and Jellyscale 12.4.0; wire jellyscale 502 requests, 0 broke a rule).
 
-Not run: the Shield (192.168.6.189), any other Android version or AVD, the dogfood Jellyfin and Jellyscale servers. The CI `wire`, `tripwire` and `tv` jobs need a pushed head (Ship milestone).
+Not run: the Shield, any other Android version or AVD, the dogfood Jellyfin and Jellyscale servers. The CI `wire`, `tripwire` and `tv` jobs need a pushed head (Ship milestone).
 
 ## Outcome & retrospective
 

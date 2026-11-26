@@ -52,7 +52,7 @@ Milestones 1 to 3, 2026-11-22, at 5483e155:
 - `mise exec -- node scripts/check-red.mjs T3-24 --expect green`: green [1,2,3,4,5,6], problems []; `T3-16`: green [4,5,6,7,8], problems [].
 - `ANDROID_SERIAL=emulator-5596 mise exec -- pnpm tv:wire --task T3-05` on this agent's own read-only `fluster_tv` emulator (system image android-36 android-tv x86_64, from the AVD's config.ini), stopped after: exit 0; `tv wire: 8 pair(s) passed; logcat clean`.
 
-Not run: the Shield (192.168.6.189:5555, not touched), `emulator-5580` (another agent's, not touched), any physical TV, arm64, other Android versions or AVDs, a real reverse proxy, the dogfood servers, Hermes's `decodeURIComponent` on device.
+Not run: the Shield (not touched), `emulator-5580` (another agent's, not touched), any physical TV, arm64, other Android versions or AVDs, a real reverse proxy, the dogfood servers, Hermes's `decodeURIComponent` on device.
 
 ## Outcome & retrospective
 
