@@ -276,7 +276,7 @@ Panels (right-side sheets, a third of the canvas, the video keeps playing; Back 
 - **Settings**: the Settings screen's own sections in a compact list (§7.18). Every change applies at once and confirms in its row with "✓ Saved" for 2 s.
 - **Chapters**: one row per chapter with its name, start time, and a trickplay picture when the version has trickplay.
 
-**OSD**: a transient pill at top centre for 1.2 s, for actions taken by key ("Subtitles: English (SDH)", "+10 s") and three lines from no key: "Skipped intro" or "Skipped credits", the conversion line for five seconds when a converted session starts, and the audio-pick line.
+**OSD**: a transient pill at top centre for 1.2 s, for actions taken by key ("Subtitles: English (SDH)", "+10 s") and four lines from no key: "Skipped intro" or "Skipped credits", the conversion line for five seconds when a converted session starts, the audio-pick line, and the progress notice, "Couldn't save your progress to {server}. Playback continues.", for five seconds (owner, 2026-11-24, `docs/specs/decisions-owner-chat-2026-11-24.md` §3).
 
 **Status**: loading, buffering, and seeking show a centred 64 px disc with the loader (7.17; a ring until it is built) and one line of text ("Opening the original file…", "Buffering…"). "Buffering…" appears only after 500 ms. Before the first frame, the item's backdrop shows at 40% with the title and the status, plus Back.
 
