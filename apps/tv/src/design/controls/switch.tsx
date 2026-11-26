@@ -58,7 +58,8 @@ export function Switch({ value, onValueChange, accessibilityLabel, disabled = fa
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: px(space.space4) },
+  // The focused box is a full target (DESIGN.md §11, rule 3), taller than the drawn track.
+  row: { minHeight: px(sizes.hitMin), flexDirection: "row", alignItems: "center", gap: px(space.space4) },
   track: {
     width: px(sizes.switchW),
     height: px(sizes.switchH),

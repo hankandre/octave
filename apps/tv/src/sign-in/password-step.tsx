@@ -3,7 +3,7 @@
 //
 // testIDs: sign-in-password-step, sign-in-username and sign-in-password (their inputs end in -input),
 // sign-in-show-password, sign-in-status, sign-in-failure, sign-in-submit, sign-in-change-server.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { passwordSignInFailure, type PasswordSignInFailure } from "@octave/core/src/domain/password-sign-in";
 import { Button } from "../design/controls/button";
@@ -17,22 +17,38 @@ import { CHANGE_SERVER_LABEL, LOADING_LINE, PASSWORD_COPY, passwordSentence } fr
 import type { PasswordStepProps } from "./sign-in-services";
 import { SignInStepFrame } from "./sign-in-step-frame";
 
-type Attempt = { phase: "idle" } | { phase: "signing-in" } | { phase: "failed"; failure: PasswordSignInFailure };
+type Attempt =
+  | { phase: "idle" }
+  | { phase: "signing-in" }
+  | { phase: "signed-in" }
+  | { phase: "failed"; failure: PasswordSignInFailure };
 
 /** What the request answered. `failure` is undefined for a success and for a cancellation. */
 type Returned = (failure: PasswordSignInFailure | undefined) => void;
 
+function attemptAfter(succeeded: boolean, failure: PasswordSignInFailure | undefined): Attempt {
+  if (succeeded) return { phase: "signed-in" };
+  return failure === undefined ? { phase: "idle" } : { phase: "failed", failure };
+}
+
 function usePasswordSignIn({ chosen, onSignedIn }: PasswordStepProps) {
   const [attempt, setAttempt] = useState<Attempt>({ phase: "idle" });
-  // A ref, so that a second press before the next render does nothing too.
   const inFlight = useRef<AbortController>(undefined);
+  // Locked from the press until React has drawn what the answer left: until then a press still reads the password and
+  // the guard of the earlier render. A success stays locked, as there is nothing more to send.
+  const isLocked = useRef(false);
 
   useEffect(() => () => inFlight.current?.abort(), []);
+
+  useLayoutEffect(() => {
+    if (attempt.phase === "idle" || attempt.phase === "failed") isLocked.current = false;
+  }, [attempt]);
 
   const signIn = async (username: string, password: string, onReturned: Returned) => {
     const { gateway, serverName } = chosen;
     const controller = new AbortController();
     inFlight.current = controller;
+    isLocked.current = true;
     setAttempt({ phase: "signing-in" });
     const answer = await gateway.login(username, password, controller.signal).then(
       () => ({ succeeded: true, failure: undefined }),
@@ -44,13 +60,13 @@ function usePasswordSignIn({ chosen, onSignedIn }: PasswordStepProps) {
       return;
     }
     inFlight.current = undefined;
-    setAttempt(answer.failure === undefined ? { phase: "idle" } : { phase: "failed", failure: answer.failure });
+    setAttempt(attemptAfter(answer.succeeded, answer.failure));
     onReturned(answer.failure);
     if (answer.succeeded) onSignedIn({ gateway, serverName });
   };
 
-  const isSigningIn = () => inFlight.current !== undefined;
-  return { attempt, isSigningIn, signIn };
+  const isBusy = () => isLocked.current;
+  return { attempt, isBusy, signIn };
 }
 
 // An empty password the viewer chose, which the server did not refuse, may be sent again as it is.
@@ -59,37 +75,43 @@ function mayRepeat(sentPassword: string, failure: PasswordSignInFailure): boolea
 }
 
 export function PasswordStep(props: PasswordStepProps) {
-  const { attempt, isSigningIn, signIn } = usePasswordSignIn(props);
+  const { attempt, isBusy, signIn } = usePasswordSignIn(props);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [shown, setShown] = useState(false);
   // True while the password is empty because this step emptied it: sending it could count against the account. Only
   // an edit clears it, never this step's own clearing.
   const [isHeld, setHeld] = useState(false);
+  // Whether the field holds something the viewer typed since the last send. It is no copy of the password.
+  const hasTypedSinceSend = useRef(false);
   const usernameView = useRef<unknown>(null);
   const passwordView = useRef<unknown>(null);
   const changeServerView = useRef<unknown>(null);
 
+  // A field may report the text it already shows, which is no edit and lifts nothing. The text is stored either way:
+  // `username` and `password` are the last drawn ones, which a second change before the next draw does not match.
   const editUsername = (text: string) => {
     setUsername(text);
-    setHeld(false);
+    if (text !== username) setHeld(false);
   };
 
   const editPassword = (text: string) => {
     setPassword(text);
-    setHeld(false);
+    hasTypedSinceSend.current = text !== "";
+    if (text !== password) setHeld(false);
   };
 
   const afterReturn = (sentPassword: string, failure: PasswordSignInFailure | undefined) => {
     setPassword("");
     if (failure === undefined) return;
-    if (!mayRepeat(sentPassword, failure)) setHeld(true);
+    // Text typed while the try ran has just been emptied here too.
+    if (hasTypedSinceSend.current || !mayRepeat(sentPassword, failure)) setHeld(true);
     // Only another address can help a redirect.
     focusView(failure === "redirect" ? changeServerView.current : passwordView.current);
   };
 
   const submit = () => {
-    if (isSigningIn()) return;
+    if (isBusy()) return;
     if (username === "") {
       focusView(usernameView.current);
       return;
@@ -98,6 +120,7 @@ export function PasswordStep(props: PasswordStepProps) {
       focusView(passwordView.current);
       return;
     }
+    hasTypedSinceSend.current = false;
     void signIn(username, password, (failure) => afterReturn(password, failure));
   };
 
