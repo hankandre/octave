@@ -190,3 +190,26 @@ Part B (shell):
 Engines and devices: mpv-android issues #619, #871, #874, #1022, #1137, #1320; mpv PR #18858; mpv v0.42.0 `DOCS/man/vo.rst`, `options.rst`, `stream/stream_curl.c`, `audio/out/ao_audiotrack.c`, RELEASE_NOTES; libmpv-android v1.0.0 and v1.1.0 build scripts; androidx/media 1.11.1 (`AudioCapabilities.java`, `DefaultHttpDataSource.java`, `VideoFrameReleaseHelper.java`, extractor text parsers), issues #1865, #3160, #3486; developer.android.com Media3 supported formats, HDR playback, surface, TV app quality, TV memory; jellyfin-androidtv v0.20.0 `libs.versions.toml` and issues #5093, #5595, #5794, #5825, #5908, #5977; jellyfin-androidx-media `build.sh`; Wholphin wiki and MpvPlayer.kt; Findroid v1.2.0; Streamyfin at 68af07d (`package.json`, `app.json`, `modules/mpv-player`, PRs #1783, #2486, issues #1673, #1853, #2261); Swiftfin 1.7.0 `Documentation/players.md`, PRs #2273, #2274; MPVKit README and releases; KSPlayer README; VLCKit; Moonfin-Core `pubspec.yaml`; Infuse product page; Kodi PR #22546; nvidia.com Shield TV Pro; Amazon Fire TV Cube device specifications; Google TV Streamer support page; androidcentral on the Streamer's lossless codec removal; apple.com Apple TV 4K specs; Apple `AVDisplayCriteria`.
 
 Shells: react-native-tvos README and releases, issues #1087, #1162; docs.expo.dev "Building for TV"; reactnative.dev networking (0.87, 0.88); RN `Libraries/Blob/URL.js` (react-native-tvos 0.88.1-0); `expo/fetch` `NativeRequest.kt`, `NativeResponse.swift`; Hermes `doc/RegExp.md`; developer.android.com JavaScriptSandbox; quickjs-kt; Compose for TV and javascriptengine release notes; `tv-material` 1.1.0 Gradle module metadata; kotlinlang.org supported platforms and native target support; jellyfin-sdk-kotlin; Tauri issues #6364, #10152, PR #10602; wry `main_pipe.rs`, `WryActivity.kt`; skrin and Polarity sources; jellyfin-android `PlayerFragment.kt`; Amazon Vega OS and Vega 2.0 announcements; Amazon hybrid apps overview; Apple App Review guideline 4.2; WKWebView availability; Callstack's TV testing guide; Maestro `pressKey` and supported platforms; Roborazzi; GitHub Actions billing and runner pricing.
+
+## Amendment, 2026-11-26 (T8-04): what "the player screen is native" means
+
+A Product Owner call under `docs/specs/decisions-owner-chat-2026-11-25.md` §1, provisional; the owner can veto it. No text above is changed. Where "the player screen is native per platform" above reads as "the player's controls are native", this section wins.
+
+It was ruled on 2026-11-26 as a change to land before any chrome code. It did not: this section lands after the commits that built the controls (`0c7de008`, `5aa07ca7`).
+
+**Decision.**
+
+- The player is a native view in an Expo module. Decoding, the video surface and the screen staying awake are native. Its controls are React Native views drawn over that view, in the app's own window, so they are not a painted or web layer. This is Streamyfin's shape, the precedent "Decision (accepted)" names: its `components/video-player/controls/hooks/useRemoteControl.ts` reads `useTVEventHandler` (branch `develop`, read 2026-11-26).
+- The player module's surface does not grow for the controls: no method, event, view prop or launch key. The awake state crosses from the engine to the view inside Kotlin. Every panel reads its data in TypeScript.
+- In `docs/specs/T8-01.md` D8, the reason ("the chrome is native, so React only places the view") no longer holds. Its rule, a view with no props, stands.
+
+**Why.**
+
+- A Kotlin chrome would need a new module surface for every panel (title, backdrop and status line; pause, seek and Back; then the info sheet, Settings and Up Next), each an architecture change. Pause, seek and Back belong to the viewing in TypeScript, and so do the settings.
+- It would be a second set of controls beside the shared React ones (focus ring, icons, reduced motion), and a third in Swift for Apple TV, against this record's reason for React Native: one UI.
+
+**What it costs.** Keys are handled on the JavaScript thread. The app reads a hardware key when it comes up, and react-native-tvos names a held arrow only after its own 300 ms. A stalled JavaScript thread means no controls.
+
+**Unmeasured:** the time from a key to the controls on the Nvidia Shield and on the cheap box.
+
+**This call reopens** if, at the Shield check (T8-21), that time misses T3-12's key-to-focus budget on either device, or if T8-05 finds that react-native-tvos's hold rule does not work for scrubbing. The remedy is then one native key source that feeds the same key rules, with its own decision record, not a Kotlin chrome. To keep that remedy small, the key rules know no key source (`apps/tv/src/player/chrome-keys.ts`) and one file reads the remote's hardware keys (`apps/tv/src/player/use-remote-keys.ts`; select is read from the focused control's press, and Back by `use-player-back.ts`).

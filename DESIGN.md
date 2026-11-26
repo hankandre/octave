@@ -259,7 +259,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 
 ### 7.14 Player chrome
 
-Pure video by default. The chrome is three zones, shown together and hidden together. The player screen is native per platform (decision 0003); it follows these rules.
+Pure video by default. The chrome is three zones, shown together and hidden together. The picture is native and the chrome is React Native views over it ([decision 0003](docs/decisions/0003-tv-and-mobile-shell.md), amendment of 2026-11-26); it follows these rules.
 
 1. **Top bar** (over `scrimPlayerTop`): Back, then the title block. Episodes show the series name (`typeMeta`, `text2`) above "S1 · E2 The Keeper's Log" (`typeHeading`). On the right, a **conversion chip** only when the play method is not direct play: "Converting on server: {reason}" in `notice` with an icon. It opens the info sheet with focus on Play original. Nothing is shown for direct play.
 2. **Scrubber**: a 4 px track that grows to 8 px when focused, elapsed time left and remaining time right ("−1:21:40") in `typeMono`, chapters as 2 px gaps, the buffered range as a lighter bar ahead of the playhead, an `artAccent` fill, and a 16 px `text1` thumb when focused. The scrub preview is a 384×216 frame from trickplay, with the time and chapter name inside its lower edge.
@@ -279,6 +279,20 @@ Panels (right-side sheets, a third of the canvas, the video keeps playing; Back 
 **OSD**: a transient pill at top centre for 1.2 s, for actions taken by key ("Subtitles: English (SDH)", "+10 s") and four lines from no key: "Skipped intro" or "Skipped credits", the conversion line for five seconds when a converted session starts, the audio-pick line, and the progress notice, "Couldn't save your progress to {server}. Playback continues.", for five seconds (owner, 2026-11-24, `docs/specs/decisions-owner-chat-2026-11-24.md` §3).
 
 **Status**: loading, buffering, and seeking show a centred 64 px disc with the loader (7.17; a ring until it is built) and one line of text ("Opening the original file…", "Buffering…"). "Buffering…" appears only after 500 ms. Before the first frame, the item's backdrop shows at 40% with the title and the status, plus Back.
+
+**As built (T8-04).** The rules above are the design. This is what the app draws today; what it leaves out arrives with later tasks.
+
+- **Zones.** The top bar, the scrubber and the control row, shown and hidden together, fading over `durBase` (at once with reduced motion). The top bar is Back and the title: a film's title, or the series name over "S1 · E2 {title}". There is no conversion chip yet.
+- **Scrubber.** Focus shows as the track growing from `scrubTrackH` to `scrubTrackHActive` and the `scrubThumb` thumb in `text1`, with no ring and no lift; with no known duration there is no thumb and no remaining time. The fill is the default `artAccent`, not yet taken from the artwork. There are no chapters and no preview. While a seek has not landed it shows the target.
+- **Control row.** Only rewind 10, Play or Pause, and forward 10. TalkBack reads "Rewind 10 seconds", "Pause" or "Play", and "Forward 10 seconds"; the scrubber is "Seek".
+- **Focus holder.** While only the picture shows, an invisible full-screen element, "Player controls" to TalkBack, holds focus. It is the one place no focus is visible (section 9). An arrow shows the chrome with focus on the scrubber; select shows it with focus on Play or Pause. Neither seeks nor pauses.
+- **Keys.** Select on the scrubber pauses and resumes. Play/Pause toggles; pausing a hidden chrome shows it with focus on Play or Pause, resuming leaves it hidden, and with the chrome already shown focus stays where it is. A held arrow shows the chrome or keeps it up and does not seek: hold-to-scrub is not built. A key does nothing until it comes up. Moves stop at each zone's ends; the scrubber's Down returns to the control row's last control. Skip and Up Next are not built.
+- **Idle.** While playing, the chrome hides `chromeIdleMs` (3 s) after the last key, with a control focused or not. It stays while paused.
+- **Panels** are not built.
+- **OSD.** Of the lines above, only the progress notice is built, for five seconds. No key shows a line yet.
+- **Status.** Before the first frame an opaque layer holds the backdrop at 40% under both player scrims, the title once known, Back with focus, and one line: "Loading…" until a plan is known, then "Opening the original file…" for a direct play (section 10). The remote's transport keys do nothing there. After the first frame, "Buffering…" shows once the picture has waited `bufferingDelayMs`; a seek shows it only if it makes the picture buffer. The disc's ring turns, and stands still with reduced motion.
+- **Back** stops the player and then leaves, without waiting for the progress report; a second Back while it is stopping does nothing.
+- **A failed stop** keeps the screen and shows section 10's row "Playback error, the player did not stop" with its one button, "Back to details", focused. The button, or the next Back, tries the stop once more and leaves whatever the answer, to the screen the viewer came from. Other failures show their copy with no button yet; Back leaves.
 
 ### 7.15 Skip and Up Next
 
@@ -546,6 +560,20 @@ What the evidence says for each option, for the decisions that had options:
 ### Owner decisions, 2026-11-23
 
 - **A card's artwork while it loads (T3-39).** The frame shows a blurred preview of the picture, decoded from the image's BlurHash, in place of a plain `surface2` stand-in (`docs/specs/decisions-owner-inbox-2026-11-23b.md` §3; 7.5). The picture fades in over the preview the way the ambient backdrop does (7.2): `durSlow` with `easeInOut`, 120 ms on opacity only under reduced motion. The fade reuses that approved behaviour and is listed for the owner's veto (an instant swap needs no native change); it also runs when a recycled card remounts with its picture already cached.
+
+### Product Owner decisions, 2026-11-26 (T8-04), for the owner's veto
+
+Made under the owner's delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1) and provisional; the reasons are in `docs/specs/T8-04.md`, "For the owner's veto".
+
+- The player's chrome is React Native over the native picture (7.14; decision 0003's amendment).
+- Back stops the player before it leaves; a failed stop keeps the screen with "Back to details" focused.
+- Select on the scrubber pauses and resumes. T8-05 keeps one condition: while a held scrub is pending, select commits it and does not toggle.
+- Pausing a hidden chrome with Play/Pause shows it with focus on Play or Pause.
+- An invisible element holds focus while only the picture shows.
+- The scrubber shows focus by its thicker track and thumb. Only working controls are drawn.
+- Icons: `arrow-left`, `player-play`, `player-pause`, `rewind-backward-10`, `rewind-forward-10`.
+- Wording: "S1 · E2 {title}"; "Loading…" before a plan and "Opening the original file…" after; for TalkBack, "Player controls", "Seek", "Rewind 10 seconds" and "Forward 10 seconds".
+- The picture's frame in its own shape is a later task, so a film that is not 16:9 may be drawn stretched until then.
 
 ### Awaiting the owner
 
