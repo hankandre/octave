@@ -349,13 +349,18 @@ fi
 # ---- Shows ------------------------------------------------------------------
 
 show_dir="$shows_dir/Synthetic Show"
+# Arguments: output path, tone frequency in Hz, and optionally the length in seconds (the clip length by default).
 episode() {
   local out="$1" freq="$2"
+  local duration="${3:-$duration}"
   build "$out" \
     -f lavfi -i "$(pattern 320x180)" -f lavfi -i "$(tone "$freq")" \
     "${h264_args[@]}" "${aac_stereo[@]}" -metadata:s:a:0 language=eng -shortest
 }
-episode "$show_dir/Season 01/Synthetic Show S01E01.mkv" 330
+# S01E01 alone is long enough to watch: the wire test player-viewing (T8-03) pauses at 12 s and stops past 25 s.
+long_episode="$show_dir/Season 01/Synthetic Show S01E01.mkv"
+long_episode_seconds=60
+episode "$long_episode" 330 "$long_episode_seconds"
 episode "$show_dir/Season 01/Synthetic Show S01E02.mkv" 392
 # Season 00 holds specials; the browse screen hides or defaults them (P3-06).
 episode "$show_dir/Season 00/Synthetic Show S00E01.mkv" 262
@@ -445,6 +450,8 @@ probe_value() { ffprobe -v error -select_streams "$2" -show_entries "$3" -of csv
 [ "$(probe_value "$nodecoder" v:0 stream=codec_name)" = "msmpeg4v3" ] || fail "the no-decoder sample is not MS-MPEG-4 v3"
 [ "$(probe_value "$ass" s:0 stream=codec_name)" = "ass" ] || fail "ASS track missing"
 [ "$(probe_value "$multi" a stream=codec_name | tr '\n' ' ')" = "aac ac3 " ] || fail "multitrack audio missing"
+long_episode_length="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$long_episode")"
+[ "${long_episode_length%%.*}" = "$long_episode_seconds" ] || fail "S01E01 is ${long_episode_length} s, not $long_episode_seconds s; delete it and run this script again"
 [ -f "$sidecar_dir/Synthetic Sidecar (2024).en.srt" ] || fail "srt sidecar missing"
 [ -f "$versions_1080" ] && [ -f "$versions_720" ] || fail "multi-version files missing"
 [ -f "$bd_dir/index.bdmv" ] || fail "BDMV index missing"
