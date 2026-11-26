@@ -65,9 +65,10 @@ class EngineCore(
         }
     }
 
-    // E4.
+    // E4. A failed launch stays paused: its handle waits for the stop, so a late resume or pause does nothing.
     fun setPaused(paused: Boolean) {
         val current = live()
+        if (failed) return
         current.setPlayWhenReady(!paused)
         playing = !paused
         publishPicture()

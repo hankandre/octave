@@ -72,11 +72,11 @@ export function SignedInApp({ gateway, serverName, engine, PlayerView, clock, Ar
     }),
     [gateway, clock, viewing],
   );
-  return (
-    <ArtworkProvider component={Artwork}>
-      <PlayerServicesContext.Provider value={playerServices}>
-        <AppShell screens={screens} libraries={[]} icons={railIcons} />
-      </PlayerServicesContext.Provider>
-    </ArtworkProvider>
+  const shell = (
+    <PlayerServicesContext.Provider value={playerServices}>
+      <AppShell screens={screens} libraries={[]} icons={railIcons} />
+    </PlayerServicesContext.Provider>
   );
+  // With no component of its own, the app leaves an outer provider's artwork in place.
+  return Artwork === undefined ? shell : <ArtworkProvider component={Artwork}>{shell}</ArtworkProvider>;
 }

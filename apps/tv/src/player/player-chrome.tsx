@@ -76,6 +76,7 @@ function ChromeZones({ viewing, chrome, views, title, onBack, lastControl, onLas
           nextFocusLeft={views.tag("scrubber")}
           nextFocusRight={views.tag("scrubber")}
           onPress={() => chrome.press("scrubberPress")}
+          onStep={(command) => runChromeCommand(viewing, command)}
           onFocus={() => chrome.focused("scrubber")}
           onBlur={() => chrome.focused("none")}
         />

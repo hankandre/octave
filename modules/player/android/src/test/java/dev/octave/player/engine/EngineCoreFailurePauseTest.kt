@@ -24,6 +24,16 @@ class EngineCoreFailurePauseTest {
     }
 
     @Test
+    fun a_resume_after_a_failure_leaves_the_handle_paused() {
+        val rig = launched()
+        rig.core.signal(EngineSignal.Failed(4003, emptyList()))
+        rig.handle.calls.clear()
+        rig.core.setPaused(false)
+        assertEquals(emptyList<String>(), rig.handle.calls)
+        assertEquals(listOf("error", "ended"), rig.kinds)
+    }
+
+    @Test
     fun a_player_error_pauses_the_handle_it_keeps() {
         val rig = launched()
         rig.core.signal(EngineSignal.Failed(4003, emptyList()))

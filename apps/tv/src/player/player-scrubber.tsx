@@ -15,11 +15,15 @@ import type { PlayerServices } from "./player-services";
 import { playerTime, remainingTime } from "./player-time";
 import { useViewingValue } from "./use-viewing-value";
 
+const STEP_ACTIONS = [{ name: "increment" }, { name: "decrement" }];
+
 export type PlayerScrubberProps = FocusNeighbours & {
   viewing: PlayerServices["viewing"];
   focusable: boolean;
   viewRef: (view: unknown) => void;
   onPress: () => void;
+  /** TalkBack's increase and decrease actions: one step forward or back. */
+  onStep: (command: "seek-back" | "seek-forward") => void;
   onFocus: () => void;
   onBlur: () => void;
 };
@@ -29,7 +33,7 @@ const shareOf = (seconds: number, duration: number | undefined): DimensionValue 
   return `${Math.min(100, Math.max(0, (seconds / duration) * 100))}%`;
 };
 
-export function PlayerScrubber({ viewing, viewRef, onFocus, onBlur, ...pressable }: PlayerScrubberProps) {
+export function PlayerScrubber({ viewing, viewRef, onStep, onFocus, onBlur, ...pressable }: PlayerScrubberProps) {
   const position = useViewingValue(viewing, (state) => state.session.snapshot?.positionSeconds ?? 0);
   const duration = useViewingValue(viewing, (state) => state.session.snapshot?.durationSeconds);
   const buffered = useViewingValue(viewing, (state) => state.session.snapshot?.bufferedSeconds ?? 0);
@@ -56,6 +60,11 @@ export function PlayerScrubber({ viewing, viewRef, onFocus, onBlur, ...pressable
         accessibilityRole="adjustable"
         accessibilityLabel="Seek"
         accessibilityValue={{ text: spokenTimes }}
+        accessibilityActions={STEP_ACTIONS}
+        onAccessibilityAction={({ nativeEvent }) => {
+          if (nativeEvent.actionName === "increment") onStep("seek-forward");
+          if (nativeEvent.actionName === "decrement") onStep("seek-back");
+        }}
         onFocus={() => {
           setFocused(true);
           setSpokenTimes(latestTimes.current);
