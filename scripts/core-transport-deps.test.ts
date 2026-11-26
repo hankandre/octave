@@ -141,7 +141,7 @@ function publicGatewayMethods(): string[] {
 
 describe('"every call" is checked, not listed by hand', () => {
   // Methods that send nothing.
-  const SENDS_NOTHING = new Set(["confirmUnencryptedConnection", "forgetUnencryptedConnection", "currentUserName", "sessionId", "imageUrl"]);
+  const SENDS_NOTHING = new Set(["confirmUnencryptedConnection", "forgetUnencryptedConnection", "currentUserName", "sessionId", "imageUrl", "adopt"]);
   const TABLES = [
     "packages/core/src/jellyfin/gateway-transport.test.ts",
     "packages/core/src/jellyfin/gateway-redirect-port.test.ts",

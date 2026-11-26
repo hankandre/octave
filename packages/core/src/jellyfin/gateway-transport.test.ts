@@ -110,6 +110,7 @@ const calls: Record<string, Call> = {
   "saveAccountLanguages": (g) => g.saveAccountLanguages({ AudioLanguagePreference: "fra" }),
   "languageCultures": (g, s) => g.languageCultures(s),
   "accountPreferences": (g, s) => g.accountPreferences(s),
+  "sessionStanding": (g, s) => g.sessionStanding(s),
   "saveAccountPreferences": (g) => g.saveAccountPreferences({ continueWindow: "30" }),
   "setPlayed": async (g, s) => {
     await g.setPlayed("item-1", true, s);
