@@ -139,8 +139,8 @@ Reduced motion (the system's "remove animations" setting):
 ## 6. Layout
 
 - **Canvas.** A logical 1920×1080 canvas, scaled to the panel. All sizes in this document are px on that canvas. React Native measures in dp; on a 1080p Android TV device one dp is usually two px, so T3-06 converts every token for the device's density **[unverified per device]**.
-- **Title-safe inset** is 5%: 96 px left and right, 54 px top and bottom. Nothing focusable or textual goes outside it, except artwork bleeding to the edges.
-- **The rail.** Collapsed, the rail is an icon column inside the left safe inset (`railCollapsedW`, 96 px). Open, it is `railOpenW` (400 px) over the content on `surface1`. Content starts after the collapsed rail. Six posters show beside the collapsed rail at 248 px each; how many show is the owner's call.
+- **Title-safe inset** is 5%: 96 px left and right, 54 px top and bottom. Nothing focusable or textual goes outside it, except artwork bleeding to the edges, and the rail at the top and bottom (below).
+- **The rail.** Collapsed, the rail is an icon column inside the left safe inset (`railCollapsedW`, 96 px). Open, it is `railOpenW` (400 px) over the content on `surface1`. Its entries sit 16 px from all four of its edges, so it is the one focusable thing that reaches past the title-safe inset at the top and bottom as well as at the left. Content starts after the collapsed rail. Six posters show beside the collapsed rail at 248 px each; how many show is the owner's call.
 - **Cards.** Posters are `posterW` 248 px (2:3). Thumbs are `thumbW` 416 px (16:9). Row gap is 48 px. Rows bleed to the right edge, and a partly visible card at the edge signals that more is there.
 - **Hero.** Home's hero is short enough that the whole Continue watching row shows beneath it on the first screen, card titles included; the owner checks this on the Shield (T5-06).
 - **No hover and no pointer.** Every function works with the D-pad, select, Back, Play/Pause, and Menu or Info where the remote has them. Text entry happens only in search and sign-in, through the system keyboard and voice; sign-in leads with found servers and Quick Connect, so typing is the fallback.
@@ -155,6 +155,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 
 - **Collapsed** (the default): a column of icons inside the left safe inset, with the current screen's icon marked by a 4 px `text1` bar. No labels. It takes no focus while focus is in the content.
 - **Open**: Left from the first card or control of a screen opens it with focus on the current screen's entry. Each entry shows its icon and label in `typeLabel`. Right, or select on the current entry, closes it and returns focus to where it was. Opening and closing take `durQuick`; with reduced motion they are instant.
+- **Focus and spacing.** A focused entry shows the ring and a `surface3` fill and never scales (§9, "What lifts"). The entries sit 16 px from the rail's top, bottom and sides, `space2` apart, and the bar on the current entry stays. More libraries than fit scroll with the focused entry and the whole of its ring in view.
 - **Entries, top to bottom, always in this order:** Search, Home, one entry per library (in the server's library order, from `UserViews`), then Settings and the account (the user's initial) at the bottom. Entries never move, never reorder by use, and never hide behind a sub-menu. Many libraries scroll within the rail; Search, Settings, and the account stay in place.
 - **Search is the first entry**, so it is always Left, Up to the top, select.
 - The rail is hidden in the player and in sign-in.
@@ -406,8 +407,8 @@ Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here
 - Rows and grids move focus within themselves with Left and Right; Up and Down across rows go to the nearest item by horizontal centre. Left from the first item of a screen opens the rail; Right from the rail returns to where focus was.
 - Opening a screen focuses its primary action. Returning with Back restores the previously focused card; when it is gone, focus lands on the card now at the same place in the same row, and when the row is gone too, on the screen's opening focus. A fresh visit never restores.
 - Focus is never hidden: rows scroll the focused card to at least 96 px from any edge, and the rail never covers it.
-- **What lifts.** Art and compact controls lift: cards, tiles, buttons, icon buttons, switches. A row or a field does not scale at all, on focus or on press: a server row, a picker, menu, chapter or Settings row, a text field, the search field, and any other control that fills the width of its column or sheet. Scaling a wide control moves its text sideways and pushes its ends out of the column (a 1,700 px row grows 68 px a side). A focused row shows the ring and its fill goes from `surface2` to `surface3`; a focused field shows the ring. The rail's entries stay as T3-09 built them.
-- **Room for focus.** A control's box at rest stays inside the title-safe inset, and a column of rows or fields shares the left edge of the heading above it. The ring, the lift and the shadow may draw past the box, into a gap or the safe margin, and nothing clips them: a container that clips, such as a scroll view, a sheet or the rail's edge, leaves at least the ring's reach (7 px) around a control that does not lift, and half the lift's growth plus the ring's reach around one that does.
+- **What lifts.** Art and compact controls lift: cards, tiles, buttons, icon buttons, switches. A row or a field does not scale at all, on focus or on press: a server row, a picker, menu, chapter or Settings row, a text field, the search field, and any other control that fills the width of its column or sheet. Scaling a wide control moves its text sideways and pushes its ends out of the column (a 1,700 px row grows 68 px a side). A focused row shows the ring and its fill goes from `surface2` to `surface3`; a focused field shows the ring. A rail entry is a row.
+- **Room for focus.** A control's box at rest stays inside the title-safe inset, and a column of rows or fields shares the left edge of the heading above it. The ring, the lift and the shadow may draw past the box, into a gap or the safe margin, and nothing clips them: a container that clips, such as a scroll view, a sheet or the rail's edge, leaves at least the ring's reach (7 px) around a control that does not lift, and half the lift's growth plus the ring's reach around one that does. The rail's scrolling group is such a container: it keeps 8 px above and below its entries and 16 px at their sides, and an entry scrolled to its edge keeps that room. A ring's corner radius is the control's radius plus the ring's offset, so the gap at a corner is the gap along a side.
 - Focus never jumps: the scripted focus test (T3-10) runs 500 presses, singles and held bursts, through Home with the rail and fails on any wrong, missing, or stuck move.
 
 **Back.** Back closes the topmost layer: menu, then sheet, then dialog, then player, then screen. On a root screen it opens the rail on that screen's entry; on Home with the rail open it leaves the app (§6, the owner's call).
@@ -653,6 +654,16 @@ These are the Product Owner's calls under the delegation (`docs/specs/decisions-
 - **C10. Back during a sign-in** leaves the step, drops the answer and ends a session that arrives late. The request itself is not stopped: the password still reaches the server, and a wrong one is still counted.
 - **C11. No "Quick Connect is off" sentence.** The password step does not show it; its row in section 10 is marked not shown.
 - **C12. Autofill and a shown password.** Neither field is offered to Android autofill. While Show password is on, the field asks for a visible password, which react-native-tvos 0.88.1 does not pass to the keyboard, so the keyboard sees an ordinary field and may suggest or learn what is typed while the password is shown. Vetoing Show password removes that exposure; the fix that keeps it is a React Native patch (backlog).
+
+### Product Owner calls, 2026-11-26b (T3-40)
+
+These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The reasons are in `docs/specs/decisions-product-owner-2026-11-26b.md`, whose numbers these are.
+
+- **1. Ring corners.** A fault, not a look call: the ring keeps the same gap at a control's corners as along its sides (section 9, "Room for focus").
+- **2. A rail entry does not lift.** It shows the ring and a `surface3` fill. A veto restores the lift and needs a wider open rail.
+- **3. Nothing crops a rail entry's ring**, and it covers no neighbour, in the scrolling group and at the rail's edges (section 9, "Room for focus").
+- **4. The rail's padding is 16 px on all four sides**, in place of the 54 px title-safe inset above and below (section 6). To judge on the Shield: whether Search and the account sit too near the edge.
+- **5. The bar on the current entry stays.**
 
 ### Awaiting the owner
 
