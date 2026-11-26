@@ -33,7 +33,8 @@ export function useServerChoice({ services, onChosen, focus }: Options) {
       const server = { name: connection.name, address: gateway.serverUrl };
       // Saved servers are keyed by id, so a server that reports none is not remembered.
       if (connection.id !== undefined) services.remembered.remember({ id: connection.id, ...server });
-      const returnTo = connection.id === undefined ? from : rowControl({ id: connection.id, address: server.address });
+      // Back returns to what chose the server: the field after a typed address, else the row it is now remembered as.
+      const returnTo = connection.id === undefined || from === "field" ? from : rowControl({ id: connection.id, address: server.address });
       onChosen({ gateway, serverName: server.name, address: server.address }, returnTo);
     },
     [services, onChosen],

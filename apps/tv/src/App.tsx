@@ -1,20 +1,17 @@
-// The composition root: the app shell with the one placeholder screen every route shows until its own task replaces it
-// (sign-in T4, Home T5-03, libraries T6-01, the player T8, Settings T9). Libraries and the account arrive with T4 and T6-01.
-import { FirstScreen } from "./first-screen/FirstScreen";
-import { AppShell } from "./shell";
-import { railIcons } from "./shell/rail-icons";
+// The composition root: sign-in until a session exists, then the signed-in app (T4-03 D8). Nothing is stored yet
+// (T4-05), so every launch starts at sign-in's first step.
+import { AppRoot } from "./app-root";
+import { hostClock } from "./host/clock";
+import { hostSignedInParts } from "./host/host-signed-in";
+import { hostSignInServices } from "./host/host-sign-in";
+import { PasswordPending, SignInApp, createQuickConnectStep, type SignedIn } from "./sign-in";
 
-const screens = {
-  home: FirstScreen,
-  search: FirstScreen,
-  library: FirstScreen,
-  settings: FirstScreen,
-  accounts: FirstScreen,
-  item: FirstScreen,
-  play: FirstScreen,
-  signIn: FirstScreen,
-};
+const QuickConnect = createQuickConnectStep({ clock: hostClock });
+
+function SignIn({ onSignedIn }: { onSignedIn(signedIn: SignedIn): void }) {
+  return <SignInApp services={hostSignInServices} nextStep={QuickConnect} passwordStep={PasswordPending} onSignedIn={onSignedIn} />;
+}
 
 export default function App() {
-  return <AppShell screens={screens} libraries={[]} icons={railIcons} />;
+  return <AppRoot signIn={SignIn} signedInParts={hostSignedInParts} />;
 }

@@ -1,6 +1,8 @@
 // The first sign-in step, "Where is your server?" (T4-02 D3, DESIGN.md §7.20): remembered and found servers, the
 // Server URL field, and Search again. Select on a row, or the keyboard's action key in the field, probes that server.
 //
+// Search again and the field each log `OCTAVE_FOCUS <testID>` on focus.
+//
 // testIDs: sign-in-server-step, server-row-<n>, sign-in-enter-address, sign-in-search-again, sign-in-address (and
 // -input), sign-in-status, and the dialog's sign-in-unencrypted.
 import { useContext, useEffect, useState, type MutableRefObject } from "react";
@@ -19,6 +21,9 @@ import { SignInStepFrame } from "./sign-in-step-frame";
 import { UnencryptedDialog } from "./unencrypted-dialog";
 import { useServerChoice } from "./use-server-choice";
 import { useServerSearch } from "./use-server-search";
+
+// The smoke test's oracle reads these two lines (scripts/tv-first-focus.mjs). Each holds a fixed testID and nothing else.
+const reportFocus = (testID: "sign-in-search-again" | "sign-in-address") => console.info(`OCTAVE_FOCUS ${testID}`);
 
 type Props = {
   /** The control that takes focus on arrival; without it, the first row, or Search again. */
@@ -76,6 +81,7 @@ function Step({ services, entry, onChosen, backRef }: Props & { services: SignIn
         label="Search again"
         variant="quiet"
         onPress={() => void searchAgain()}
+        onFocus={() => reportFocus("sign-in-search-again")}
         hasTVPreferredFocus={preferred === "search"}
         viewRef={register("search")}
       />
@@ -92,6 +98,7 @@ function Step({ services, entry, onChosen, backRef }: Props & { services: SignIn
         value={address}
         onChangeText={setAddress}
         onSubmitEditing={submit}
+        onFocus={() => reportFocus("sign-in-address")}
         returnKeyType="go"
         keyboardType="url"
         autoCapitalize="none"
