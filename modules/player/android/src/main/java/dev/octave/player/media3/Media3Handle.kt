@@ -81,6 +81,7 @@ internal class Media3Handle(
             droppedFrames = player.videoDecoderCounters?.droppedBufferCount ?: 0,
             width = size.width.takeIf { it > 0 },
             height = size.height.takeIf { it > 0 },
+            bufferedMs = player.bufferedPosition.takeIf { it != C.TIME_UNSET },
         )
     }
 

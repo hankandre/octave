@@ -29,4 +29,6 @@ class HandleFacts(
     val droppedFrames: Int,
     val width: Int?,
     val height: Int?,
+    // The last buffered timestamp on the playback timeline (T8-04, D11).
+    val bufferedMs: Long? = null,
 )
