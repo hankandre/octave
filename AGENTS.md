@@ -86,7 +86,9 @@ Dependencies
 ## Design
 
 - Follow `DESIGN.md` for every UI change.
-- Load the `frontend-design` and `impeccable` skills for every UI spec, implementation and review; `DESIGN.md` and the task's acceptance win over both.
+- Load Anthropic's `frontend-design` skill for every UI spec, implementation and review; use `impeccable` as a secondary critique tool.
+- Check TV layout, focus and remote behaviour against current Android TV guidance; neither skill covers TV. Use tvOS and Fire TV guidance as references.
+- Rank conflicts: the task's acceptance and `DESIGN.md`, then Android TV guidance, then `frontend-design`, then `impeccable`. Report a conflict with Android TV guidance to the Product Owner.
 - Use the design tokens; never hard-code colours, sizes, radii, or durations.
 - Build screens from the shared controls; never use a platform picker or dialog the D-pad cannot style or focus.
 - Make every screen work with the D-pad, select, and Back alone, and honour reduced motion.
