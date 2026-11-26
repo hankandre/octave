@@ -2,6 +2,7 @@
 // gateway (DOMAINS.md §8).
 import { createContext } from "react";
 import type { ServerDiscovery } from "@octave/core/src/domain/server-discovery";
+import type { SignInMethods } from "@octave/core/src/domain/sign-in-methods";
 import type { JellyfinGateway } from "@octave/core/src/jellyfin/gateway";
 import type { LanHttpConfirmationStore } from "@octave/core/src/lan-http-confirmations";
 import type { RememberedServers } from "@octave/core/src/remembered-servers";
@@ -14,6 +15,8 @@ export type SignInServices = {
   remembered: RememberedServers;
   /** What Back on the first step does; without it the app exits. */
   leave?: () => void;
+  /** How the chosen server lets a viewer sign in; without it, `DEFAULT_SIGN_IN_METHODS`. */
+  signInMethods?: (chosen: ChosenServer) => SignInMethods;
 };
 
 /** The server the viewer chose, handed to every later sign-in step. `address` is the gateway's `serverUrl`. */
@@ -30,8 +33,10 @@ export type NextStepProps = {
   chosen: ChosenServer;
   changeServer(): void;
   onSignedIn?(signedIn: SignedIn): void;
-  /** Hands over to the password step, when the flow has one. */
+  /** Hands over to the password step because this server offers no Quick Connect, when the flow has one. */
   openPassword?(): void;
+  /** The viewer chose to type a password instead, when the flow offers one. Back returns to this step. */
+  choosePassword?(): void;
 };
 
 export type PasswordStepProps = {

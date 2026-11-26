@@ -9,7 +9,7 @@ import { px } from "../scale";
 import { textStyle } from "../text";
 import { colors, radii, sizes, space } from "../tokens";
 
-export type TextFieldProps = Pick<TextInputProps, "onSubmitEditing" | "returnKeyType" | "keyboardType" | "autoCapitalize" | "autoCorrect"> & {
+export type TextFieldProps = Pick<TextInputProps, "onSubmitEditing" | "returnKeyType" | "keyboardType" | "autoCapitalize" | "autoCorrect" | "importantForAutofill"> & {
   label: string;
   value: string;
   onChangeText: (text: string) => void;

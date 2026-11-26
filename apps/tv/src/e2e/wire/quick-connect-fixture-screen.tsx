@@ -1,7 +1,6 @@
 // The Quick Connect step in fixed states, for the 1920×1080 captures (T4-03 D13): the real step over a transport that
-// answers from memory, then the password step's placeholder. The states are a code with its QR code, a code with no
-// approval link (a loopback server), an expired code, a refused code, and the placeholder. Failures show once the first
-// poll has run. Nothing is sent.
+// answers from memory. The states are a code with its QR code, a code with no approval link (a loopback server), an
+// expired code and a refused code. Failures show once the first poll has run. Nothing is sent.
 import { MemoryLanHttpConfirmations } from "@octave/core/src/lan-http-confirmations";
 import type { Transport } from "@octave/core/src/ports/transport";
 import type { ReactElement } from "react";
@@ -10,7 +9,7 @@ import { colors } from "../../design/tokens";
 import { hostClock } from "../../host/clock";
 import { hostCrypto } from "../../host/crypto";
 import { createGatewayFactory } from "../../host/gateway";
-import { PasswordPending, createQuickConnectStep } from "../../sign-in";
+import { createQuickConnectStep } from "../../sign-in";
 import { ChosenServerContext, type ChosenServer } from "../../sign-in/sign-in-services";
 import { wait } from "./wire-context";
 
@@ -45,14 +44,12 @@ async function chosenServer(address: string, pollStatus: number): Promise<Chosen
 }
 
 const quickConnect = (chosen: ChosenServer) => <QuickConnectStep chosen={chosen} changeServer={stay} />;
-const placeholder = (chosen: ChosenServer) => <PasswordPending chosen={chosen} changeServer={stay} onSignedIn={stay} />;
 
 const STATES = [
   { id: "waiting-qr", address: LAN, pollStatus: 200, step: quickConnect },
   { id: "waiting-no-link", address: LOOPBACK, pollStatus: 200, step: quickConnect },
   { id: "expired", address: LAN, pollStatus: 404, step: quickConnect },
   { id: "refused", address: LAN, pollStatus: 401, step: quickConnect },
-  { id: "password-pending", address: LAN, pollStatus: 200, step: placeholder },
 ];
 
 export async function showQuickConnectFixtures(show: (element: ReactElement | null) => Promise<void>, log: (line: string) => void): Promise<void> {

@@ -1,4 +1,4 @@
-export { PasswordPending } from "./password-pending";
+export { PasswordStep } from "./password-step";
 export { createQuickConnectStep } from "./quick-connect-step";
 export { SignInApp } from "./sign-in-app";
 export { SignInStepFrame } from "./sign-in-step-frame";

@@ -1,8 +1,9 @@
 // Sign-in by Quick Connect (T4-03 D9, DESIGN.md §7.20): the code and the QR code of its approval link. The screen
-// updates by itself when a phone approves, and a server without Quick Connect hands over to the password step.
+// updates by itself when a phone approves, and a server without Quick Connect hands over to the password step. A
+// viewer may also choose the password step (T4-04 D3).
 //
 // testIDs: sign-in-quick-connect, sign-in-code, sign-in-qr, sign-in-status, sign-in-new-code, sign-in-try-again,
-// sign-in-change-server.
+// sign-in-use-password, sign-in-change-server.
 import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { groupCode, spokenCode, type QuickConnectFailure } from "@octave/core/src/domain/quick-connect";
@@ -14,7 +15,7 @@ import { textStyle } from "../design/text";
 import { colors, sizes, space } from "../design/tokens";
 import { focusView } from "../shell/focus-bridge";
 import { QrCode } from "./qr-code";
-import { CHANGE_SERVER_LABEL, LOADING_LINE, QUICK_CONNECT_COPY, noLinkSentence, quickConnectSentence } from "./sign-in-copy";
+import { CHANGE_SERVER_LABEL, LOADING_LINE, PASSWORD_COPY, QUICK_CONNECT_COPY, noLinkSentence, quickConnectSentence } from "./sign-in-copy";
 import type { NextStepProps } from "./sign-in-services";
 import { SignInStepFrame } from "./sign-in-step-frame";
 
@@ -88,16 +89,20 @@ function Step({ clock, ...props }: NextStepProps & { clock: Clock }) {
   const { address } = props.chosen;
   const changeServerView = useRef<unknown>(null);
   const retryView = useRef<unknown>(null);
+  const usePasswordView = useRef<unknown>(null);
   const retry = state.phase === "failed" ? retryFor(state.failure) : undefined;
+  // A password post would hit the same redirect.
+  const isRedirected = state.phase === "failed" && retry === undefined;
+  const choosePassword = isRedirected ? undefined : props.choosePassword;
 
   // A failure takes focus to the one thing that can help.
   useEffect(() => {
     if (state.phase === "failed") focusView(retry === undefined ? changeServerView.current : retryView.current);
   }, [state, retry]);
 
-  // The retry button goes away while the new code loads, so focus leaves it first.
+  // The retry button goes away while the new code loads, so focus leaves it first, for the control focus opens on.
   const pressRetry = () => {
-    focusView(changeServerView.current);
+    focusView(choosePassword === undefined ? changeServerView.current : usePasswordView.current);
     newCode();
   };
 
@@ -128,13 +133,27 @@ function Step({ clock, ...props }: NextStepProps & { clock: Clock }) {
             />
           </View>
         )}
+        {choosePassword === undefined ? null : (
+          <View style={styles.button}>
+            <Button
+              testID="sign-in-use-password"
+              label={PASSWORD_COPY.usePassword}
+              variant="secondary"
+              onPress={choosePassword}
+              hasTVPreferredFocus
+              viewRef={(view) => {
+                usePasswordView.current = view;
+              }}
+            />
+          </View>
+        )}
         <View style={styles.button}>
           <Button
             testID="sign-in-change-server"
             label={CHANGE_SERVER_LABEL}
             variant="quiet"
             onPress={props.changeServer}
-            hasTVPreferredFocus
+            hasTVPreferredFocus={choosePassword === undefined}
             viewRef={(view) => {
               changeServerView.current = view;
             }}
