@@ -1,4 +1,5 @@
 // The sign-in step's sentences (DESIGN.md §10). A failure shows only these, never an error's or a server's text.
+import type { PasswordSignInFailure } from "@octave/core/src/domain/password-sign-in";
 import type { QuickConnectFailure } from "@octave/core/src/domain/quick-connect";
 import type { ServerChoiceFailure } from "@octave/core/src/domain/server-choice";
 
@@ -19,7 +20,16 @@ export const QUICK_CONNECT_COPY = {
   tryAgain: "Try again",
 } as const;
 
-export const PASSWORD_PENDING_COPY = { heading: "Who is signing in?", body: "Not available yet." } as const;
+export const PASSWORD_COPY = {
+  heading: "Who is signing in?",
+  username: "Username",
+  password: "Password",
+  showPassword: "Show password",
+  signIn: "Sign in",
+  usePassword: "Use a password",
+} as const;
+
+export const PASSWORD_PENDING_COPY = { heading: PASSWORD_COPY.heading, body: "Not available yet." } as const;
 
 export const CHANGE_SERVER_LABEL = "Change server";
 
@@ -31,6 +41,19 @@ export function quickConnectSentence(failure: QuickConnectFailure, address: stri
       return "This code has expired. Get a new code to try again.";
     case "refused":
       return "The server didn't accept this code. Get a new code to try again.";
+    case "unreachable":
+    case "redirect":
+    case "other":
+      return signInSentence(failure, address);
+  }
+}
+
+export function passwordSentence(failure: PasswordSignInFailure, address: string): string {
+  switch (failure) {
+    case "wrong-credentials":
+      return "That username and password didn't work.";
+    case "refused":
+      return "This account can't sign in right now. Try again later. If it still doesn't work, ask the server's owner.";
     case "unreachable":
     case "redirect":
     case "other":

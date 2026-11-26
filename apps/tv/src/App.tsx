@@ -5,12 +5,12 @@ import { ReducedMotionProvider } from "./design/motion";
 import { hostClock } from "./host/clock";
 import { hostSignedInParts } from "./host/host-signed-in";
 import { hostSignInServices } from "./host/host-sign-in";
-import { PasswordPending, SignInApp, createQuickConnectStep, type SignedIn } from "./sign-in";
+import { PasswordStep, SignInApp, createQuickConnectStep, type SignedIn } from "./sign-in";
 
 const QuickConnect = createQuickConnectStep({ clock: hostClock });
 
 function SignIn({ onSignedIn }: { onSignedIn(signedIn: SignedIn): void }) {
-  return <SignInApp services={hostSignInServices} nextStep={QuickConnect} passwordStep={PasswordPending} onSignedIn={onSignedIn} />;
+  return <SignInApp services={hostSignInServices} nextStep={QuickConnect} passwordStep={PasswordStep} onSignedIn={onSignedIn} />;
 }
 
 export default function App() {

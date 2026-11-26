@@ -1,28 +1,54 @@
-// The sign-in steps and the hand-off between them (T4-02 D8, T4-03 D7): the server step, then the later step it is
-// given, which may hand over to the password step. Both draw the chosen server's address through the frame.
-import { useCallback, useEffect, useReducer, type ComponentType, type MutableRefObject } from "react";
+// The sign-in steps and the hand-off between them (T4-02 D8, T4-03 D7, T4-04 D6, D7): the server step, then the later
+// step it is given, which may hand over to the password step. Both draw the chosen server's address through the frame.
+import { useCallback, useContext, useEffect, useReducer, type ComponentType, type MutableRefObject } from "react";
+import { DEFAULT_SIGN_IN_METHODS, type SignInMethods } from "@octave/core/src/domain/sign-in-methods";
 import type { ControlId } from "./controls";
 import { ServerStep } from "./server-step";
-import { ChosenServerContext, type ChosenServer, type NextStepProps, type PasswordStepProps, type SignedIn } from "./sign-in-services";
+import { ChosenServerContext, SignInServicesContext, type ChosenServer, type NextStepProps, type PasswordStepProps, type SignedIn } from "./sign-in-services";
+
+type Chosen = { chosen: ChosenServer; methods: SignInMethods; returnTo: ControlId };
+
+/** Whether the viewer chose the password step, or the server left no other. */
+type PasswordFrom = "quick-connect" | "skipped";
 
 type State =
   | { step: "server"; returnTo?: ControlId }
-  | { step: "next" | "password"; chosen: ChosenServer; returnTo: ControlId };
+  | ({ step: "next" } & Chosen)
+  | ({ step: "password"; from: PasswordFrom } & Chosen);
 
 type Action =
-  | { type: "chosen"; chosen: ChosenServer; returnTo: ControlId }
+  | ({ type: "chosen" } & Chosen)
   | { type: "open-password" }
+  | { type: "choose-password" }
+  | { type: "back" }
   | { type: "change-server" };
+
+function toPassword(state: State, from: PasswordFrom): State {
+  return state.step === "next" ? { ...state, step: "password", from } : state;
+}
+
+function toServer(state: State): State {
+  return state.step === "server" ? state : { step: "server", returnTo: state.returnTo };
+}
+
+// A skipped step is not a layer to return to: Back from there goes to the server step.
+function back(state: State): State {
+  if (state.step !== "password" || state.from === "skipped") return toServer(state);
+  return { step: "next", chosen: state.chosen, methods: state.methods, returnTo: state.returnTo };
+}
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "chosen":
-      return { step: "next", chosen: action.chosen, returnTo: action.returnTo };
+      return { step: "next", chosen: action.chosen, methods: action.methods, returnTo: action.returnTo };
     case "open-password":
-      return state.step === "next" ? { ...state, step: "password" } : state;
-    // The skipped step is not a layer to return to: Back from either later step goes to the server step.
+      return toPassword(state, "skipped");
+    case "choose-password":
+      return toPassword(state, "quick-connect");
+    case "back":
+      return back(state);
     case "change-server":
-      return state.step === "server" ? state : { step: "server", returnTo: state.returnTo };
+      return toServer(state);
   }
 }
 
@@ -40,28 +66,35 @@ const ignoreSignIn = () => undefined;
 
 export function SignInFlow({ nextStep: NextStep, passwordStep: PasswordStep, onSignedIn = ignoreSignIn, backRef, stepBackRef }: Props) {
   const [state, dispatch] = useReducer(reducer, { step: "server" });
+  const signInMethods = useContext(SignInServicesContext)?.signInMethods;
   const changeServer = useCallback(() => dispatch({ type: "change-server" }), []);
   const openPassword = useCallback(() => dispatch({ type: "open-password" }), []);
-  const onChosen = useCallback((chosen: ChosenServer, returnTo: ControlId) => dispatch({ type: "chosen", chosen, returnTo }), []);
+  const choosePassword = useCallback(() => dispatch({ type: "choose-password" }), []);
+  const onChosen = useCallback(
+    (chosen: ChosenServer, returnTo: ControlId) => dispatch({ type: "chosen", chosen, methods: signInMethods?.(chosen) ?? DEFAULT_SIGN_IN_METHODS, returnTo }),
+    [signInMethods],
+  );
 
   useEffect(() => {
     backRef.current = () => {
       if (state.step === "server") return stepBackRef.current();
-      changeServer();
+      dispatch({ type: "back" });
       return true;
     };
-  }, [backRef, stepBackRef, state.step, changeServer]);
+  }, [backRef, stepBackRef, state.step]);
 
   if (state.step === "server") {
     return <ServerStep entry={state.returnTo} onChosen={onChosen} backRef={stepBackRef} />;
   }
   const shared = { chosen: state.chosen, changeServer, onSignedIn };
+  // One value draws both routes to the password step.
+  const passwordOffered = PasswordStep !== undefined && state.methods.password === "offered";
   return (
     <ChosenServerContext.Provider value={state.chosen}>
       {state.step === "password" && PasswordStep !== undefined ? (
         <PasswordStep {...shared} />
       ) : (
-        <NextStep {...shared} openPassword={PasswordStep === undefined ? undefined : openPassword} />
+        <NextStep {...shared} openPassword={passwordOffered ? openPassword : undefined} choosePassword={passwordOffered ? choosePassword : undefined} />
       )}
     </ChosenServerContext.Provider>
   );
