@@ -115,7 +115,11 @@ export function AppShell({ screens, libraries, account, initialPath = "/", icons
     },
     [nav],
   );
-  const api = useMemo<ShellApi>(() => ({ open, route: top }), [open, top]);
+  // The same pop Back runs on a pushed screen (use-shell-back.ts); the bottom screen has nothing to close.
+  const close = useCallback(() => {
+    if (nav.isReady() && nav.canGoBack()) nav.dispatch(StackActions.pop());
+  }, [nav]);
+  const api = useMemo<ShellApi>(() => ({ open, close, route: top }), [open, close, top]);
 
   const placeOfTop = useCallback((): Place | undefined => (topKey.current === undefined ? undefined : places.get(topKey.current)), [places]);
 

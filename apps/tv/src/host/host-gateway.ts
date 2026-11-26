@@ -7,7 +7,7 @@ import { createCapabilityProbe } from "./device-capabilities";
 import { createAppGatewayFactory, type GatewayFactory } from "./gateway";
 import { createInstallIdSource, type InstallIdSource } from "./install-id";
 import { loadInstallIdModule } from "./install-id-module";
-import { createPlayerEngine, type PlayerNative } from "./player-engine";
+import { createPlayerEngine } from "./player-engine";
 import { loadPlayerModule } from "./player-module";
 import { loadSessionModule } from "./session-module";
 import { createSessionTransport } from "./transport";
@@ -18,11 +18,9 @@ let factory: GatewayFactory | undefined;
 
 // The host is built on first use, so importing this file loads no native module.
 export const hostGateway: GatewayFactory = (serverUrl, stores) => {
-  // The module's typed declaration names its argument shapes; the adapter takes plain maps (as player-run.ts does).
-  // T8-03 joins the two in the app.
   factory ??= createAppGatewayFactory(
     { crypto: hostCrypto, transport: createSessionTransport(loadSessionModule()), installId: hostInstallId },
-    createCapabilityProbe(() => createPlayerEngine(loadPlayerModule() as unknown as PlayerNative)),
+    createCapabilityProbe(() => createPlayerEngine(loadPlayerModule())),
   );
   return factory(serverUrl, stores);
 };

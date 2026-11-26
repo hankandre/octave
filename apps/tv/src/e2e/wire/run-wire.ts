@@ -8,7 +8,7 @@ import type { ReactElement } from "react";
 import { createCapabilityProbe } from "../../host/device-capabilities";
 import { createAppGatewayFactory, createGatewayFactory } from "../../host/gateway";
 import { hostInstallId } from "../../host/host-gateway";
-import { createPlayerEngine, type PlayerNative } from "../../host/player-engine";
+import { createPlayerEngine } from "../../host/player-engine";
 import { loadPlayerModule } from "../../host/player-module";
 import * as playerCapabilities from "./player-capabilities";
 import { loadSessionModule } from "../../host/session-module";
@@ -41,8 +41,8 @@ const TESTS: Record<string, (context: WireContext) => Promise<WireOutcome>> = {
   "artwork-canary": artworkCanary.run,
 };
 
-// The app's probe, as host-gateway.ts wires it: the player engine's initialize (the cast is player-run.ts's).
-const probe = createCapabilityProbe(() => createPlayerEngine(loadPlayerModule() as unknown as PlayerNative));
+// The app's probe, as host-gateway.ts wires it: the player engine's initialize.
+const probe = createCapabilityProbe(() => createPlayerEngine(loadPlayerModule()));
 
 export async function runWire(host: { crypto: Crypto; props: unknown; show: (element: ReactElement | null) => Promise<void> }, log: (line: string) => void): Promise<void> {
   let index = 0;
