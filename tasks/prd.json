@@ -2140,10 +2140,10 @@
             "A finished sign-in mounts SignedInApp from App.tsx with the signed-in gateway and the server's name, the player engine and its view, the host clock and the native artwork provider, so a release build reaches Home and plays from it; the password sign-in of T4-04 opens Home the same way, and pnpm tv:smoke's first-focus oracle still passes (T8-03, D11)"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "PR #347. Quick Connect: code and QR (zbarimg decodes /web/#/quickconnect?code=482913), 5 s poll, 10 min cap, newCode/stop; the secret stays in the run's closure. AppRoot mounts SignedInApp from App.tsx; ReducedMotionProvider added. Wire: sign-in-quick-connect passes on Jellyfin 10.11 and 12; full suite 22 pairs. The recorder learns the secret and token (gzip fixed) and the judge fails when it learns neither; contract replay covers both versions. Untested: a phone scanning the QR (393), App.tsx wiring, no real TV, Jellyscale has no Quick Connect (T4-04)."
         },
         {
           "id": "T4-04",
