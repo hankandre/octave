@@ -26,6 +26,7 @@ import { judgeArtworkCapture, judgeCapture, judgeLogcat, judgePlayerCapture, jud
 import { describeLogKept, logKeptErrors, startLogKeeper } from "./tv-wire-logcat.mjs";
 import { MAX_IMAGE_HOLD_MS, startMock } from "./tv-wire-mock.mjs";
 import { proxyRequestsNamingTargets, startProxyListener, startRecorder } from "./tv-wire-proxy.mjs";
+import { openKeyRemote } from "./tv-wire-keys.mjs";
 import { readDecoderList } from "./tv-wire-decoders.mjs";
 import { ensureFixtures, readWireCredentials, scanJellyfinLibraries, upstreamPort } from "./tv-wire-fixtures.mjs";
 
@@ -33,6 +34,11 @@ const repo = fileURLToPath(new URL("..", import.meta.url));
 const LIST = join(repo, "apps", "tv", "src", "e2e", "wire", "wire-tests.json");
 const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
 const RUN_MS = 480_000;
+// How often the run looks for new app lines: often while a test waits on the remote's keys, which it needs at once.
+const LOOK_MS = 1_000;
+const KEY_LOOK_MS = 100;
+// The test the runner sends keys to and reads the window for (T8-04).
+const USES_KEYS = "player-transport";
 const REAL_TARGETS = ["jellyfin-10-11", "jellyfin-12", "jellyscale"];
 
 // The player's wire tests (T8-02) whose captures are plays, judged by judgePlayerCapture (player-viewing's own judge
@@ -41,7 +47,7 @@ const PLAYS = ["player-original-file", "player-samples", "player-capabilities"];
 // The tests the emulator's decoder list is read for (T8-02 item 6, T8-07 item 8).
 const READS_DECODERS = ["player-samples", "player-capabilities"];
 // The tests whose own judge in WIRE_JUDGES reads the pair's records.
-const RECORDS_JUDGED = ["player-redirect", "player-capabilities", "player-viewing"];
+const RECORDS_JUDGED = ["player-redirect", "player-capabilities", "player-viewing", "player-transport"];
 const REDIRECTED = ["transport-redirect", "transport-canary", "player-redirect"];
 
 // T3-11: the artwork test whose capture judgeArtworkCapture reads, with the card count from its result line.
@@ -169,9 +175,9 @@ export function resumedPackage(dumpsys) {
 // missing done line, and anything the evidence writer had to replace. Returns the summary lines, the ERROR lines to
 // print and whether any pair failed.
 export function judgeRun(input, { write }) {
-  const { pairs, counts, lines, logLines, seen, devicePorts, secrets, voids, kept, deviceLines } = input;
+  const { pairs, counts, lines, logLines, seen, devicePorts, secrets, voids, keyErrors = [], kept, deviceLines } = input;
   const known = [...secrets];
-  const runErrors = [...voids, ...judgeLogcat(logLines, known), ...logKeptErrors(kept)];
+  const runErrors = [...voids, ...keyErrors, ...judgeLogcat(logLines, known), ...logKeptErrors(kept)];
   const named = proxyRequestsNamingTargets(seen, devicePorts);
   if (named.length > 0) runErrors.push(`ERROR tv wire: ${named.length} request(s) naming a wire target went to the global proxy`);
   if (!lines.includes("OCTAVE_WIRE done")) runErrors.push("ERROR tv wire: no OCTAVE_WIRE done line; the app's wire run did not finish");
@@ -182,6 +188,7 @@ export function judgeRun(input, { write }) {
     if (pair.test === "transport-private-lan-and-proxy") counted.privateLan = counts.privateLan;
     if (READS_DECODERS.includes(pair.test)) counted.decoders = pair.decoders ?? null;
     if (RECORDS_JUDGED.includes(pair.test)) counted.records = pair.records;
+    if (pair.test === USES_KEYS) Object.assign(counted, { keys: pair.keys, windows: pair.windows });
     const host = `127.0.0.1:${pair.devicePort}`;
     const errors = [...judgeWire({ pairs: [counted], lines })];
     if (pair.test === "transport-probe-then-signed-in") errors.push(...judgeCapture(pair.records, { expected: PROBE_THEN_SIGNED_IN, host, secrets: known }));
@@ -302,6 +309,7 @@ async function main(args) {
     const recorders = new Map();
     let reversed = [];
     let keeper = null;
+    const remote = openKeyRemote({ shell, appId: ANDROID_APPLICATION_ID });
     let kept = null;
     let dump = [];
     let after = null;
@@ -344,8 +352,14 @@ async function main(args) {
       const component = resolved.stdout.trim().split("\n").pop()?.trim() ?? "";
       if (!component.startsWith(`${ANDROID_APPLICATION_ID}/`)) throw new Error("the leanback launcher category resolves to no activity of the app");
       shell("am", "start", "-a", "android.intent.action.MAIN", "-c", LEANBACK, "-n", component);
-      for (const deadline = Date.now() + RUN_MS; Date.now() < deadline; await sleep(1_000)) {
-        if (wireLines(keeper.lines()).includes("OCTAVE_WIRE done")) break;
+      const lookMs = selected.some((pair) => pair.test === USES_KEYS) ? KEY_LOOK_MS : LOOK_MS;
+      let read = 0;
+      for (const deadline = Date.now() + RUN_MS; Date.now() < deadline; await sleep(lookMs)) {
+        const logged = keeper.lines();
+        const fresh = wireLines(logged.slice(read));
+        read = logged.length;
+        await remote.answer(fresh);
+        if (fresh.includes("OCTAVE_WIRE done")) break;
       }
       // Let the app's last calls (a dropped stall runs on to its deadline) reach the recorders.
       await sleep(2_000);
@@ -372,8 +386,9 @@ async function main(args) {
       `adbd up ${before.elapsed} s before the reverses; ${after === null ? "adbd not found after the run" : after.pid === before.pid ? `same adbd after the run (up ${after.elapsed} s)` : "adbd restarted during the run"}`,
       `${reversed.length - missing.length} of ${reversed.length} adb reverse(s) present at the end of the run`,
       `resumed package at the end of the run: ${foreground}`,
+      ...(selected.some((pair) => pair.test === USES_KEYS) ? remote.describe() : []),
     ];
-    return { dump, keptLines: keeper.lines(), kept, mock, proxy, recorders, voids, state };
+    return { dump, keptLines: keeper.lines(), kept, mock, proxy, recorders, remote, voids, state };
   };
 
   // A run whose adb connection dropped (its reverses gone) is void, not a transport result: it runs once more, and the
@@ -399,6 +414,7 @@ async function main(args) {
         ...pair,
         records: recorders.get(`${pair.test} ${pair.target}`).records,
         ...(READS_DECODERS.includes(pair.test) ? { decoders } : {}),
+        ...(pair.test === USES_KEYS ? { keys: run.remote.keys, windows: run.remote.windows } : {}),
         ...(pair.test === ARTWORK_CAPTURE && pair.target === "mock" ? { widths: mock.latestImageWidths() } : {}),
       })),
       counts: mock.counts(),
@@ -408,6 +424,7 @@ async function main(args) {
       devicePorts: [...all.map((pair) => pair.devicePort), list.canaryPort, list.closedPort, mock.ports.privateLan, ...earlier.ports],
       secrets: [...secrets],
       voids: run.voids,
+      keyErrors: run.remote.errors,
       kept: run.kept,
       deviceLines,
     },

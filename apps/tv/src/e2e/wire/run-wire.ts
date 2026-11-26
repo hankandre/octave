@@ -18,6 +18,7 @@ import * as artworkHeaderAndCache from "./artwork-header-and-cache";
 import * as playerOriginalFile from "./player-original-file";
 import * as playerRedirect from "./player-redirect";
 import * as playerSamples from "./player-samples";
+import * as playerTransport from "./player-transport";
 import * as playerViewing from "./player-viewing";
 import { SeamRecorder } from "./seam-recorder";
 import * as canary from "./transport-canary";
@@ -41,6 +42,7 @@ const TESTS: Record<string, (context: WireContext) => Promise<WireOutcome>> = {
   "artwork-header-and-cache": artworkHeaderAndCache.run,
   "artwork-canary": artworkCanary.run,
   "player-viewing": playerViewing.run,
+  "player-transport": playerTransport.run,
 };
 
 // The app's probe, as host-gateway.ts wires it: the player engine's initialize.
@@ -48,6 +50,13 @@ const probe = createCapabilityProbe(() => createPlayerEngine(loadPlayerModule())
 
 export async function runWire(host: { crypto: Crypto; props: unknown; show: (element: ReactElement | null) => Promise<void> }, log: (line: string) => void): Promise<void> {
   let index = 0;
+  // The running count of the keys asked for; the runner holds each key line to it.
+  let presses = 0;
+  const press: WireContext["press"] = (key) => {
+    presses += 1;
+    log(`OCTAVE_WIRE key ${key} ${presses}`);
+  };
+  const readWindow: WireContext["readWindow"] = (state) => log(`OCTAVE_WIRE window ${state}`);
   for (const test of list.tests) {
     for (const target of test.targets) {
       const base = `http://127.0.0.1:${list.basePort + index}`;
@@ -71,6 +80,8 @@ export async function runWire(host: { crypto: Crypto; props: unknown; show: (ele
           seam,
           gateway: (url) => factory(url),
           show: host.show,
+          press,
+          readWindow,
           gatewayStatingFull: (url) => statingFull(url, { deviceCapabilities: { get: () => "full" } }),
         };
         outcome = run === undefined ? { words: "outcome=no-device-test" } : await run(context);

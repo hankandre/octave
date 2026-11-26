@@ -18,6 +18,10 @@
 // - judgeViewingCapture(records, words): player-viewing's playstate reports and result words (T8-03 items 2, 4, 7 and
 //   8): two viewings, each a start, progress and one stop in order, with fresh positions, a pause, a stop that did not
 //   fail, the second start where the first stopped, and only original-file media requests.
+// - judgeTransportCapture(records, tokens, { keys, windows }): player-transport's playstate reports, its result words,
+//   the keys the runner sent and its reads of the window (T8-04, D13): an arrow that wakes the controls seeks nothing,
+//   two seeks forward and one back while paused, every pause and resume from the keys that make one, a stop by Back
+//   before the file's end, original-file media requests only, and the screen kept on only while playing.
 // - judgeWire({ pairs, lines }): the app's OCTAVE_WIRE lines against the selected pairs and the host's counts
 //   (items 2, 4, 6 and 9); WIRE_JUDGES holds the rule per test id.
 import { findSecret } from "../apps/tv/src/e2e/wire/find-secret.ts";
@@ -321,10 +325,122 @@ export function judgeViewingCapture(records, said) {
   return [...errors.map((text) => `ERROR wire viewing: ${text}`), ...judgePlayerCapture(records)];
 }
 
+// player-transport's keys, in order (T8-04, D13). The runner sends them and keeps this account; the app cannot write it.
+const TRANSPORT_KEYS = [
+  ...["DPAD_RIGHT", "MEDIA_PLAY_PAUSE"],
+  ...["DPAD_RIGHT", "DPAD_RIGHT", "DPAD_LEFT"],
+  ...["DPAD_DOWN", "DPAD_CENTER", "DPAD_CENTER", "MEDIA_PLAY_PAUSE"],
+  ...["DPAD_CENTER", "DPAD_CENTER", "MEDIA_PLAY_PAUSE"],
+  "BACK",
+];
+// A word may be said twice (centre, centre-wake), so the result line's tokens are held, not one value per name.
+const TRANSPORT_WORDS = [
+  ...["outcome=ok", "wake=no-seek", "pause=ok", "seek=+20", "back=-10"],
+  ...["centre=resumed", "centre=paused", "resume=ok", "centre-wake=shown", "centre-wake=focused", "stop=back"],
+];
+// An arrow that seeked lands at 10 s or later, whatever it seeked from.
+const WAKE_UNDER_SECONDS = 10;
+// The file is 60 s long, so a stop before this was not the file's end.
+const STOP_UNDER_SECONDS = 50;
+const SEEK_NEAR_SECONDS = 2;
+// Where the first paused run's positions are, from its first: the pause, two seeks forward and one back.
+const SEEK_OFFSETS = [0, 10, 20, 10];
+// Seven keys that pause or resume make three pauses and three resumes only if each of them did what it should.
+const PAUSED_RUNS = 3;
+
+// The progress posts' reports as runs of consecutive paused posts.
+function pausedRuns(reports) {
+  const runs = [];
+  let open = null;
+  for (const report of reports) {
+    if (report?.paused !== true) {
+      open = null;
+      continue;
+    }
+    if (open === null) {
+      open = [];
+      runs.push(open);
+    }
+    open.push(report);
+  }
+  return runs;
+}
+
+// The positions in order, each repeat of the one before it (within SEEK_NEAR_SECONDS) left out.
+function distinctPositions(reports) {
+  const positions = [];
+  for (const { position } of reports) {
+    if (positions.length > 0 && Math.abs(position - positions.at(-1)) <= SEEK_NEAR_SECONDS) continue;
+    positions.push(position);
+  }
+  return positions;
+}
+
+function wakeErrors(progress) {
+  const firstPaused = progress.findIndex((record) => record.report?.paused === true);
+  if (firstPaused < 0) return ["no progress post was paused"];
+  const early = progress.slice(0, firstPaused + 1);
+  if (early.every((record) => record.report?.position < WAKE_UNDER_SECONDS)) return [];
+  return [`a progress post up to the first paused one was at ${WAKE_UNDER_SECONDS} s or later (the arrow that woke the controls seeked, or the run was too slow to tell)`];
+}
+
+function seekErrors(run) {
+  const positions = distinctPositions(run);
+  const moved = positions.map((position) => position - positions[0]);
+  const asExpected = moved.length === SEEK_OFFSETS.length && SEEK_OFFSETS.every((offset, index) => Math.abs(moved[index] - offset) <= SEEK_NEAR_SECONDS);
+  if (asExpected) return [];
+  return [`the first paused run moved by ${moved.join(", ")} s, expected ${SEEK_OFFSETS.join(", ")}`];
+}
+
+function transportReportErrors(reports) {
+  const calls = reports.map(call);
+  const inShape = calls[0] === PLAYING_CALL && calls.at(-1) === STOPPED_CALL && calls.slice(1, -1).every((sent) => sent === PROGRESS_CALL);
+  if (!inShape) return ["the reports are not one start, progress posts and one stop in that order"];
+  const progress = reports.slice(1, -1);
+  const stop = reports.at(-1).report;
+  const runs = pausedRuns(progress.map((record) => record.report));
+  const errors = wakeErrors(progress);
+  if (runs.length > 0) errors.push(...seekErrors(runs[0]));
+  if (runs.length !== PAUSED_RUNS) errors.push(`the progress posts hold ${runs.length} paused run(s), expected ${PAUSED_RUNS}`);
+  if (progress.at(-1)?.report?.paused !== false) errors.push("the last progress post before the stop was not playing");
+  if (stop?.failed !== false) errors.push("the stop did not say it had not failed");
+  if (!(stop?.position < STOP_UNDER_SECONDS)) errors.push(`the stop was not under ${STOP_UNDER_SECONDS} s, so Back may not be what stopped it`);
+  return errors;
+}
+
+// One read of the window in each state: the flag while playing, and not while paused. A read that did not find Octave's
+// window proves neither.
+function windowErrors(windows) {
+  return [
+    ["paused", false],
+    ["playing", true],
+  ].flatMap(([state, expected]) => {
+    const reads = windows.filter((read) => read.state === state);
+    if (reads.length !== 1) return [`the runner read the window ${reads.length} time(s) while ${state}, expected once`];
+    if (reads[0].found !== true) return [`Octave's window was not found in the read while ${state}`];
+    if (reads[0].keepScreenOn !== expected) return [`the window ${expected ? "did not hold" : "held"} KEEP_SCREEN_ON while ${state}`];
+    return [];
+  });
+}
+
+export function judgeTransportCapture(records, tokens, { keys = [], windows = [] } = {}) {
+  const errors = TRANSPORT_WORDS.filter((word) => !tokens.includes(word)).map((word) => `the app did not say ${word}`);
+  if (keys.join(" ") !== TRANSPORT_KEYS.join(" ")) {
+    errors.push(`the runner sent ${keys.length} key(s) (${keys.join(" ")}), expected ${TRANSPORT_KEYS.join(" ")}`);
+  }
+  const reports = records.filter((record) => REPORT_CALLS.includes(call(record)));
+  for (const record of reports) {
+    if (!(record.status >= 200 && record.status < 300)) errors.push(`a ${call(record)} was answered ${record.status ?? "with nothing"}, not 2xx`);
+    if (record.report?.method !== "DirectPlay") errors.push(`a ${call(record)} did not name the play method DirectPlay`);
+  }
+  errors.push(...transportReportErrors(reports), ...windowErrors(windows));
+  return [...errors.map((text) => `ERROR wire transport: ${text}`), ...judgePlayerCapture(records)];
+}
+
 const words = (line) => Object.fromEntries([...line.matchAll(/(\S+?)=(\S*)/g)].map(([, key, value]) => [key, value]));
 const count = (value) => (Number.isInteger(value) ? value : null);
 
-// The rule per test id: (pair, words of the app's result line) => ERROR lines.
+// The rule per test id: (pair, words of the app's result line, the line's tokens) => ERROR lines.
 export const WIRE_JUDGES = {
   "transport-probe-then-signed-in": (pair, said) => {
     if (said.outcome !== "ok") return [`ERROR wire ${pair.test} ${pair.target}: the gateway's probe, sign-in, views and logout did not finish (outcome=${said.outcome ?? "missing"})`];
@@ -430,6 +546,12 @@ export const WIRE_JUDGES = {
     if (!Array.isArray(pair.records)) return [`ERROR wire ${pair.test} ${pair.target}: no records to judge the reports by`];
     return judgeViewingCapture(pair.records, said);
   },
+  // T8-04 items 1, 2, 3, 5 and 8: the player screen driven by the remote's keys, judged by its reports, the runner's
+  // keys and window reads, and the words.
+  "player-transport": (pair, _said, tokens) => {
+    if (!Array.isArray(pair.records)) return [`ERROR wire ${pair.test} ${pair.target}: no records to judge the reports by`];
+    return judgeTransportCapture(pair.records, tokens, { keys: pair.keys, windows: pair.windows });
+  },
   // T3-11 item 4: every card loaded on the first visit and again, from the cache, on the second.
   "artwork-header-and-cache": (pair, said) => {
     const errors = [];
@@ -495,7 +617,7 @@ export function judgeWire({ pairs, lines }) {
     if (count(pair.canaryOrigin) !== null && pair.canaryOrigin > 0) errors.push(`ERROR wire ${name}: the canary origin received ${pair.canaryOrigin} request(s)`);
     const judge = WIRE_JUDGES[pair.test];
     if (typeof judge !== "function") errors.push(`ERROR wire ${name}: no host judge for this test`);
-    else errors.push(...judge(pair, said));
+    else errors.push(...judge(pair, said, results[0].split(/\s+/)));
   }
   return errors;
 }
