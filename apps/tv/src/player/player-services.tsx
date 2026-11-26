@@ -6,8 +6,8 @@ import type { FailureLog } from "@octave/core/src/ports/failure-log";
 import type { PlayerViewProps } from "../host/player-view";
 
 export type PlayerServices = {
-  /** The viewing the screen shows and ends. Starting one is Home's `play`, not the screen's. */
-  viewing: Pick<Viewing, "state" | "subscribe" | "stop">;
+  /** The viewing the screen shows, drives and ends. Starting one is Home's `play`, not the screen's. */
+  viewing: Pick<Viewing, "state" | "subscribe" | "stop" | "leave" | "setPaused" | "togglePaused" | "seekBy">;
   /** The engine's video view. */
   PlayerView: ComponentType<PlayerViewProps>;
   serverName: string;

@@ -13,7 +13,15 @@ import { colors, focus, motion, radii } from "./tokens";
 
 type FrameState = { focused: boolean; pressed: boolean };
 
-export type FocusFrameProps = {
+/** The tags of the views each arrow moves focus to, when they are not the nearest ones. */
+export type FocusNeighbours = {
+  nextFocusUp?: number;
+  nextFocusDown?: number;
+  nextFocusLeft?: number;
+  nextFocusRight?: number;
+};
+
+export type FocusFrameProps = FocusNeighbours & {
   testID?: string;
   onPress?: (event: GestureResponderEvent) => void;
   onFocus?: () => void;
@@ -24,8 +32,8 @@ export type FocusFrameProps = {
   hasTVPreferredFocus?: boolean;
   /** The pressable's view, for code that has to focus it or point a focus guide at it. */
   viewRef?: (view: unknown) => void;
-  /** The tag of the view that Right moves focus to, when it is not the nearest one. */
-  nextFocusRight?: number;
+  /** False takes the control out of focus without changing its look: a control that is fading out. */
+  focusable?: boolean;
   accessibilityLabel?: string;
   accessibilityRole?: AccessibilityRole;
   accessibilityState?: AccessibilityState;
@@ -61,6 +69,10 @@ export function FocusFrame({
   holdFocus = false,
   hasTVPreferredFocus,
   viewRef,
+  focusable = true,
+  nextFocusUp,
+  nextFocusDown,
+  nextFocusLeft,
   nextFocusRight,
   accessibilityLabel,
   accessibilityRole,
@@ -113,8 +125,11 @@ export function FocusFrame({
     <Pressable
       ref={viewRef}
       testID={testID}
+      nextFocusUp={nextFocusUp}
+      nextFocusDown={nextFocusDown}
+      nextFocusLeft={nextFocusLeft}
       nextFocusRight={nextFocusRight}
-      focusable={!disabled}
+      focusable={focusable && !disabled}
       disabled={disabled}
       hasTVPreferredFocus={hasTVPreferredFocus}
       accessibilityLabel={accessibilityLabel}

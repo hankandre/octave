@@ -159,8 +159,8 @@ export const depth = {
   },
 } as const satisfies Record<string, Shadow | Scrim>;
 
-/** The ambient backdrop's art opacity under the scrims (DESIGN.md §7.2: 35%). */
-export const backdropArt = { opacity: 0.35 } as const;
+/** A backdrop's art opacity under the scrims: Home's (DESIGN.md §7.2: 35%) and the loading player's (§7.14: 40%). */
+export const backdropArt = { opacity: 0.35, playerOpacity: 0.4 } as const;
 
 /** Durations are ms; `easeOut` and `easeInOut` are the four numbers of a cubic bezier. */
 export const motion = {

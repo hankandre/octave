@@ -1,30 +1,34 @@
-// The player screen (T8-03 D6, route `play`): the engine's view over the whole screen, the one notice for a report the
-// server did not take, and a failed viewing's fixed copy. Leaving the screen, by Back or at the end, stops the viewing.
-// It reads the viewing's state through selectors, so the engine's one-second position events draw nothing again.
+// The player screen (T8-03 D6, T8-04, route `play`): the engine's view over the whole screen and, bottom to top, the
+// loading layer or the buffering disc, the chrome, the one notice for a report the server did not take, and a failed
+// viewing's copy. Only the picture shows until a key is pressed. Back stops the player before it leaves; leaving any
+// other way, as at the end, stops the viewing too.
 //
-// testIDs: player-screen, player-view, player-osd (player-osd.tsx), player-failure.
-import { useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { PLAYBACK_FAILURE_COPY, type PlaybackFailureCode } from "@octave/core/src/domain/playback-failure";
+// Something always holds focus, so the remote's keys always arrive: the loading layer's Back, the failed stop's button,
+// a control of the chrome, or else the focus holder, an invisible element over the picture.
+//
+// testIDs: player-screen, player-view, player-osd (player-osd.tsx), player-failure (player-failure.tsx).
+import { useContext, useEffect, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { PLAYBACK_FAILURE_COPY } from "@octave/core/src/domain/playback-failure";
 import { failureAction } from "@octave/core/src/player/session-failure";
 import type { ViewingState } from "@octave/core/src/player/viewing";
-import { px } from "../design/scale";
-import { textStyle } from "../design/text";
-import { colors, sizes, space } from "../design/tokens";
+import { colors } from "../design/tokens";
 import type { Route } from "../shell/routes";
 import { useShell } from "../shell/shell-context";
+import { PlayerChrome, type ChromeViewName } from "./player-chrome";
+import { PlayerFailure } from "./player-failure";
 import { OSD_NOTICE_MS, PlayerOsd } from "./player-osd";
 import { PlayerServicesContext, type PlayerServices } from "./player-services";
+import { PlayerBuffering, PlayerLoading } from "./player-status";
+import { usePlayerBack } from "./use-player-back";
+import { usePlayerChrome, type PlayerChromeState } from "./use-player-chrome";
+import { useViewingValue } from "./use-viewing-value";
+import { trapped, useViews } from "./use-views";
 
 export function PlayerScreen(_props: { route?: Route }) {
   const services = useContext(PlayerServicesContext);
   if (services === undefined) return <View style={styles.screen} />;
   return <Player services={services} />;
-}
-
-function useViewingValue<Value>(viewing: PlayerServices["viewing"], select: (state: ViewingState) => Value): Value {
-  const subscribe = useCallback((listener: () => void) => viewing.subscribe(listener), [viewing]);
-  return useSyncExternalStore(subscribe, () => select(viewing.state()));
 }
 
 /** True from the first warning for OSD_NOTICE_MS, and never again while this screen is mounted: one screen is one viewing. */
@@ -45,27 +49,43 @@ function useOnceNotice(warned: boolean): boolean {
   return seen && !expired;
 }
 
-const withServer = (copy: string, serverName: string): string => copy.replace("{server}", () => serverName);
+type Layer = "loading" | "picture" | "failure";
 
-function Failure({ code, serverName }: { code: PlaybackFailureCode; serverName: string }) {
-  const { title = "", body } = PLAYBACK_FAILURE_COPY[code];
-  return (
-    <View testID="player-failure" style={[StyleSheet.absoluteFill, styles.failure]}>
-      <Text accessibilityRole="header" style={styles.title}>
-        {title}
-      </Text>
-      <Text style={styles.body}>{withServer(body, serverName)}</Text>
-    </View>
-  );
+function layerOf({ phase, session }: ViewingState): Layer {
+  if (phase === "loading") return "loading";
+  return phase === "failed" && session.failure !== undefined ? "failure" : "picture";
+}
+
+type ViewName = ChromeViewName | "holder" | "loadingBack" | "failure";
+
+/** The one view that takes focus when what is on screen changes. */
+function focusTarget(layer: Layer, stopFailed: boolean, chrome: PlayerChromeState): ViewName {
+  if (layer === "loading") return "loadingBack";
+  if (stopFailed) return "failure";
+  return chrome.shown ? chrome.target : "holder";
 }
 
 function Player({ services }: { services: PlayerServices }) {
   const { viewing, PlayerView, serverName, log } = services;
   const { close } = useShell();
   const phase = useViewingValue(viewing, (state) => state.phase);
+  const layer = useViewingValue(viewing, layerOf);
   const failure = useViewingValue(viewing, (state) => state.session.failure);
+  const title = useViewingValue(viewing, (state) => state.title);
+  const paused = useViewingValue(viewing, (state) => state.session.snapshot?.paused === true);
   const warned = useViewingValue(viewing, (state) => state.session.reportingWarning === "report-failed");
   const noticeShown = useOnceNotice(warned);
+  const back = usePlayerBack(services, close);
+  const chrome = usePlayerChrome({ viewing, paused, hold: phase !== "playing", active: layer === "picture" });
+  const views = useViews<ViewName>();
+  const stopFailed = layer === "failure" && failure === "stop-failed";
+  const target = focusTarget(layer, stopFailed, chrome);
+  const withServer = (copy: string): string => copy.replace("{server}", () => serverName);
+  const { focus } = views;
+
+  useEffect(() => {
+    focus(target);
+  }, [target, focus]);
 
   useEffect(
     () => () => {
@@ -85,22 +105,32 @@ function Player({ services }: { services: PlayerServices }) {
       <View testID="player-view" style={StyleSheet.absoluteFill}>
         <PlayerView style={StyleSheet.absoluteFill} />
       </View>
-      {noticeShown ? <PlayerOsd message={withServer(PLAYBACK_FAILURE_COPY["report-failed"].body, serverName)} /> : null}
-      {phase === "failed" && failure !== undefined ? <Failure code={failure} serverName={serverName} /> : null}
+      <Pressable
+        ref={views.ref("holder")}
+        accessibilityLabel="Player controls"
+        focusable={layer !== "loading" && !stopFailed && !chrome.shown}
+        onPress={() => chrome.press("holderPress")}
+        style={StyleSheet.absoluteFill}
+        {...trapped(views.tag("holder"))}
+      />
+      {layer === "loading" ? (
+        <PlayerLoading
+          viewing={viewing}
+          back={{ onPress: back, hasTVPreferredFocus: true, viewRef: views.ref("loadingBack"), ...trapped(views.tag("loadingBack")) }}
+        />
+      ) : null}
+      {layer === "picture" ? (
+        <>
+          <PlayerBuffering viewing={viewing} />
+          <PlayerChrome viewing={viewing} chrome={chrome} views={views} title={title} onBack={back} />
+        </>
+      ) : null}
+      {noticeShown ? <PlayerOsd message={withServer(PLAYBACK_FAILURE_COPY["report-failed"].body)} /> : null}
+      {layer === "failure" && failure !== undefined ? <PlayerFailure code={failure} withServer={withServer} views={views} onBack={back} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.void },
-  failure: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: px(space.space4),
-    paddingHorizontal: px(space.safeX),
-    paddingVertical: px(space.safeY),
-    backgroundColor: colors.void,
-  },
-  title: { ...textStyle("typeTitle"), color: colors.text1, textAlign: "center" },
-  body: { ...textStyle("typeBody"), color: colors.text2, textAlign: "center", maxWidth: px(sizes.dialogMaxW) },
 });
