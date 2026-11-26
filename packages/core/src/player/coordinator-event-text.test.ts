@@ -63,6 +63,7 @@ describe("events other than errors carry no player text", () => {
   it("rebuilds an ended event with a smuggled message before the screen and the session state see it", async () => {
     const { gateway, fake, onEvent, onSessionEnded, coordinator, state } = await setup();
     fake.emit({ kind: "loaded", snapshot: dirtySnapshot });
+    fake.emit({ kind: "first-frame" });
     fake.emit({ kind: "ended", reason: "error", message: NATIVE_TEXT, snapshot: dirtySnapshot } as unknown as PlayerEvent);
     await coordinator.flush();
     expect(onEvent).toHaveBeenLastCalledWith({ kind: "ended", reason: "error", snapshot });
@@ -76,6 +77,7 @@ describe("events other than errors carry no player text", () => {
   it("rebuilds a state event with a smuggled message, keeping its snapshot and cause", async () => {
     const { gateway, fake, onEvent, coordinator, state } = await setup();
     fake.emit({ kind: "loaded", snapshot });
+    fake.emit({ kind: "first-frame" });
     fake.emit({ kind: "state", snapshot: { ...dirtySnapshot, paused: true }, cause: "pause", message: NATIVE_TEXT } as unknown as PlayerEvent);
     await coordinator.flush();
     expect(onEvent).toHaveBeenLastCalledWith({ kind: "state", snapshot: { ...snapshot, paused: true }, cause: "pause" });

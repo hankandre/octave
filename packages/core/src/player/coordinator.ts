@@ -373,10 +373,14 @@ export class PlaybackCoordinator {
     }
     const plan = this.plan;
     if (!plan) return;
+    // The start is reported at the first frame, before anything that event reports. A first frame with no
+    // snapshot yet waits for the next event that carries one. The reporter sends the start only once.
+    if (this.firstFrameShown && this.snapshot) {
+      this.reporter.start(plan, this.snapshot, () => this.snapshot, () => this.plan);
+    }
 
     switch (event.kind) {
       case "loaded":
-        this.reporter.start(plan, event.snapshot, () => this.snapshot, () => this.plan);
         this.reportUnappliedAudioPick(event.snapshot);
         break;
       case "tracks-changed":
