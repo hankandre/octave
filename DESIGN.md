@@ -341,6 +341,8 @@ A short surface: a list of sections on the left and the selected section's rows 
 - Every button has a `durInstant` press (scale .98, none with reduced motion) and the shared focus ring and lift.
 - A row or a field never scales, on focus or on press (§9, "What lifts").
 - **TextField**: a 72 px `surface2` field with a `lineStrong` border, the label above in `typeLabel` and `text2`, helper and error text below. Text comes from the system keyboard or voice.
+- **A control with a border.** The focus ring's 3 px offset is measured from the control's outer edge, its border included, so a bordered field and an unbordered row show the same gap.
+- **A field's cursor and selection.** The cursor is `text1`, selected text is marked with `fillSecondary`, and a selection handle is `text1`. No field shows a platform colour.
 
 ### 7.20 Sign-in
 
@@ -598,6 +600,8 @@ These are the Product Owner's calls under the delegation (`docs/specs/decisions-
 - **C8.** A search of the network that fails shows nothing; the address field shows, as when no server is found.
 - **C9.** The origin chip is `typeMono` on `surface2` at `radiusPill`, holding the full normalised address.
 - **C10. Rows and fields do not lift.** A row or a field shows focus with the ring and, for a row, a `surface3` fill; it never scales. Art and compact controls keep the lift. A column of rows shares its heading's left edge, and no container clips a ring, a lift or a shadow (section 9, "What lifts" and "Room for focus"; `tasks/product-owner-log.md`, "2026-11-26, T4-02 ruling, Captures"). The first captures of the server step showed a lifted row cut off at both ends. This applies to every list the app draws later: pickers, menus, chapters and Settings.
+- **C11. The ring's offset on a bordered control.** The 3 px offset is measured from the control's outer edge, border included (7.19). The retaken capture showed the Server URL field's ring 1 px from the field, because the field's 2 px border used up 2 of the 3 px. This reads the existing rule; it adds no value.
+- **C12. A field's cursor.** The cursor is `text1`, not the platform's teal; selected text is marked with `fillSecondary` and a selection handle is `text1` (7.19). `focus` was not chosen: section 3.1 keeps it for the ring alone.
 
 ### Awaiting the owner
 
