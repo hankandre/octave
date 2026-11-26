@@ -1,4 +1,4 @@
-// Records everything that crosses the session module's seam during one wire test (T3-05 item 4): every argument
+// Records everything that crosses the session module's seam during one wire test (T3-05 item 4; restoreSessions, T4-05): every argument
 // JavaScript passes, every result and every rejection native returns, and what the test adds (the gateway's results
 // and errors, the root's props). The scan runs on the device; only fixed words and counts leave it.
 import type { OctaveSessionNative } from "@octave/session";
@@ -47,10 +47,13 @@ export class SeamRecorder {
           throw error;
         }
       };
+    // restoreSessions takes nothing; its call is recorded with an empty map (T4-05).
+    const restore = wrap(() => (inner.restoreSessions === undefined ? Promise.resolve(undefined) : inner.restoreSessions()));
     this.native = {
       signIn: wrap((args) => inner.signIn(args)),
       request: wrap((args) => inner.request(args)),
       endSession: wrap((args) => inner.endSession(args)),
+      restoreSessions: () => restore({}),
     };
   }
 

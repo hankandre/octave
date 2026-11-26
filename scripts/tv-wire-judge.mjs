@@ -539,6 +539,11 @@ export const WIRE_JUDGES = {
     }
     if (said.selftest !== "ok") errors.push(`ERROR wire ${pair.test} ${pair.target}: the seam scan's self-test did not pass (selftest=${said.selftest ?? "missing"})`);
     if (said.canary !== "absent") errors.push(`ERROR wire ${pair.test} ${pair.target}: the canary token crossed the seam (canary=${said.canary ?? "missing"})`);
+    // T4-05: the app writes both words; a line from before T4-05 holds neither.
+    if (said.restore !== undefined && said.restore !== "listed") errors.push(`ERROR wire ${pair.test} ${pair.target}: restoreSessions did not list the signed-in session (restore=${said.restore})`);
+    if (said["after-logout"] !== undefined && said["after-logout"] !== "absent") {
+      errors.push(`ERROR wire ${pair.test} ${pair.target}: restoreSessions still listed the session after the logout (after-logout=${said["after-logout"]})`);
+    }
     return errors;
   },
   "transport-errors": (pair, said) => {

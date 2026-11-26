@@ -20,7 +20,8 @@ import org.json.JSONObject
 // fixed words and counts only, never an address, a host, a header or an exception message, and logs nothing.
 // Run by scripts/tv-cleartext.mjs: am instrument -w -e hostPort <port> <test package>/<this class>.
 // With -e check resolved-address it runs T3-20's ResolvedAddressCheck instead and reports only that check's keys
-// (scripts/tv-resolved-address.mjs); without it, it runs exactly what it ran before.
+// (scripts/tv-resolved-address.mjs); with -e check stored-credential-save or stored-credential-restore, T4-05's
+// StoredCredentialCheck (scripts/tv-stored-credential.mjs); without it, it runs exactly what it ran before.
 class CleartextProbe : Instrumentation() {
     private var hostPort: Int? = null
     private var check: String? = null
@@ -38,6 +39,7 @@ class CleartextProbe : Instrumentation() {
         when (check) {
             null -> Unit
             RESOLVED_ADDRESS -> return resolvedAddress(results)
+            STORED_CREDENTIAL_SAVE, STORED_CREDENTIAL_RESTORE -> return storedCredential(results, check == STORED_CREDENTIAL_SAVE)
             // A check this probe does not know reports no done, so the run fails.
             else -> return finish(Activity.RESULT_OK, results)
         }
@@ -94,6 +96,17 @@ class CleartextProbe : Instrumentation() {
         finish(Activity.RESULT_OK, results)
     }
 
+    // T4-05: the stored-credential check. When the check itself throws, it reports no done.
+    private fun storedCredential(results: Bundle, save: Boolean) {
+        try {
+            val check = StoredCredentialCheck(context)
+            if (save) check.save(results) else check.restore(results)
+        } catch (error: Exception) {
+            results.putString("failed", error.javaClass.simpleName)
+        }
+        finish(Activity.RESULT_OK, results)
+    }
+
     private fun publicVectors(results: Bundle) {
         try {
             val text = context.assets.open("host-classes.json").bufferedReader().use { it.readText() }
@@ -139,5 +152,7 @@ class CleartextProbe : Instrumentation() {
 
     private companion object {
         const val RESOLVED_ADDRESS = "resolved-address"
+        const val STORED_CREDENTIAL_SAVE = "stored-credential-save"
+        const val STORED_CREDENTIAL_RESTORE = "stored-credential-restore"
     }
 }
