@@ -3,8 +3,8 @@
 // scripts/tv-e2e.mjs judges; then the wire tests of pnpm tv:wire (T3-05), which write OCTAVE_WIRE
 // lines. It reaches only an e2e bundle (apps/tv/e2e-gate.js). It renders the player view full screen, so the player's
 // wire tests (T8-02) have a surface to draw on, and over it whatever a wire test shows (T3-11's artwork views). Once the
-// wire run is done it shows the player screen's fixtures (T8-03 D15), then the Quick Connect step's (T4-03 D13) and
-// the server step's (T4-02 D14) for the captures.
+// wire run is done it shows the player screen's fixtures (T8-03 D15), then the Quick Connect step's (T4-03 D13), the
+// server step's (T4-02 D14) and the side rail's (T3-40 item 8) for the captures.
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import { StyleSheet, View } from "react-native";
 import { hostClock } from "../host/clock";
@@ -17,6 +17,7 @@ import { runInstallId } from "./install-id-run";
 import { showPlayerFixtures } from "./wire/player-fixture-screen";
 import { showQuickConnectFixtures } from "./wire/quick-connect-fixture-screen";
 import { runWire } from "./wire/run-wire";
+import { showShellFixtures } from "./wire/shell-fixture-screen";
 import { showSignInFixtures } from "./wire/sign-in-fixture-screen";
 import { wait } from "./wire/wire-context";
 
@@ -48,7 +49,8 @@ export default function E2eRoot(props: Record<string, unknown>) {
       .then(() => showPlayerFixtures(show))
       .then(() => wait(PLAYER_FAILURE_HOLD_MS))
       .then(() => showQuickConnectFixtures(show, log))
-      .then(() => showSignInFixtures(show, log));
+      .then(() => showSignInFixtures(show, log))
+      .then(() => showShellFixtures(show, log));
   }, [props, show]);
   return (
     <>
