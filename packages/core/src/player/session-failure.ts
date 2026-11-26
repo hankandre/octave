@@ -28,9 +28,14 @@ export function playbackFailureCode(error: unknown): PlaybackFailureCode {
   }
 }
 
-// The action holds only the code. The filtered native reason goes to the log sink and nowhere else.
-export function failureAction(error: unknown, log: FailureLog): PlaybackSessionAction {
+// The filtered native reason goes to the log sink and nowhere else.
+export function logFailure(error: unknown, log: FailureLog): void {
   log(errorReason(error, "Something went wrong."));
+}
+
+// The action holds only the code.
+export function failureAction(error: unknown, log: FailureLog): PlaybackSessionAction {
+  logFailure(error, log);
   return { type: "failure", code: playbackFailureCode(error) };
 }
 
