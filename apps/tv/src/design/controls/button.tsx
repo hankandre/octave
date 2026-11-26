@@ -1,14 +1,14 @@
 // Button (DESIGN.md §7.19): primary, secondary, quiet and danger. 72 px tall, `radiusControl`, label in `typeLabel`.
 // Focus ring, lift and press come from FocusFrame. A disabled button takes no focus and its label goes to `text3`.
 import { StyleSheet, Text } from "react-native";
-import { FocusFrame } from "../focus-frame";
+import { FocusFrame, type FocusNeighbours } from "../focus-frame";
 import { px } from "../scale";
 import { textStyle } from "../text";
 import { colors, radii, sizes, space } from "../tokens";
 
 export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
 
-export type ButtonProps = {
+export type ButtonProps = FocusNeighbours & {
   label: string;
   variant?: ButtonVariant;
   onPress: () => void;
@@ -41,9 +41,9 @@ function labelColour(variant: ButtonVariant, focused: boolean, disabled: boolean
   }
 }
 
-export function Button({ label, variant = "primary", onPress, disabled = false, hasTVPreferredFocus, onFocus, viewRef, testID }: ButtonProps) {
+export function Button({ label, variant = "primary", onPress, disabled = false, hasTVPreferredFocus, onFocus, viewRef, testID, ...neighbours }: ButtonProps) {
   return (
-    <FocusFrame testID={testID} onPress={onPress} onFocus={onFocus} viewRef={viewRef} disabled={disabled} hasTVPreferredFocus={hasTVPreferredFocus} accessibilityRole="button" accessibilityLabel={label} contentStyle={[styles.box, fill[variant]]}>
+    <FocusFrame {...neighbours} testID={testID} onPress={onPress} onFocus={onFocus} viewRef={viewRef} disabled={disabled} hasTVPreferredFocus={hasTVPreferredFocus} accessibilityRole="button" accessibilityLabel={label} contentStyle={[styles.box, fill[variant]]}>
       {({ focused }) => <Text style={[styles.label, { color: labelColour(variant, focused, disabled) }]}>{label}</Text>}
     </FocusFrame>
   );

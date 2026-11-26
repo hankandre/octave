@@ -9,6 +9,7 @@ import { Viewing } from "@octave/core/src/player/viewing";
 import type { Clock } from "@octave/core/src/ports/clock";
 import type { FailureLog } from "@octave/core/src/ports/failure-log";
 import { FirstScreen } from "../first-screen/FirstScreen";
+import { ArtworkProvider, type ArtworkComponent } from "../design/rows/artwork";
 import { HomeScreen, HomeServicesContext, type HomeServices } from "../home";
 import type { PlayerViewProps } from "../host/player-view";
 import { PlayerScreen, PlayerServicesContext, type PlayerServices } from "../player";
@@ -21,6 +22,8 @@ export type SignedInAppProps = {
   engine: PlayerEngine;
   PlayerView: ComponentType<PlayerViewProps>;
   clock: Clock;
+  /** Fills the artwork slot of Home and the player. T4-03 passes `createNativeArtwork` with the signed-in session. */
+  Artwork?: ArtworkComponent;
 };
 
 // The app has no sink for filtered failure reasons yet, so they are dropped here.
@@ -53,7 +56,7 @@ function homeScreenFor({ source, clock, viewing }: HomeParts): ComponentType<{ r
   };
 }
 
-export function SignedInApp({ gateway, serverName, engine, PlayerView, clock }: SignedInAppProps) {
+export function SignedInApp({ gateway, serverName, engine, PlayerView, clock, Artwork }: SignedInAppProps) {
   const viewing = useMemo(() => new Viewing(playbackGatewayOf(gateway), engine, clock, dropReason), [gateway, engine, clock]);
   const playerServices = useMemo<PlayerServices>(() => ({ viewing, PlayerView, serverName, log: dropReason }), [viewing, PlayerView, serverName]);
   const screens = useMemo<AppShellProps["screens"]>(
@@ -70,8 +73,10 @@ export function SignedInApp({ gateway, serverName, engine, PlayerView, clock }: 
     [gateway, clock, viewing],
   );
   return (
-    <PlayerServicesContext.Provider value={playerServices}>
-      <AppShell screens={screens} libraries={[]} icons={railIcons} />
-    </PlayerServicesContext.Provider>
+    <ArtworkProvider component={Artwork}>
+      <PlayerServicesContext.Provider value={playerServices}>
+        <AppShell screens={screens} libraries={[]} icons={railIcons} />
+      </PlayerServicesContext.Provider>
+    </ArtworkProvider>
   );
 }

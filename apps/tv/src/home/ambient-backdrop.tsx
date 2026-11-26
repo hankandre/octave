@@ -5,23 +5,15 @@
 //
 // testIDs: home-backdrop (the layer), home-backdrop-layer-<n> (one fade), home-backdrop-artwork-<n> (its artwork slot).
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Easing, StyleSheet, View, type ViewStyle } from "react-native";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 import type { ImageRef } from "@octave/core/src/domain/catalog";
 import { useReducedMotion } from "../design/motion";
 import { useArtwork } from "../design/rows";
-import { backdropArt, canvas, colors, colourAt, depth, motion } from "../design/tokens";
+import { scrimStyle } from "../design/scrim";
+import { backdropArt, canvas, motion } from "../design/tokens";
 import { useDwell } from "./use-dwell";
 
 type Layer = { id: number; image: ImageRef; fade: boolean };
-type Scrim = typeof depth.scrimHero | typeof depth.scrimFloor;
-
-/** A scrim as a gradient from its solid edge: `at` is the fraction of its length from that edge (tokens.ts). */
-function gradientOf(scrim: Scrim, toward: "to right" | "to top"): string {
-  const stops = scrim.stops.map(({ at, alpha }) => `${colourAt(colors[scrim.color], alpha)} ${at * 100}%`);
-  return `linear-gradient(${toward}, ${stops.join(", ")})`;
-}
-
-const gradientStyle = (image: string): ViewStyle => ({ backgroundImage: image }) as ViewStyle;
 
 function BackdropLayer({ layer, onFaded, onFailed }: { layer: Layer; onFaded: (id: number) => void; onFailed: (id: number) => void }) {
   const { component: Artwork } = useArtwork();
@@ -75,8 +67,8 @@ export function AmbientBackdrop({ target }: { target: ImageRef | undefined }) {
           <BackdropLayer key={layer.id} layer={layer} onFaded={dropOlder} onFailed={drop} />
         ))}
       </View>
-      <View style={[styles.fill, gradientStyle(gradientOf(depth.scrimHero, "to right"))]} />
-      <View style={[styles.fill, gradientStyle(gradientOf(depth.scrimFloor, "to top"))]} />
+      <View style={[styles.fill, scrimStyle("scrimHero", "to right")]} />
+      <View style={[styles.fill, scrimStyle("scrimFloor", "to top")]} />
     </View>
   );
 }

@@ -18,6 +18,11 @@ export const glyphs = {
   "stack-2": 0xeef7,
   settings: 0xeb20,
   user: 0xeb4d,
+  "arrow-left": 0xea19,
+  "player-pause": 0xed45,
+  "player-play": 0xed46,
+  "rewind-backward-10": 0xfaba,
+  "rewind-forward-10": 0xfac2,
 } as const;
 
 export type IconName = keyof typeof glyphs;
