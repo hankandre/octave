@@ -25,15 +25,15 @@ The access token is the one secret Octave holds. Jellyscale requires it on every
 
 ### The native session surface
 
-Four methods and one event, in a session module of their own that shares the registry with the player module. Adding a method or an event is an architecture change that needs a decision record. Three of the five members exist (T3-05): `signIn`, `request` and `endSession`, with the shapes in decision 0005's T3-05 amendment (each takes one map and resolves one map; every outcome is a value with one of the core's seven error codes; none rejects on purpose). `restoreSessions` and `sessionEnded` are T4-05's. `ModuleSurfaceTest` holds the module's JavaScript surface at exactly the three.
+Four methods and one event, in a session module of their own that shares the registry with the player module. Adding a method or an event is an architecture change that needs a decision record. Four of the five members exist: `signIn`, `request` and `endSession` (T3-05), with the shapes in decision 0005's T3-05 amendment (each takes one map and resolves one map; every outcome is a value with one of the core's seven error codes; none rejects on purpose), and `restoreSessions` (T4-05), with the shape in its T4-05 amendment. The event `sessionEnded` is T4-08's. `ModuleSurfaceTest` holds the module's JavaScript surface at exactly the four functions and no event.
 
-Session module allowlist: `signIn`, `request`, `restoreSessions`, `endSession` and the event `sessionEnded`, in modules/session/surface-allowlist.json; the last two are pending until `T4-05` builds them, so three of the five exist. scripts/tv-module-surfaces.test.ts fails when the module's Kotlin definition, that file and this line disagree, and when a pending member is defined (T8-01).
+Session module allowlist: `signIn`, `request`, `restoreSessions`, `endSession` and the event `sessionEnded`, in modules/session/surface-allowlist.json; the event is pending until `T4-08` builds it, so four of the five exist. scripts/tv-module-surfaces.test.ts fails when the module's Kotlin definition, that file and this line disagree, and when a pending member is defined (T8-01).
 
 | Method | Takes | Returns |
 |---|---|---|
 | `signIn` | origin, DeviceId, and a password credential or a Quick Connect secret | `{ session, userId, userName?, serverId? }` or an error code |
 | `request` | a session id (or, for the fixed pre-sign-in paths, the server's base URL and a DeviceId), a method (`GET`, `POST`, `DELETE`), a server path, query pairs, a JSON body, a timeout | `{ status, body }` or an error code |
-| `restoreSessions` | nothing | a list of `{ session, origin, userId, userName, serverId }` |
+| `restoreSessions` | nothing | `{ sessions: [{ session, server, deviceId, userId, serverId, userName? }] }`, newest record first; an empty list when nothing can be read |
 | `endSession` | a session id | nothing; always succeeds locally |
 
 Event: `sessionEnded { session, reason }`, where `reason` is a fixed code (`revoked`, `store-unreadable`).
