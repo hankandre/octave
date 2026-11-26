@@ -28,11 +28,20 @@ import java.util.concurrent.TimeUnit
 //   request    { session } or { server, deviceId }, plus method, path, query ([[name, value], ...]), body (JSON text,
 //              or absent), timeoutMs -> { status, body } (body JSON text or null) or { error }
 //   endSession { session, timeoutMs } -> {} or { error, status? }
+//   restore    {} -> { sessions: [ { session, server, deviceId, userId, serverId, userName? } ] } (T4-05)
 //
-// `servers` is the development-build rule (T3-33): signIn and every call before sign-in ask it after the address is
-// parsed and before anything is sent. A session's calls and endSession need not: a session exists only because signIn
-// passed the rule in this process.
-internal class SessionTransport(private val identity: ClientIdentity, private val servers: DevelopmentServers) {
+// `servers` is the development-build rule (T3-33): signIn, every call before sign-in and every restored record ask it
+// after the address is parsed and before anything is sent or opened. A session's calls and endSession need not: a
+// session exists only because signIn or restore passed the rule in this process.
+//
+// `store` keeps one encrypted record per account (docs/specs/T4-05.md, D1 to D5). Without one (no React context yet),
+// nothing is saved or restored; endSession still deletes the record its entry names. Save, forget and restore run
+// under SessionStore.LOCK, and nothing is sent under it.
+internal class SessionTransport(
+    private val identity: ClientIdentity,
+    private val servers: DevelopmentServers,
+    private val store: SessionStore? = null,
+) {
     fun signIn(args: Map<String, Any?>): Map<String, Any?> = outcome {
         val kind = args["kind"]
         val (path, body) = when (kind) {
@@ -68,12 +77,33 @@ internal class SessionTransport(private val identity: ClientIdentity, private va
             throw UnusableAnswer()
         }
         val authorization = MediaBrowserAuthorization.parse(header) ?: throw UnusableAnswer()
-        val session = SessionRegistry.open(server, authorization)
         val forms = TokenStrip.forms(token)
-        val result = mutableMapOf<String, Any?>("session" to session.value, "userId" to TokenStrip.clean(userId, forms))
-        string(user["Name"])?.let { result["userName"] = TokenStrip.clean(it, forms) }
-        string(data["ServerId"])?.let { result["serverId"] = TokenStrip.clean(it, forms) }
+        val cleanUserId = TokenStrip.clean(userId, forms)
+        val userName = string(user["Name"])?.let { TokenStrip.clean(it, forms) }
+        val serverId = string(data["ServerId"])?.let { TokenStrip.clean(it, forms) }
+        // A sign-in that names no server id is not stored: the viewer is signed in for this launch only (Q11).
+        val stored = if (store != null && !serverId.isNullOrEmpty()) StoredSession(server, deviceId, token, cleanUserId, serverId, userName) else null
+        val account = stored?.let { SessionAccount(server, deviceId, cleanUserId, it.serverId, userName) }
+        val session = synchronized(SessionStore.LOCK) {
+            val opened = SessionRegistry.open(server, authorization, account)
+            if (stored != null && account != null) keep(stored, account, opened)
+            opened
+        }
+        val result = mutableMapOf<String, Any?>("session" to session.value, "userId" to cleanUserId)
+        userName?.let { result["userName"] = it }
+        serverId?.let { result["serverId"] = it }
         result
+    }
+
+    // Under the lock: saves the record of a new sign-in. A newer record replaces the file older entries named, so they
+    // stop naming it. A save that could not be made stores nothing and leaves an existing record untouched (Q9).
+    private fun keep(stored: StoredSession, account: SessionAccount, session: SessionId) {
+        val file = store?.save(stored) ?: return
+        for ((id, entry) in SessionRegistry.withAccounts()) {
+            val other = entry.account ?: continue
+            if (id != session && other.record == file) other.record = null
+        }
+        account.record = file
     }
 
     fun request(args: Map<String, Any?>): Map<String, Any?> = outcome {
@@ -116,11 +146,88 @@ internal class SessionTransport(private val identity: ClientIdentity, private va
         allowOnly(args, END_SESSION_KEYS)
         val session = SessionId.parse(string(args, "session")) ?: throw Refused()
         val timeoutMs = timeoutMs(args)
-        // The entry goes first (decision 0005): the logout below can fail and the session is gone either way.
-        val entry = SessionRegistry.take(session) ?: return@outcome emptyMap()
+        // The record and the entry go first (decision 0005; T4-05 D5): the logout below can fail and the session is gone
+        // either way. The entry names its record, so a transport with no store deletes it too.
+        val entry = synchronized(SessionStore.LOCK) { forgetAndTake(session) } ?: return@outcome emptyMap()
         val request = buildRequest(entry.address, "POST", "/Sessions/Logout", null, null)
         val status = send(request, CallAuthority.Closing(entry), timeoutMs, resend = false, readBody = false).status
         if (status !in 200..299) statusError(status) else emptyMap()
+    }
+
+    // Under the lock: deletes the record the session names, then takes its entry.
+    private fun forgetAndTake(session: SessionId): SessionEntry? {
+        val account = SessionRegistry.entry(session)?.account
+        account?.record?.let { SessionStore.forget(it) }
+        account?.record = null
+        return SessionRegistry.take(session)
+    }
+
+    // Opens a session for each stored record no live entry names, then answers every live session with a record in
+    // this store, newest record first (docs/specs/T4-05.md, D4). It sends nothing: validation is the core's. A second
+    // call in the same process answers the same ids, because the registry outlives the module instance. It never
+    // fails: a store that cannot be read answers what it could.
+    fun restore(): Map<String, Any?> {
+        val store = store ?: return mapOf("sessions" to emptyList<Map<String, Any?>>())
+        val sessions = synchronized(SessionStore.LOCK) {
+            val named = SessionRegistry.withAccounts().mapNotNull { it.second.account?.record?.path }.toSet()
+            for (file in store.records()) {
+                if (file.path in named) continue
+                try {
+                    reopen(store, file)
+                } catch (_: Exception) {
+                    // Unavailable: the record is kept and nothing is opened for it.
+                }
+            }
+            listed(store)
+        }
+        return mapOf("sessions" to sessions)
+    }
+
+    // Under the lock: a corrupt record is deleted; an unavailable one is kept; a record the development-build rule
+    // refuses is kept and opens nothing; any other opens a session with the header Kotlin builds again.
+    private fun reopen(store: SessionStore, file: java.io.File) {
+        val stored = when (val read = store.read(file)) {
+            SessionStore.Read.Corrupt -> return SessionStore.forget(file)
+            SessionStore.Read.Unavailable -> return
+            is SessionStore.Read.Session -> read.session
+        }
+        val address = ServerAddress.parse(stored.server)
+        try {
+            servers.check(address)
+        } catch (_: OctaveHttpException) {
+            return
+        }
+        val header = try {
+            MediaBrowserHeader.build(ClientIdentity.CLIENT, identity.device, stored.deviceId, identity.version, stored.token)
+        } catch (_: IllegalArgumentException) {
+            return SessionStore.forget(file)
+        }
+        val authorization = MediaBrowserAuthorization.parse(header) ?: return SessionStore.forget(file)
+        val account = SessionAccount(stored.server, stored.deviceId, stored.userId, stored.serverId, stored.userName, file)
+        SessionRegistry.open(stored.server, authorization, account)
+    }
+
+    // Under the lock: the live sessions whose record is in this store, newest record first. Every field is stripped of
+    // the session's token, as a sign-in result is.
+    private fun listed(store: SessionStore): List<Map<String, Any?>> {
+        val held = SessionRegistry.withAccounts().mapNotNull { (id, entry) ->
+            val account = entry.account ?: return@mapNotNull null
+            val record = account.record?.takeIf { store.owns(it) } ?: return@mapNotNull null
+            Triple(id, entry, record.lastModified())
+        }
+        return held.sortedByDescending { it.third }.mapNotNull { (id, entry) ->
+            val account = entry.account ?: return@mapNotNull null
+            val forms = TokenStrip.forms(entry.authorization)
+            val result = linkedMapOf<String, Any?>(
+                "session" to id.value,
+                "server" to TokenStrip.clean(account.server, forms),
+                "deviceId" to TokenStrip.clean(account.deviceId, forms),
+                "userId" to TokenStrip.clean(account.userId, forms),
+                "serverId" to TokenStrip.clean(account.serverId, forms),
+            )
+            account.userName?.let { result["userName"] = TokenStrip.clean(it, forms) }
+            result
+        }
     }
 
     private fun tokenlessHeader(deviceId: String): String = try {

@@ -1,12 +1,12 @@
-// The session module's JavaScript surface (decision 0005, amendment T3-05): the shapes of its three native functions,
-// signIn, request and endSession. Types only: the one place that loads the native module is the app's
+// The session module's JavaScript surface (decision 0005, amendments T3-05 and T4-05): the shapes of its four native
+// functions, signIn, request, restoreSessions and endSession. Types only: the one place that loads the native module is the app's
 // apps/tv/src/host/session-module.android.ts, and the app's adapter (apps/tv/src/host/transport.ts) turns these
 // functions into the core's Transport port. No argument is a header, an absolute URL or a token; no result holds one.
 // Every outcome is a value; a function does not reject on purpose.
 
 export type SessionErrorCode = "network" | "timeout" | "redirect" | "cancelled" | "refused" | "unexpected-response" | "status";
 
-// An error from any of the three: a code, and the status only for "status".
+// An error from signIn, request or endSession: a code, and the status only for "status".
 export interface SessionError {
   readonly error: SessionErrorCode;
   readonly status?: number;
@@ -55,9 +55,25 @@ export interface EndSessionArgs {
   readonly timeoutMs: number;
 }
 
+// One stored session that restoreSessions opened, or that this process already held (T4-05). It holds no token.
+export interface RestoredSessionOutcome {
+  readonly session: string;
+  readonly server: string; // the base URL the sign-in was made to
+  readonly deviceId: string;
+  readonly userId: string;
+  readonly serverId: string;
+  readonly userName?: string;
+}
+
+// Newest record first; an empty list when nothing is stored or nothing can be read. It has no error value.
+export interface RestoreSessionsOutcome {
+  readonly sessions: readonly RestoredSessionOutcome[];
+}
+
 // The native module, as apps/tv/src/host/session-module.android.ts loads it.
 export interface OctaveSessionNative {
   signIn(args: SignInArgs): Promise<SignInOutcome | SessionError>;
   request(args: RequestArgs): Promise<RequestOutcome | SessionError>;
+  restoreSessions(): Promise<RestoreSessionsOutcome>;
   endSession(args: EndSessionArgs): Promise<Record<string, never> | SessionError>;
 }

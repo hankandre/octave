@@ -1,5 +1,6 @@
 package dev.octave.session.http
 
+import java.io.File
 import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
 
@@ -27,28 +28,46 @@ class SessionId private constructor(val value: String) {
     }
 }
 
-// A session as the registry holds it: the pinned origin, the base path and the header value. Nothing outside http/
-// can read one.
+// A session as the registry holds it: the pinned origin, the base path, the header value and, for a session with a
+// stored record (T4-05), its account. Nothing outside http/ can read one.
 internal class SessionEntry(
     val scheme: String,
     val host: String,
     val port: Int,
     val authorization: MediaBrowserAuthorization,
     val basePath: String = "",
+    val account: SessionAccount? = null,
 ) {
     val address: ServerAddress get() = ServerAddress(scheme, host, port, basePath)
 
     override fun toString(): String = "SessionEntry([redacted])"
 }
 
-// The sessions this process holds, in memory only (decision 0005). The store is T4-05's.
+// The account of a session (docs/specs/T4-05.md, D3): what restoreSessions answers for it, and the record it names.
+// `record` changes only under SessionStore.LOCK: it is set once the record is saved, and cleared when the session ends
+// or a newer sign-in to the same account replaces the record, so ending this session never deletes a newer record.
+internal class SessionAccount(
+    val server: String,
+    val deviceId: String,
+    val userId: String,
+    val serverId: String,
+    val userName: String?,
+    record: File? = null,
+) {
+    @Volatile
+    var record: File? = record
+
+    override fun toString(): String = "SessionAccount([redacted])"
+}
+
+// The sessions this process holds, in memory only (decision 0005); the encrypted records are SessionStore's.
 object SessionRegistry {
     private val sessions = ConcurrentHashMap<SessionId, SessionEntry>()
 
     // Opens a session for a server address as the core hands it over. Throws OctaveHttpException.
-    internal fun open(baseUrl: String, authorization: MediaBrowserAuthorization): SessionId {
+    internal fun open(baseUrl: String, authorization: MediaBrowserAuthorization, account: SessionAccount? = null): SessionId {
         val address = ServerAddress.parse(baseUrl)
-        val entry = SessionEntry(address.scheme, address.host, address.port, authorization, address.basePath)
+        val entry = SessionEntry(address.scheme, address.host, address.port, authorization, address.basePath, account)
         while (true) {
             val id = SessionId.random()
             if (sessions.putIfAbsent(id, entry) == null) return id
@@ -66,6 +85,10 @@ object SessionRegistry {
 
     // Whether this process holds the session: the one answer another module gets (T8-01). No entry, origin or header.
     fun holds(session: SessionId): Boolean = sessions.containsKey(session)
+
+    // The sessions that carry an account, for the store's checks and restoreSessions (T4-05).
+    internal fun withAccounts(): List<Pair<SessionId, SessionEntry>> =
+        sessions.entries.filter { it.value.account != null }.map { it.key to it.value }
 
     // The number of sessions held; no id and no entry (T3-25, for the cap tests).
     internal fun count(): Int = sessions.size
