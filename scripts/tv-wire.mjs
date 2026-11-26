@@ -35,11 +35,13 @@ const LEANBACK = "android.intent.category.LEANBACK_LAUNCHER";
 const RUN_MS = 480_000;
 const REAL_TARGETS = ["jellyfin-10-11", "jellyfin-12", "jellyscale"];
 
-// The player's wire tests (T8-02) whose captures are plays, judged by judgePlayerCapture, and the tests whose upstream
-// answers a 3xx on purpose.
+// The player's wire tests (T8-02) whose captures are plays, judged by judgePlayerCapture (player-viewing's own judge
+// calls it, T8-03), and the tests whose upstream answers a 3xx on purpose.
 const PLAYS = ["player-original-file", "player-samples", "player-capabilities"];
 // The tests the emulator's decoder list is read for (T8-02 item 6, T8-07 item 8).
 const READS_DECODERS = ["player-samples", "player-capabilities"];
+// The tests whose own judge in WIRE_JUDGES reads the pair's records.
+const RECORDS_JUDGED = ["player-redirect", "player-capabilities", "player-viewing"];
 const REDIRECTED = ["transport-redirect", "transport-canary", "player-redirect"];
 
 // T3-11: the artwork test whose capture judgeArtworkCapture reads, with the card count from its result line.
@@ -179,7 +181,7 @@ export function judgeRun(input, { write }) {
     if (pair.test === "transport-redirect") counted.redirector = counts.redirector;
     if (pair.test === "transport-private-lan-and-proxy") counted.privateLan = counts.privateLan;
     if (READS_DECODERS.includes(pair.test)) counted.decoders = pair.decoders ?? null;
-    if (pair.test === "player-redirect" || pair.test === "player-capabilities") counted.records = pair.records;
+    if (RECORDS_JUDGED.includes(pair.test)) counted.records = pair.records;
     const host = `127.0.0.1:${pair.devicePort}`;
     const errors = [...judgeWire({ pairs: [counted], lines })];
     if (pair.test === "transport-probe-then-signed-in") errors.push(...judgeCapture(pair.records, { expected: PROBE_THEN_SIGNED_IN, host, secrets: known }));

@@ -21,6 +21,10 @@
 // (canonicalDigest), so the judge can tell that both requests carry the same flags in both places and the one
 // Octave profile. No other value of the body or query is kept.
 //
+// T8-03 adds `report` to every POST /Sessions/Playing, /Sessions/Playing/Progress and /Sessions/Playing/Stopped record
+// and to no other: the whole seconds of the body's PositionTicks and its IsPaused, Failed and PlayMethod, each read
+// only when its JSON type is right and else null. Nothing else of the body is kept, so no id is.
+//
 // Also here: the global-proxy listener, which records the requests that arrive when the emulator's http_proxy names
 // it, and a health check for the fixture servers.
 import { createHash } from "node:crypto";
@@ -142,6 +146,28 @@ export function playbackInfoFacts(body, rawUrl) {
   return { body: bodyFlags, query: queryFlags, profile };
 }
 
+// The playstate posts the recorder keeps report facts of.
+const REPORT_PATH = /\/Sessions\/Playing(?:\/Progress|\/Stopped)?$/;
+const TICKS_PER_SECOND = 10_000_000;
+
+// What the recorder keeps of a playstate post: { position, paused, failed, method } (see the header).
+export function reportFacts(body) {
+  let fields = null;
+  try {
+    fields = JSON.parse(body);
+  } catch {
+    // Not JSON: every fact is null.
+  }
+  const read = (name, type) => (typeof fields?.[name] === type ? fields[name] : null);
+  const ticks = read("PositionTicks", "number");
+  return {
+    position: ticks === null ? null : Math.floor(ticks / TICKS_PER_SECOND),
+    paused: read("IsPaused", "boolean"),
+    failed: read("Failed", "boolean"),
+    method: read("PlayMethod", "string"),
+  };
+}
+
 // The URL with the value of each PlaySessionId parameter that is a play session this run learned blanked, for the
 // secret scan only.
 export function withoutOwnPlaySession(rawUrl, playSessions) {
@@ -187,6 +213,7 @@ export function startRecorder({ upstream, secrets, swap }) {
     const signIn = record.method === "POST" && url.pathname.endsWith("/Users/AuthenticateByName");
     const playbackInfo = record.method === "POST" && /\/PlaybackInfo$/i.test(url.pathname);
     if (playbackInfo) record.playbackInfo = playbackInfoFacts(body.toString("utf8"), incoming.url ?? "/");
+    if (record.method === "POST" && REPORT_PATH.test(url.pathname)) record.report = reportFacts(body.toString("utf8"));
     if (signIn && swap) {
       try {
         const fields = JSON.parse(body.toString("utf8"));

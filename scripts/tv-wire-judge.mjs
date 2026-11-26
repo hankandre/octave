@@ -15,6 +15,9 @@
 // - judgeArtworkCapture(records, { host, secrets, images, widths }): the artwork test's capture (T3-11 items 2 to 4):
 //   the four non-image calls in order, exactly `images` Primary image requests with distinct paths between the latest
 //   items and the logout, and on the mock every maxWidth 248.
+// - judgeViewingCapture(records, words): player-viewing's playstate reports and result words (T8-03 items 2, 4, 7 and
+//   8): two viewings, each a start, progress and one stop in order, with fresh positions, a pause, a stop that did not
+//   fail, the second start where the first stopped, and only original-file media requests.
 // - judgeWire({ pairs, lines }): the app's OCTAVE_WIRE lines against the selected pairs and the host's counts
 //   (items 2, 4, 6 and 9); WIRE_JUDGES holds the rule per test id.
 import { findSecret } from "../apps/tv/src/e2e/wire/find-secret.ts";
@@ -252,6 +255,72 @@ function noDecoderWords(expectation) {
   return { nodecoder: method, client: expectation.clientReason ?? "none" };
 }
 
+const PLAYING_CALL = "POST /Sessions/Playing";
+const PROGRESS_CALL = "POST /Sessions/Playing/Progress";
+const STOPPED_CALL = "POST /Sessions/Playing/Stopped";
+const REPORT_CALLS = [PLAYING_CALL, PROGRESS_CALL, STOPPED_CALL];
+
+// The first viewing's own progress posts, the least spread of two of its positions, the least position of its stop, and
+// how far from that stop the second viewing may start. All in whole seconds.
+const FIRST_PROGRESS_POSTS = 2;
+const FRESH_SECONDS = 8;
+const LEAST_STOP_SECONDS = 20;
+const RESUME_SECONDS = 10;
+const VIEWING_WORDS = { outcome: "ok", start: "after-first-frame", resume: "at-reported", resumed: "within-10s" };
+
+// The reports as viewings, or null unless they are exactly two, each a start, then progress posts, then one stop.
+function viewingsOf(reports) {
+  const viewings = [];
+  let open = null;
+  for (const record of reports) {
+    const sent = call(record);
+    if ((sent === PLAYING_CALL) !== (open === null)) return null;
+    if (sent === PLAYING_CALL) open = { start: record, progress: [], stop: undefined };
+    else if (sent === PROGRESS_CALL) open.progress.push(record);
+    else {
+      viewings.push({ ...open, stop: record });
+      open = null;
+    }
+  }
+  return open === null && viewings.length === 2 ? viewings : null;
+}
+
+function firstViewingErrors({ progress, stop }) {
+  const errors = [];
+  if (progress.length < FIRST_PROGRESS_POSTS) errors.push(`the first viewing sent ${progress.length} progress post(s), fewer than ${FIRST_PROGRESS_POSTS}`);
+  const positions = progress.map((record) => record.report?.position).filter(Number.isInteger);
+  if (positions.length < 2 || Math.max(...positions) - Math.min(...positions) < FRESH_SECONDS) {
+    errors.push(`no two progress positions of the first viewing are ${FRESH_SECONDS} s or more apart`);
+  }
+  if (!progress.some((record) => record.report?.paused === true)) errors.push("no progress post of the first viewing was paused");
+  if (stop.report?.failed !== false) errors.push("the first viewing's stop did not say it had not failed");
+  if (!(stop.report?.position >= LEAST_STOP_SECONDS)) errors.push(`the first viewing's stop was not at ${LEAST_STOP_SECONDS} s or later`);
+  return errors;
+}
+
+function resumedStartErrors(first, second) {
+  const stopped = first.stop.report?.position;
+  const started = second.start.report?.position;
+  if (Number.isInteger(stopped) && Number.isInteger(started) && Math.abs(started - stopped) <= RESUME_SECONDS) return [];
+  return [`the second viewing did not start within ${RESUME_SECONDS} s of where the first stopped`];
+}
+
+export function judgeViewingCapture(records, said) {
+  const errors = [];
+  for (const [key, value] of Object.entries(VIEWING_WORDS)) {
+    if (said[key] !== value) errors.push(`${key}=${said[key] ?? "missing"}, expected ${key}=${value}`);
+  }
+  const reports = records.filter((record) => REPORT_CALLS.includes(call(record)));
+  for (const record of reports) {
+    if (!(record.status >= 200 && record.status < 300)) errors.push(`a ${call(record)} was answered ${record.status ?? "with nothing"}, not 2xx`);
+    if (record.report?.method !== "DirectPlay") errors.push(`a ${call(record)} did not name the play method DirectPlay`);
+  }
+  const viewings = viewingsOf(reports);
+  if (viewings === null) errors.push("the reports are not two viewings, each one start, progress posts and one stop in order");
+  else errors.push(...firstViewingErrors(viewings[0]), ...resumedStartErrors(viewings[0], viewings[1]));
+  return [...errors.map((text) => `ERROR wire viewing: ${text}`), ...judgePlayerCapture(records)];
+}
+
 const words = (line) => Object.fromEntries([...line.matchAll(/(\S+?)=(\S*)/g)].map(([, key, value]) => [key, value]));
 const count = (value) => (Number.isInteger(value) ? value : null);
 
@@ -355,6 +424,11 @@ export const WIRE_JUDGES = {
       if (said[key] !== value) fail(`${key}=${said[key] ?? "missing"}, expected ${key}=${value}`);
     }
     return errors;
+  },
+  // T8-03 items 2, 4, 7 and 8: two viewings through the core's coordinator, judged by their reports and words.
+  "player-viewing": (pair, said) => {
+    if (!Array.isArray(pair.records)) return [`ERROR wire ${pair.test} ${pair.target}: no records to judge the reports by`];
+    return judgeViewingCapture(pair.records, said);
   },
   // T3-11 item 4: every card loaded on the first visit and again, from the cache, on the second.
   "artwork-header-and-cache": (pair, said) => {
