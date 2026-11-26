@@ -25,7 +25,7 @@
 //   before the file's end, original-file media requests only, and the screen kept on only while playing.
 // - judgeQuickConnectCapture(records, words): sign-in-quick-connect's requests and result words (T4-03, D12): the
 //   probe, the availability check, one Initiate, polls that send only the secret, one sign-in, then Home read with a
-//   token and no further poll.
+//   token and no further poll, with the secret and the issued token both learned by the recorder.
 // - judgeWire({ pairs, lines }): the app's OCTAVE_WIRE lines against the selected pairs and the host's counts
 //   (items 2, 4, 6 and 9); WIRE_JUDGES holds the rule per test id.
 import { findSecret } from "../apps/tv/src/e2e/wire/find-secret.ts";
@@ -466,6 +466,12 @@ const QUICK_CONNECT_WORDS = { outcome: "ok", home: "shown" };
 
 const succeeded = (record) => record.status >= 200 && record.status < 300;
 
+// What the recorder must have learned from an answer: without the value, no leak check can find it.
+const QUICK_CONNECT_LEARNED = new Map([
+  ["POST /QuickConnect/Initiate", "secret"],
+  [QUICK_CONNECT_SIGN_IN, "token"],
+]);
+
 // The requests up to and including the sign-in, in order, with nothing between them.
 function quickConnectOrderErrors(calls) {
   const errors = QUICK_CONNECT_OPENING.flatMap((expected, index) => (calls[index] === expected ? [] : [`request ${index + 1} is not ${expected}`]));
@@ -499,6 +505,10 @@ export function judgeQuickConnectCapture(records, said) {
   records.forEach((record, index) => {
     const isSignInCall = [...QUICK_CONNECT_OPENING, QUICK_CONNECT_POLL, QUICK_CONNECT_SIGN_IN].includes(calls[index]);
     if (isSignInCall && !succeeded(record)) errors.push(`request ${index + 1} (${calls[index]}) was answered ${record.status ?? "with nothing"}, not 2xx`);
+    const learned = QUICK_CONNECT_LEARNED.get(calls[index]);
+    if (learned !== undefined && succeeded(record) && record.learned !== true) {
+      errors.push(`request ${index + 1} (${calls[index]}): the recorder learned no ${learned} from the answer, so no leak check covers it`);
+    }
     if (calls[index] === QUICK_CONNECT_POLL && record.queryNames.join(" ") !== "secret") errors.push(`request ${index + 1}, a poll, does not send exactly the secret`);
   });
   errors.push(...afterSignInErrors(records));
