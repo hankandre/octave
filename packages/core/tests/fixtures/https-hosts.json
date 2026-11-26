@@ -1,0 +1,73 @@
+{
+  "description": "https server addresses for T4-02 item 8 (docs/specs/T4-02.md, D9, R10, R11). Read by packages/core/src/jellyfin/gateway-https-host.test.ts, by the device conformance run packages/core/src/conformance/server-address-conformance.ts and by the native client's HttpsHostAgreementTest.kt, so the core and the native client are judged against one fixed expectation. refused: the core refuses each before any request with its kind, and the native client refuses each as INVALID_ADDRESS. accepted: the core admits each and hands over serverUrl; the native client accepts the address as written and serverUrl, with serverUrl's host lower-cased. invalidPunycode: xn-- labels that are not valid punycode; the core admits each and hands over serverUrl, and the native client either refuses it as INVALID_ADDRESS or keeps the host exactly as written, lower-cased. Non-ASCII characters are written literally, so each vector reads as a viewer would type it; each vector's note names the character it exercises.",
+  "refused": [
+    {
+      "address": "https://bücher.example",
+      "kind": "unicode-host",
+      "note": "u with diaeresis"
+    },
+    {
+      "address": "https://BÜCHER.example",
+      "kind": "unicode-host",
+      "note": "capital U with diaeresis"
+    },
+    {
+      "address": "https://ｍedia.example",
+      "kind": "unicode-host",
+      "note": "fullwidth m maps to ASCII"
+    },
+    {
+      "address": "https://media。example",
+      "kind": "unicode-host",
+      "note": "U+3002 maps to a dot"
+    },
+    {
+      "address": "https://naſ.example",
+      "kind": "unicode-host",
+      "note": "long s folds to s"
+    },
+    {
+      "address": "https://Kodi.example",
+      "kind": "unicode-host",
+      "note": "Kelvin sign folds to k"
+    },
+    {
+      "address": "https://bücher.example:8920/jellyfin",
+      "kind": "unicode-host",
+      "note": "with a port and a base path"
+    },
+    {
+      "address": "https://b%C3%BCcher.example",
+      "kind": "invalid-address",
+      "note": "a percent-encoded host"
+    }
+  ],
+  "accepted": [
+    {
+      "address": "https://xn--bcher-kva.example",
+      "serverUrl": "https://xn--bcher-kva.example"
+    },
+    {
+      "address": "https://XN--BCHER-KVA.example",
+      "serverUrl": "https://xn--bcher-kva.example"
+    },
+    {
+      "address": "https://media.xn--bcher-kva.example:8920/jellyfin",
+      "serverUrl": "https://media.xn--bcher-kva.example:8920/jellyfin"
+    }
+  ],
+  "invalidPunycode": [
+    {
+      "address": "https://xn--.example",
+      "serverUrl": "https://xn--.example"
+    },
+    {
+      "address": "https://xn--a.example",
+      "serverUrl": "https://xn--a.example"
+    },
+    {
+      "address": "https://xn--zz-.example",
+      "serverUrl": "https://xn--zz-.example"
+    }
+  ]
+}
