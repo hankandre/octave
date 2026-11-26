@@ -17,7 +17,7 @@ The scene: an evening, a dimmed living room, a remote in hand, three metres from
 1. **The artwork is the interface.** Backdrops, posters, stills, and logos carry identity and hierarchy. The chrome never adds a decorative colour, texture, or illustration that competes with them.
 2. **One obvious next action.** Every screen has exactly one primary action, and it is what most people want: Resume, Play next episode, Play. Focus starts on it. Resume from Home takes one press.
 3. **Lights follow intent.** The chrome fades as the content takes over. It never hides while it holds focus or while the video is paused.
-4. **Focus is the cursor.** Every screen works with the D-pad, select, and Back alone. The focused thing is unmistakable: it lifts and gets a warm-white ring. There is no pointer.
+4. **Focus is the cursor.** Every screen works with the D-pad, select, and Back alone. The focused thing is unmistakable: it gets a warm-white ring, and it lifts or, when it is a row or a field, brightens (§9). There is no pointer.
 5. **Honest, then quiet.** Say what is really happening (original file, repackaging, converting, refused, and why) in plain words at the moment it matters, then get out of the way. Technical depth lives one press away, in the info sheet.
 6. **TV first; other forms derive from it.** The TV is the reference form. Phones, tablets (T15), and the desktop (T16) take its tokens and components and change scale, density, and input. A component that needs a pointer is unfinished.
 7. **Calm under failure.** Loading, empty, error, and refused states are designed screens with the item's own artwork, a clear sentence, and a way forward. Nothing ever shows a raw status code or a blank page.
@@ -125,7 +125,7 @@ Player overlays use scrims and opaque surfaces, never blur.
 | `durSlow` | 480 ms | Backdrop, art-tint and card-preview crossfades |
 | `easeOut` | cubic-bezier(.16, 1, .3, 1) | Entrances, focus |
 | `easeInOut` | cubic-bezier(.65, 0, .35, 1) | Crossfades |
-| `lift` | scale 1.08 | Focused art |
+| `lift` | scale 1.08 | Focused art and compact controls; never a row or a field (§9) |
 
 The lift's cost is measured (decision 0004: an animated lift cost frames and memory on the Shield). Whether a device gets the animated lift, a static one, or each by available memory is the owner's choice in decision 0004 (choice 2), made after the cheap box arrives (T0-06, T3-12).
 
@@ -339,6 +339,7 @@ A short surface: a list of sections on the left and the selected section's rows 
 | `danger` | `secondary` with `danger` text | Sign out, destructive confirms |
 
 - Every button has a `durInstant` press (scale .98, none with reduced motion) and the shared focus ring and lift.
+- A row or a field never scales, on focus or on press (§9, "What lifts").
 - **TextField**: a 72 px `surface2` field with a `lineStrong` border, the label above in `typeLabel` and `text2`, helper and error text below. Text comes from the system keyboard or voice.
 
 ### 7.20 Sign-in
@@ -388,6 +389,8 @@ Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here
 - Rows and grids move focus within themselves with Left and Right; Up and Down across rows go to the nearest item by horizontal centre. Left from the first item of a screen opens the rail; Right from the rail returns to where focus was.
 - Opening a screen focuses its primary action. Returning with Back restores the previously focused card; when it is gone, focus lands on the card now at the same place in the same row, and when the row is gone too, on the screen's opening focus. A fresh visit never restores.
 - Focus is never hidden: rows scroll the focused card to at least 96 px from any edge, and the rail never covers it.
+- **What lifts.** Art and compact controls lift: cards, tiles, buttons, icon buttons, switches. A row or a field does not scale at all, on focus or on press: a server row, a picker, menu, chapter or Settings row, a text field, the search field, and any other control that fills the width of its column or sheet. Scaling a wide control moves its text sideways and pushes its ends out of the column (a 1,700 px row grows 68 px a side). A focused row shows the ring and its fill goes from `surface2` to `surface3`; a focused field shows the ring. The rail's entries stay as T3-09 built them.
+- **Room for focus.** A control's box at rest stays inside the title-safe inset, and a column of rows or fields shares the left edge of the heading above it. The ring, the lift and the shadow may draw past the box, into a gap or the safe margin, and nothing clips them: a container that clips, such as a scroll view, a sheet or the rail's edge, leaves at least the ring's reach (7 px) around a control that does not lift, and half the lift's growth plus the ring's reach around one that does.
 - Focus never jumps: the scripted focus test (T3-10) runs 500 presses, singles and held bursts, through Home with the rail and fails on any wrong, missing, or stuck move.
 
 **Back.** Back closes the topmost layer: menu, then sheet, then dialog, then player, then screen. On a root screen it opens the rail on that screen's entry; on Home with the rail open it leaves the app (§6, the owner's call).
@@ -499,7 +502,7 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 ## 11. Accessibility rules
 
 1. Text contrast is 4.5:1 or more (3:1 for 24 px bold and up). Non-text UI (progress, borders that convey state, focus) is 3:1 or more against its neighbours. Text over artwork always sits on a scrim that guarantees this.
-2. Focus is visible (ring plus lift) and never hidden, and the ring is 3 px or more with 3:1 or more contrast against both the art and the page (two-tone ring).
+2. Focus is visible (the ring, plus the lift or a row's brighter fill, §9) and never hidden, with the whole ring drawn, and the ring is 3 px or more with 3:1 or more contrast against both the art and the page (two-tone ring).
 3. Targets are 64 px or more.
 4. State is never colour alone: toggles change icon and state in words.
 5. Motion: honour the system's reduced-motion setting everywhere (§5). Nothing flashes more than 3 times a second. The countdown never advances without a visible, focusable Hide.
@@ -594,6 +597,7 @@ These are the Product Owner's calls under the delegation (`docs/specs/decisions-
 - **C7.** A typed address with no scheme gets `http://` for this device or a home-network host, and `https://` otherwise.
 - **C8.** A search of the network that fails shows nothing; the address field shows, as when no server is found.
 - **C9.** The origin chip is `typeMono` on `surface2` at `radiusPill`, holding the full normalised address.
+- **C10. Rows and fields do not lift.** A row or a field shows focus with the ring and, for a row, a `surface3` fill; it never scales. Art and compact controls keep the lift. A column of rows shares its heading's left edge, and no container clips a ring, a lift or a shadow (section 9, "What lifts" and "Room for focus"; `tasks/product-owner-log.md`, "2026-11-26, T4-02 ruling, Captures"). The first captures of the server step showed a lifted row cut off at both ends. This applies to every list the app draws later: pickers, menus, chapters and Settings.
 
 ### Awaiting the owner
 
