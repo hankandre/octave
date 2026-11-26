@@ -57,10 +57,8 @@ export function startQuickConnect(gateway: JellyfinGateway, clock: Clock, listen
     emit({ phase: "failed", failure });
   };
 
-  const failFrom = (error: unknown, step: QuickConnectStep) => {
-    const failure = quickConnectFailure(error, step);
-    if (failure !== undefined) fail(failure);
-  };
+  // Only for an attempt nothing aborted: a cancellation that gets here still has to leave the viewer a retry.
+  const failFrom = (error: unknown, step: QuickConnectStep) => fail(quickConnectFailure(error, step) ?? "other");
 
   // Before the code shows, one status means Quick Connect is not there: 404 for not built, 401 for turned off.
   const endBeforeCode = (error: unknown, step: QuickConnectStep, unavailableStatus: number) => {
@@ -110,21 +108,27 @@ export function startQuickConnect(gateway: JellyfinGateway, clock: Clock, listen
     let isPolling = false;
     let unreachablePolls = 0;
 
-    async function poll(): Promise<void> {
-      isPolling = true;
+    async function isApproved(): Promise<boolean> {
       try {
         const { authenticated } = await gateway.pollQuickConnect(offer.secret, signal);
-        if (signal.aborted) return;
+        if (signal.aborted) return false;
         unreachablePolls = 0;
-        if (authenticated) await signIn(offer, signal);
+        return authenticated;
       } catch (error) {
-        if (signal.aborted) return;
+        if (signal.aborted) return false;
         unreachablePolls += 1;
         const isRetried = quickConnectFailure(error, "connect") === "unreachable" && unreachablePolls < UNREACHABLE_POLLS;
         if (!isRetried) failFrom(error, "connect");
-      } finally {
-        isPolling = false;
+        return false;
       }
+    }
+
+    // Signing in is outside isApproved's catch: once the session exists, nothing thrown is a failed poll.
+    async function poll(): Promise<void> {
+      isPolling = true;
+      const approved = await isApproved();
+      isPolling = false;
+      if (approved) await signIn(offer, signal);
     }
 
     emit({ phase: "waiting", code: offer.code, link: offer.link });
