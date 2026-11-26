@@ -1,0 +1,239 @@
+{
+  "task": "T8-04",
+  "files": [
+    "packages/core/src/player/viewing-transport.test.ts",
+    "apps/tv/src/player/chrome-keys.test.tsx",
+    "apps/tv/src/player/player-chrome.test.tsx",
+    "apps/tv/src/player/player-status.test.tsx",
+    "apps/tv/src/player/player-back.test.tsx",
+    "apps/tv/src/player/test-support/remote.ts",
+    "apps/tv/src/player/test-support/tv-emitter-double.ts",
+    "apps/tv/src/player/test-support/focus-follow.ts",
+    "apps/tv/src/player/test-support/player-rig.tsx",
+    "modules/player/android/src/test/java/dev/octave/player/engine/EngineCoreBufferingTest.kt",
+    "modules/player/android/src/test/java/dev/octave/player/engine/EngineCorePictureTest.kt"
+  ],
+  "items": [
+    {
+      "item": 1,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/player/player-chrome.test.tsx",
+        "src/player/chrome-keys.test.tsx",
+        "-t",
+        "T8-04 item 1:"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "--filter",
+          "@octave/tv",
+          "exec",
+          "jest",
+          "--ci",
+          "src/player/chrome-keys.test.tsx",
+          "-t",
+          "T8-04 item 1:"
+        ]
+      ]
+    },
+    {
+      "item": 2,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/core",
+        "exec",
+        "vitest",
+        "run",
+        "src/player/viewing-transport.test.ts",
+        "-t",
+        "T8-04 item 2:"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "--filter",
+          "@octave/tv",
+          "exec",
+          "jest",
+          "--ci",
+          "src/player/player-chrome.test.tsx",
+          "-t",
+          "T8-04 item 2:"
+        ]
+      ]
+    },
+    {
+      "item": 3,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/player/player-chrome.test.tsx",
+        "src/player/chrome-keys.test.tsx",
+        "-t",
+        "T8-04 item 3:"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "--filter",
+          "@octave/tv",
+          "exec",
+          "jest",
+          "--ci",
+          "src/player/chrome-keys.test.tsx",
+          "-t",
+          "T8-04 item 3:"
+        ]
+      ]
+    },
+    {
+      "item": 4,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/player/player-chrome.test.tsx",
+        "-t",
+        "T8-04 item 4:"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "--filter",
+          "@octave/core",
+          "exec",
+          "vitest",
+          "run",
+          "src/player/viewing-transport.test.ts",
+          "-t",
+          "T8-04 item 4:"
+        ]
+      ]
+    },
+    {
+      "item": 5,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/player/player-back.test.tsx",
+        "-t",
+        "T8-04 item 5:"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "--filter",
+          "@octave/tv",
+          "exec",
+          "jest",
+          "--ci",
+          "src/player/player-chrome.test.tsx",
+          "-t",
+          "T8-04 item 5:"
+        ],
+        [
+          "pnpm",
+          "--filter",
+          "@octave/core",
+          "exec",
+          "vitest",
+          "run",
+          "src/player/viewing-transport.test.ts",
+          "-t",
+          "T8-04 item 5:"
+        ]
+      ]
+    },
+    {
+      "item": 6,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/player/player-status.test.tsx",
+        "-t",
+        "T8-04 item 6:"
+      ],
+      "also": [
+        [
+          "node",
+          "scripts/tv-native-test-only.mjs",
+          "dev.octave.player.engine.EngineCoreBufferingTest"
+        ],
+        [
+          "pnpm",
+          "--filter",
+          "@octave/core",
+          "exec",
+          "vitest",
+          "run",
+          "src/player/viewing-transport.test.ts",
+          "-t",
+          "T8-04 item 6:"
+        ]
+      ]
+    },
+    {
+      "item": 7,
+      "gate": "review",
+      "why": "Under D1 no Kotlin of the player draws a colour, size or duration, so no native token export is built (D14, Product Owner ruling 2026-11-26). The reviewer confirms the diff under modules/*/android/src/main adds no such literal and that pnpm lint (octave/design-tokens) is green on apps/tv/src/player/. The item as worded is not claimed met; the task is not marked passes until a Product Owner pass drops or rewords it."
+    },
+    {
+      "item": 8,
+      "run": [
+        "node",
+        "scripts/tv-native-test-only.mjs",
+        "dev.octave.player.engine.EngineCorePictureTest"
+      ],
+      "note": "The Kotlin file holds only awake_* cases; every one is item 8."
+    },
+    {
+      "item": 9,
+      "run": [
+        "pnpm",
+        "--filter",
+        "@octave/tv",
+        "exec",
+        "jest",
+        "--ci",
+        "src/player/player-back.test.tsx",
+        "-t",
+        "T8-04 item 9:"
+      ],
+      "also": [
+        [
+          "pnpm",
+          "--filter",
+          "@octave/core",
+          "exec",
+          "vitest",
+          "run",
+          "src/player/viewing-transport.test.ts",
+          "-t",
+          "T8-04 item 9:"
+        ]
+      ]
+    }
+  ]
+}
