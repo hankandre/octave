@@ -20,3 +20,9 @@ The owner's words are in the chat of this date; this file records them in the re
 3. The frozen source-shape scans that set two tasks' frozen files against each other are retired by T8-26, which moves the media-URL guard to lint.
 
 **Re-check.** If routine rulings start producing answers Fable would have reversed, say so and the split goes back.
+
+## 2. The OpenCode Go quota is used up
+
+**Decision.** No work goes to `opencode-go/*`. The coordinator moves to the Anthropic Max plan with the stage work. This replaces the line of `decisions-owner-chat-2026-11-25.md` §2 that gives the `opencode-go` quota to the coordinator.
+
+**What it means.** The coordinator and every stage now share the Max plan's usage window, so the coordinator stays lean: it delegates long reads and runs heavy sessions in sequence where it can. Neon keeps its own Google budget and its one review sweep per high-risk task.
