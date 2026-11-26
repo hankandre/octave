@@ -2165,10 +2165,10 @@
             "A Show password control on the password step shows the typed password while it is on, and is off whenever the step opens (DESIGN.md 7.20, step 3; docs/specs/decisions-product-owner-2026-11-26.md, 3)"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "PR #351 (merged 2026-11-26, main 28e8f580). Rebased branch: pnpm check pass; check-red T4-04 --expect green 1-6. Emulator, scripted server, fake data: captures in docs/specs/captures/T4-04; tv:smoke pass before review fixes; after fixes, Go resent nothing after a wrong password. Reviews: guardian, routine, Neon; fixes in the PR. Untested: real TV; password sign-in to real Jellyfin or Jellyscale (T4-07)."
         },
         {
           "id": "T4-01",
