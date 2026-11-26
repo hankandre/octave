@@ -56,6 +56,9 @@ export function TextField({ label, value, onChangeText, onFocus, helper, error, 
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry}
           accessibilityLabel={label}
+          cursorColor={colors.text1}
+          selectionColor={colors.fillSecondary}
+          selectionHandleColor={colors.text1}
           style={[styles.input, disabled ? styles.inputDisabled : undefined]}
         />
       </FocusFrame>
