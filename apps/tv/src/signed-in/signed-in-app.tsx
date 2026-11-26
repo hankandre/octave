@@ -1,6 +1,6 @@
 // The composition for a signed-in gateway (T8-03 D11): it builds the viewing over the gateway and the engine, gives Home
 // its play and the player screen its services, and draws the shell. Every other route shows the placeholder screen until
-// its own task. Sign-in mounts it; App.tsx has no session yet. Libraries and the account arrive with T4 and T6-01.
+// its own task. AppRoot mounts it once a sign-in finishes. Libraries and the account arrive with T4 and T6-01.
 import { useMemo, type ComponentType } from "react";
 import type { JellyfinGateway } from "@octave/core/src/jellyfin/gateway";
 import { playbackGatewayOf } from "@octave/core/src/jellyfin/playback-gateway";
