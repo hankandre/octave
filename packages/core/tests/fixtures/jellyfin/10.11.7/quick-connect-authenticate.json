@@ -14,8 +14,8 @@
       "HasConfiguredPassword": true,
       "HasConfiguredEasyPassword": false,
       "EnableAutoLogin": false,
-      "LastLoginDate": "2026-11-26T19:13:08.1117741Z",
-      "LastActivityDate": "2026-11-26T19:13:08.1117741Z",
+      "LastLoginDate": "2026-11-26T19:16:05.0766922Z",
+      "LastActivityDate": "2026-11-26T19:16:05.0766922Z",
       "Configuration": {
         "PlayDefaultAudioTrack": true,
         "SubtitleLanguagePreference": "",
@@ -98,7 +98,7 @@
       "UserId": "user-test",
       "UserName": "octave-test",
       "Client": "Octave Tests",
-      "LastActivityDate": "2026-11-26T19:13:08.1289173Z",
+      "LastActivityDate": "2026-11-26T19:16:05.0867833Z",
       "LastPlaybackCheckIn": "0001-01-01T00:00:00.0000000Z",
       "DeviceName": "ci",
       "DeviceId": "octave-fixtures-quick-connect",
@@ -112,7 +112,6 @@
       "ServerId": "server-1011",
       "SupportedCommands": []
     },
-    "AccessToken": "REDACTED",
     "ServerId": "server-1011"
   }
 }

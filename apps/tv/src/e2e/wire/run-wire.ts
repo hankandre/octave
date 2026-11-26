@@ -26,6 +26,7 @@ import * as errors from "./transport-errors";
 import * as privateLan from "./transport-private-lan-and-proxy";
 import * as probeThenSignedIn from "./transport-probe-then-signed-in";
 import * as redirect from "./transport-redirect";
+import * as signInQuickConnect from "./sign-in-quick-connect";
 import type { WireContext, WireOutcome } from "./wire-context";
 import list from "./wire-tests.json";
 
@@ -43,6 +44,7 @@ const TESTS: Record<string, (context: WireContext) => Promise<WireOutcome>> = {
   "artwork-canary": artworkCanary.run,
   "player-viewing": playerViewing.run,
   "player-transport": playerTransport.run,
+  "sign-in-quick-connect": signInQuickConnect.run,
 };
 
 // The app's probe, as host-gateway.ts wires it: the player engine's initialize.
@@ -57,6 +59,7 @@ export async function runWire(host: { crypto: Crypto; props: unknown; show: (ele
     log(`OCTAVE_WIRE key ${key} ${presses}`);
   };
   const readWindow: WireContext["readWindow"] = (state) => log(`OCTAVE_WIRE window ${state}`);
+  const approve: WireContext["approve"] = (code) => log(`OCTAVE_WIRE approve ${code}`);
   for (const test of list.tests) {
     for (const target of test.targets) {
       const base = `http://127.0.0.1:${list.basePort + index}`;
@@ -82,6 +85,7 @@ export async function runWire(host: { crypto: Crypto; props: unknown; show: (ele
           show: host.show,
           press,
           readWindow,
+          approve,
           gatewayStatingFull: (url) => statingFull(url, { deviceCapabilities: { get: () => "full" } }),
         };
         outcome = run === undefined ? { words: "outcome=no-device-test" } : await run(context);

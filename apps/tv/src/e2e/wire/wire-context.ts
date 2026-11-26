@@ -26,6 +26,8 @@ export interface WireContext {
   readonly show: (element: ReactElement | null) => Promise<void>;
   // Asks the runner to send the remote's key (T8-04): one app line, which the runner answers with one adb key event.
   readonly press: (key: WireKey) => void;
+  // Asks the runner to approve a Quick Connect code on this pair's server, as a signed-in phone would (T4-03).
+  readonly approve: (code: string) => void;
   // Asks the runner to read whether the app's window holds the keep-screen-on flag, in the state the app is in.
   readonly readWindow: (state: "paused" | "playing") => void;
 }

@@ -23,6 +23,9 @@
 //   two seeks forward and one back while paused, every pause and resume from the keys that make one, no movement from
 //   the arrows sent after a centre press, a stop by Back
 //   before the file's end, original-file media requests only, and the screen kept on only while playing.
+// - judgeQuickConnectCapture(records, words): sign-in-quick-connect's requests and result words (T4-03, D12): the
+//   probe, the availability check, one Initiate, polls that send only the secret, one sign-in, then Home read with a
+//   token and no further poll.
 // - judgeWire({ pairs, lines }): the app's OCTAVE_WIRE lines against the selected pairs and the host's counts
 //   (items 2, 4, 6 and 9); WIRE_JUDGES holds the rule per test id.
 import { findSecret } from "../apps/tv/src/e2e/wire/find-secret.ts";
@@ -454,6 +457,54 @@ export function judgeTransportCapture(records, tokens, { keys = [], windows = []
   return [...errors.map((text) => `ERROR wire transport: ${text}`), ...judgePlayerCapture(records)];
 }
 
+const QUICK_CONNECT_OPENING = ["GET /System/Info/Public", "GET /QuickConnect/Enabled", "POST /QuickConnect/Initiate"];
+const QUICK_CONNECT_POLL = "GET /QuickConnect/Connect";
+const QUICK_CONNECT_SIGN_IN = "POST /Users/AuthenticateWithQuickConnect";
+// What Home's four lists send (packages/core/src/jellyfin/gateway.ts).
+const HOME_READS = ["GET /UserItems/Resume", "GET /Shows/NextUp", "GET /Items", "GET /Items/Latest"];
+const QUICK_CONNECT_WORDS = { outcome: "ok", home: "shown" };
+
+const succeeded = (record) => record.status >= 200 && record.status < 300;
+
+// The requests up to and including the sign-in, in order, with nothing between them.
+function quickConnectOrderErrors(calls) {
+  const errors = QUICK_CONNECT_OPENING.flatMap((expected, index) => (calls[index] === expected ? [] : [`request ${index + 1} is not ${expected}`]));
+  let next = QUICK_CONNECT_OPENING.length;
+  while (calls[next] === QUICK_CONNECT_POLL) next += 1;
+  if (next === QUICK_CONNECT_OPENING.length) errors.push("no poll followed the Initiate");
+  if (calls[next] !== QUICK_CONNECT_SIGN_IN) errors.push(`request ${next + 1}, after the polls, is not ${QUICK_CONNECT_SIGN_IN}`);
+  const signIns = calls.filter((sent) => sent === QUICK_CONNECT_SIGN_IN).length;
+  if (signIns !== 1) errors.push(`${signIns} sign-in(s) were recorded, expected exactly one`);
+  return errors;
+}
+
+function afterSignInErrors(records) {
+  const signedInAt = records.findIndex((record) => call(record) === QUICK_CONNECT_SIGN_IN);
+  if (signedInAt < 0) return [];
+  const later = records.slice(signedInAt + 1);
+  const errors = [];
+  if (later.some((record) => call(record) === QUICK_CONNECT_POLL)) errors.push("a poll was sent after the sign-in, so polling did not stop");
+  if (!later.some((record) => HOME_READS.includes(call(record)) && record.token && succeeded(record))) {
+    errors.push("no read of Home with a token was answered 2xx after the sign-in");
+  }
+  return errors;
+}
+
+export function judgeQuickConnectCapture(records, said) {
+  const errors = Object.entries(QUICK_CONNECT_WORDS)
+    .filter(([key, value]) => said[key] !== value)
+    .map(([key, value]) => `${key}=${said[key] ?? "missing"}, expected ${key}=${value}`);
+  const calls = records.map(call);
+  errors.push(...quickConnectOrderErrors(calls));
+  records.forEach((record, index) => {
+    const isSignInCall = [...QUICK_CONNECT_OPENING, QUICK_CONNECT_POLL, QUICK_CONNECT_SIGN_IN].includes(calls[index]);
+    if (isSignInCall && !succeeded(record)) errors.push(`request ${index + 1} (${calls[index]}) was answered ${record.status ?? "with nothing"}, not 2xx`);
+    if (calls[index] === QUICK_CONNECT_POLL && record.queryNames.join(" ") !== "secret") errors.push(`request ${index + 1}, a poll, does not send exactly the secret`);
+  });
+  errors.push(...afterSignInErrors(records));
+  return errors.map((text) => `ERROR wire quick connect: ${text}`);
+}
+
 const words = (line) => Object.fromEntries([...line.matchAll(/(\S+?)=(\S*)/g)].map(([, key, value]) => [key, value]));
 const count = (value) => (Number.isInteger(value) ? value : null);
 
@@ -568,6 +619,11 @@ export const WIRE_JUDGES = {
   "player-transport": (pair, _said, tokens) => {
     if (!Array.isArray(pair.records)) return [`ERROR wire ${pair.test} ${pair.target}: no records to judge the reports by`];
     return judgeTransportCapture(pair.records, tokens, { keys: pair.keys, windows: pair.windows });
+  },
+  // T4-03 items 1, 3 and 9: the code approved while the step polls, the sign-in, and Home from the app's own mount.
+  "sign-in-quick-connect": (pair, said) => {
+    if (!Array.isArray(pair.records)) return [`ERROR wire ${pair.test} ${pair.target}: no records to judge the sign-in by`];
+    return judgeQuickConnectCapture(pair.records, said);
   },
   // T3-11 item 4: every card loaded on the first visit and again, from the cache, on the second.
   "artwork-header-and-cache": (pair, said) => {

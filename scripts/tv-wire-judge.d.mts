@@ -27,4 +27,5 @@ export function judgeRecords(records: CaptureRecord[], options: { host: string; 
 export function judgeCapture(records: CaptureRecord[], options: { expected: string[]; host: string; secrets: string[] }): string[];
 export function judgeLogcat(lines: string[], secrets: string[]): string[];
 export function judgeWire(run: { pairs: WirePair[]; lines: string[] }): string[];
+export function judgeQuickConnectCapture(records: CaptureRecord[], said: Record<string, string>): string[];
 export const WIRE_JUDGES: Record<string, (pair: WirePair, said: Record<string, string>) => string[]>;

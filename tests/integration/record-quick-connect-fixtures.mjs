@@ -6,7 +6,8 @@
 // code; that call is not recorded. Quick Connect is turned off for the last three answers and the setting is put back,
 // also after a failure or a signal. Never run it against a real server. Credentials come from
 // tests/integration/.credentials and are never printed.
-// In the files the secret is a fixed lowercase fake (Jellyfin's is uppercase) and the code is 482913. Each file is
+// In the files the secret is a fixed lowercase fake (Jellyfin's is uppercase) and the code is 482913. The sign-in's body
+// is saved without its AccessToken field: no Jellyfin fixture may hold that key, and only Kotlin reads it. Each file is
 // { request: { method, path, queryNames }, status, body }. Scrubbing and the leak checks are shared with the other
 // recorders (fixture-recording.mjs).
 import { mkdirSync } from "node:fs";
@@ -97,11 +98,11 @@ async function record(server) {
   await call(base, admin.AccessToken, "POST", "/QuickConnect/Authorize", { query: { code } });
   scenes.set("connect-approved", await answer(base, CONNECT, 200, { query: { secret } }));
   const signedIn = await answer(base, AUTHENTICATE, 200, { body: { Secret: secret } });
-  const { AccessToken: quickConnectToken } = signedIn.body;
+  const { AccessToken: quickConnectToken, ...signedInBody } = signedIn.body;
   if (!quickConnectToken) throw new Error(`${server.name}: the sign-in gave no token`);
   tokens.push(quickConnectToken);
   cleanups.push(() => call(base, quickConnectToken, "POST", "/Sessions/Logout"));
-  scenes.set("authenticate", signedIn);
+  scenes.set("authenticate", { ...signedIn, body: signedInBody });
   scenes.set("connect-unknown", await answer(base, CONNECT, 404, { query: { secret: UNKNOWN_SECRET } }));
 
   // A code the server holds when Quick Connect is turned off, as when a TV is waiting.
