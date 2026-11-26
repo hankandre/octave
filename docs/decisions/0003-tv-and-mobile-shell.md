@@ -212,4 +212,11 @@ It was ruled on 2026-11-26 as a change to land before any chrome code. It did no
 
 **Unmeasured:** the time from a key to the controls on the Nvidia Shield and on the cheap box.
 
-**This call reopens** if, at the Shield check (T8-21), that time misses T3-12's key-to-focus budget on either device, or if T8-05 finds that react-native-tvos's hold rule does not work for scrubbing. The remedy is then one native key source that feeds the same key rules, with its own decision record, not a Kotlin chrome. To keep that remedy small, the key rules know no key source (`apps/tv/src/player/chrome-keys.ts`) and one file reads the remote's hardware keys (`apps/tv/src/player/use-remote-keys.ts`; select is read from the focused control's press, and Back by `use-player-back.ts`).
+**This call reopens** on either of two findings.
+
+1. T8-05's spec finds that react-native-tvos's hold rule does not carry hold to scrub. T8-05 is the next task of the player lane, and its spec states the finding either way.
+2. The median time from a remote key to the controls being drawn, with the picture playing and the controls hidden, is over the budget the owner sets in T3-12 for a key press to a focus change, on the Shield or on the cheap box. T3-12's script measures it, by the method it uses for key to focus, and the Shield check (T8-21) judges the Shield's reading.
+
+Finding 2 is not in force yet. On 2026-11-26 T3-12 has no budget and measures only the browse path, and T8-21 has no item for this time. A Product Owner pass adds one item to each (`tasks/backlog.jsonl`, source T8-04, 2026-11-26); until then no task holds this measure.
+
+The remedy is then one native key source that feeds the same key rules, with its own decision record, not a Kotlin chrome. To keep that remedy small, the key rules know no key source (`apps/tv/src/player/chrome-keys.ts`) and one file reads the remote's hardware keys (`apps/tv/src/player/use-remote-keys.ts`; select is read from the focused control's press, and Back by `use-player-back.ts`).
