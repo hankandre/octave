@@ -7,9 +7,9 @@
 // - modules/artwork/android/src/main/java/dev/octave/artwork/OctaveArtworkModule.kt declares, inside the block of its one
 //   `View(OctaveArtworkView::class) { … }`, exactly one `Prop("blurHash") { view: OctaveArtworkView, value: String? -> … }`
 //   (any parameter names, the value typed `String?`), and no Prop("blurHash") elsewhere. The view block's Props are
-//   exactly session, itemId, imageType, tag, width and blurHash, so a planted or renamed `Prop("blurHashUrl")` or
+//   exactly session, itemId, imageType, tag, drawnWidth and blurHash, so a planted or renamed `Prop("blurHashUrl")` or
 //   `Prop("previewUrl")` fails the scan.
-// - modules/artwork/surface-allowlist.json's one view lists the props ["session", "itemId", "imageType", "tag", "width",
+// - modules/artwork/surface-allowlist.json's one view lists the props ["session", "itemId", "imageType", "tag", "drawnWidth",
 //   "blurHash"] in that order, and its events stay ["onArtworkState"].
 // - modules/artwork/src/index.ts's `interface OctaveArtworkViewProps` has the member `blurHash?: string` (readonly
 //   allowed) and no url, uri, source, src, headers, header or token member.
@@ -20,7 +20,7 @@ import { describe, expect, it } from "vitest";
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
 const MODULE_FILE = "modules/artwork/android/src/main/java/dev/octave/artwork/OctaveArtworkModule.kt";
-const SIX = ["session", "itemId", "imageType", "tag", "width", "blurHash"];
+const SIX = ["session", "itemId", "imageType", "tag", "drawnWidth", "blurHash"];
 const FORBIDDEN_MEMBERS = ["url", "uri", "source", "src", "headers", "header", "token"];
 
 function read(path: string): string {

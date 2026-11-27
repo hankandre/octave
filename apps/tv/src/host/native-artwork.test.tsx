@@ -8,7 +8,7 @@
 //   is the native view component (ComponentType<OctaveArtworkViewProps>), `session` a () => string | undefined getter.
 // - With a session it draws a wrapper View carrying the slot's testID, with backgroundColor colors.surface2, and the
 //   picture view inside it, last (since T3-39 a preview view that holds only the hash may come before it; its rules
-//   are in native-artwork-preview.test.tsx). The picture view receives session, itemId, imageType, tag, width (Math.round of the drawn width),
+//   are in native-artwork-preview.test.tsx). The picture view receives session, itemId, imageType, tag, drawnWidth (Math.round of the drawn width),
 //   onArtworkState and at most a style: no blurHash, height, testID, URL, header or token.
 // - Until an event arrives onFailed is not called. onArtworkState({ nativeEvent: { state: "failed" } }) calls onFailed
 //   once; "loaded" calls nothing.
@@ -30,7 +30,7 @@ import { createNativeArtwork } from "./native-artwork";
 
 const SESSION = "0123456789abcdef0123456789abcdef";
 const IMAGE: ImageRef = { itemId: "a1b2c3d4e5f60718293a4b5c6d7e8f90", type: "Primary", tag: "5f3e2d1c0b9a87654321fedcba987654", blurHash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" };
-const FIVE = ["session", "itemId", "imageType", "tag", "width"];
+const FIVE = ["session", "itemId", "imageType", "tag", "drawnWidth"];
 
 type StateHandler = (event: { nativeEvent: { state: "loaded" | "failed" } }) => void;
 
@@ -74,7 +74,7 @@ describe("T3-11 item 1: the picture view receives only the five props", () => {
     const props = lastProps();
     const keys = Object.keys(props).filter((key) => key !== "onArtworkState" && key !== "style");
     expect(keys.sort()).toEqual([...FIVE].sort());
-    expect(props).toMatchObject({ session: SESSION, itemId: IMAGE.itemId, imageType: "Primary", tag: IMAGE.tag, width: sizes.posterW });
+    expect(props).toMatchObject({ session: SESSION, itemId: IMAGE.itemId, imageType: "Primary", tag: IMAGE.tag, drawnWidth: sizes.posterW });
   });
 
   it("T3-11 item 1: no blurHash, height, testID, URL, header or token reaches the picture view", async () => {
@@ -106,17 +106,17 @@ describe("T3-11 item 3: the view is asked for the drawn width", () => {
           </ArtworkProvider>
         </ReducedMotionProvider>,
       );
-      expect({ variant, width: lastProps().width }).toEqual({ variant, width });
+      expect({ variant, width: lastProps().drawnWidth }).toEqual({ variant, width });
     }
     expect(sizes.posterW).toBe(248);
   });
 
   it("T3-11 item 3: a fractional drawn width is rounded to whole canvas px", async () => {
     await slot({ width: 247.6 });
-    expect(lastProps().width).toBe(248);
+    expect(lastProps().drawnWidth).toBe(248);
     received.length = 0;
     await slot({ width: 416.4 });
-    expect(lastProps().width).toBe(416);
+    expect(lastProps().drawnWidth).toBe(416);
   });
 });
 
