@@ -662,7 +662,7 @@
             "Every approval a spec reused is listed in the task's result and in the pull request body, so the owner can veto it; an option that changes approved wording, even by a word, is a new call",
             "The refiner, spec-checker and product-owner agent files carry the rule as short instructions: a look or wording question whose answer is an approval they can cite is answered with the citation",
             "The rule says who takes a new call: the Product Owner while the delegation of docs/specs/decisions-owner-chat-2026-11-25.md (1) lasts, and the owner once it ends",
-            "DESIGN.md's status line and its Awaiting the owner list (section 12) drop the calls the owner has settled (the rail's look and entries, the posters beside it and what Back does on Home, approved with T1-08 on 2026-11-20; what Menu or Info does on a Continue watching card, docs/specs/decisions-direction-2026-11-22.md, 2) and keep what is still open; a call the Product Owner answered under the delegation stays listed and is marked as answered by the Product Owner, so the owner can revisit it",
+            "docs/specs/awaiting-owner.md, which replaces DESIGN.md's status line and its Awaiting the owner list (docs/decisions/0008-owner-answers-guiding-documents.md, question 3), drops the calls the owner has settled (the rail's look and entries, the posters beside it and what Back does on Home, approved with T1-08 on 2026-11-20; what Menu or Info does on a Continue watching card, docs/specs/decisions-direction-2026-11-22.md, 2) and keeps what is still open; a call the Product Owner answered under the delegation stays listed and is marked as answered by the Product Owner, so the owner can revisit it",
             "The task changes neither .claude/workflows/task.js nor its tests, because the flow is run by hand; no check is given up and a denied command still halts a run"
           ],
           "verify": "pnpm check",
@@ -682,7 +682,7 @@
           "depends_on": [],
           "acceptance": [
             "PRODUCT.md names no task id, task list or phase-by-phase roadmap, and points to tasks/prd.json for the plan (owner: docs/specs/decisions-owner-inbox-2026-11-23.md, 3)",
-            "Its principles, audience, scope, success measures and decided product questions stay, in product terms; no sentence of them changes meaning, and the PR lists every sentence removed or reworded so the owner can read the change",
+            "Its principles, audience, scope and success measures stay, in product terms; no sentence of them changes meaning, and the PR lists every sentence removed or reworded so the owner can read the change; its decided product questions were removed as history with the owner's approval (docs/decisions/0008-owner-answers-guiding-documents.md, question 3; what they recorded is in docs/decisions/0009-design-and-product-history-kept.md and the files it names)",
             "The features the launch scope review moved after launch (docs/research/launch-scope-2026-11-22.md) are not named in PRODUCT.md",
             "Nothing the roadmap alone recorded is lost: the spec shows where tasks/prd.json or a decision record already holds each fact, and returns to the Product Owner any that neither holds",
             "Every file that cites a PRODUCT.md section this task removes or renames is updated in the same PR"
