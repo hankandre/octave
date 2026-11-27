@@ -187,6 +187,7 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - [ ] First playback in a browser against the pinned Jellyscale (T17-12).
 - [x] (2026-11-26) The owner raised the task file's limit to 450 KB (T17-24, carried out in the branch that adds T17).
 - [x] (2026-11-26) The owner accepted the amendment for a container the browser cannot take; T17-25 writes it.
+- [x] (2026-11-26) T17-01 implemented on `task/T17-01`; review and the CI `web` job are open.
 - [ ] The rest of T17.
 
 ## Decision log
@@ -244,5 +245,11 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - Not usable as built: Firefox stops the worker mid-stream and playback dies (after 27.7 s with default timeouts, 87.7 s with the worker held open). A first load, a hard reload and a failing handler send the request with no header and no warning.
 - Safari, AirPlay and a real Jellyscale were not tested.
 - By the gate it changes nothing in v1.
+
+**T17-01, local, 2026-11-26** (commits `ad77b78a`, `1db25e14`, `c1a686f3`).
+
+- `pnpm check`, `pnpm web:build`, `pnpm lint:flow` and `check-red T17-01 --expect green` (items 1 to 3) pass; `pnpm web:test` passes 8 of 8 in Playwright's Chromium and Firefox.
+- Not run: the CI `web` job, any release browser, Safari, any device, Jellyfin or Jellyscale (the scaffold sends no server request).
+- The lockfile adds only new packages. pnpm also links the new `react-dom` 19.3.0 as the optional peer of `expo`, `@expo/cli` and `@expo/router-server` in the TV's tree; no existing version changed. The TV build was not run.
 
 ## Outcome & retrospective
