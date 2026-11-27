@@ -9,6 +9,7 @@
 // "cancelled" at once while the native call runs on to its answer or its deadline, and its answer is dropped. A
 // sign-in that succeeds after its abort is ended, so no session is left that the core does not know.
 import type { OctaveSessionNative } from "@octave/session";
+import type { Clock } from "@octave/core/src/ports/clock";
 import {
   TransportError,
   type RestoredSession,
@@ -192,18 +193,36 @@ function restoredOf(value: unknown): RestoredSession | undefined {
   };
 }
 
+// What can end a restore that does not answer (G-L3): the clock and how long to wait.
+export interface RestoreDeadline {
+  readonly clock: Clock;
+  readonly timeoutMs: number;
+}
+
+// Calls restoreSessions, answering undefined for a rejection or, with a deadline, once it passes; a later answer is
+// dropped. The native call itself runs on: nothing can stop it from here.
+function askNative(session: SessionNative, deadline: RestoreDeadline | undefined): Promise<unknown> {
+  const call = Promise.resolve()
+    .then(() => session.restoreSessions?.())
+    .catch(() => undefined);
+  if (deadline === undefined) return call;
+  return new Promise((resolve) => {
+    const cancel = deadline.clock.after(deadline.timeoutMs, () => resolve(undefined));
+    void call.then((answer) => {
+      cancel();
+      resolve(answer);
+    });
+  });
+}
+
 // The core's SessionRestore over restoreSessions (T4-05 D6). It keeps only well-formed entries, in the module's order
-// (newest record first), and answers an empty list for a rejection or any other shape. It never rejects.
-export function createSessionRestore(native: SessionNative | OctaveSessionNative): SessionRestore {
+// (newest record first), and answers an empty list for a rejection, any other shape, or an answer later than the
+// deadline (which opens sign-in's first step and deletes nothing). It never rejects.
+export function createSessionRestore(native: SessionNative | OctaveSessionNative, deadline?: RestoreDeadline): SessionRestore {
   const session = native as SessionNative;
   return {
     async restoreSessions(): Promise<readonly RestoredSession[]> {
-      let answer: unknown;
-      try {
-        answer = await session.restoreSessions?.();
-      } catch {
-        return [];
-      }
+      const answer = await askNative(session, deadline);
       if (!isMap(answer) || !Array.isArray(answer.sessions)) return [];
       return answer.sessions.flatMap((entry: unknown) => {
         const restored = restoredOf(entry);
