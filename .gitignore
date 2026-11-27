@@ -15,6 +15,8 @@ apps/tv/android/
 apps/tv/ios/
 apps/tv/.expo/
 apps/tv/dist/
+apps/web/test-results/
+apps/web/playwright-report/
 modules/*/android/build/
 modules/*/android/.cxx/
 tests/integration/.fixture-ports
