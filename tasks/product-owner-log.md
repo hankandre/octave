@@ -1840,3 +1840,39 @@ Inline ruling on Opus on the five open questions of `docs/specs/T5-09.md` (appro
 Same pass, dogfood note on Quick Connect (T4-03). The owner found that with the phone's VPN off, the phone loaded the server's home-network address, so the VPN is the likely reason the QR link timed out; a retry of the approval page itself is pending. The line PR #377 appends records the case with its cause unconfirmed. No second line is appended: the evidence narrows that line's cause but changes no outcome, and the backlog is append-only. Later | PR #377's line | brings it back: the pending retry fails with the VPN off, or a household phone cannot reach the address the TV uses. The owner's note that there is no way to sign out to retry is backlog line 436, already placed: T4-06 (Switch and Add account) follows T5-09, T4-11 and T4-12 in the `ui` lane.
 
 For the owner's veto: Q2, Up from a card far to the right lands on the hero's primary at the far left.
+
+## 2026-11-27, T5-09 ruling, a row that does not scroll back from its end
+
+Inline ruling on Opus 5.5. Not the owner's words; the owner can veto any of it. Focus: no task merged since the last section; this ruling takes no backlog entry, defers none and dismisses none.
+
+Probed before ruling (head `4d6853fe`):
+
+- The abort: `ReactHorizontalScrollView.kt:1088-1092` (react-native-tvos 0.88.1-0) aborts any unfinished `OverScroller` whose reported `scrollX` is at or past the scroll range, whatever its direction. A Left scroll that starts at the maximum reports the maximum on its first frame and is aborted. Source-checked, not logged.
+- The build: `apps/tv/android/settings.gradle` includes only the Gradle plugins, and `app/build.gradle:201` takes `com.facebook.react:react-android`, resolved to the published `io.github.react-native-tvos:react-android:0.88.1-0` in the Gradle cache. React Native's Kotlin is a prebuilt AAR, not compiled from `node_modules`.
+- The switch: with `scrollAnimationEnabled` false on a TV, `computeScroll` (`:336-348`) jumps to the scroller's final position with `scrollTo` and finishes it, so `onOverScrolled` never meets an unfinished scroll; `scrollToChild` already uses `scrollBy`. The prop reaches the native view (`ReactHorizontalScrollViewManager.kt:173`, `ScrollView.js:787`), and FlashList spreads rest props onto its ScrollView (spec check).
+- An extra Right on the last card: the row's guide traps Right, but `executeKeyEvent` runs `arrowScroll` in the scroll view first, which scrolls toward the end with no focus move. `scrollEnabled` false would stop that, but also zeroes `computeScrollDeltaToGetChildRectOnScreen` (`:350-355`), so the next Left would not scroll at all.
+
+Options:
+
+1. Patch React Native | rejected for this task | feasibility: it needs React Native built from source (NDK and C++ in every build and in CI) or a native subclass of the row's scroll view, which is native code under `modules/` and an architecture change; the spec is TypeScript only. Maintenance: a patch carried across every react-native-tvos upgrade.
+2. Pixel plus a JS scroll restore | rejected | the spec forbids a JS fix racing a native animation, and a restore after the miss shows the clip first.
+3. **Row scrolls without animation | chosen** | one documented prop, no dependency change, no native change; it removes the running scroll the abort needs, on both routes (exact Rights and an extra Right), so the pixel is not needed.
+4. The pixel alone | rejected as the fix | 5 of 20 misses remain after one extra Right; it is the fallback's base.
+5. Stop an extra Right from scrolling | rejected | not reachable from JS without breaking Left (above); a focus guide cannot stop the scroll view's own key handling.
+6. Ship with the bug logged | the fallback.
+
+Ruling: **option 3.** `MediaRow`'s horizontal list sets `scrollAnimationEnabled={false}`, in every motion setting. `rowEndInset` stays 72 and the one-pixel patch is not applied. The vertical Home list is unchanged (Up's native scroll to the top, spec cause 3, keeps its animation).
+
+- Why for the viewer: the owner is dogfooding and has noticed clipped focus before; a ring cut by 8 px one Left in five breaks `DESIGN.md` §9 ("Focus is never hidden") and is worse than before this task. A row that steps instead of sliding fits §5 ("They never bounce, slide across the screen") and its reduced-motion rule ("No scale, translate"), which the animated row scroll does not honour today.
+- What must be proven (milestone 3, recorded in the PR and the evidence):
+  - Left more than 250 ms after the previous key, from the last card of a thumb row and of a poster row, 20 runs each arriving with exact Rights and 20 each after one and after three extra Rights on the last card: 0 misses, every focused card's box at least 96 px from both of the row's edges, its ring whole.
+  - 3(e) and 3(f) repeated: the last card's box 96 px from the screen's edge and unfaded; Left five times from it, each card 96 px in.
+  - Held Right and held Left across a row of at least 14 cards: no blank cell is captured after the burst ends (an instant jump draws new cells in one frame; `drawDistance` should cover it), and the row's remembered offset is kept after Back.
+  - `pnpm check` green with a focused, non-frozen test that the rendered `r-list` has `scrollAnimationEnabled` false. No frozen test changes.
+- Fallback, if any miss remains or blank cells show: apply the one-pixel end padding (the measured patch), ship it, and log the residual (misses after an extra Right) against backlog line 506 with its rate; then a later task decides between a native row scroll view and an upstream fix. Do not try options 1, 2 or 5 inside T5-09.
+- Unproven: the Shield and the cheap box (a jump may show more jank on a slow device than a slide; T3-12 measures). Backlog line 507 (a batched Left burst against the fade's JS round trip) is a different cause and stays on the backlog.
+- For the owner's veto: rows on Home now step to the next card instead of sliding. A veto restores the slide and takes the fallback.
+
+Item 5, the `DESIGN.md` edit | held, scope | why: `AGENTS.md` forbids a guiding-document change in a feature PR; the text is filed as `docs/proposals/T5-09.md` and the code follows it, which `AGENTS.md` allows ("Where an approved task or decision record differs from either document and a proposal for it is filed, follow the task or record"). For T5-09's PR, item 5 is met by that proposal under review, not by a `DESIGN.md` diff. If option 3 holds, the implementer adds to the proposal's §7.4 text: "A row steps to the focused card; it does not slide." (look call, for the owner's veto).
+
+For the later pass, after `chore/design-history-removal` merges (its commit `62a08c59` rewrites item 5 to "DESIGN.md sections 7.3 and 7.4 say the same in the same PR, and docs/specs/awaiting-owner.md lists the Product Owner's calls it rests on (gate: review)"): replace item 5, by scope, with "docs/proposals/T5-09.md proposes the DESIGN.md 7.3, 7.4 and 9 text for the owner's approval, and docs/specs/awaiting-owner.md lists the Product Owner's calls it rests on, including the rows' unanimated scroll (gate: review)". Applying the proposal to `DESIGN.md` is its own pull request after the owner approves; T5-09 does not wait for it.
