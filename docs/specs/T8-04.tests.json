@@ -196,20 +196,15 @@
     },
     {
       "item": 7,
-      "gate": "review",
-      "why": "Under D1 no Kotlin of the player draws a colour, size or duration, so no native token export is built (D14, Product Owner ruling 2026-11-26). The reviewer confirms the diff under modules/*/android/src/main adds no such literal and that pnpm lint (octave/design-tokens) is green on apps/tv/src/player/. The item as worded is not claimed met; the task is not marked passes until a Product Owner pass drops or rewords it."
-    },
-    {
-      "item": 8,
       "run": [
         "node",
         "scripts/tv-native-test-only.mjs",
         "dev.octave.player.engine.EngineCorePictureTest"
       ],
-      "note": "The Kotlin file holds only awake_* cases; every one is item 8."
+      "note": "The Kotlin file holds only awake_* cases; every one is this item, numbered 8 before a Product Owner pass dropped the old item 7 (2026-11-26)."
     },
     {
-      "item": 9,
+      "item": 8,
       "run": [
         "pnpm",
         "--filter",
@@ -233,7 +228,8 @@
           "-t",
           "T8-04 item 9:"
         ]
-      ]
+      ],
+      "note": "The tests keep their frozen names, \"T8-04 item 9:\", from before a Product Owner pass dropped the old item 7 (2026-11-26)."
     }
   ]
 }
