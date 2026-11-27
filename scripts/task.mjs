@@ -12,7 +12,7 @@ export const EVIDENCE_REFERENCE = /\bPR #\d+\b|\bcommit [0-9a-f]{7,40}\b/i;
 
 // The lanes a task can have, and the ones of which at most one runs at a time (AGENTS.md: native module, player and on-device work stay serial).
 // task.js cannot import this file, so it keeps a copy that .claude/workflows/task-lanes.test.mjs holds equal.
-export const LANES = ["workflow", "core", "ui", "apk-checks", "tv-scripts", "release", "native-session", "player", "device"];
+export const LANES = ["workflow", "core", "ui", "apk-checks", "tv-scripts", "release", "web", "native-session", "player", "device"];
 export const SERIAL_LANES = ["native-session", "player", "device"];
 
 const SET_REFUSAL = "ERROR task: set changes only status, owner, passes and evidence";
