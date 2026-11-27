@@ -3339,7 +3339,7 @@
           "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": "Branch task/T8-27 at commit 2a8439a6 (no PR yet; feat d3749ae8, wire c9353b2f, design d57eebc7, captures ec2f9d52, fixes 87b8e1b7). pnpm check green (Jest 716/716). check-red T8-27 green [1,2,4], T8-04 green [1-8], problems []. Wire on emulator-5554 vs Jellyscale: player-transport (--task T8-04, hidden Left, Right after Down) pass; player-viewing (--task T8-03) pass; a build whose controls never hid failed picture-right-timeout. Captures 1920x1080 in docs/specs/captures/T8-27 (before 9b7b115c, after ec2f9d52). Unrun: Shield, cheap box, CI wire job."
+          "evidence": "Branch task/T8-27 at commit 06bbcc71 (no PR yet; feat b4c30b51, wire d53efbb8 caf15a3a, captures 8ecf1bc7, proposal 06bbcc71; no DESIGN.md edit). pnpm check green (Jest 716/716). check-red T8-27 green [1,2,4], T8-04 green [1-8], problems []. Wire on own emulator vs Jellyscale, app code unchanged since: player-transport (--task T8-04, hidden Left, Right after Down) pass; player-viewing (--task T8-03) pass. Captures 1920x1080 in docs/specs/captures/T8-27 (before 9b7b115c, after 8ecf1bc7). Unrun: Shield, cheap box, CI wire job."
         },
         {
           "id": "T8-05",
