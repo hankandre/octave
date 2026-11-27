@@ -19,7 +19,7 @@ description: Find and fix drift between Octave's docs and code. Use weekly, afte
 ## Fix
 
 - Use Sonnet for fixes.
-- Change the doc when the code is right.
+- Change the doc when the code is right, except `PRODUCT.md` and `DESIGN.md`: file a drift in either as a proposal in `docs/proposals/` (decision 0007).
 - Append an entry to `tasks/backlog.jsonl` when the code is wrong.
 - Open one small PR per drift.
 - Never mix gardening with feature work.
