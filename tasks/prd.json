@@ -1,6 +1,6 @@
 {
   "product": "Octave",
-  "updated": "2026-11-26",
+  "updated": "2026-11-27",
   "rules": [
     "Pick the first task, in file order, whose status is todo and whose depends_on tasks all pass.",
     "Skip tasks with human set to true unless the owner is taking part; set them to blocked and state in evidence what the owner must decide or check.",
@@ -5199,7 +5199,7 @@
             "pnpm lint:boundaries fails an import into apps/web or packages/web-host from apps/tv, modules or react-native, and an import of packages/web-host from packages/core; in the web form only packages/web-host may name fetch, XMLHttpRequest, WebSocket, EventSource, localStorage, sessionStorage, indexedDB, document.cookie or navigator.serviceWorker; a lint run over a file that breaks each rule fails",
             "The TV's rules stay as strict: pnpm lint, lint:network and lint:boundaries cover packages/core/src, apps/tv and modules with the same rules, their existing tests pass unedited, and no TV rule list gains a web name (gate: review)",
             "pnpm check runs the web form's lint, typecheck and unit tests, and CI has a web job that runs pnpm web:test and is green (gate: ci)",
-            "DOMAINS.md names apps/web and packages/web-host, what each owns and which way their imports may point, in the same PR (gate: review)",
+            "docs/proposals/T17-01.md proposes, as step 1 of the guiding-document change process, the exact DOMAINS.md text that names apps/web and packages/web-host, what each owns and which way their imports may point, and says what it affects; DOMAINS.md is unchanged in the PR (gate: review)",
             "The spec holds the maintenance check from primary sources for each dependency the task adopts: vite, react-dom and the browser test runner (gate: review)"
           ],
           "verify": "pnpm check && pnpm web:test",

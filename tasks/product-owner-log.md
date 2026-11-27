@@ -1787,3 +1787,11 @@ Inline ruling on the spec check's five questions (`docs/specs/T17-01.md`, Spec c
 5. **No skip rule for the `web` job on TV-only pull requests.** | ruling: confirmed; the job runs on every pull request. | why: a path filter is easy to get wrong while shared files (the lockfile, root configs, `packages/core`) feed both forms; revisit only if the job's time hurts. | for the owner's veto.
 
 Backlog: three lines appended (indexedDB in the TV core ban; the TV destructuring gap; the owner act on the required check).
+
+## 2026-11-27 (Product Owner pass, scoped: T17-01 and DOMAINS.md)
+
+Focus: since the last pass one task merged (T17-24, process: the task file's size limit, with plan 017's PR #368), none moved the product forward; this pass took, deferred and dismissed no backlog entry. It keeps T17-01 inside the guiding-document rule that merged with PR #368.
+
+- **T17-01 item 6: a proposal, not a `DOMAINS.md` edit.** | scope edit | was: "DOMAINS.md names apps/web and packages/web-host, what each owns and which way their imports may point, in the same PR (gate: review)"; now: "docs/proposals/T17-01.md proposes, as step 1 of the guiding-document change process, the exact DOMAINS.md text that names apps/web and packages/web-host, what each owns and which way their imports may point, and says what it affects; DOMAINS.md is unchanged in the PR (gate: review)". | why: `AGENTS.md` ("Guiding documents") now treats `DOMAINS.md` as a guiding document that no task changes without the owner's explicit approval, even one in progress, and that holds no per-task or tool detail. The facts item 6 pinned stay pinned, in the proposal; the gate stays review, so the frozen manifest's gates still match. | for the owner's veto.
+- **The branch's `DOMAINS.md` edit is reverted** to `main`'s text. The proposal carries the wording trimmed to what a guiding document may hold; the lint detail it dropped already lives in `docs/specs/T17-01.md`, `.dependency-cruiser-web.cjs`, `eslint.web.config.js` and `docs/commands.md`. No `docs/design/web/` or `docs/architecture/web.md` is created: where such detail lives is not approved.
+- The spec's item 6 row and its shared-files row now say the same. The frozen manifest's item 6 `why` ("DOMAINS.md is checked by review") is left as frozen; it is still a review item.
