@@ -19,6 +19,8 @@ This is the one list of calls the owner can still veto, or has said they will ju
 - **The extra press after "Next" on the password step:** `docs/specs/T4-04.md`, call C3.
 - **The rail's padding of 16 px on all four sides:** `docs/specs/decisions-product-owner-2026-11-26b.md` §4, kept by `-2026-11-26c.md` §1.
 - **Up from any card landing on the hero's Resume, at the far left:** `docs/specs/decisions-product-owner-2026-11-26d.md` §3.
+- **Home's rows stepping to the focused card instead of sliding (T5-09):** the log, "2026-11-27, T5-09 ruling, a row that does not scroll back from its end"; the text is in `docs/proposals/T5-09.md` §7.4. A veto brings the slide back with a one-pixel end padding, and a Left from a row's end then misses its scroll in some runs.
+- **A row's last card 96 px in, with its end fade off while it has focus (T5-09):** `decisions-product-owner-2026-11-26d.md` §4; the text is in `docs/proposals/T5-09.md`.
 
 ## Open questions for the owner
 
@@ -68,6 +70,8 @@ This is the one list of calls the owner can still veto, or has said they will ju
 - "Product Owner pass, fifth": the calls of `decisions-product-owner-2026-11-26f.md`.
 - "Product Owner pass, sixth": the new session-ended sentence.
 - "Product Owner pass, seventh": the edits of T1-25 item 2 and T1-29 item 5.
+- "2026-11-26, T5-09 ruling, Spec and Check": no design step for T5-09, Up into the hero kept against Android TV's nearest-element guidance, "shows no fade" met by a fade over empty space, the unanimated scroll to the top on every hero focus, and the middle card under the fade sent to the backlog.
+- "2026-11-27, T5-09 ruling, a row that does not scroll back from its end": the rows' unanimated scroll, and T5-09 item 5 met by `docs/proposals/T5-09.md` (scope edit of 2026-11-27).
 
 ## Settled, no longer awaiting
 

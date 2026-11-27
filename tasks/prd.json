@@ -2346,7 +2346,7 @@
             "Up from any card of Home's first row lands on the hero's primary action, or on More info when the hero has no primary, and Home scrolls to its top so the hero's title, facts and overview are in view (docs/specs/decisions-product-owner-2026-11-26d.md, 3)",
             "Down from the hero, and Up and Down between rows, land as today on the card nearest by horizontal centre, and every row keeps its remembered place",
             "A focused card at the end of a row, with its ring and its caption, is not under the row's fading edge and sits at least 96 px from the screen's right edge; a row with nothing more to its right shows no fade (DESIGN.md 9; docs/specs/decisions-product-owner-2026-11-26d.md, 4)",
-            "DESIGN.md sections 7.3 and 7.4 say the same in the same PR, and docs/specs/awaiting-owner.md lists the Product Owner's calls it rests on (gate: review)",
+            "docs/proposals/T5-09.md proposes the DESIGN.md 7.3, 7.4 and 9 text for the owner's approval, and docs/specs/awaiting-owner.md lists the Product Owner's calls it rests on, including the rows' unanimated scroll (gate: review)",
             "The PR shows before and after captures at 1920x1080 of the hero reached from a card, and of each row's last card focused"
           ],
           "verify": "pnpm check",
