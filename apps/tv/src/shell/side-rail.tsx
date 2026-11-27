@@ -54,7 +54,7 @@ type ItemProps = {
   open: boolean;
   nextFocusRight?: number;
   onFocus(key: RailKey): void;
-  onBlur(): void;
+  onBlur(key: RailKey): void;
   onPress(entry: RailEntry): void;
   registerEntry(key: RailKey, view: unknown): void;
 };
@@ -82,7 +82,7 @@ function RailItem({ entry, selected, open, nextFocusRight, onFocus, onBlur, onPr
       }}
       onBlur={() => {
         setFocused(false);
-        onBlur();
+        onBlur(key);
       }}
       onPress={() => onPress(entry)}
       contentStyle={[styles.entry, isFocused ? styles.entryFocused : undefined]}
@@ -129,7 +129,7 @@ export function SideRail({ entries, current, onSelect, returnTag, onOpenChange, 
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = null;
   }, []);
-  const { listProps, entryFocused, entryLaidOut } = useRailReveal(px(LIST_ROOM));
+  const { listProps, entryFocused, entryBlurred, entryLaidOut } = useRailReveal(px(LIST_ROOM));
   const onFocus = useCallback(
     (key: RailKey) => {
       cancel();
@@ -138,13 +138,17 @@ export function SideRail({ entries, current, onSelect, returnTag, onOpenChange, 
     },
     [cancel, change, entryFocused],
   );
-  const onBlur = useCallback(() => {
-    cancel();
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      change(false);
-    }, 0);
-  }, [cancel, change]);
+  const onBlur = useCallback(
+    (key: RailKey) => {
+      entryBlurred(key);
+      cancel();
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        change(false);
+      }, 0);
+    },
+    [cancel, change, entryBlurred],
+  );
   useEffect(() => cancel, [cancel]);
 
   const onPress = useCallback(
