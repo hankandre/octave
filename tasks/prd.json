@@ -5203,8 +5203,8 @@
             "The spec holds the maintenance check from primary sources for each dependency the task adopts: vite, react-dom and the browser test runner (gate: review)"
           ],
           "verify": "pnpm check && pnpm web:test",
-          "status": "todo",
-          "owner": null,
+          "status": "in_progress",
+          "owner": "web-coordinator",
           "passes": false,
           "evidence": ""
         },
