@@ -52,3 +52,11 @@ Asked by the coordinator, with the Product Owner's recommendation: "Most films a
 
 **What it means for the web work.** No web task edits either file. T17-03 and T17-25, whose acceptance does, are blocked until the owner sets the process and a Product Owner pass changes them.
 
+
+## 8. The `web` lane in WORKFLOW.md
+
+**Asked:** "Do you approve adding the `web` task lane to the lane list in WORKFLOW.md as part of PR #368?", after the rule on guiding documents came to cover `WORKFLOW.md` (`AGENTS.md`, "Guiding documents"). **The owner chose:** "Approve the one-line change".
+
+**What it covers.** Adding `web` to the lane names in the one "Lanes" sentence of `WORKFLOW.md`, and nothing else in that file. It cascades to `LANES` in `scripts/task.mjs` and its copy in `.claude/workflows/task.js`, and to the two lane tables in `scripts/task-lanes.test.ts` and `.claude/workflows/task-lanes.test.mjs`. No TV lane changes.
+
+**§7 widened.** `DOMAINS.md`, `ARCHITECTURE.md` and `WORKFLOW.md` are guiding documents too: a web task changes none of them without the owner's explicit approval, and web-specific rules go in guides under `docs/web/`.
