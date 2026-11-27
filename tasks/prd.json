@@ -2350,10 +2350,10 @@
             "The PR shows before and after captures at 1920x1080 of the hero reached from a card, and of each row's last card focused"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "commit e8b2c467 (rows step; also 0563685f, 451844b0, be011c06, 07ed1eee; item 5 scope edit a46db9d3). check, check-red green 1,2,4, tv:e2e pass. Emulator: Left >250ms apart, thumb and poster, 0/1/3 extra Rights, 120 runs, 660 cards, 0 misses; 50ms bursts no blanks, Back keeps place. 0ms batch blanks briefly (animated build same; joins F6 deferral). Captures docs/specs/captures/T5-09; item 5: docs/proposals/T5-09.md and awaiting-owner.md. Unproven: Shield, hero with no primary."
+          "passes": true,
+          "evidence": "PR #386 merged, all CI checks green. emulator-5554, fixture media: Left >250 ms apart, thumb and poster rows, 120 runs, 660 cards, 0 misses; 50 ms held bursts clean; Up and Right on the hero as specified; captures in docs/specs/captures/T5-09. Rows step, not slide (PO call, veto open). DESIGN.md text proposed in docs/proposals/T5-09.md. Unrun: Shield, cheap box, TalkBack, More-info-only hero on a device."
         },
         {
           "id": "T4-11",
@@ -3336,10 +3336,10 @@
             "The PR shows before and after captures at 1920x1080 of the controls with the scrubber focused and with it not focused"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": "Branch task/T8-27 at commit 06bbcc71 (no PR yet; feat b4c30b51, wire d53efbb8 caf15a3a, captures 8ecf1bc7, proposal 06bbcc71; no DESIGN.md edit). pnpm check green (Jest 716/716). check-red T8-27 green [1,2,4], T8-04 green [1-8], problems []. Wire on own emulator vs Jellyscale, app code unchanged since: player-transport (--task T8-04, hidden Left, Right after Down) pass; player-viewing (--task T8-03) pass. Captures 1920x1080 in docs/specs/captures/T8-27 (before 9b7b115c, after 8ecf1bc7). Unrun: Shield, cheap box, CI wire job."
+          "passes": true,
+          "evidence": "PR #384 merged, all CI checks including tv and wire green. tv:wire T8-04 and T8-03 passed on the pinned Jellyscale (Android TV emulator); before/after captures in docs/specs/captures/T8-27. DESIGN.md unchanged by this PR (thumb size #381; wording proposed in docs/proposals/T8-27.md). guardian approved. Unrun: Shield and cheap box with a real remote, TalkBack, Jellyfin on a device."
         },
         {
           "id": "T8-05",
