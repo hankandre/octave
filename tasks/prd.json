@@ -5182,7 +5182,7 @@
           "status": "done",
           "owner": null,
           "passes": true,
-          "evidence": "Owner chose \"Raise it to 450 KB (Recommended)\" on 2026-11-26 (docs/specs/decisions-owner-web-2026-11-26.md §5). Commit a0dae51b: MAX_FILE_BYTES 450_000 in scripts/task.mjs, boundary test scripts/task.test.ts (450,000 pass, 450,001 fail), docs/specs/T1-13.md, dated amendment to decisions-prd-size-limit.md, T1-13 item 5 and T1-21 item 3 edited with owner approval. pnpm check exit 0."
+          "evidence": "Owner chose \"Raise it to 450 KB (Recommended)\" on 2026-11-26 (docs/specs/decisions-owner-web-2026-11-26.md §5). PR #368: MAX_FILE_BYTES 450_000 in scripts/task.mjs, boundary test scripts/task.test.ts (450,000 pass, 450,001 fail), docs/specs/T1-13.md, dated amendment to decisions-prd-size-limit.md, T1-13 item 5 and T1-21 item 3 edited with owner approval. pnpm check exit 0."
         },
         {
           "id": "T17-01",
