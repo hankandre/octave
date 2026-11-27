@@ -196,8 +196,9 @@ test('T1-15 item 3: after an escalation the implement gate blocks a result that 
 });
 
 test('T1-15 item 3: a follow-up that blocks with only ciOnly items still says why', async () => {
+  const { escalate } = loadModels();
   const only = work({ done: false, checksPassed: false, ciOnly: ['accept CI baselines'] });
-  const flow = await runFlow({ task: 'T9-01', from: 'implement' }, { 'follow-ups': only, 'follow-ups (retry)': only, 'follow-ups (fable)': only });
+  const flow = await runFlow({ task: 'T9-01', from: 'implement' }, { 'follow-ups': only, 'follow-ups (retry)': only, [`follow-ups (${escalate})`]: only });
   assert.equal(attention(flow)?.outcome, 'blocked', JSON.stringify(flow.result));
   const detail = flat(attention(flow).detail);
   assert.ok(detail.trim().length > 0, 'the detail is not empty');
@@ -206,8 +207,9 @@ test('T1-15 item 3: a follow-up that blocks with only ciOnly items still says wh
 });
 
 test('T1-15 item 3: a follow-up with failed checks and no lists names the checks in its reason', async () => {
+  const { escalate } = loadModels();
   const bare = work({ done: true, checksPassed: false });
-  const flow = await runFlow({ task: 'T9-01', from: 'implement' }, { 'follow-ups': bare, 'follow-ups (retry)': bare, 'follow-ups (fable)': bare });
+  const flow = await runFlow({ task: 'T9-01', from: 'implement' }, { 'follow-ups': bare, 'follow-ups (retry)': bare, [`follow-ups (${escalate})`]: bare });
   assert.equal(attention(flow)?.outcome, 'blocked', JSON.stringify(flow.result));
   const detail = flat(attention(flow).detail);
   assert.ok(detail.trim().length > 0, 'the detail is not empty');
@@ -225,8 +227,9 @@ test('T1-15 item 3: ciOnly from a red attempt never reaches Ship, and a green at
 });
 
 test('T1-15 item 3: a follow-up handed to Ship keeps its blockers and drops its ciOnly items', async () => {
+  const { escalate } = loadModels();
   const handed = work({ done: false, checksPassed: true, blockers: ['needs CI run'], ciOnly: ['DROPPED item'] });
-  const flow = await runFlow({ task: 'T9-01', from: 'implement', ciSteps: ['pending'] }, { 'follow-ups': handed, 'follow-ups (retry)': handed, 'follow-ups (fable)': handed });
+  const flow = await runFlow({ task: 'T9-01', from: 'implement', ciSteps: ['pending'] }, { 'follow-ups': handed, 'follow-ups (retry)': handed, [`follow-ups (${escalate})`]: handed });
   assert.equal(flow.result.merged.length, 1, JSON.stringify(flow.result));
   const prompt = shipPrompt(flow);
   assert.match(prompt, /needs CI run/);

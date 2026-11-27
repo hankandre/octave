@@ -25,23 +25,23 @@ test('no override returns the defaults', () => {
 });
 
 test('defaults match AGENTS.md rules', () => {
-  assert.equal(MODELS.spec.high, 'fable');
+  assert.equal(MODELS.spec.high, 'opus');
   assert.equal(MODELS.spec.routine, 'opus');
-  assert.equal(MODELS.check.native, 'fable');
+  assert.equal(MODELS.check.native, 'opus');
   assert.equal(MODELS.implement.routine, 'sonnet');
   assert.equal(MODELS.implement.native, 'opus');
   assert.equal(MODELS.guardian, 'opus');
-  assert.equal(MODELS.escalate, 'fable');
+  assert.equal(MODELS.escalate, 'opus');
   assert.deepEqual(MODELS, {
-    spec: { routine: 'opus', high: 'fable' },
-    check: { routine: 'opus', high: 'fable', native: 'fable' },
+    spec: { routine: 'opus', high: 'opus' },
+    check: { routine: 'opus', high: 'opus', native: 'opus' },
     implement: { routine: 'sonnet', native: 'opus' },
     review: { routine: 'sonnet', guarded: 'opus' },
     guardian: 'opus',
     ship: 'sonnet',
-    escalate: 'fable',
+    escalate: 'opus',
     tests: { routine: 'sonnet', native: 'opus' },
-    owner: 'fable',
+    owner: 'opus',
     gate: 'haiku',
   });
 });
@@ -52,12 +52,12 @@ test('every MODELS leaf is a valid model name', () => {
 });
 
 test('partial override is deep-merged and does not mutate defaults', () => {
-  const out = resolveModels(MODELS, { spec: { high: 'opus' }, check: { high: 'opus' }, escalate: 'opus' });
-  assert.equal(out.spec.high, 'opus');
+  const out = resolveModels(MODELS, { spec: { high: 'fable' }, check: { high: 'fable' }, escalate: 'fable' });
+  assert.equal(out.spec.high, 'fable');
   assert.equal(out.spec.routine, 'opus');
-  assert.equal(out.check.native, 'fable');
-  assert.equal(out.escalate, 'opus');
-  assert.equal(MODELS.spec.high, 'fable');
+  assert.equal(out.check.native, 'opus');
+  assert.equal(out.escalate, 'fable');
+  assert.equal(MODELS.spec.high, 'opus');
 });
 
 test('unknown keys fail fast', () => {
@@ -215,7 +215,7 @@ const gateJson = (body, exitCode = 0) => ({ exitCode, output: `noise\n${JSON.str
 
 test('the models for the test writer, the owner ruling and the gate agent are fixed, and the owner cannot be overridden', () => {
   assert.deepEqual(MODELS.tests, { routine: 'sonnet', native: 'opus' });
-  assert.equal(MODELS.owner, 'fable');
+  assert.equal(MODELS.owner, 'opus');
   assert.equal(MODELS.gate, 'haiku');
   assert.throws(() => resolveModels(MODELS, { owner: 'sonnet' }), /owner.*cannot be overridden/);
   assert.equal(resolveModels(MODELS, { gate: 'sonnet' }).gate, 'sonnet');
@@ -408,12 +408,9 @@ test('the review prompt judges the frozen tests and the Ship prompt fills the Fr
 
 test('the Product Owner ruling runs the product-owner agent on the fixed owner model', () => {
   assert.match(code, /agentType: 'product-owner', model: models\.owner/);
-  const pass = readFileSync(new URL('./product-owner.js', import.meta.url), 'utf8');
-  assert.match(pass, /agentType: 'product-owner', model: 'fable'/);
 });
 
 test('the agent files carry the models and the frozen-test rules', () => {
-  assert.match(read('.claude/agents/product-owner.md'), /^model: fable$/m);
   assert.match(read('.claude/agents/test-writer.md'), /^model: sonnet$/m);
   assert.match(read('.claude/agents/test-writer.md'), /manifest/);
   for (const agent of ['implementer', 'native-engineer']) assert.match(read(`.claude/agents/${agent}.md`), /frozen test/i, agent);
