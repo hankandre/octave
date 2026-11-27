@@ -1,6 +1,6 @@
 ---
 name: spec-checker
-description: Fresh-context check of an Octave spec in docs/specs/ against the task, rules, and code. Use after refiner and before implementation. Coordinator passes model fable for high-risk tasks.
+description: Fresh-context check of an Octave spec in docs/specs/ against the task, rules, and code. Use after refiner and before implementation. Runs on Opus for every task; Fable only when the owner asks.
 model: opus
 tools: Read, Grep, Glob, Edit, Bash, mcp__serena__find_symbol, mcp__serena__get_symbols_overview, mcp__serena__find_referencing_symbols, mcp__codebase-memory-mcp__trace_path, mcp__semble__search
 ---

@@ -26,3 +26,16 @@ The owner's words are in the chat of this date; this file records them in the re
 **Decision.** No work goes to `opencode-go/*`. The coordinator moves to the Anthropic Max plan with the stage work. This replaces the line of `decisions-owner-chat-2026-11-25.md` §2 that gives the `opencode-go` quota to the coordinator.
 
 **What it means.** The coordinator and every stage now share the Max plan's usage window, so the coordinator stays lean: it delegates long reads and runs heavy sessions in sequence where it can. Neon keeps its own Google budget and its one review sweep per high-risk task.
+
+## 3. No routine work routes to Fable
+
+**The owner's words.** "We need to reduce my Fable usage."
+
+**The policy (the coordinator's reading of those words, for the owner's veto).** It supersedes the Fable split of §1: §1's batching and citation rules stay.
+
+- Every stage that ran on Fable runs on Opus 5.5: the Product Owner pass, its direction, architecture and frozen-test calls, and the spec and check of a high-risk or native task.
+- Fable 5.2 runs only when the owner asks for it, or as an escalation after two failed Opus attempts at the same problem, and then only after asking the owner.
+- No run escalates to Fable by itself. A step still not green after Opus ends blocked, and its reason says the owner may choose Fable for a rerun (`models: {"escalate": "fable"}`). A step already on Opus gets no third Opus attempt.
+- A task's `model: fable` in `tasks/prd.json` still marks it high risk, so its review goes to the guardian; it no longer picks Fable. The task list is not edited.
+
+**Re-check.** If Opus rulings or specs start producing answers the owner reverses, say so, and the owner decides whether Fable returns for that job.

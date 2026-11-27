@@ -3,13 +3,13 @@ export const meta = {
   description: 'A Product Owner pass: triage tasks/backlog.jsonl into tasks/prd.json, set priorities, log each decision, and ship it for the owner to veto',
   whenToUse: 'Run when tasks/backlog.jsonl has entries without taken_by, or the owner asks for a re-prioritisation. args: {root: "/abs/path/of/the/folder/holding/the/checkout"} (optional)',
   phases: [
-    { title: 'Decide', detail: 'product-owner (Fable 5.2) applies its decisions through scripts/task-owner.mjs and logs them' },
+    { title: 'Decide', detail: 'product-owner (Opus 5.5) applies its decisions through scripts/task-owner.mjs and logs them' },
     { title: 'Ship', detail: 'PR listing every decision for the owner to veto; auto-merge on green' },
   ],
 };
 
 // Only this pass adds, splits, reorders or drops tasks in tasks/prd.json (AGENTS.md; prd rule 15). The owner can veto any of it.
-// The model is fixed here, not taken from args: the acceptance names Fable 5.2.
+// The model is fixed here, not taken from args: Opus 5.5, since no routine work routes to Fable (owner, 2026-11-26).
 const REPO = 'octave';
 const input = typeof args === 'string' ? {} : args || {};
 const main = input.root ? `${input.root}/${REPO}` : '.';
@@ -48,7 +48,7 @@ const decide = await agent(
 3. Write the operations file outside the repo (mktemp) and apply it: mise exec -- node ${worktree}/scripts/task-owner.mjs apply <ops.json> --date <today, from date +%F>. An add needs takes (the backlog entries it covers) and a lane from scripts/task.mjs LANES; set or change a task's lane with an edit of \`lane\`. An acceptance edit that changes scope only (a path, a split, a dependency, what a task covers) gives scope, your reason, and needs no approval file. An acceptance edit that changes on-screen wording or copy, look or product direction, and any edit of human or verify, needs owner_approval: a docs/specs/decisions-*.md or docs/decisions/*.md file that names the task; without one, leave it for the owner. There is no operation for rules.
 4. Append a dated section to tasks/product-owner-log.md. Its first line is the focus line: how many tasks merged since the last pass moved the product forward and how many were hardening or process, and how many entries this pass took, deferred and dismissed. Then one line per decision, a dismissal or a later included: what, the backlog entry's what, the approval path or "scope edit", why. Run mise exec -- pnpm check, and commit the task and backlog files and the log in one commit whose message ends with the trailer "Product-Owner-Pass: <today>".
 Return the focus line first, then every decision (one line each) and every approval path. Return nothingToDo=true, with no commit, when nothing needs a decision. If a command is denied, report it in deniedCommands and do not work around it.`,
-  { agentType: 'product-owner', model: 'fable', schema: DECIDE, phase: 'Decide', label: 'product-owner pass' },
+  { agentType: 'product-owner', model: 'opus', schema: DECIDE, phase: 'Decide', label: 'product-owner pass' },
 );
 if (!decide) return leave({ outcome: 'failed', detail: 'The Product Owner returned nothing.' });
 if (denied(decide)) return leave({ outcome: 'denied', detail: denied(decide) });

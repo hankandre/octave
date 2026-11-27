@@ -32,16 +32,17 @@ export const meta = {
 // The run stops early only on STOP_OUTCOMES (a denied command, a test that passes before implementation (tests-green), or a changed frozen test (frozen-tests)), an inline Product Owner ruling with no log entry (ruling-unlogged), or a denied fixture teardown.
 // Check and every guarded work step may return productOwnerQuestions; the inline Product Owner step rules on technical, placement, dependency and scope kinds, writes each ruling to tasks/product-owner-log.md and the run goes on. Look, wording and direction questions park the task.
 // MODELS-BEGIN (pure; extracted and tested by .claude/workflows/task.test.mjs)
+// Nothing routes to Fable by default (owner, 2026-11-26); a run reaches it only when the owner passes it in args.models.
 const MODELS = {
-  spec: { routine: 'opus', high: 'fable' },
-  check: { routine: 'opus', high: 'fable', native: 'fable' },
+  spec: { routine: 'opus', high: 'opus' },
+  check: { routine: 'opus', high: 'opus', native: 'opus' },
   implement: { routine: 'sonnet', native: 'opus' },
   review: { routine: 'sonnet', guarded: 'opus' },
   guardian: 'opus',
   ship: 'sonnet',
-  escalate: 'fable',
+  escalate: 'opus',
   tests: { routine: 'sonnet', native: 'opus' },
-  owner: 'fable',
+  owner: 'opus',
   gate: 'haiku',
 };
 const MODEL_NAMES = ['haiku', 'sonnet', 'opus', 'fable'];
@@ -263,6 +264,7 @@ function whyNotGreen(out, step) {
   const why = (out.blockers || []).concat(out.failures || []);
   if (!why.length) why.push(out.done !== true ? `the ${step} step did not report done` : `the ${step} step reported checks not passed but listed no failure`);
   if ((out.ciOnly || []).length) why.push(`ciOnly items on a result that was not green, not handed to Ship: ${out.ciOnly.join('; ')}`);
+  if (out.exhausted) why.push(out.exhausted);
   return why;
 }
 // STEP-END
@@ -552,18 +554,22 @@ async function runTask(task, opts) {
   const problemsOf = (out) => (out.blockers || []).concat(out.failures || []);
   const stepOf = (out) => decideStep(out, !!out && !!denied(out));
   // Implementation step with one retry and an escalation: used for implement, check fixes, and CI fixes.
+  // The escalation is skipped when it would run the same model a third time. A result still not green carries exhausted, which names the owner's choice of Fable.
   // ciOnly items (only a CI run can produce them, reported with every local check green) count only on a green result; callers read them through decideStep.
   const work = async (prompt, label, phaseTitle) => {
     const attempt = (text, model, name) => agent(`${common}\n${text}\n${VERIFY_STEPS}`, { agentType: implAgent, model, schema: WORK, phase: phaseTitle, label: name });
     let out = await attempt(prompt, implModel, label);
-    if (stepOf(out).action === 'retry') {
-      log(`${task}: ${label} not green; one more try, then escalating to ${models.escalate}`);
-      out = await attempt(`Finish this work: ${prompt}\nThe last attempt left these problems:\n${numbered(problemsOf(out))}`, implModel, `${label} (retry)`);
-      if (stepOf(out).action === 'retry') {
-        out = await attempt(`Two attempts failed. Finish this work: ${prompt}\nRemaining problems:\n${numbered(problemsOf(out))}`, models.escalate, `${label} (${models.escalate})`);
-      }
+    if (stepOf(out).action !== 'retry') return out;
+    const escalates = models.escalate !== implModel;
+    log(`${task}: ${label} not green; one more try${escalates ? `, then escalating to ${models.escalate}` : ''}`);
+    out = await attempt(`Finish this work: ${prompt}\nThe last attempt left these problems:\n${numbered(problemsOf(out))}`, implModel, `${label} (retry)`);
+    if (stepOf(out).action === 'retry' && escalates) {
+      out = await attempt(`Two attempts failed. Finish this work: ${prompt}\nRemaining problems:\n${numbered(problemsOf(out))}`, models.escalate, `${label} (${models.escalate})`);
     }
-    return out;
+    if (stepOf(out).action !== 'retry' || models.escalate === 'fable') return out;
+    const exhausted = `The ${label} step is still not green on ${models.escalate}, and no run escalates to Fable by itself. The owner may choose Fable for a rerun with models: {"escalate": "fable"}.`;
+    log(`${task}: ${exhausted}`);
+    return { ...out, exhausted };
   };
 
   // Gates: a small agent with no agent type relays one command's exit code and output; the pure decide functions judge it.
@@ -887,7 +893,7 @@ Use ciOnly only for a step that a local run cannot produce (for example acceptin
 
   const haltedBeforeShip = halted('ship');
   if (haltedBeforeShip) return haltedBeforeShip;
-  // 5. Ship (CI fixes go through the same retry and Fable escalation)
+  // 5. Ship (CI fixes go through the same retry and escalation)
   const shipPrompt = `${common}
 Ship with the ship skill: rebase onto origin/main if it moved (force-with-lease is allowed on this branch), push, open the PR if none exists, enable auto-merge with rebase, and wait for CI with gh pr checks --watch. The PR body must explain user impact, testing (use the evidence below), conversion and security implications, untested device, Jellyfin and Jellyscale gates, and call out any change to invariants, docs/security.md, release signing, or CI. For a UI change, add a Screenshots section that links the visual artifact from the PR's CI run (gh api repos/{owner}/{repo}/actions/runs/<run>/artifacts) and names the images that changed, plus a Design review notes section from the review. Change no source files. If CI is red, return merged=false with each failing check and its cause. Fill the PR body's Frozen tests section from the changes list that \`${nodeCli('check-flow.mjs')} --repo ${worktree} --json\` prints (or write "none changed"). After a merge, run git -C ${main} pull --ff-only and remove the worktree and branch.
 Evidence: ${evidence}

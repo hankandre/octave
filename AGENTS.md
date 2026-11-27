@@ -151,7 +151,8 @@ Dependencies
 - Run each task as: refine + spec, spec check, failing tests, implement, verify, one review round, ship.
 - Use the model `WORKFLOW.md` assigns to each stage.
 - Fix critical, high, and medium review findings and every small low in the same pull request; send what is left to `tasks/backlog.jsonl` (`WORKFLOW.md` §2c).
-- Lower effort before choosing a weaker model; escalate one tier after two failed attempts.
+- Lower effort before choosing a weaker model; escalate one tier after two failed attempts, but never to Fable: after two failed Opus attempts, stop and ask the owner.
+- Use Fable only when the owner asks for it.
 - Switch models only at task boundaries.
 
 ## Pull requests
