@@ -29,8 +29,11 @@ const allTasks = (prd) => prd.phases.flatMap((phase) => phase.tasks.map((task) =
 const find = (prd, id) => allTasks(prd).find(({ task }) => task.id === id);
 const need = (prd, id) => find(prd, id) || fail(`no task ${id}`);
 
+// An empty phase has no task to anchor on, so its first task takes neither after nor before.
 function place(phase, anchorOp, id) {
   const { after, before } = anchorOp;
+  const noAnchor = after === undefined && before === undefined;
+  if (noAnchor && phase.tasks.length === 0) return 0;
   if ((after === undefined) === (before === undefined)) fail(`${id}: give exactly one of after and before`);
   const anchor = after ?? before;
   const index = phase.tasks.findIndex((task) => task.id === anchor);
