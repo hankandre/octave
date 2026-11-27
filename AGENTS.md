@@ -86,6 +86,7 @@ Dependencies
 ## Design
 
 - Follow `DESIGN.md` for every UI change.
+- Design a new or changed screen with `designer` before its spec, and have a separate `ux-review` session check the build against that design.
 - Load Anthropic's `frontend-design` skill for every UI spec, implementation and review; use `impeccable` as a secondary critique tool.
 - Check TV layout, focus and remote behaviour against current Android TV guidance; neither skill covers TV. Use tvOS and Fire TV guidance as references.
 - Rank conflicts: the task's acceptance and `DESIGN.md`, then Android TV guidance, then `frontend-design`, then `impeccable`. Report a conflict with Android TV guidance to the Product Owner.
