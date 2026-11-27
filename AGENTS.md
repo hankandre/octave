@@ -30,11 +30,11 @@ Octave is a Jellyfin and Jellyscale client for the TV that plays the original fi
 ## Jellyscale and parallel sessions
 
 - Treat Jellyscale and Octave as two products in two repositories, each with its own Product Owner, plan and releases.
-- Expect several sessions working on different clients at once. Give each client its own session, plan, folder and worktree.
+- Expect several sessions working on different clients at once. Give each client its own session, plan and worktree.
 - Agree which one session edits a shared file (instructions, shared design language, repository layout) before any of them edits it.
-- Treat the two repositories' issue boards as the lasting record: a new session must be able to work from the boards and these instructions alone.
+- Treat the two repositories' issue boards as the lasting record: a new session must be able to work from the boards and this repository, without another session's chat.
 - Read the open `from:jellyscale` issues on this repository's board before planning client work, and have each one that affects your platform planned.
-- Treat Jellyscale's published API contract as the source of truth for the server. Build new server features against its test server and example answers.
+- When a planned task uses Jellyscale's own API, treat its published contract as the source of truth for the server, and build against its test server and example answers. Until the Product Owner plans that move, the other rules here stand.
 - Name your platform in every `from:fluster` request, and add Jellyscale's platform label where one exists.
 - Search both boards before filing a request.
 - Use a direct message between sessions only for a quick question. Put every decision and request on a board.
