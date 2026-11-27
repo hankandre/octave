@@ -1452,10 +1452,10 @@
             "The PR shows before and after captures at 1920x1080 of the open rail with Search, Home and the last entry focused, and of a focused button"
           ],
           "verify": "pnpm check",
-          "status": "in_progress",
+          "status": "done",
           "owner": "implementer",
-          "passes": false,
-          "evidence": "At commit cc397b93 (ring 14aefd28, rail 5d1ed3db, DESIGN 4afd7876, captures 94b0bb4f in docs/specs/captures/T3-40/); a later rebase changes hashes and the PR carries them. pnpm check exit 0; check-red T3-40 green 1-5; tsc clean. tv:e2e and captures (emulator only, whole rings) ran before the rebase and cc397b93, which changes scroll timing only. Not run: Shield."
+          "passes": true,
+          "evidence": "PR #361 (merged 2026-11-26). pnpm check pass; check-red green 1-5; 6 met, 7-8 review. Emulator captures in docs/specs/captures/T3-40. Review approved; lows fixed or logged. ux-review not run on this change: merged on the owner's word, a review of all screens follows. Untested: real TV, later scroll re-check on Android."
         },
         {
           "id": "T3-36",
