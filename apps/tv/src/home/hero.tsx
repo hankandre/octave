@@ -2,16 +2,20 @@
 // (Resume or Play, then More info). The facts and overview slots have fixed heights, so the detail arriving later moves nothing.
 // A button sits in a plain View (`home-hero-<action>-slot`) that reports its layout, because Button and FocusFrame take no
 // `onLayout`; that frame's x is relative to the action bar, which starts `rowInsetStart` in from the hero's left.
+// The whole hero is one focus guide (T5-09). It traps Right, so Right on the last button stays on it, and it is pointed at the
+// opening button, so Up from the first row lands there. Its area reaches the list's top, so the native Up scroll ends there too;
+// each focused button also asks the rows for it, for focus that does not come by Up (Back to Home, Right from the rail).
 //
-// testIDs: home-hero-title, home-hero-facts-slot, home-hero-facts, home-hero-overview-slot, home-hero-overview,
+// testIDs: home-hero, home-hero-title, home-hero-facts-slot, home-hero-facts, home-hero-overview-slot, home-hero-overview,
 // home-hero-primary-slot, home-hero-primary, home-hero-more-info-slot, home-hero-more-info.
-import { useCallback, useRef, type RefObject } from "react";
-import { StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
+import { useCallback, useLayoutEffect, useRef, type RefObject } from "react";
+import { StyleSheet, Text, TVFocusGuideView, View, type LayoutChangeEvent } from "react-native";
 import { Button } from "../design/controls/button";
 import { useFocusPlace, rowInsetStart, type RowListEntry } from "../design/rows";
 import { canvasScale, px } from "../design/scale";
 import { textStyle } from "../design/text";
 import { colors, space, textLayout, type as typeTokens } from "../design/tokens";
+import { pointGuide } from "../shell/focus-bridge";
 
 export type HeroAction = "primary" | "more-info";
 
@@ -38,6 +42,7 @@ export function Hero({ title, facts, overview, primaryLabel, onPrimary, onMoreIn
   const opening: HeroAction = primaryLabel === undefined ? "more-info" : "primary";
   const views = useRef<Record<HeroAction, unknown>>({ primary: null, "more-info": null });
   const frames = useRef<Partial<Record<HeroAction, Frame>>>({});
+  const guideRef = useRef<unknown>(null);
 
   const viewRef = useCallback(
     (action: HeroAction) => (view: unknown) => {
@@ -48,6 +53,11 @@ export function Hero({ title, facts, overview, primaryLabel, onPrimary, onMoreIn
   );
   const primaryRef = useCallback((view: unknown) => viewRef("primary")(view), [viewRef]);
   const moreInfoRef = useCallback((view: unknown) => viewRef("more-info")(view), [viewRef]);
+
+  // The buttons' refs are attached before this runs, so the opening button is there to be named.
+  useLayoutEffect(() => {
+    pointGuide(guideRef.current, [views.current[opening]]);
+  }, [opening]);
 
   const layoutOf = (action: HeroAction) => (event: LayoutChangeEvent) => {
     const { x, width } = event.nativeEvent.layout;
@@ -64,11 +74,12 @@ export function Hero({ title, facts, overview, primaryLabel, onPrimary, onMoreIn
   const focusAction = (action: HeroAction) => () => {
     onFocusAction(action);
     place.focused(`hero-${action}`, views.current[action]);
+    entryRef.current?.revealHeader();
     entryRef.current?.fromHeader(centreOf(action));
   };
 
   return (
-    <View style={styles.hero}>
+    <TVFocusGuideView {...{ ref: guideRef }} testID="home-hero" trapFocusRight style={styles.hero}>
       <Text testID="home-hero-title" numberOfLines={2} style={styles.title}>
         {title}
       </Text>
@@ -102,7 +113,7 @@ export function Hero({ title, facts, overview, primaryLabel, onPrimary, onMoreIn
           />
         </View>
       </View>
-    </View>
+    </TVFocusGuideView>
   );
 }
 

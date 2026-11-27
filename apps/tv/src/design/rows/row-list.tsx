@@ -5,7 +5,7 @@
 // The screen owns the memory: `useRowMemory()`.
 //
 // testIDs, with l the list's testID: l-list and l-row-<rowId> (each row's testID, so l-row-<rowId>-title and so on).
-import { FlashList } from "@shopify/flash-list";
+import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { useCallback, useEffect, useMemo, useRef, type ReactElement, type RefObject } from "react";
 import { StyleSheet, View } from "react-native";
 import { px } from "../scale";
@@ -23,6 +23,8 @@ export type RowSpec = { id: string; title: string; variant: CardVariant; items: 
 export type RowListEntry = {
   /** Down from the header at `x` (canvas px): point the first shown row at its card nearest `x`, and every other guide at nothing. */
   fromHeader(x: number): void;
+  /** The header took focus: show it, by scrolling the vertical list to its top at once. No row moves. */
+  revealHeader(): void;
 };
 
 export type RowListProps = {
@@ -46,6 +48,7 @@ export function RowList({ rows, memory, leftEdge, header, entryRef, onCardFocus,
   const router = useMemo(() => createRowRouter(memory), [memory]);
   router.update(shown);
   const place = useFocusPlace();
+  const listRef = useRef<FlashListRef<RowSpec>>(null);
   const shownRef = useRef(shown);
   shownRef.current = shown;
   const handlers = useRef({ onCardFocus });
@@ -64,6 +67,7 @@ export function RowList({ rows, memory, leftEdge, header, entryRef, onCardFocus,
         const first = shownRef.current[0];
         if (first !== undefined) router.enter(first.id, x);
       },
+      revealHeader: () => listRef.current?.scrollToOffset({ offset: 0, animated: false }),
     };
     return () => {
       entryRef.current = null;
@@ -79,6 +83,7 @@ export function RowList({ rows, memory, leftEdge, header, entryRef, onCardFocus,
   );
   return (
     <FlashList
+      ref={listRef}
       testID={`${testID}-list`}
       data={shown}
       keyExtractor={keyOf}
