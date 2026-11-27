@@ -5158,13 +5158,32 @@
     {
       "id": "T17",
       "name": "Web client",
-      "goal": "A viewer opens Octave in a current desktop browser or on an iPhone or iPad, served by Jellyscale, and watches with the same honesty as on the TV: every request carries the header, no token is in a URL, and every server copy or conversion is shown with its reason (plan 017).",
+      "goal": "A viewer opens Octave in a current desktop browser or on an iPhone or iPad, served by Jellyscale at its own address, and watches with the same honesty as on the TV: every request carries the header, no token is in a URL, and every server copy or conversion is shown with its reason (plan 017).",
       "exit": [
         "A viewer signs in at the origin that served the client and plays a film in Chromium and Firefox, and the web wire test passes against the pinned Jellyscale",
         "Decision 0006 is accepted by the owner and docs/security.md names the test behind each of its promises",
-        "One build serves from any base path and passes Octave's own browser and wire tests at /octave/ and at one other prefix"
+        "One pinned, licensed build serves from / or any prefix and passes Octave's own browser and wire tests at / and at one other prefix"
       ],
       "tasks": [
+        {
+          "id": "T17-24",
+          "title": "Owner decision: room in tasks/prd.json for the web phase",
+          "domain": "Process",
+          "lane": "web",
+          "model": "sonnet",
+          "skill": "verify",
+          "human": true,
+          "depends_on": [],
+          "acceptance": [
+            "Owner decision: raise MAX_FILE_BYTES in scripts/task.mjs from 350,000 to 450,000 now (the Product Owner's recommendation), or keep 350,000 and let the branch that adds phase T17 wait until T1-21 moves finished phases out",
+            "If raised: scripts/task.mjs, its boundary test in scripts/task.test.ts (in no frozen manifest), docs/specs/T1-13.md and docs/specs/decisions-prd-size-limit.md say 450,000 in the branch that adds phase T17, before it merges, and T1-21's item 3 follows by an edit with the owner's approval (gate: review)"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
         {
           "id": "T17-01",
           "title": "Scaffold apps/web and packages/web-host with their lints, boundaries and a CI job",
@@ -5175,10 +5194,10 @@
           "human": false,
           "depends_on": [],
           "acceptance": [
-            "pnpm web:build builds apps/web, written in React DOM (react-dom 19.3.0, matching react) with Vite, into one static build with relative asset URLs; pnpm web:test serves that one build at /octave/ and at a second prefix, and the page draws its root in Chromium and Firefox with every request inside the prefix",
+            "pnpm web:build builds apps/web, written in React DOM (react-dom 19.3.0, matching react) with Vite, into one static build with relative asset URLs; pnpm web:test serves that one build at / and at a second prefix, and the page draws its root in Chromium and Firefox with every request inside the prefix",
             "The build runs with no inline script and no eval: pnpm web:test serves it under Content-Security-Policy default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' and records no violation, no request to another origin and no service worker registration",
             "pnpm lint:boundaries fails an import into apps/web or packages/web-host from apps/tv, modules or react-native, and an import of packages/web-host from packages/core; in the web form only packages/web-host may name fetch, XMLHttpRequest, WebSocket, EventSource, localStorage, sessionStorage, indexedDB, document.cookie or navigator.serviceWorker; a lint run over a file that breaks each rule fails",
-            "The TV's rules stay as strict: pnpm lint, lint:network and lint:boundaries cover packages/core/src, apps/tv and modules with the same rules, their existing tests pass unedited, and no TV rule list gains a web name",
+            "The TV's rules stay as strict: pnpm lint, lint:network and lint:boundaries cover packages/core/src, apps/tv and modules with the same rules, their existing tests pass unedited, and no TV rule list gains a web name (gate: review)",
             "pnpm check runs the web form's lint, typecheck and unit tests, and CI has a web job that runs pnpm web:test and is green (gate: ci)",
             "DOMAINS.md names apps/web and packages/web-host, what each owns and which way their imports may point, in the same PR (gate: review)",
             "The spec holds the maintenance check from primary sources for each dependency the task adopts: vite, react-dom and the browser test runner (gate: review)"
@@ -5201,6 +5220,7 @@
           "acceptance": [
             "Owner decision: accept decision 0006 (docs/decisions/0006-*.md), which replaces decision 0005's native-only token rule for the browser form alone and makes the eight promises of plan 017's 'What decision 0006 must promise'",
             "The record amends invariant I7 for pictures loaded by item id through an img element, and keeps trickplay fetched with the header (gate: review)",
+            "ARCHITECTURE.md section 3 says the pinned Jellyscale serves pictures by item id without a token (internal/api/routes.go:113-114 at b920b193), and I7 names the web form's media element fed only by the engine instead of 'a web video element' (gate: review)",
             "docs/security.md gains the web section: the boundary, the CSP the server must send, what is never persisted, and one named test for each promise with the T17 task that writes it (gate: review)",
             "AGENTS.md's token rules say which hold for the browser form, and that no native code may cite decision 0006 (gate: review)"
           ],
@@ -5220,7 +5240,7 @@
           "human": false,
           "depends_on": [],
           "acceptance": [
-            "PRODUCT.md names the web form: its v1 browsers, the single origin and its cost (a viewer with two servers opens two addresses), and its media limits: only a fragmented MP4 or WebM plays as stored, no audio passthrough, and HDR only as the browser reports it (gate: review)",
+            "PRODUCT.md names the web form: its v1 browsers, the server that serves it at its own address and that it talks to no other, the cost of that (a viewer with two servers opens two addresses), and its media limits: in v1 a WebM plays as stored and a fragmented MP4 joins once the engine can prove one fragmented, no audio passthrough, and HDR only as the browser reports it (gate: review)",
             "DESIGN.md gains the web form's rules, designed with the frontend-design skill backed by impeccable: a responsive layout with no canvas or overscan, the web type ramp of 14 to 48 px from the shared token values, :focus-visible with roving arrows in rows, hover that brightens a fill and never draws the ring, history and real URLs for Back, and the player's volume and fullscreen (gate: review)",
             "DESIGN.md section 10 gains plan 017's web wording rows and the notice 'This browser can't run Octave' (gate: review)"
           ],
@@ -5251,8 +5271,29 @@
           "evidence": ""
         },
         {
+          "id": "T17-25",
+          "title": "Owner decision: amend decision 0002, I1 and rule 5 for a container the browser cannot take",
+          "domain": "Playback Negotiation",
+          "lane": "web",
+          "model": "opus",
+          "skill": "exec-plan",
+          "human": true,
+          "depends_on": [],
+          "acceptance": [
+            "Owner decision: accept a dated amendment to decision 0002 that lets a device which decodes a source's streams but cannot take its container ask the server to copy them (direct play off, stream copy left on), and lets a device ask that only the stream it cannot decode be re-encoded",
+            "The amendment states the exact rules: when the request is sent; its flags in the body and the query; how the answer is judged (a copy of both streams is DirectStream although the server's reasons hold DirectPlayError, and a re-encode of either stream is Transcode); each case's client reason and copy ('Repackaging on server, original quality: this browser can't play the file's container', 'Converting audio on server, original picture: {reason}'); and that a device naming no containers sends exactly today's requests (gate: review)",
+            "It keeps burn-in out of a plan played as stored: there a subtitle no renderer can draw is shown as unavailable (gate: review)",
+            "ARCHITECTURE.md I1 and section 3 rule 5, and DESIGN.md section 10, say the same in the same PR (gate: review)"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T17-05",
-          "title": "Judge the container a device plays as stored, so a browser asks for a server copy",
+          "title": "Judge the container a device plays as stored, under today's rule 5",
           "domain": "Playback Negotiation",
           "lane": "web",
           "model": "opus",
@@ -5260,10 +5301,11 @@
           "human": false,
           "depends_on": [],
           "acceptance": [
-            "The device capability report may name the containers the device plays as stored; a source in another container whose streams the device decodes goes to a forced conversion with direct play off and stream copy allowed, with the reason 'the file format is not supported here'; core tests with fixtures",
-            "A conversion answer that copies both streams is DirectStream and one that re-encodes is Transcode, judged as today; a server that offers direct play again is refused with its reason and never direct played; core tests with recorded answers",
-            "In the two client sentences, the browser form reads 'this browser' where the TV reads 'this device'; core tests",
-            "A report that names no containers, as the TV's Media3 report, gets exactly today's decisions: the core's existing negotiation and capability tests pass unedited, and the TV's wire tests pass in CI (gate: ci)"
+            "The device capability report may name the containers the device plays as stored; a source in another container counts as one no engine on this device can play and takes ARCHITECTURE.md section 3 rule 5 as it stands: one more PlaybackInfo with direct play and video stream copy off in the body and the query; core tests with fixtures",
+            "A copy with only the container changed is not asked for until the owner accepts T17-25; a server that offers direct play again, as the pinned Jellyscale does (it reads no flag, jellyscale-org/jellyscale#224), is refused device-cannot-play and never direct played; core tests with recorded answers",
+            "The browser form's client sentence reads 'this browser can't play the original file' where the TV's reads 'this device'; core tests",
+            "A report that names no containers, as the TV's Media3 report, sends exactly today's requests and gets today's decisions, the audio-only failure included: the core's existing tests pass unedited, and new tests compare the requests",
+            "Against the pinned Jellyscale in CI, a capability set naming WebM alone refuses the MKV H.264 sample with device-cannot-play after two PlaybackInfo requests carrying the flags in the body and the query, with no media request and no job, and the TV's wire tests pass (gate: ci)"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -5305,11 +5347,12 @@
             "T17-01"
           ],
           "acceptance": [
-            "pnpm web:wire serves one web build at /octave/ and at one other prefix, same-origin in front of this checkout's pinned Jellyscale fixture, drives Chromium and Firefox, and records every request from the browser's side (resource type, initiator) and the server's side",
-            "A run fails on a request after sign-in without the Authorization header (pictures by item id and the build's own files excepted), a token or another of the run's secrets in a URL, a Cookie or Set-Cookie, a followed redirect, another origin, a request a media element initiated, or a service worker",
+            "pnpm web:wire serves one web build at / and at one other prefix, same-origin in front of this checkout's pinned Jellyscale fixture, drives Chromium and Firefox, and records every request from the browser's side (resource type, initiator) and the server's side",
+            "A run fails on a token or another of the run's secrets in a URL, a Cookie or Set-Cookie, a followed redirect, another origin, a request a media element initiated, a service worker, or a request after sign-in without the Authorization header other than the build's own files; only T17-11 adds the picture exception decision 0006 allows",
+            "A test session for the disposable fixture signs in from the runner, never through the app, so an engine can be wire-tested before decision 0006; the shipped build holds none of its code (gate: review)",
             "An opt-in web sample set adds a WebM film to this checkout's fixture and leaves the default samples unchanged, so the TV's tripwire and wire tests pass in CI (gate: ci)",
-            "CI's web job runs pnpm web:wire against the pinned Jellyscale, and it is green on the scaffold's page (gate: ci)",
-            "docs/commands.md describes pnpm web:wire in the same PR (gate: review)"
+            "CI's web job runs pnpm web:wire against the pinned Jellyscale (gate: ci)",
+            "docs/commands.md describes pnpm web:wire and its test session in the same PR (gate: review)"
           ],
           "verify": "pnpm check && pnpm web:wire",
           "status": "todo",
@@ -5327,13 +5370,15 @@
           "human": false,
           "depends_on": [
             "T17-01",
-            "T17-05"
+            "T17-05",
+            "T17-07"
           ],
           "acceptance": [
-            "A web engine implements the PlayerEngine port: it fetches the original file only through the host's media fetch with byte ranges and appends it to a MediaSource, or a ManagedMediaSource where MediaSource is missing, with disableRemotePlayback set; the media element holds no URL but its own object URL",
+            "A web engine in packages/web-host implements the PlayerEngine port: it fetches the original file only through the host's media fetch with byte ranges and appends it to a MediaSource, or a ManagedMediaSource where MediaSource is missing, with disableRemotePlayback set; the media element holds no URL but its own object URL",
             "It reports capabilities probed per exact codec string, WebM as the container it plays as stored, and no passthrough",
             "It keeps a byte budget: it trims behind the playhead, treats QuotaExceededError as normal, and ends with a player error code, never silence, when an append does not grow the buffered range or the clock does not advance while unpaused with buffer ahead",
-            "In Chromium and Firefox, pnpm web:test plays a WebM sample from a local mock origin, seeks ahead and back, pauses and reaches the end, with every request through the given media fetch and none initiated by the media element"
+            "In Chromium and Firefox, pnpm web:test plays a WebM sample from a local mock origin, seeks ahead and back, pauses and reaches the end, with every request through the given media fetch and none initiated by the media element",
+            "Against the pinned Jellyscale, pnpm web:wire plays the WebM sample as stored through this engine with the runner's test session: the header on every media request, no token in a URL and no request initiated by the media element (gate: ci)"
           ],
           "verify": "pnpm check && pnpm web:test",
           "status": "todo",
@@ -5351,13 +5396,15 @@
           "human": false,
           "depends_on": [
             "T17-06",
+            "T17-07",
             "T17-08"
           ],
           "acceptance": [
-            "hls.js, pinned to one exact version, loads every playlist and segment through a loader that uses the host's media fetch; it is never given a URL it may fetch by itself, and a foreign origin is refused",
+            "In packages/web-host, hls.js, pinned to one exact version, loads every playlist and segment through a loader that uses the host's media fetch; it is never given a URL it may fetch by itself, and a foreign origin is refused",
             "Every playlist it loads, a media playlist's reload included, passes T17-06's validator inside the loader before hls.js reads it, and every ApiKey or api_key is stripped on rebuild",
             "Its buffer keeps a byte budget (a small maxBufferLength floor, a byte cap and a short back buffer), and BUFFER_APPEND_NO_PROGRESS or a clock that stops while buffer is ahead ends with a player error code, never silence",
             "In Chromium and Firefox, pnpm web:test plays a recorded fMP4 HLS copy and a recorded transcode from a local mock origin, seeks, switches the audio track and recovers from one failed segment, with every request through the given media fetch",
+            "Against the pinned Jellyscale, pnpm web:wire plays the H.264 sample as a conversion over a streaming limit the test sets, through this engine with the runner's test session: the header on every playlist and segment request and no token in a URL (gate: ci)",
             "The spec holds hls.js's maintenance check from primary sources (gate: review)"
           ],
           "verify": "pnpm check && pnpm web:test",
@@ -5408,7 +5455,7 @@
             "packages/web-host holds the token in one private holder in page memory and exposes only the core's Transport port and a media fetch by session, path and range; its requests use credentials 'omit', redirect 'manual' and no referrer, go only to the origin that served the page, and treat a 3xx and a status of 0 as errors; Node tests show each",
             "A canary token run through sign-in, Home and sign-out appears nowhere but the holder and the header: in no URL, DOM attribute, React state or prop, history state, log, error or storage; a test shows it",
             "A viewer signs in with a password at the origin that served the page, over HTTPS and over plain HTTP on a home-network address, where the DeviceId's SHA-256 comes from a Crypto adapter that does not need crypto.subtle; browser tests",
-            "After sign-in Home draws against the pinned Jellyscale, with pictures by item id through img elements as decision 0006 amends I7, and pnpm web:wire passes in Chromium and Firefox (gate: ci)",
+            "pnpm web:wire lets a request go without the header only for the build's own files and a GET of /Items/{id}/Images/{type} or /Items/{id}/Images/{type}/{index} holding no credential, as decision 0006 amends I7; after sign-in Home draws against the pinned Jellyscale and the run passes in Chromium and Firefox (gate: ci)",
             "The sign-in page follows DESIGN.md's web rules and section 10's sign-in rows, and the PR holds captures at three widths (gate: review)"
           ],
           "verify": "pnpm check && pnpm web:test && pnpm web:wire",
@@ -5431,10 +5478,10 @@
             "T17-11"
           ],
           "acceptance": [
-            "From Home a viewer plays the WebM film as stored, and the player says 'Original file' for it alone; a film above the viewer's streaming limit plays as a server conversion through hls.js and the player says 'Converting on server: {reason}'; pnpm web:wire shows both in Chromium and Firefox against the pinned Jellyscale (gate: ci)",
+            "From Home, a viewer plays the WebM film as stored and the player says 'Original file' for it alone; with a streaming limit the test sets in the device preferences (no web control sets one yet), a film above it plays as a server conversion through hls.js and the player says 'Converting on server: {reason}'; pnpm web:wire shows both in Chromium and Firefox against the pinned Jellyscale (gate: ci)",
             "The wire test shows the header on every playlist, segment and media request, no token in any URL, no request initiated by a media element, the start report after the first frame, progress, one stopped report, and no conversion job on the server 10 s after the viewer stops (gate: ci)",
             "The player works with keyboard and pointer: play and pause, seek 10 s, the scrubber, volume and fullscreen, and Back returns through history to the page the viewer came from; browser tests",
-            "A source the browser cannot take and the server will not copy is refused before playback with its reason and a way back, never played silently; a browser test shows it",
+            "An MKV film is refused before playback with its reason and a way back, never played silently, and the wire run records its two PlaybackInfo requests, with the flags in the body and the query, and the pinned Jellyscale's answer: the evidence jellyscale-org/jellyscale#224 asks for (gate: ci)",
             "A film stopped part way offers Resume on Home and resumes within 10 s of where it stopped (gate: ci)",
             "The PR holds captures of the player, its loading and a refusal at three widths (gate: review)"
           ],
@@ -5462,6 +5509,54 @@
             "pnpm web:wire shows the revoke and no request with the old token after it (gate: ci)"
           ],
           "verify": "pnpm check && pnpm web:test && pnpm web:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T17-26",
+          "title": "Approve a Quick Connect sign-in from the browser (Jellyscale #104, #118)",
+          "domain": "Server Connection & Identity",
+          "lane": "web",
+          "model": "opus",
+          "skill": "jellyfin-api",
+          "human": false,
+          "depends_on": [
+            "T17-11"
+          ],
+          "acceptance": [
+            "Blocked on jellyscale-org/jellyscale#104 and #118: the task starts when the pinned Jellyscale has Quick Connect and its approval link; until then its status is blocked with the issues' state in evidence",
+            "Opening the client with #/quickconnect?code=<code>, as Jellyscale's /web/ passes it (its D-090), shows an approval screen that names the device and app asking, as the server reports them for that code, and approves only on an explicit confirmation: loading, reloading or following the link never approves, and the confirm control is not the opening focus; browser tests",
+            "A viewer who is not signed in signs in first and returns to the same screen with the code kept; the code stays out of storage beyond this tab, out of history after use and out of logs; browser tests",
+            "An expired, used or unknown code shows a plain sentence and approves nothing; browser tests",
+            "pnpm web:wire runs one approval against the pinned Jellyscale: the header on the approval call, no token in any URL, and one approval per confirmation (gate: ci)"
+          ],
+          "verify": "pnpm check && pnpm web:test && pnpm web:wire",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T17-27",
+          "title": "A pinned, licensed web build that Jellyscale can ship",
+          "domain": "Distribution",
+          "lane": "web",
+          "model": "opus",
+          "skill": "verify",
+          "human": false,
+          "depends_on": [
+            "T17-12",
+            "T17-14"
+          ],
+          "acceptance": [
+            "A tag builds one web release from its own source: a versioned archive of the static build, servable at / and at a prefix, with its SHA-256 and the commit it was built from",
+            "The archive holds LICENSE (GPL-3.0-only), a notice file listing every bundled dependency with its licence and copyright, and a written source offer that points at the tag; the build fails when a bundled dependency is missing from the notice file",
+            "CI unpacks the archive, serves it at / under decision 0006's CSP, and the browser test passes against it (gate: ci)",
+            "docs/commands.md says how Jellyscale pins a release (its URL, checksum and version), and the PR names jellyscale-org/jellyscale#289 (gate: review)"
+          ],
+          "verify": "pnpm check && pnpm web:test",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -5504,6 +5599,7 @@
           "acceptance": [
             "The capability report may carry a bitrate ceiling, and the source decision converts a source above it with MaxStreamingBitrate at the ceiling in the body and the query; the ceiling is never written into the DeviceProfile; core tests",
             "A conversion for the ceiling reads 'Converting on server: the bitrate is too high for this browser' and never offers Play original, which stays with the viewer's own streaming limit; core tests",
+            "Against the pinned Jellyscale in CI, a capability set with a ceiling below the H.264 sample's bitrate gets a conversion whose PlaybackInfo carries MaxStreamingBitrate at the ceiling in the body and the query, with the ceiling's reason (gate: ci)",
             "A report with no ceiling, as the TV's, gets exactly today's decisions: the existing tests pass unedited, and the TV's wire tests pass in CI (gate: ci)"
           ],
           "verify": "pnpm check",
@@ -5559,7 +5655,7 @@
         },
         {
           "id": "T17-18",
-          "title": "Text subtitles drawn by Octave in the browser, with burn-in as a shown fallback",
+          "title": "Text subtitles drawn by Octave in the browser, with burn-in only on a conversion",
           "domain": "Player Engine",
           "lane": "web",
           "model": "sonnet",
@@ -5570,8 +5666,8 @@
           ],
           "acceptance": [
             "A text subtitle (WebVTT, SRT) is fetched through the host's media fetch and drawn in Octave's own overlay, never through a track element's URL, and the audio and subtitles picker switches it; browser tests",
-            "When no renderer can draw a track, the player asks for burn-in and says 'Converting on server: the subtitle format is not supported here' with 'Subtitles are burned in'; a test",
-            "pnpm web:wire plays the sidecar sample with its subtitle against the pinned Jellyscale, with the header on the subtitle request and no token in its URL (gate: ci)"
+            "On a plan played as stored, a subtitle no renderer can draw is shown as unavailable in the picker and no conversion is asked for; on a plan that is already a conversion, the player asks for burn-in and says 'Converting on server: the subtitle format is not supported here' with 'Subtitles are burned in'; browser tests",
+            "pnpm web:wire plays the sidecar sample with its subtitle, and a converted film with a burned-in subtitle, against the pinned Jellyscale: the header on every request and no token in a URL (gate: ci)"
           ],
           "verify": "pnpm check && pnpm web:test && pnpm web:wire",
           "status": "todo",
@@ -5647,20 +5743,21 @@
         },
         {
           "id": "T17-22",
-          "title": "Play a film the browser cannot take as stored through a server copy (Jellyscale issue: honour and echo the five PlaybackInfo flags)",
+          "title": "Play a film the browser cannot take as stored through a server copy (Jellyscale #224)",
           "domain": "Playback Negotiation",
           "lane": "web",
           "model": "opus",
           "skill": "jellyfin-api",
           "human": false,
           "depends_on": [
-            "T17-12"
+            "T17-12",
+            "T17-25"
           ],
           "acceptance": [
-            "Blocked on the Jellyscale issue for the five PlaybackInfo flags (the coordinator files it and its number goes into this title): the task starts when the pinned Jellyscale has it; until then its status is blocked with the issue's state in evidence",
-            "An MKV film whose streams the browser decodes plays as an fMP4 HLS copy, and the player says 'Repackaging on server, original quality: {reason}'; with audio the browser cannot decode, only the audio is re-encoded and the player says 'Converting audio on server, original picture: {reason}'; core tests",
-            "pnpm web:wire shows both against the pinned Jellyscale, with the flags in the body and the query and the server's copy on the wire (gate: ci)",
-            "The TV's wire tests pass in CI (gate: ci)"
+            "Blocked on jellyscale-org/jellyscale#224, which is needs-evidence and is planned once a supported client sends the flags and its viewer is left without a film (T17-12's wire run records that): the task starts when the pinned Jellyscale honours the flags; until then its status is blocked with the issue's state in evidence",
+            "Under the rules the owner accepts in T17-25, an MKV film whose streams the browser decodes plays as an fMP4 HLS copy and the player says 'Repackaging on server, original quality: {reason}'; with audio the browser cannot decode, the video stays copied, only the audio is re-encoded, and the player says 'Converting audio on server, original picture: {reason}'; core tests",
+            "The core's existing tests pass unedited, and a report naming no containers, the audio-only failure included, sends exactly today's requests and gets today's decisions; core tests compare them",
+            "pnpm web:wire shows both cases against the pinned Jellyscale with the flags in the body and the query and the server's copy on the wire, and the TV's wire tests pass in CI (gate: ci)"
           ],
           "verify": "pnpm check && pnpm web:wire",
           "status": "todo",
@@ -5670,7 +5767,7 @@
         },
         {
           "id": "T17-23",
-          "title": "Sign in by single sign-on over HTTPS (Jellyscale issue: a cookie-free OIDC handoff a browser tab can bind, on JS-039)",
+          "title": "Sign in by single sign-on over HTTPS (Jellyscale #296)",
           "domain": "Server Connection & Identity",
           "lane": "web",
           "model": "opus",
@@ -5680,7 +5777,7 @@
             "T17-13"
           ],
           "acceptance": [
-            "Blocked on the Jellyscale issue for a cookie-free OIDC handoff (the coordinator files it as a proposal on JS-039 and its number goes into this title): the task starts when the pinned Jellyscale has it; until then its status is blocked with the issue's state in evidence",
+            "Blocked on jellyscale-org/jellyscale#296, the cookie-free OIDC handoff proposed on JS-039: the task starts when the pinned Jellyscale has it; until then its status is blocked with the issue's state in evidence",
             "Over HTTPS the sign-in page offers single sign-on: the tab makes a verifier kept in sessionStorage, the server returns a one-time code to the base path the client was served from, and the page never sees an identity-provider token; over plain HTTP it offers a password and says 'Single sign-on needs HTTPS. Sign in with a password, or open this server over HTTPS.'",
             "A page-level sign-in after expiry returns the viewer to the title they were on, with Resume; a browser test",
             "The wire test with a test identity provider shows no Set-Cookie, no token in a URL, the provider's navigation as the only redirect, and sign-out revoking and reaching every tab (gate: ci)"
