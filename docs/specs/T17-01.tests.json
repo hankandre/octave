@@ -1,0 +1,27 @@
+{
+  "task": "T17-01",
+  "files": [
+    "apps/web/playwright.config.ts",
+    "apps/web/e2e/build.spec.ts",
+    "apps/web/src/app.test.tsx",
+    "scripts/web-boundaries.test.ts",
+    "scripts/web-lint.test.ts"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "web:test", "--grep", "T17-01 item 1"] },
+    { "item": 2, "run": ["pnpm", "web:test", "--grep", "T17-01 item 2"] },
+    { "item": 3, "run": ["pnpm", "exec", "vitest", "run", "scripts/web-boundaries.test.ts", "scripts/web-lint.test.ts"] },
+    {
+      "item": 4,
+      "gate": "review",
+      "why": "That the TV's rules are unchanged is a property of the diff: the reviewer checks no TV lint config, script or existing test is edited and no TV rule list gains a web name."
+    },
+    {
+      "item": 5,
+      "gate": "ci",
+      "why": "A green web job and pnpm check running the web steps are shown by CI on the pull request; a test may not read the workflow or package.json."
+    },
+    { "item": 6, "gate": "review", "why": "Documentation: DOMAINS.md is checked by review, never by a test." },
+    { "item": 7, "gate": "review", "why": "Documentation: the dependency maintenance check in the spec is checked by review." }
+  ]
+}
