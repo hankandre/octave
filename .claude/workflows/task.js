@@ -322,7 +322,7 @@ function unaccountedLows(lowCount, followUp) {
 // A task's lane (tasks/prd.json) and the lane runner's decisions. A workflow script cannot import, so LANES and SERIAL_LANES are copies of
 // scripts/task.mjs; task-lanes.test.mjs keeps them equal. At most one serial lane has a task running at a time (AGENTS.md: native module,
 // player and on-device work stay serial). MAX_LANES is WORKFLOW.md's cap of four concurrent streams.
-const LANES = ['workflow', 'core', 'ui', 'apk-checks', 'tv-scripts', 'release', 'native-session', 'player', 'device'];
+const LANES = ['workflow', 'core', 'ui', 'apk-checks', 'tv-scripts', 'release', 'web', 'native-session', 'player', 'device'];
 const SERIAL_LANES = ['native-session', 'player', 'device'];
 const MAX_LANES = 4;
 // What is wrong with args.lanes, as a list of problems (empty when it is fine).

@@ -16,7 +16,7 @@ const src = readFileSync(join(here, 'task.js'), 'utf8');
 const workflowDoc = readFileSync(join(repoRoot, 'WORKFLOW.md'), 'utf8');
 const commandsDoc = readFileSync(join(repoRoot, 'docs', 'commands.md'), 'utf8');
 
-const TABLE = ['workflow', 'core', 'ui', 'apk-checks', 'tv-scripts', 'release', 'native-session', 'player', 'device'];
+const TABLE = ['workflow', 'core', 'ui', 'apk-checks', 'tv-scripts', 'release', 'web', 'native-session', 'player', 'device'];
 const SERIAL = ['native-session', 'player', 'device'];
 const DENIAL = 'If a command is denied, report it in deniedCommands and do not work around it';
 

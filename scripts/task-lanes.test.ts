@@ -19,7 +19,7 @@ const cli = taskModule as unknown as {
   parseNextArgs(argv: string[]): { lane?: string };
 };
 
-const TABLE = ["workflow", "core", "ui", "apk-checks", "tv-scripts", "release", "native-session", "player", "device"];
+const TABLE = ["workflow", "core", "ui", "apk-checks", "tv-scripts", "release", "web", "native-session", "player", "device"];
 const SERIAL = ["native-session", "player", "device"];
 
 const mk = (id: string, extra: Record<string, unknown> = {}) => ({
