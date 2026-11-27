@@ -1799,7 +1799,17 @@ Focus: since the last pass one task merged (T17-24, process: the task file's siz
 
 Focus: no task merged since the sixth pass. This pass records the owner's answer to question 3 of `docs/proposals/vision-docs-restructure.md` and edits two tasks; it takes, defers and dismisses no backlog entry. Made on Opus.
 
-- Edited T1-25, item 2 | approval: `docs/decisions/0008-owner-answers-guiding-documents.md` (question 3) | the decided product questions no longer stay in `PRODUCT.md` | why: the owner approved removing historical content from `PRODUCT.md`; what those questions recorded is in `docs/decisions/0009-design-and-product-history-kept.md` and the files it names.
-- Edited T1-29, item 5 | approval: the same file, question 3 | the list of calls awaiting the owner is `docs/specs/awaiting-owner.md`, which replaces `DESIGN.md`'s status line and Awaiting the owner list; what the item asks of the list is unchanged | why: the owner approved one list at that path.
+- Edited T1-25, item 2 | approval file: `docs/decisions/0008-owner-answers-guiding-documents.md` (question 3), read by the Product Owner; the owner approved removing the history, not this edit, which is open to the owner's veto | the decided product questions no longer stay in `PRODUCT.md` | why: the owner approved removing historical content from `PRODUCT.md`; what those questions recorded is in `docs/decisions/0009-design-and-product-history-kept.md` and the files it names.
+- Edited T1-29, item 5 | approval file: the same, question 3, read the same way and open to the owner's veto | the list of calls awaiting the owner is `docs/specs/awaiting-owner.md`, which replaces `DESIGN.md`'s status line and Awaiting the owner list; what the item asks of the list is unchanged | why: the owner approved one list at that path.
 
 For the owner's veto: the two acceptance edits above.
+
+## 2026-11-27 (Product Owner pass, eighth, scoped: citations of DESIGN.md section 12)
+
+Focus: no task merged since the seventh pass. This pass repoints the open tasks that asked `DESIGN.md` section 12 to record their calls, after that section stopped collecting calls; it takes, defers and dismisses no backlog entry. Made on Opus.
+
+- Edited T3-41 item 6, T4-06 item 12, T4-11 item 12, T4-12 item 6 and T5-09 item 5 | scope edit | each task lists the Product Owner's calls it rests on in `docs/specs/awaiting-owner.md` in place of `DESIGN.md` section 12; the other sections the items name are unchanged | why: section 12 now holds only rules in force, and the calls awaiting the owner are listed in one place (`docs/decisions/0008-owner-answers-guiding-documents.md`, question 3).
+- Edited T8-27 item 5 | approval: `docs/decisions/0008-owner-answers-guiding-documents.md`, question 2 | the pull request edits no `DESIGN.md` text; `docs/proposals/T8-27.md` gives the new text for sections 7.14 and 9 | why: the owner approved T8-27 shipping with no `DESIGN.md` edit, with `DESIGN.md` describing the old controls until new wording is approved.
+
+For the owner's veto: the five scope edits above.
+
