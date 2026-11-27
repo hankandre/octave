@@ -5203,10 +5203,10 @@
             "The spec holds the maintenance check from primary sources for each dependency the task adopts: vite, react-dom and the browser test runner (gate: review)"
           ],
           "verify": "pnpm check && pnpm web:test",
-          "status": "in_progress",
+          "status": "done",
           "owner": "web-coordinator",
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "commit bbdfafbd, commit 3c2c802f: web:build makes one static relative-URL build; web:test 8/8 in Chromium and Firefox at / and /second/prefix/ under the CSP: no violation, other origin or service worker. lint:boundaries and web:lint refuse every case (check-red green 1-3). TV rules and tests unedited. pnpm check runs web lint, typecheck and unit tests; item 5's CI web job runs on this task's PR, which merges only when green. DOMAINS.md text filed as docs/proposals/T17-01.md (item 6). Dependency check in the spec."
         },
         {
           "id": "T17-02",
