@@ -2253,10 +2253,10 @@
             "When an account becomes active (sign-in or a restored session) and when it signs out, the app calls hostPreferences().useAccount with the gateway's account preference source, so the account's settings follow it (T9-09, D9)"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "PR #362 (merged 2026-11-26; CI pass). Emulator: tv:e2e with Keystore restore across processes, wire T3-05 8 pairs, smoke, sign-in then relaunch to Home on Jellyfin 10.11 (before the rebase over #361). Guardian PASS, 2 mediums fixed; Neon 2 lows, 1 fixed, 1 logged. Untested: real TV, Jellyfin 12, Jellyscale, HTTPS, backup/transfer."
         },
         {
           "id": "T4-08",
