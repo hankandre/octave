@@ -3336,10 +3336,10 @@
             "The PR shows before and after captures at 1920x1080 of the controls with the scrubber focused and with it not focused"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Branch task/T8-27 at commit 71d4aef0 (from commit ed05b875; no PR yet). pnpm check green (Jest 703/703). check-red T8-27 green [1,2,4], T8-04 green [1-8], problems []. Wire on emulator-5554 against Jellyscale: player-transport (--task T8-04, new steps incl. hidden Left and Right) pass; player-viewing (--task T8-03) pass. tv:e2e pass. Captures 1920x1080 in docs/specs/captures/T8-27 (before 9b7b115c, after head). Unrun: Shield, cheap box, CI wire job, tv:visual (no script)."
         },
         {
           "id": "T8-05",
