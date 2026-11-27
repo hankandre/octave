@@ -132,7 +132,7 @@ const screens = {
   "13-picker-from-rail": () => rail({ current: "account" }) + picker(withSignedOut, 0),
   "14-picker-back-opens-rail": () => picker(withSignedOut, -1) + rail({ open: true, current: "account", focused: "account" }),
   "15-switching": loading,
-  "16-switch-failed": () => unreachable("Who's watching?"),
+  // 16-switch-failed.png is drawn by ../full-screen-states/mockups.html?m=06-switch-failed.
   "17-alt-switch-failed-as-built": () => unreachable("Change server"),
 };
 document.body.innerHTML = screens[new URLSearchParams(location.search).get("m") ?? "01-two-accounts"]();
