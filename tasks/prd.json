@@ -2356,6 +2356,66 @@
           "evidence": ""
         },
         {
+          "id": "T4-11",
+          "title": "Show the launch's loading and couldn't-check screens in one centred full-screen pattern",
+          "domain": "App Shell & Presentation",
+          "lane": "ui",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T4-05",
+            "T3-34"
+          ],
+          "acceptance": [
+            "One shared full-screen message component draws, centred left to right inside the title-safe inset and top to bottom, a mark, one heading, at most one sentence, an optional server block and one row of actions, at fixed tops held as DESIGN.md 8 tokens (mark box 232 and 96 high, heading 360, sentence 439 with two lines reserved, server 569, actions 744 with a server and 582 without), and nothing else: no \"What you can do\" label (brief M1, M2, section 3; docs/specs/decisions-owner-chat-2026-11-26-full-screen-states.md)",
+            "The heading is the state's fixed text in typeTitle and text1, with the heading role; the sentence is typeBodyLg in text2, at most 840 wide and two lines; neither holds a server name, an address, a title or any other variable (brief M3, M4)",
+            "The server block sits on its own lines under the sentence: the name in typeHeading and text1 when one is given, the full address under it in typeMono and text2, or the address alone in the same place when no name is given; a long name is one line cut with an ellipsis, a long address wraps to at most three lines and is then cut at its end; the block takes no focus, has no box and moves or covers no button (brief M5, M6, M7, M9)",
+            "When the actions appear the first holds focus, is the primary and sits first from the left, and the rest are secondary; Left and Right move along the row and stop at its ends, Up and Down do nothing; select runs the focused action once and a second press while it runs does nothing; the screen never retries or leaves by itself (brief M10, M11, M12, M15)",
+            "The marks are Tabler's server-off for unreachable and alert-triangle for every other failure, both in notice, and map-question in text2 for a state that is not a fault; the three glyphs are added to the icon set (brief section 3)",
+            "Loading at launch shows the loader (the player's status ring until T3-35) in the mark box and \"Loading…\" as the one heading, with nothing to focus; after Try again the address being checked shows in the server place; Back leaves the app (brief M16, M18; decisions-product-owner-2026-11-26f.md, call 2, P7)",
+            "A launch whose stored sign-in cannot be checked shows, in place of the loading screen and with its mark, heading and server at the same tops, the brief's section 4 row for its answer, with the address in the server place: unreachable or timeout (\"Can't reach the server\"; Try again, Change server), redirect (\"This address redirects elsewhere\"; Change server, Try again), unsupported version (\"This server needs an update\"; Try again, Change server), and anything else, another server answering included (\"Something went wrong\"; Try again, Change server) (brief M13, M17; docs/specs/decisions-owner-chat-2026-11-26-full-screen-states.md)",
+            "Try again returns to the loading screen and then to Home or a failure, with focus on that failure's primary again; Change server opens sign-in's first step and keeps the stored sign-in, as T4-05 built it; Back on a failure leaves the app (brief M14, M19)",
+            "No screen of this pattern shows a status code, exception text, a server-supplied reason, an id or a token; a test plants each and finds none (brief M8)",
+            "Each state has exactly one heading; when a state appears TalkBack reads its heading, sentence and server once, then the focused action, and does not repeat them as focus moves (brief M21, M22)",
+            "With reduced motion the mark is still and \"Loading…\" stays; a change of state is instant or an opacity fade of 120 ms or less, and nothing slides or flashes (brief M20)",
+            "DESIGN.md 5, 7.16 (one pattern for every full-screen state), 7.17 (full-screen loading), 7.20 (the launch screens, replacing T4-05 Q12), 8 (the layout tokens), 10 (the launch rows) and 12 (docs/specs/decisions-owner-chat-2026-11-26-full-screen-states.md and decisions-product-owner-2026-11-26f.md) say what this task built, in the same PR (gate: review)",
+            "The PR shows before and after captures at 1920x1080 of launch loading, each launch failure, the second action focused, and a long address"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T4-12",
+          "title": "Show Quick Connect's loading and failures and the not-found state in the centred full-screen pattern",
+          "domain": "App Shell & Presentation",
+          "lane": "ui",
+          "model": "sonnet",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T4-11",
+            "T4-04"
+          ],
+          "acceptance": [
+            "Before the code, the Quick Connect step shows T4-11's loading layout with the server's name and address in the server place and \"Use a password\" and \"Change server\" in the action row, focus as DESIGN.md 7.20 says today (decisions-product-owner-2026-11-26f.md, call 4)",
+            "A Quick Connect failure replaces the code and the QR code with T4-11's pattern and the server's name and address, using the brief's section 4 rows: expired (\"This code has expired\", \"Get a new code to try again.\"), refused (\"The server didn't accept this code\", the same sentence), unreachable (\"Can't reach the server\", \"Check the address and that the server is running.\"), redirect (the Redirect row, Change server only) and anything else (\"Something went wrong\", \"Octave couldn't finish signing in.\"); the failure's own action is primary and focused, then \"Use a password\" where 7.20 shows it, then \"Change server\" (docs/specs/decisions-owner-chat-2026-11-26-full-screen-states.md)",
+            "\"Approve this sign-in on your phone\" is the heading only while a code is drawn; no failure or loading state carries it (brief M24)",
+            "The not-found state uses the pattern with the map-question mark, its kept words and Go home as the focused primary, keeps its testIDs, and Left from Go home opens the rail; Back does what it does today (brief M11, section 6)",
+            "No screen draws the old Notice or EmptyState layout; both are served by T4-11's component, and no \"What you can do\" label remains",
+            "DESIGN.md 7.16, 7.17, 7.20, 10 and 12 say what this task built, in the same PR (gate: review)",
+            "The PR shows before and after captures at 1920x1080 of Quick Connect loading, each Quick Connect failure, and not-found with the rail"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T4-06",
           "title": "Remember accounts and ask Who's watching? only when there are two",
           "domain": "Server Connection & Identity",
@@ -2364,7 +2424,8 @@
           "skill": "jellyfin-api",
           "human": false,
           "depends_on": [
-            "T4-05"
+            "T4-05",
+            "T4-11"
           ],
           "acceptance": [
             "With one signed-in account the app opens straight to its Home",
@@ -2374,7 +2435,7 @@
             "Switching accounts drops the previous account's cached screens, only once the new account has been checked; a failed or left switch keeps the previous account active and signed in, and a check the viewer has left never switches the account later",
             "Who's watching? shows every signed-in account in wrapped, centred rows, ordered by user name then server address, each tile with the initial, the user's name (Account and the user icon when there is none) and the server's address, then Add account; focus opens on the active account's tile from the rail and on the first tile at launch; select on the active account's tile returns to its Home with no check",
             "Switching accounts calls hostPreferences().useAccount with the new account's preference source, so each account sees its own settings (T9-09, D9)",
-            "A switch whose server cannot be checked shows Loading…, then the matching sign-in sentence with Try again focused and a quiet Who's watching?; Back there or on Loading…, and that button, return to Who's watching? with focus on the chosen tile",
+            "A switch whose server cannot be checked shows T4-11's loading screen with the chosen account's server address, then T4-11's failure for that answer with Try again as the focused primary and Who's watching? as the second action; Back there or on loading, and that button, return to Who's watching? with focus on the chosen tile",
             "Two Quick Connect sign-ins as different users to one server from this TV leave both signed in, proven by the wire test against the pinned Jellyfin 10.11 and 12; what Jellyscale does is recorded in the PR, and a Jellyscale issue is filed and named if it signs the first one out",
             "Signing in again as an account already saved on that server makes no second tile and leaves it signed in, also when the viewer left that sign-in before its answer arrived; the session it replaced is ended without deleting the new stored sign-in",
             "Back from sign-in's first step, reached by Add account, returns to Who's watching? with focus on Add account",
@@ -2404,7 +2465,7 @@
             "A finished sign-in as that user signs the same tile in again and opens its Home; a different user is saved as their own account and the signed-out tile stays signed out",
             "Back from sign-in's first step, reached from a tile, returns to Who's watching? with focus on that tile",
             "A switch that finds the sign-in ended by the server leaves that account's tile in place as Signed out",
-            "Each tile shows its server's name, and at launch focus opens on the account used last on this TV, or else the first signed-in tile",
+            "Each tile shows its server's name, and at launch focus opens on the account used last on this TV, or else the first signed-in tile; the loading and failure screens of a launch or a switch show that name on its own line above the address, and launch loading shows the server it checks from its first frame (decisions-product-owner-2026-11-26f.md, calls 2 and 3)",
             "A stored record that cannot be opened at launch hides no other account's tile; choosing that account shows the failed-switch screen and deletes nothing",
             "With one signed-in account and others signed out, launch opens its Home; with none signed in, launch opens sign-in"
           ],
@@ -2570,15 +2631,16 @@
           "skill": "change-review",
           "human": false,
           "depends_on": [
-            "T5-03"
+            "T5-03",
+            "T4-11"
           ],
           "acceptance": [
             "An empty library shows the copy table's Nothing to watch yet with one action",
             "Loading shows skeleton rows shaped like the real ones, only after 150 ms",
             "A failed row shows one sentence and Retry in its place, and Retry reloads only that row",
-            "A lost connection shows a plain sentence naming the server, never a status code or transport message",
+            "A lost connection shows T4-11's full-screen pattern with the heading \"Can't reach the server\", the sentence \"Check that the server is on, then try again.\" and the server's name and address on their own lines, never a status code or transport message",
             "Each state takes focus on its action and works with the D-pad alone",
-            "A Home whose whole load fails, or whose every list fails, shows the lost-connection state with Retry focused, in place of the plain surface T5-03 left: the sentence is \"Couldn't reach {server}. Check that the server is on, then try again.\", and the task adds its row to DESIGN.md's copy table in the same PR (docs/specs/decisions-product-owner-2026-11-26.md, 1)",
+            "A Home whose whole load fails, or whose every list fails, shows the lost-connection state with Retry focused, in place of the plain surface T5-03 left; Left from Retry and Back open the rail; the task adds its row to DESIGN.md's copy table in the same PR (docs/specs/decisions-owner-chat-2026-11-26-full-screen-states.md)",
             "The PR holds 1920x1080 captures of each state and of the loaded Home with fixture artwork made for the fixture: the hero, Continue watching and Recently added, with a card focused (gate: review)"
           ],
           "verify": "pnpm check",
@@ -2930,7 +2992,8 @@
           "skill": "change-review",
           "human": false,
           "depends_on": [
-            "T5-03"
+            "T5-03",
+            "T4-11"
           ],
           "acceptance": [
             "The page opens with focus on Resume (with the position) or Play; Start over shows only when there is a position",
@@ -3637,11 +3700,12 @@
           "human": false,
           "depends_on": [
             "T8-09",
-            "T8-25"
+            "T8-25",
+            "T4-11"
           ],
           "acceptance": [
             "Each refusal reason shows its own sentence over the title's backdrop, with Retry and Back: conversion not allowed, this device cannot play the file, unsafe stream address, live source, no sources",
-            "Server unreachable, server error and other failures show the copy table's sentences",
+            "Every playback failure and refusal uses T4-11's full-screen pattern over the title's backdrop at 30% with the title in typeMeta (DESIGN.md 7.16), with at least one action, the first focused; no heading or sentence holds the server's name: unreachable reads \"Check that the server is on, then try again.\" (docs/specs/decisions-owner-chat-2026-11-26-full-screen-states.md) and server error \"The server had a problem starting playback, so try again in a moment.\" (decisions-product-owner-2026-11-26f.md, call 6, for the owner's veto); session-ended keeps the owner's words until the owner rules (call 7); DESIGN.md 10 and the core copy change together",
             "No screen shows a status code, an exception message, a URL or an id",
             "Retry negotiates again with a new play session, from the last position once a first frame was shown",
             "Back returns to the title's page with focus on the play action",
