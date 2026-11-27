@@ -90,7 +90,7 @@ Every item screen (Detail, Series, Player loading, Up Next) and the Home hero ta
 | `typeMeta` | 24 / 1.35 | 500 | Card subtitles, facts line, badges |
 | `typeMono` | 24 / 1.3, Mono | 500 | Timecodes, codes, technical values |
 
-Rules: **body text is 28 px and no text is under 24 px** (the sizes tvOS, Fire TV, and Xbox agree on). Sentence case everywhere: no uppercase-tracked labels, no eyebrow or kicker labels. Titles truncate to one line in cards and two lines in headers, with the full title in the accessible label.
+Rules: **body text is 28 px and no text is under 24 px** (the sizes tvOS, Fire TV, and Xbox agree on; UX audit D13 B). Sentence case everywhere: no uppercase-tracked labels, no eyebrow or kicker labels. Titles truncate to one line in cards and two lines in headers, with the full title in the accessible label.
 
 ## 5. Space, shape, depth, motion
 
@@ -542,4 +542,37 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 
 ## 12. Decisions
 
-Decisions are recorded in `docs/decisions/` and `docs/specs/decisions-*.md`; calls still awaiting the owner's veto or judgement are listed in `docs/specs/awaiting-owner.md`.
+The rules below are settled and in force, and no other section of this document states them. Decisions are recorded in `docs/decisions/` and `docs/specs/decisions-*.md`; calls still awaiting the owner's veto or judgement are listed in `docs/specs/awaiting-owner.md`.
+
+### Look
+
+- Switch thumb 28 px. On is a `text1` track with an `onLight` thumb. Off is a `surface3` track with a `text2` thumb.
+- A disabled label is `text3` on the normal fill.
+- A skeleton never shimmers.
+- Cards: 24 px between cards (`space5`), 24 px from the art to the title, 16 px (`space4`) from a row's title to its cards, and the subtitle and the missing-image title in `text2`.
+- The right edge of a row has a 96 px fading edge, so Android keeps the focused card 96 px in; the same margin applies on the left, with no fade.
+- A focused card has the ring, the static lift and `shadowLift`, as §7.5 says.
+- The icon set is Tabler (MIT), loaded as a font with expo-font, with no native module. The stroke weight is light: Tabler's weight-300 font.
+- A card's picture also fades in over its preview when a recycled card remounts with its picture already cached.
+
+### Player
+
+- Only working controls are drawn.
+- Icons: `arrow-left`, `player-play`, `player-pause`, `rewind-backward-10`, `rewind-forward-10`.
+- The picture's frame in its own shape is a later task, so a film that is not 16:9 may be drawn stretched until then.
+
+### Sign-in
+
+- Back on the first sign-in step: while a server is being probed, Back cancels the probe and stays on the step. After "Enter address" reveals the field, Back does what it does on the rest of the step, and the field stays. With nothing to stop, Back leaves the app without a question.
+- Remembered servers have no section title.
+- The choice made in the unencrypted-connection dialog is kept for one launch only, so the dialog does not say that Octave will remember it.
+- The conflict line on a found server: "Another address on this network answered as this server."
+- There is no Connect button: the keyboard's action key submits the address.
+- "Loading…" is the status line while a probe runs.
+- A typed address with no scheme gets `http://` for this device or a home-network host, and `https://` otherwise.
+- A search of the network that fails shows nothing; the address field shows, as when no server is found.
+- The origin chip is `typeMono` on `surface2` at `radiusPill`, holding the full normalised address.
+- The password step's failure sentence is `text1` with no icon, as on the Quick Connect step.
+- While a stored sign-in is checked at launch, the server's answer and the session's each get five seconds.
+- There is no sign-out control yet: a viewer whose stored sign-in works reaches sign-in only by clearing the app's data until T4-06 or T9-05.
+- No warning at launch over plain HTTP at home: a stored sign-in to a private-LAN `http://` server opens without the unencrypted-connection warning when the server answers as the same server; a new sign-in to it asks again.
