@@ -92,7 +92,6 @@ Dependencies
 - Write one proposal per file, `docs/proposals/<task id or short name>.md`.
 - Write the reasons and history in a record under `docs/decisions/`.
 - Where an approved task or decision record differs from either document and a proposal for it is filed, follow the task or record.
-- Let a task already in progress on 2026-11-26 finish as it was written (`docs/decisions/0007-guiding-documents.md`).
 - Before starting any other task whose acceptance requires editing either document, have a Product Owner pass move that edit to a proposal and keep its behaviour pinned.
 - Treat `DOMAINS.md`, `ARCHITECTURE.md` and `WORKFLOW.md` as guiding documents too.
 - Change no guiding document without coordinating with the owner first and getting the owner's explicit approval, even in a task already in progress.
