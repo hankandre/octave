@@ -3,7 +3,8 @@
 // - when the image has a non-empty BlurHash, a preview view that gets that hash string and nothing else; the native side
 //   validates and decodes it and draws a blurred preview, or nothing for a hash it refuses;
 // - the picture view, which gets the opaque session id, the image's item id, type and tag, and the drawn width in whole
-//   canvas px: never a URL, header, token, BlurHash or height.
+//   canvas px as drawnWidth (T3-42: never `width`, which React Native's layout reads as dp): never a URL, header,
+//   token, BlurHash or height.
 // With a preview the picture fades in over it on "loaded" (DESIGN.md §5 and §7.5: durSlow with easeInOut, or
 // reducedMotion.durSlow under reduced motion, opacity only); with none it shows at once, as in T3-11. A failed image
 // calls the slot's onFailed, so the card shows its title. With no session nothing is drawn and the slot fails at once.
@@ -31,13 +32,13 @@ type PictureProps = {
   itemId: string;
   imageType: ArtworkImageType;
   tag: string;
-  width: number;
+  drawnWidth: number;
   /** Whether a preview is drawn beneath, so the picture fades in over it. */
   fades: boolean;
   onArtworkState: (event: StateEvent) => void;
 };
 
-function Picture({ NativeView, session, itemId, imageType, tag, width, fades, onArtworkState }: PictureProps) {
+function Picture({ NativeView, session, itemId, imageType, tag, drawnWidth, fades, onArtworkState }: PictureProps) {
   const reduced = useReducedMotion();
   const opacity = useRef(new Animated.Value(fades ? 0 : 1)).current;
   const shown = useRef(!fades);
@@ -69,7 +70,7 @@ function Picture({ NativeView, session, itemId, imageType, tag, width, fades, on
         itemId={itemId}
         imageType={imageType}
         tag={tag}
-        width={width}
+        drawnWidth={drawnWidth}
         onArtworkState={onState}
         style={StyleSheet.absoluteFill}
       />
@@ -112,7 +113,7 @@ export function createNativeArtwork({ view: NativeView, session }: NativeArtwork
             itemId={image.itemId}
             imageType={image.type}
             tag={image.tag}
-            width={drawn}
+            drawnWidth={drawn}
             fades={hash !== undefined}
             onArtworkState={onArtworkState}
           />
