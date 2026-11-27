@@ -50,10 +50,10 @@ function transportCalls(rig: PlayerRig): number[] {
   return [seekBy, togglePaused, setPaused, leave].map((call) => call.mock.calls.length);
 }
 
-/** An arrow from the picture, then the focus landing where the screen asked. */
+/** An arrow that does not seek (T8-27 D1) from the picture, then the focus landing where the screen asked. */
 async function wakeOnScrubber(): Promise<ReturnType<typeof focusTracker>> {
   const tracker = focusTracker();
-  await pressRemoteKey("right");
+  await pressRemoteKey("up");
   expectChromeShown();
   await tracker.follow();
   return tracker;
@@ -86,7 +86,7 @@ describe("T8-04 item 1: only the picture until a key is pressed", () => {
     expect(transportCalls(rig)).toEqual([0, 0, 0, 0]);
   });
 
-  it.each(ARROWS)("T8-04 item 1: one %s key shows the controls, asks focus for the scrubber alone and does not seek", async (arrow) => {
+  it.each(ARROWS)("T8-04 item 1: one %s key shows the controls and asks focus for the scrubber alone; Left and Right seek 10 s once", async (arrow) => {
     const rig = await renderAfterFirstFrame();
     expectPictureAlone();
     focusView.mockClear();
@@ -95,7 +95,9 @@ describe("T8-04 item 1: only the picture until a key is pressed", () => {
 
     expectChromeShown();
     expect(focusRequests()).toEqual([SCRUBBER]);
-    expect(transportCalls(rig)).toEqual([0, 0, 0, 0]);
+    const seeks: Record<string, number[][]> = { up: [], down: [], left: [[-10]], right: [[10]] };
+    expect(rig.viewing.seekBy.mock.calls).toEqual(seeks[arrow]);
+    expect(transportCalls(rig).slice(1)).toEqual([0, 0, 0]);
   });
 
   it("T8-04 item 1: the focus holder names itself in all four directions, is focusable only while the controls are hidden, and takes focus back when they hide", async () => {
@@ -150,7 +152,7 @@ describe("T8-04 item 2: Left and Right on the scrubber, and select from the pict
     expectChromeShown();
   });
 
-  it("T8-04 item 2: one select from the picture shows the controls once with focus on Play or Pause, and pauses nothing", async () => {
+  it("T8-04 item 2: one select from the picture pauses once and shows the controls once with focus on Play or Pause", async () => {
     const rig = await renderAfterFirstFrame();
     expectPictureAlone();
     focusView.mockClear();
@@ -159,9 +161,9 @@ describe("T8-04 item 2: Left and Right on the scrubber, and select from the pict
     await advance(0);
 
     expectChromeShown();
-    expect(focusRequests()).toEqual(["Pause"]);
+    expect(focusRequests()).toEqual(["Play"]);
     expect(rig.viewing.setPaused).not.toHaveBeenCalled();
-    expect(rig.viewing.togglePaused).not.toHaveBeenCalled();
+    expect(rig.viewing.togglePaused).toHaveBeenCalledTimes(1);
     expect(rig.viewing.seekBy).not.toHaveBeenCalled();
   });
 
