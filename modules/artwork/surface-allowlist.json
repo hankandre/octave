@@ -2,6 +2,6 @@
   "module": "OctaveArtwork",
   "functions": [],
   "events": [],
-  "views": [{ "name": "OctaveArtworkView", "props": ["session", "itemId", "imageType", "tag", "width", "blurHash"], "events": ["onArtworkState"] }],
+  "views": [{ "name": "OctaveArtworkView", "props": ["session", "itemId", "imageType", "tag", "drawnWidth", "blurHash"], "events": ["onArtworkState"] }],
   "pending": {}
 }

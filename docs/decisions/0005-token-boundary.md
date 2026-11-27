@@ -346,6 +346,16 @@ T4-05 builds the stored credential and the fourth function, `restoreSessions` (`
 
 As built: one AES-256-GCM record per account at `<noBackupFilesDir>/octave-sessions/<sha256(serverId "\n" userId)>`, the version byte and the Keystore's IV and ciphertext, with the file name as associated data, written through a synced temporary file. One process-wide lock covers save, forget and restore. `endSession` deletes the record before it takes the entry and sends the logout; a delete that fails is followed by a truncate to no bytes and a second delete.
 
+## Amendment, 2026-11-26 (T3-42): the width prop's name
+
+T3-42 renames the artwork view's prop `width` to `drawnWidth` (`docs/specs/T3-42.md`; the Product Owner's call 1 in `docs/specs/decisions-product-owner-2026-11-26d.md`). It adds no method, no module event, no view event, no prop and no session method or event.
+
+- **Why.** React Native's layout reads a view's top-level `width` prop (Fabric's `propsConversions.h` and `YogaStylableProps.cpp`; `BaseViewConfig.android.js` lists it), so the drawn width in canvas px also sized the view in dp, twice its frame on a 1080p TV.
+- **Unchanged.** The value and meaning: the drawn width in whole canvas px, which sizes the image request (`ArtworkRequest.cappedWidth`, the 400 px Primary cap, `ArtworkFetch`). The view keeps six props (`session`, `itemId`, `imageType`, `tag`, `drawnWidth`, `blurHash`), the one event `onArtworkState` and no function.
+- **The rule.** No prop React passes to the view may be a name React Native's layout or base view config reads; `apps/tv/src/host/native-artwork-layout.test.tsx` holds it against the installed package.
+
+The T3-11 and T3-39 amendments above name `width` as it was then.
+
 ## Revisit if
 
 - A crash reporter, over-the-air JavaScript updates or any third-party runtime code is proposed. Under A that is a new reader of the token; under C it is not.

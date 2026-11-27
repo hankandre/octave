@@ -17,7 +17,8 @@ export interface OctaveArtworkViewProps {
   readonly itemId?: string;
   readonly imageType?: ArtworkImageType;
   readonly tag?: string;
-  readonly width?: number;
+  // No prop may be a name React Native's layout reads (T3-42): `width` there sized the view in dp.
+  readonly drawnWidth?: number;
   readonly blurHash?: string;
   readonly onArtworkState?: (event: { nativeEvent: ArtworkStateEvent }) => void;
   readonly style?: unknown;
