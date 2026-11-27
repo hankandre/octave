@@ -206,6 +206,11 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - Chrome 157 on Linux played 4K H.264 below real time at every rate (0.97x at 17 Mbps, 0.62x at 112 Mbps), with a full buffer and no stall event or dropped frame. Software decode is the likely cause and is not proven.
 - `QuotaExceededError` never stopped playback: hls.js evicted and carried on.
 - Open: Safari, iPhone and iPad; Chrome and Edge with a hardware decoder. So no bitrate ceiling is written down for them.
-- (c), the service-worker experiment, has not run.
+**Milestone 0 (c), done in Chrome and Firefox, 2026-11-26** (`docs/research/web-service-worker-spike.md`).
+
+- A service worker adds the header to a same-origin `<video src>` MP4 in headless Chrome 157 and Playwright's Firefox 159 (not a release Firefox).
+- Not usable as built: Firefox stops the worker mid-stream and playback dies (after 27.7 s with default timeouts, 87.7 s with the worker held open). A first load, a hard reload and a failing handler send the request with no header and no warning.
+- Safari, AirPlay and a real Jellyscale were not tested.
+- By the gate it changes nothing in v1.
 
 ## Outcome & retrospective
