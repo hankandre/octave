@@ -2,6 +2,9 @@
 // off (no recycled-cell blur), a draw distance of ROW_DRAW_DISTANCE, a focus guide that traps Right (and Left when no
 // rail is beside it), a scroll home when the first card takes focus, and a per-row scroll offset kept by the screen
 // in a RowMemory under a stable row id. Nothing overrides focus: the native engine moves one card per press.
+// The row steps to the focused card and never slides, in every motion setting (T5-09): React Native's
+// `ReactHorizontalScrollView.onOverScrolled` aborts a running scroll that reports the scroll's end, so an animated scroll
+// back from the end could stop before it moved and leave the focused card clipped.
 // The row's end fades out, and its length is also Android's focus margin, so it stays on except while the last card has focus
 // (T5-09): React Native draws it at full strength even at the end, where it would cover that card's ring and lift. The content
 // ends `space.safeX` after the last card, so at rest the fade lies over empty space there.
@@ -154,6 +157,7 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge: leftE
           maintainVisibleContentPosition={{ disabled: true }}
           drawDistance={drawDistanceFor(variant)}
           showsHorizontalScrollIndicator={false}
+          scrollAnimationEnabled={false}
           fadingEdgeLength={lastCardRowId === rowId ? NO_FADE : END_FADE}
           contentContainerStyle={{ paddingLeft: px(rowInsetStart), paddingRight: px(rowEndInset) }}
           style={{ height: px(rowListHeight(variant)) }}
