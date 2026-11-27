@@ -2353,7 +2353,7 @@
           "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": "commit 51659b0b (rows step; also 2a01bb53, d7a30d40, 4ccc7002, 24152ad3). check, check-red green 1,2,4, tv:e2e pass. Emulator: Left >250ms apart, thumb and poster, 0/1/3 extra Rights, 120 runs, 660 cards, 0 misses; 50ms bursts (14-card thumb, 12-card poster) no blanks, Back keeps place. 0ms batch blanks briefly (animated build same, thumb) and loses 96px (backlog). Captures docs/specs/captures/T5-09; item 5 in docs/proposals/T5-09.md. Unproven: Shield, hero with no primary."
+          "evidence": "commit e8b2c467 (rows step; also 0563685f, 451844b0, be011c06, 07ed1eee; item 5 scope edit a46db9d3). check, check-red green 1,2,4, tv:e2e pass. Emulator: Left >250ms apart, thumb and poster, 0/1/3 extra Rights, 120 runs, 660 cards, 0 misses; 50ms bursts no blanks, Back keeps place. 0ms batch blanks briefly (animated build same; joins F6 deferral). Captures docs/specs/captures/T5-09; item 5: docs/proposals/T5-09.md and awaiting-owner.md. Unproven: Shield, hero with no primary."
         },
         {
           "id": "T4-11",
