@@ -27,3 +27,21 @@ Asked to choose after the evaluation (`docs/research/web-ui-paths.md`), the owne
 ## 4. Design
 
 Web design work uses Anthropic's front-end design skill, with `impeccable` as its backup. `AGENTS.md` holds the rule.
+
+## 5. The size limit of the task list (T17-24, T1-13, T1-21)
+
+Asked by the coordinator, with the Product Owner's recommendation: "The task list has a 350 KB limit, which you set on Nov 22. With the web tasks it's at 346 KB, and TV progress updates would push it over within days. After that, every pull request fails. What should I do?"
+
+- Options: "Raise it to 450 KB (Recommended)" (Web work can merge now and the TV session won't be blocked. The trade-off is less pressure to archive finished phases; that cleanup remains a later task.) / "Keep 350 KB, archive first".
+- The owner chose: "Raise it to 450 KB (Recommended)".
+
+**What it changes.** `MAX_FILE_BYTES` becomes 450,000 (T17-24). T1-13's item 5 and T1-21's item 3 name the new limit; T1-21 stays a later task. `docs/specs/decisions-prd-size-limit.md` gains a dated amendment.
+
+## 6. Repackaging a film the browser cannot take (T17-25, T17-05, T17-22)
+
+Asked by the coordinator, with the Product Owner's recommendation: "Most films are MKV files, which browsers generally can't play, even when they can play the video and audio inside. May Octave ask the server to repackage them without re-encoding, and re-encode only the audio when needed? TV behaviour won't change."
+
+- Options: "Yes, amend the rule (Recommended)" (The player says "Repackaging on server, original quality" and says when audio is being converted. It still requires Jellyscale to respect the playback options (#224).) / "No, keep today's rule".
+- The owner chose: "Yes, amend the rule (Recommended)".
+
+**What it covers, and no more.** Decision 0002, invariant I1 and `ARCHITECTURE.md` §3 rule 5 are amended so that a device which decodes a source's streams but cannot take its container may ask the server to copy them into one it takes, and a device may ask that only the stream it cannot decode be re-encoded. Each is shown to the viewer. A device that names no containers, as the TV, sends exactly today's requests. T17-25 writes the amendment; T17-22 uses it and still waits for jellyscale-org/jellyscale#224; T17-05 keeps today's rule until T17-25 merges.

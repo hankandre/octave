@@ -6,7 +6,7 @@ A viewer opens Jellyscale in a browser and watches, from the server's own web cl
 
 Evidence for every claim below: `docs/research/web-client.md`.
 
-**Status, 2026-11-26.** Approved for implementation by the owner (`docs/specs/decisions-owner-web-2026-11-26.md`). The work is phase T17 in `tasks/prd.json`, in its own parallel lane `web`, added by the Product Owner pass "2026-11-26 (Product Owner pass, scoped: the web client)"; every ruling there is provisional, for the owner's veto. Milestone 0 is done in Chrome and Firefox; Safari, iPhone, iPad and a hardware-decoding Chrome are the owner's run (T17-04). The web UI is plain React DOM (owner, 2026-11-26; `docs/research/web-ui-paths.md`). Work that holds or persists a browser token waits for the owner to accept decision 0006 (T17-02); everything else may run now. Jellyscale has decided to ship Octave Web at `/` instead of jellyfin-web, with `/web/` passing the Quick Connect address to it and still serving an operator's build (its D-088 to D-090; jellyscale-org/jellyscale#289); its JS-150 waits on one thing, a pinned, licensed build (T17-27), and jellyfin-web stays its test gate. A follow-up pass on 2026-11-26 ruled on a review of the task list; the branch that adds T17 does not merge before the owner decides the task file's size limit (T17-24).
+**Status, 2026-11-26.** Approved for implementation by the owner (`docs/specs/decisions-owner-web-2026-11-26.md`). The work is phase T17 in `tasks/prd.json`, in its own parallel lane `web`, added by the Product Owner pass "2026-11-26 (Product Owner pass, scoped: the web client)"; every ruling there is provisional, for the owner's veto. Milestone 0 is done in Chrome and Firefox; Safari, iPhone, iPad and a hardware-decoding Chrome are the owner's run (T17-04). The web UI is plain React DOM (owner, 2026-11-26; `docs/research/web-ui-paths.md`). Work that holds or persists a browser token waits for the owner to accept decision 0006 (T17-02); everything else may run now. Jellyscale has decided to ship Octave Web at `/` instead of jellyfin-web, with `/web/` passing the Quick Connect address to it and still serving an operator's build (its D-088 to D-090; jellyscale-org/jellyscale#289); its JS-150 waits on one thing, a pinned, licensed build (T17-27), and jellyfin-web stays its test gate. A follow-up pass on 2026-11-26 ruled on a review of the task list; the owner then raised the task file's size limit to 450 KB (T17-24) and accepted the amendment for a container the browser cannot take (T17-25, which writes it), both on 2026-11-26 (`docs/specs/decisions-owner-web-2026-11-26.md` §5, §6).
 
 - [ ] A viewer signs in at the origin Jellyscale served the client from, by OIDC over HTTPS or by a password, and reaches Home. Plain Jellyfin serving Octave's web form is unverified and is not a v1 gate; the core still speaks to both servers.
 - [ ] Every request carries `Authorization`, and no request carries a token in its URL: the wire test records zero `ApiKey`/`api_key` requests, zero `Cookie`/`Set-Cookie`, the identity provider's navigation as the only redirect, and zero requests initiated by a media element.
@@ -122,9 +122,9 @@ Each task gets its own spec in `docs/specs/<TASK-ID>.md` before implementation. 
 
 | Milestone | Tasks | Waits for |
 |---|---|---|
-| — | T17-24 the task file's size limit (owner, `human`) | the owner; this branch does not merge before it |
+| — | T17-24 the task file's size limit: raised to 450 KB in the branch that adds T17 | done by the owner's answer |
 | 0 | T17-04 (owner, `human`) | the owner's devices |
-| 1 | T17-25 the amendment to decision 0002, I1 and rule 5 (owner, `human`), T17-05 containers under today's rule 5, T17-15 the ceiling, T17-22 the server copy | T17-22: T17-25 and jellyscale-org/jellyscale#224, which is needs-evidence and gets its evidence from T17-12's wire run; the downmix reason is jellyscale-org/jellyscale#295, on the backlog |
+| 1 | T17-25 writing the owner's amendment to decision 0002, I1 and rule 5 (accepted 2026-11-26), T17-05 containers under today's rule 5, T17-15 the ceiling, T17-22 the server copy | T17-22: T17-25 and jellyscale-org/jellyscale#224, which is needs-evidence and gets its evidence from T17-12's wire run; the downmix reason is jellyscale-org/jellyscale#295, on the backlog |
 | 2 | T17-02 decision 0006 (owner, `human`), T17-03 `PRODUCT.md` and `DESIGN.md` | T17-02: the owner |
 | 3 | T17-11 the host and password sign-in, T17-13 staying signed in, T17-26 approving a Quick Connect sign-in | decision 0006; T17-26 also jellyscale-org/jellyscale#104 and #118 |
 | 4 | T17-06 the validator, T17-08 WebM as stored, T17-09 hls.js, T17-16 the measured ceiling | nothing before 0006 except T17-16, which follows first playback; T17-08 and T17-09 are wire-tested with T17-07's runner-side test session |
@@ -134,7 +134,7 @@ Each task gets its own spec in `docs/specs/<TASK-ID>.md` before implementation. 
 | 8 | T17-01 one build at `/` and any prefix, T17-07 the web wire test at `/` and a second prefix, T17-27 the pinned, licensed build | first playback (T17-27) |
 | 9 | not yet a task: a later pass adds the hardening task once T17-12 merges (backlog) | first playback |
 
-**The first playback needs no Jellyscale change.** The pinned Jellyscale reads none of the five PlaybackInfo flags, so it cannot be asked to copy an MKV, and Octave's profile may carry no container condition. T17-12 therefore plays a WebM film as stored (an opt-in sample in T17-07) and a film over the viewer's own streaming limit as a conversion, which the pinned Jellyscale already makes (`packages/core/tests/fixtures/jellyscale/README.md`, the forced-limit run). An MKV in the browser is refused with its reason until T17-22; T17-05 sends it through today's rule 5 (direct play and video copy off), which the pinned Jellyscale answers with direct play again, and the wire run records that as the evidence jellyscale-org/jellyscale#224 asks for. A copy into a container the browser takes needs the owner's amendment (T17-25) first, because rule 5 turns video copy off and I1 allows the extra request only that way.
+**The first playback needs no Jellyscale change.** The pinned Jellyscale reads none of the five PlaybackInfo flags, so it cannot be asked to copy an MKV, and Octave's profile may carry no container condition. T17-12 therefore plays a WebM film as stored (an opt-in sample in T17-07) and a film over the viewer's own streaming limit as a conversion, which the pinned Jellyscale already makes (`packages/core/tests/fixtures/jellyscale/README.md`, the forced-limit run). An MKV in the browser is refused with its reason until T17-22; T17-05 sends it through today's rule 5 (direct play and video copy off), which the pinned Jellyscale answers with direct play again, and the wire run records that as the evidence jellyscale-org/jellyscale#224 asks for. A copy into a container the browser takes waits for T17-25 to write the amendment the owner accepted on 2026-11-26, because rule 5 as written turns video copy off.
 
 ## What decision 0006 must promise
 
@@ -171,7 +171,7 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - **Buffer starvation on 4K.** A 4K remux is ~10 s of buffer on iOS; without a bitrate ceiling the viewer sees stalls that look like a network fault.
 - **The cutover breaks the shells.** Jellyfin Desktop and Jellyfin for webOS load `/web/`; Desktop's mpv plugin and webOS's `manifest.json`/`NativeShell` contract are jellyfin-web's. Jellyscale keeps `/web/` serving an operator's build and decides the shells on its own observation (its D-090).
 - **Web pull requests run the TV's CI.** Every web PR runs the TV's device jobs and changes the shared lockfile, so a web dependency can move a TV build and web PRs queue behind TV jobs. The CI skip rule is not loosened for it; a change to it is its own task.
-- **The task file is near its size limit.** `tasks/prd.json` is about 345 KB of 350 KB with T17 in it; T17-24 asks the owner to raise the limit or wait for T1-21.
+- **The task file grows.** The owner raised its limit to 450 KB (T17-24); moving finished phases out (T1-21) is a later task, so the limit is the only pressure left.
 - **A browser cannot keep the token out of JavaScript.** Decision 0005's guarantee is replaced by a stated, tested weaker one, not quietly dropped.
 - **Two UIs drift apart.** Web screens are built apart from TV screens. Rules, copy and token values stay in the core and shared files; `DESIGN.md` is the contract both are reviewed against.
 - **hls.js is a large dependency** with its own retry and error semantics; it must be wrapped so the rules, not the library, decide what plays.
@@ -185,8 +185,8 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - [ ] Milestone 0 on Safari, iPhone, iPad and a hardware-decoding Chrome or Edge (T17-04, the owner).
 - [ ] Decision 0006 accepted by the owner (T17-02).
 - [ ] First playback in a browser against the pinned Jellyscale (T17-12).
-- [ ] The owner's size-limit decision (T17-24), before the branch that adds T17 merges.
-- [ ] The owner's amendment for a container the browser cannot take (T17-25).
+- [x] (2026-11-26) The owner raised the task file's limit to 450 KB (T17-24, carried out in the branch that adds T17).
+- [x] (2026-11-26) The owner accepted the amendment for a container the browser cannot take; T17-25 writes it.
 - [ ] The rest of T17.
 
 ## Decision log
@@ -208,6 +208,7 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - 2026-11-26, Product Owner pass (scoped: the web client; provisional, for the owner's veto): a parallel lane `web` for every T17 task, so web work never stops a TV lane; 23 tasks mapped above; "milestones 1 to 9 wait for decision 0006" narrowed to "nothing that holds or persists a browser token merges before it"; the first playback goes through a WebM and the viewer's streaming limit, so it waits for no Jellyscale issue; the service-worker result is one backlog line, by the gate.
 - 2026-11-26, Jellyscale (its D-088 to D-090, by its owner and product owner): Jellyscale ships Octave Web at `/` instead of jellyfin-web; `/web/` passes the Quick Connect address to it and still serves an operator's build; JS-150 waits on a pinned, licensed build. This replaces the `/octave/` entry above and the plan 017 pass's cutover ruling.
 - 2026-11-26, Product Owner follow-up (provisional, for the owner's veto; `tasks/product-owner-log.md`, "2026-11-26 (Product Owner follow-up, scoped: the web client review)"): T17-05 stays inside today's rule 5 and the copy waits for an owner-accepted amendment (T17-25); the playback tasks gain Jellyscale checks; the picture exception moves to T17-11; burn-in never converts a film played as stored; four tasks added (T17-24 to T17-27); the size limit goes to the owner.
+- 2026-11-26, owner: raised the task file's limit to 450 KB, and accepted the amendment that lets a browser ask for a copy into a container it takes, or a re-encode of only the stream it cannot decode, shown to the viewer, with the TV unchanged (`docs/specs/decisions-owner-web-2026-11-26.md` §5, §6).
 
 ## Surprises & discoveries
 
