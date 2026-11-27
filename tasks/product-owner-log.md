@@ -1623,3 +1623,19 @@ Focus: since the fourth pass, T3-42 and T8-04 merged (both product) and the T4-0
 For the owner's veto: T5-09 before the new screens; Quick Connect's loading keeps its two buttons (call 4); no server line on the first launch frame until T4-10 (call 2, P7); the playback server-error sentence "The server had a problem starting playback, so try again in a moment." (call 6).
 
 For the owner: the session-ended sentence, your own words of 2026-11-23, keeps "{server}" inside it, against the new rule that a sentence names no server. Keep it, or move the name below as on the other screens? Default: keep it until you say.
+## 2026-11-26, T3-43 ruling, Spec and Check
+
+Inline ruling on Opus on the three scope questions of `docs/specs/T3-43.md` and its spec check (approved). Not the owner's words; the owner can veto any of it.
+
+- Q1, keep `shell-edge`, backlog its removal | agree, scope | why: T3-09's frozen `app-shell.test.tsx` pins it, and it points at the same entry as `rail-guide`, so the two cannot disagree. Removing it is not inside T3-43's acceptance. Backlog line added; it comes back when T3-09's shell tests are next returned for a ruling.
+- Q2, Up and Down no longer reach the rail from the content | accept, scope | why: `DESIGN.md` 7.1 already says the collapsed rail takes no focus while focus is in the content and names Left as the way in; Search stays "Left, Up to the top, select". No new rule, so no owner approval file. This is the call the owner may veto from the sofa: Up from the hero's top and Down from the last row now do nothing where they may have fallen into the rail before.
+- Q3, the library case | accept: proved in Jest now (item 1), shown on the emulator in T6-01 | why: no library screen is reachable until T6-01 fills the rail, and decision 0004 condition 5 needs Left at a library's first card to reach the rail. T6-01's acceptance needs an edit, scope only: add "Left from a library's first card opens the rail on that library's entry, shown on the emulator". An inline ruling edits no task list, so it returns in `needsPass` with a backlog line.
+
+The spec check's issues, all inside the acceptance:
+
+1. (Medium, TalkBack) The implementer adds a milestone-2 step on their own emulator with TalkBack on: Left from Home's first card reaches the current entry, Up and Down reach every entry, Right returns. If it cannot be run, the PR lists it as an untested gate (as the spec's Risks already plan). It adds no acceptance item and no test.
+2. (Low, stable wrapper and re-point) The implementer makes the `registerEntry` wrapper a stable `useCallback` and re-points `rail-guide` when the current entry's view registers anew, as well as on `current` and `entries`. The test writer may cover the re-register case in `rail-entry-focus.test.tsx` under item 1 (the last `pointGuide` call names the current entry's registered view); it is item 1's own wording, not new scope.
+3. (Low, pre-existing collapse window) The implementer names it in the PR's risks; no change and no task. It joins F6's deferral (fast-press focus), which already waits for the owner or T3-10.
+4. (Low, line number) Probed: `besideRail` is `FirstScreen.tsx:66` on the task branch. Nothing to do in code or tests; read the spec's `:72` as `:66`.
+
+For the owner's veto: Q2, Up and Down from the content no longer enter the rail.
