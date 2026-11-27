@@ -8,18 +8,18 @@
 // The contract frozen here:
 // - modules/artwork/android/src/main/java/dev/octave/artwork/OctaveArtworkModule.kt has one `ModuleDefinition { }`
 //   whose top-level calls are only `Name("OctaveArtwork")`, one `View(OctaveArtworkView::class) { … }` and an optional
-//   `OnDestroy`. The view's block holds exactly the six `Prop`s session, itemId, imageType, tag, width and blurHash, one
+//   `OnDestroy`. The view's block holds exactly the six `Prop`s session, itemId, imageType, tag, drawnWidth and blurHash, one
 //   `Events("onArtworkState")` and On… lifecycle hooks. Anywhere in the file's code an AsyncFunction, a Function, a
 //   Property, a Constant or Constants, a PropGroup, a static function, a Class, a GroupView, an OnCreate, a sendEvent
 //   or a Prop outside the view fails.
 // - modules/artwork/surface-allowlist.json is exactly { module: "OctaveArtwork", functions: [], events: [], views:
-//   [{ name: "OctaveArtworkView", props: [session, itemId, imageType, tag, width, blurHash], events: ["onArtworkState"] }],
+//   [{ name: "OctaveArtworkView", props: [session, itemId, imageType, tag, drawnWidth, blurHash], events: ["onArtworkState"] }],
 //   pending: {} }.
 // - docs/security.md has exactly one line starting `Artwork module allowlist:` (a list marker before it is allowed).
 //   Its backticked names, apart from the module name `OctaveArtwork` and task ids, are exactly the view, its six
 //   props and its event.
 // - modules/artwork/src/index.ts declares `interface OctaveArtworkViewProps` with exactly session, itemId, imageType,
-//   tag, width, blurHash, onArtworkState and style, and `interface ArtworkStateEvent` with exactly `state: "loaded" | "failed"`.
+//   tag, drawnWidth, blurHash, onArtworkState and style, and `interface ArtworkStateEvent` with exactly `state: "loaded" | "failed"`.
 // - The package is @octave/artwork (private, GPL-3.0-only, main src/index.ts, no dependency of its own), a
 //   "workspace:*" dependency of @octave/tv; its Expo config names dev.octave.artwork.OctaveArtworkModule for Android
 //   only; its Gradle file has namespace dev.octave.artwork, project(':octave-session'), the JUnit BOM pin of
@@ -34,7 +34,7 @@ import { describe, expect, it } from "vitest";
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const MODULE_FILE = "modules/artwork/android/src/main/java/dev/octave/artwork/OctaveArtworkModule.kt";
-const PROPS = ["session", "itemId", "imageType", "tag", "width", "blurHash"];
+const PROPS = ["session", "itemId", "imageType", "tag", "drawnWidth", "blurHash"];
 const VIEW = "OctaveArtworkView";
 const EVENT = "onArtworkState";
 
@@ -347,7 +347,7 @@ describe("T3-11 item 1: the artwork module's surface", () => {
     expect(props.get("session")).toMatch(/:\s*string\b/);
     expect(props.get("itemId")).toMatch(/:\s*string\b/);
     expect(props.get("tag")).toMatch(/:\s*string\b/);
-    expect(props.get("width")).toMatch(/:\s*number\b/);
+    expect(props.get("drawnWidth")).toMatch(/:\s*number\b/);
     const event = interfaceMembers(types, "ArtworkStateEvent");
     expect([...event.keys()]).toEqual(["state"]);
     const state = event.get("state") ?? "";

@@ -5,7 +5,7 @@
 // The contract frozen here (createNativeArtwork from ./native-artwork, as T3-11 froze it, plus):
 // - With a session and an image whose blurHash is a non-empty string, the surface2 wrapper (carrying the slot's testID)
 //   holds two instances of the view, in this order: a preview view whose props are only blurHash (that exact string)
-//   and at most a style; then the picture view with T3-11's five props (session, itemId, imageType, tag, width), the
+//   and at most a style; then the picture view with T3-11's five props (session, itemId, imageType, tag, drawnWidth), the
 //   onArtworkState handler and at most a style, and no blurHash.
 // - With no blurHash, or "", it draws only the picture view, with no blurHash prop, as T3-11 did.
 // - The picture view sits in an element whose style opacity is 0 while a preview is drawn and no "loaded" has come.
@@ -37,7 +37,7 @@ const OTHER_HASH = "diE|rGDNI9tmPpMca0tSO@xFs9R%xuofWARiNGkWWVso";
 const HASHED: ImageRef = { itemId: "a1b2c3d4e5f60718293a4b5c6d7e8f90", type: "Primary", tag: "5f3e2d1c0b9a87654321fedcba987654", blurHash: HASH };
 const RECYCLED: ImageRef = { itemId: "0f1e2d3c4b5a69788796a5b4c3d2e1f0", type: "Primary", tag: "00112233445566778899aabbccddeeff", blurHash: OTHER_HASH };
 const PLAIN: ImageRef = { itemId: HASHED.itemId, type: "Primary", tag: HASHED.tag };
-const FIVE = ["session", "itemId", "imageType", "tag", "width"];
+const FIVE = ["session", "itemId", "imageType", "tag", "drawnWidth"];
 
 type StateHandler = (event: { nativeEvent: { state: "loaded" | "failed" } }) => void;
 type Render = { instance: number; props: Record<string, unknown> };
@@ -150,7 +150,7 @@ describe("T3-39 item 1: a preview view beneath the picture view", () => {
     expect(preview.blurHash).toBe(HASH);
     expect(picture).toBeDefined();
     expect(Object.keys(picture).filter((key) => key !== "onArtworkState" && key !== "style").sort()).toEqual([...FIVE].sort());
-    expect(picture).toMatchObject({ session: SESSION, itemId: HASHED.itemId, imageType: "Primary", tag: HASHED.tag, width: sizes.posterW });
+    expect(picture).toMatchObject({ session: SESSION, itemId: HASHED.itemId, imageType: "Primary", tag: HASHED.tag, drawnWidth: sizes.posterW });
     expect(typeof picture.onArtworkState).toBe("function");
     expect(picture).not.toHaveProperty("blurHash");
   });
