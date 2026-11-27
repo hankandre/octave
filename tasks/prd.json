@@ -3215,10 +3215,10 @@
             "When the stop fails on Back, the player screen stays up and shows the copy table's Couldn't stop playback row with its action, where today the failure reaches only the failure log (DESIGN.md section 10; docs/specs/decisions-product-owner-2026-11-26.md, 4)"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "PR #344: CI tv and wire pass; PR records player-transport on Jellyscale (keys, pause, seek, keep-screen-on). 2026-11-26: manifest fixed after item 7 was dropped (842abe69); check-red 1-8 green, native 1117 pass. Untested: key-to-controls latency on Shield and cheap box (backlog); series line on Jellyscale (jellyscale#288)."
         },
         {
           "id": "T8-27",
