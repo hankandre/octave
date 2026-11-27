@@ -103,6 +103,7 @@ An inline ruling of a task run is logged in the same file, but without a `Produc
 ## The task flow, in the order it runs
 
 1. **Product Owner pass.** Backlog triage into the task list, with a log line and a veto for the owner. Outside the per-task run; it runs when the backlog has untaken entries.
+   - **Design (tasks that add or change a screen's look or focus; skip fixes).** Before Spec, `designer` writes `docs/specs/design/<ID>/`: a brief and 1920×1080 mockups. Show the owner the mockups and go on without waiting; the Product Owner decides, and the owner can veto. The spec follows the brief. A separate `ux-review` session compares the build with it and may challenge the design. This step is run by hand; `task.js` does not run it.
 2. **Spec.** `refiner` writes `docs/specs/<ID>.md`.
 3. **Check.** A fresh `spec-checker` appends its verdict; only critical or high issues block. Its technical, placement, dependency and scope questions go to the inline Product Owner step.
 4. **Tests.** `test-writer` commits the failing tests and the manifest. Red gate: the run stops with `tests-green` if one already passes.
@@ -276,6 +277,7 @@ Subagent definitions under `.claude/agents/*.md` set `model` in their frontmatte
 | `scout` | haiku | Read-only search and summarization |
 | `ci-triage` | haiku | Read failing check output, return the cause and the file:line |
 | `refiner` | opus | Refine one task and write `docs/specs/<TASK-ID>.md` |
+| `designer` | sonnet | Before Spec, design a new or changed screen as a brief and mockups in `docs/specs/design/<TASK-ID>/` |
 | `spec-checker` | opus | Fresh-context spec check; appends the verdict |
 | `implementer` | sonnet | Execute one TypeScript milestone from the approved spec |
 | `reviewer` | sonnet | Fresh-context review of routine diffs |
