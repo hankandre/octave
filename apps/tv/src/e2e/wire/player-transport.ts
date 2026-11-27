@@ -26,8 +26,10 @@ const NO_SEEK_SECONDS = 8;
 const SEEK_SECONDS = 10;
 const NEAR_SECONDS = 2;
 // A seek asked for while playing aims 10 s from where the picture was when the key arrived, which the last one-second
-// state event and the key's trip through adb leave up to about this far from the position read before the press.
-const PLAYING_NEAR_SECONDS = 3;
+// state event and the key's trip through adb leave up to about this far past the position read before the press.
+// Playing only moves forward, so the aim falls short of it only by rounding.
+const PLAYING_AHEAD_SECONDS = 3;
+const PLAYING_BEHIND_SECONDS = 0.5;
 // After the idle timer should have hidden the controls, and after a key that must not pause.
 const IDLE_PAST_MS = motion.chromeIdleMs + 1_000;
 const SETTLE_MS = 1_000;
@@ -43,8 +45,9 @@ const landedNear = (seconds: number) => (state: ViewingState) => {
   return landed ? true : undefined;
 };
 
-// A seek asked for while playing, aimed within PLAYING_NEAR_SECONDS of `seconds`, once it has landed. Playing alone never
-// sets a seek target, so a position that only moved on cannot pass.
+// A seek asked for while playing, aimed from PLAYING_BEHIND_SECONDS before `seconds` to PLAYING_AHEAD_SECONDS after it,
+// once the position reads within NEAR_SECONDS of the aim. Playing alone never sets a seek target, and a seek the engine
+// refused clears its target with the position left where it was, so neither can pass.
 function playingSeekLanded(seconds: number) {
   let asked: number | undefined;
   return (state: ViewingState) => {
@@ -52,7 +55,11 @@ function playingSeekLanded(seconds: number) {
       asked = state.seekingTo;
       return undefined;
     }
-    return asked !== undefined && Math.abs(asked - seconds) <= PLAYING_NEAR_SECONDS ? true : undefined;
+    if (asked === undefined) return undefined;
+    const aimed = asked - seconds >= -PLAYING_BEHIND_SECONDS && asked - seconds <= PLAYING_AHEAD_SECONDS;
+    const position = positionOf(state);
+    const landed = position !== undefined && Math.abs(position - asked) <= NEAR_SECONDS;
+    return aimed && landed ? true : undefined;
   };
 }
 
@@ -143,6 +150,9 @@ async function drive(context: WireContext, viewing: Viewing, closed: Promise<voi
   words.push("picture-left=scrubber");
   press("MEDIA_PLAY_PAUSE");
   await awaitState(viewing, STEP_MS, "picture-left-resume", pausedIs(false));
+  // Down takes focus off the scrubber to the control row, so if the controls failed to hide, the next Right only moves
+  // focus there and step 7 times out instead of seeking from the scrubber.
+  press("DPAD_DOWN");
   readWindow("playing");
   await wait(WINDOW_READ_MS);
 
