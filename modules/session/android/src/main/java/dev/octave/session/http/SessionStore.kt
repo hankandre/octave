@@ -60,11 +60,11 @@ internal class SessionStore(root: File, private val cipher: RecordCipher) {
         return files.filter { isRecordName(it.name) && it.isFile }
     }
 
+    // Classified from the bytes read, not from File.length(), which also answers 0 when the file cannot be reached
+    // (G-L5): a read that fails is unavailable, and only bytes that were read can make a record corrupt.
     fun read(file: File): Read {
-        val length = file.length()
-        if (length < MIN_BYTES || length > MAX_BYTES) return Read.Corrupt
         val bytes = try {
-            file.readBytes()
+            readAtMost(file, MAX_BYTES + 1)
         } catch (_: IOException) {
             return Read.Unavailable
         } catch (_: SecurityException) {
@@ -81,6 +81,17 @@ internal class SessionStore(root: File, private val cipher: RecordCipher) {
                 opened.bytes.fill(0)
             }
         }
+    }
+
+    private fun readAtMost(file: File, limit: Int): ByteArray = java.io.FileInputStream(file).use { input ->
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        while (out.size() < limit) {
+            val count = input.read(buffer, 0, minOf(buffer.size, limit - out.size()))
+            if (count < 0) break
+            out.write(buffer, 0, count)
+        }
+        out.toByteArray()
     }
 
     override fun toString(): String = "SessionStore([redacted])"
