@@ -1,7 +1,8 @@
 # 0008. The owner's answers on reorganising the guiding documents
 
-- Status: the owner's answers of 2026-11-26, recorded as given. Approval file for T8-27, T1-25 and T1-29 where this record says so, and for the two changes named under question 2 and question 3.
-- Context: `docs/proposals/vision-docs-restructure.md` (revision 2) put four questions to the owner. The coordinator condensed them; the questions below are the condensed wording the owner saw.
+- Status: the owner's answers of 2026-11-26, recorded as given. This record is the owner's approval for the two changes under question 2 and question 3, and for T8-27 shipping with no `DESIGN.md` edit (question 2). The edits to T1-25 and T1-29 that follow from question 3 are the Product Owner's reading of the answer, for the owner's veto. This file names those tasks only so that the Product Owner's script (`scripts/task-owner.mjs`) can record the edits.
+- Context: four questions put to the owner from the plan `docs/proposals/vision-docs-restructure.md` (revision 2). The coordinator condensed them; the questions below are the condensed wording the owner saw.
+- Files on other branches: when this record was written, the plan was only on the unmerged branch `docs/vision-docs-plan`, and `docs/specs/awaiting-owner.md` only on the unmerged branch `chore/design-history-removal`. Until those merge, the two paths name files that are not on `main`.
 
 ## The owner's answer, verbatim
 
