@@ -2,8 +2,9 @@
 // shell owns Back for the whole app. Routes are built and parsed in ./routes only; screens open routes through `useShell()`.
 //
 // Focus: each screen reports its focus place through `useFocusPlace()` (design/rows). The rail returns focus to the last
-// content element (`nextFocusRight`, select on the current entry), a thin guide at the content's left edge sends Left from a
-// first column to the current entry, and Back to a screen focuses the card that opened the next one.
+// content element (`nextFocusRight`, select on the current entry). Left from a first column reaches the current entry through
+// the rail's own guide (side-rail.tsx); a thin guide at the content's left edge points at the same entry. Back to a screen
+// focuses the card that opened the next one.
 //
 // testIDs: rail (the region), rail-guide, rail-entry-<key>, shell-edge, shell-content, not-found, not-found-home.
 import { CommonActions, DarkTheme, NavigationContainer, StackActions, createNavigationContainerRef, type ParamListBase } from "@react-navigation/native";
@@ -182,7 +183,7 @@ export function AppShell({ screens, libraries, account, initialPath = "/", icons
     railOpen,
   });
 
-  // The edge guide sends Left from a first column to the current entry.
+  // The edge guide points at the current entry, as the rail's own guide does; it cannot take Left on every screen by itself.
   useEffect(() => {
     if (chrome !== "rail") return;
     const view = entryViews.current.get(currentKey);
