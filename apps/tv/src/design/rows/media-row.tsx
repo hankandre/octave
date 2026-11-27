@@ -131,7 +131,8 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge: leftE
     [memory, router],
   );
   const onBlurCard = useCallback((id: string, index: number) => {
-    if (index === lastIndex.current) setLastCardRowId(undefined);
+    // On any blur: the card that had focus may no longer be the last, if the row's items changed under it.
+    setLastCardRowId(undefined);
     handlers.current.onCardBlur?.(id, index);
   }, []);
   const onPressCard = useCallback((id: string, index: number) => handlers.current.onCardPress?.(id, index), []);
