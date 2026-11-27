@@ -2,7 +2,7 @@
 // button's own select is the component's, and player-chrome.test.tsx holds it.
 //
 // Testing contract (the implementer builds to it). `./chrome-keys` exports
-//   chromeState(state: ChromeState, input: ChromeInput): { state: ChromeState; command?: ChromeCommand }
+//   chromeState(state: ChromeState, input: ChromeInput): { state: ChromeState; command?: ChromeCommand; focus?: "scrubber" | "play" }
 // - ChromeState is { shown: boolean; zone: "top" | "scrubber" | "controls" | "none"; idleAt?: number }.
 // - Every input carries `at` (ms), `paused` (the picture's, before any command runs) and `hold` (true while something
 //   keeps the chrome up: a sheet, a focused prompt, loading or a failure), plus a `type`:
@@ -11,7 +11,8 @@
 //   "holderPress", "scrubberPress" (that Pressable's onPress);
 //   "focus" with `zone` (what onFocus and onBlur reported last);
 //   "changed" (`paused` or `hold` changed); "idle" (the screen's one timer fired).
-// - ChromeCommand is one of "show-scrubber", "show-play", "seek-back", "seek-forward", "toggle", "pause", "resume".
+// - ChromeCommand is one of "seek-back", "seek-forward", "toggle", "pause", "resume".
+// - `focus` is where the screen moves focus, set exactly when the input shows a hidden chrome (T8-27 D1).
 // - `idleAt` is when the chrome is to hide, and is absent while it is not to.
 import { describe, expect, it } from "@jest/globals";
 import { motion } from "../design/tokens";
@@ -39,18 +40,27 @@ const ARROWS: KeyType[] = ["up", "down", "left", "right"];
 const ZONES: Zone[] = ["top", "scrubber", "controls"];
 
 describe("T8-04 item 1: the key rules from the picture", () => {
-  it.each(ARROWS)("T8-04 item 1: hidden, %s shows the chrome with focus for the scrubber and does not seek", (arrow) => {
+  const HIDDEN_ARROW_COMMANDS: Record<string, string | undefined> = {
+    up: undefined,
+    down: undefined,
+    left: "seek-back",
+    right: "seek-forward",
+  };
+
+  it.each(ARROWS)("T8-04 item 1: hidden, %s shows the chrome with focus for the scrubber; Left and Right seek", (arrow) => {
     const result = chromeState(hidden, input(arrow, 1000));
 
-    expect(result.command).toBe("show-scrubber");
+    expect(result.focus).toBe("scrubber");
+    expect(result.command).toBe(HIDDEN_ARROW_COMMANDS[arrow]);
     expect(result.state.shown).toBe(true);
     expect(result.state.idleAt).toBe(1000 + IDLE);
   });
 
-  it("T8-04 item 1: hidden, the holder's press shows the chrome with focus for Play or Pause and toggles nothing", () => {
+  it("T8-04 item 1: hidden, the holder's press pauses and shows the chrome with focus for Play or Pause", () => {
     const result = chromeState(hidden, input("holderPress", 1000));
 
-    expect(result.command).toBe("show-play");
+    expect(result.command).toBe("toggle");
+    expect(result.focus).toBe("play");
     expect(result.state.shown).toBe(true);
   });
 
