@@ -5533,10 +5533,10 @@
             "pnpm web:wire runs one approval against the pinned Jellyscale: the header on the approval call, no token in any URL, and one approval per confirmation (gate: ci)"
           ],
           "verify": "pnpm check && pnpm web:test && pnpm web:wire",
-          "status": "todo",
+          "status": "blocked",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Blocked on jellyscale-org/jellyscale#104 and #118 (open, planned): the pinned Jellyscale has no Quick Connect (/QuickConnect/Enabled is a stub). Starts when it has Quick Connect, its approval link and the asking device's name for a code. Product Owner follow-up 2026-11-26."
         },
         {
           "id": "T17-27",
@@ -5760,10 +5760,10 @@
             "pnpm web:wire shows both cases against the pinned Jellyscale with the flags in the body and the query and the server's copy on the wire, and the TV's wire tests pass in CI (gate: ci)"
           ],
           "verify": "pnpm check && pnpm web:wire",
-          "status": "todo",
+          "status": "blocked",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Blocked on jellyscale-org/jellyscale#224 (open, needs-evidence): Jellyscale plans it once a supported client sends the PlaybackInfo flags and its viewer is left without a film; T17-12's wire run records that evidence. Also waits for the owner's amendment T17-25. Product Owner follow-up 2026-11-26."
         },
         {
           "id": "T17-23",
@@ -5783,10 +5783,10 @@
             "The wire test with a test identity provider shows no Set-Cookie, no token in a URL, the provider's navigation as the only redirect, and sign-out revoking and reaching every tab (gate: ci)"
           ],
           "verify": "pnpm check && pnpm web:test && pnpm web:wire",
-          "status": "todo",
+          "status": "blocked",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Blocked on jellyscale-org/jellyscale#296 (open): the cookie-free OIDC handoff a browser tab can redeem, proposed on JS-039. Starts when the pinned Jellyscale has it. Product Owner follow-up 2026-11-26."
         }
       ]
     }
