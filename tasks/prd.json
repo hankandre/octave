@@ -1455,7 +1455,7 @@
           "status": "in_progress",
           "owner": "implementer",
           "passes": false,
-          "evidence": "At commit 9db82b01 (fixes c643fb22, fb61a79b; DESIGN b9caf316) (docs/specs/captures/T3-40/, emulator only). pnpm check exit 0; check-red T3-40 green 1-5, no problems; tsc clean; tv:e2e exit 0 on emulator-5554. All six after captures show whole rings, 3 px gap, 16 px rail padding. Not run: Shield, change review, tv:visual (no such script)."
+          "evidence": "At commit cc397b93 (ring 14aefd28, rail 5d1ed3db, DESIGN 4afd7876, captures 94b0bb4f in docs/specs/captures/T3-40/); a later rebase changes hashes and the PR carries them. pnpm check exit 0; check-red T3-40 green 1-5; tsc clean. tv:e2e and captures (emulator only, whole rings) ran before the rebase and cc397b93, which changes scroll timing only. Not run: Shield."
         },
         {
           "id": "T3-36",
