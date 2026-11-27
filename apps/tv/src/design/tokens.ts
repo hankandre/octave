@@ -85,7 +85,7 @@ export const sizes = {
   upNextW: 560,
   scrubTrackH: 4,
   scrubTrackHActive: 8,
-  scrubThumb: 16,
+  scrubThumb: 24,
   scrubGap: 2,
   scrubPreviewW: 384,
   scrimPlayerTopH: 360,
