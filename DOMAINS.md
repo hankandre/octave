@@ -181,6 +181,10 @@ Spend the most rigor (Opus or Fable, plans, adversarial review) on the core.
 
 **Target.** `apps/tv` (T3-01), with the tokens and base controls from T3-06 and the shell from T3-09.
 
+**The web form** (plan 017).
+- `apps/web` (`@octave/web`, T17-01) owns the web form's screens and composition root: React DOM with Vite, built into one static build with relative asset URLs. Today it draws a placeholder heading. It may import `packages/core` and `packages/web-host`; it names no network or browser storage API.
+- `packages/web-host` (`@octave/web-host`) owns the web form's adapters and is the only web code that may name `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `localStorage`, `sessionStorage`, `indexedDB`, `document.cookie` or `navigator.serviceWorker`. It is empty until T17-11. It may import `packages/core`, never `apps/web`.
+
 **Rules.**
 - Screens call application use cases. They do not instantiate gateways, transports, or engines; the composition root builds them.
 - Every screen works with the D-pad, select, and Back alone (`DESIGN.md`).
@@ -222,7 +226,12 @@ screens (apps/tv) ──► application (use cases, coordinator, reducers) ─�
             │                              └──► ports (interfaces only: Transport, PlayerEngine, PlaybackGateway, stores)
             └──► composition root only: may construct adapters
 adapters (gateway transport, native modules) ──► domain, ports
+
+web:  apps/web ──► packages/web-host ──► packages/core
+      apps/web ─────────────────────────► packages/core
 ```
+
+Neither `apps/web` nor `packages/web-host` imports `apps/tv`, `modules/`, React Native or Expo, and `packages/core` imports neither of them.
 
 1. **`domain/` imports nothing** outside itself: no React, React Native, Expo, SDK, or HTTP client.
 2. **The core imports no platform:** nothing from React, React Native, Expo, a native module, or a browser or desktop API. It takes what it needs through ports.
@@ -232,6 +241,8 @@ adapters (gateway transport, native modules) ──► domain, ports
 6. **Native side:** every request goes through the one OkHttp client; the token stays in the session registry; the player module never touches Jellyfin data other than its typed launch request.
 
 `pnpm lint:boundaries` (dependency-cruiser, `.dependency-cruiser.cjs`) enforces rules 1, 2, 3 and no circular imports on `packages/core/src` (T2-02): the domain may import nothing outside `domain/`, installed or not; a core file, tests included, imports only core code, the core's test fixtures and its declared npm packages (an allowlist), so React, React Native, Expo and native modules cannot reach it; and no core source file may import a Node builtin. ESLint forbids the browser globals in the core, and forbids timers, the wall clock, `crypto` and `Math.random` outside `packages/core/src/adapters/`; dependency-cruiser forbids importing `adapters/` from non-test core code (T2-03); ESLint also forbids `fetch`, `XMLHttpRequest`, `WebSocket` and `EventSource` outside `adapters/` (T2-04, T3-04). T3-04 adds `pnpm lint:network` for Octave's Kotlin and Java and the linked libraries, ESLint's network rules for `apps/tv`, and `NetworkPathsBytecodeTest` for the compiled classes.
+
+For the web form, `pnpm lint:boundaries` also runs `.dependency-cruiser-web.cjs` over `apps/web/src` and `packages/web-host/src` (T17-01): no import of `apps/tv`, `modules/`, the TV's workspace packages, React Native, Expo or anything unresolvable, no import of `apps/web` from `packages/web-host`, and no cycle. `pnpm web:lint` (`eslint.web.config.js`) refuses in `apps/web/src` the network and browser storage names listed for `packages/web-host` in section 8.
 
 ## Ubiquitous language
 
