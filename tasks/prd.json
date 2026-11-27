@@ -1606,10 +1606,10 @@
             "The PR shows before and after captures at 1920x1080 of Home with a card focused, and the emulator's view bounds of one thumb, one poster and the backdrop"
           ],
           "verify": "pnpm check && pnpm tv:native:test",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 45d8d6e9 renames the prop to drawnWidth; commit 45745bab adds captures. pnpm check, tv:native:test (1117/0), check-red green [2,3], tv:build+apk:check, tv:smoke, tv:e2e, tv:wire --task T3-11 (5/5 pass). Emulator bounds, picture view before -> after: thumb 832x234 -> 416x234, poster 496x372 -> 248x372, backdrop 3840x1080 -> 1824x1080 (frames 416x234, 248x372, 1824x1080). Captures show all four corner markers after; player loading screen too. Not run: Shield, cheap box, PR CI."
         },
         {
           "id": "T3-28",
