@@ -80,9 +80,9 @@ function taskPaths(task, root) {
   const main = root ? `${root}/${REPO}` : '.';
   return { main, worktree: `${parent}/${REPO}-${task}`, branch: `task/${task}`, spec: `docs/specs/${task}.md` };
 }
-// Paths whose change always needs a guardian review (AGENTS.md: policy, tokens, redaction, native).
+// Paths whose change always needs a guardian review (AGENTS.md: policy, tokens, redaction, native; the web form's token holder, engine and validator).
 const HIGH_RISK_PATH =
-  /^(packages\/core\/.*(jellyfin|negotiat|gateway|player|playback|redact|safe-reason|transport|host-class|session|lan-http)|packages\/core\/tests\/fixtures\/(hls-|host-classes)|src\/lib\/jellyfin\/|src\/lib\/player\/|src\/lib\/redact|src\/lib\/safe-reason|src\/lib\/transport-error|src\/lib\/lan-http|src\/domain\/(playback|host-class)|modules\/|apps\/tv\/android\/|docs\/security\.md|tests\/fixtures\/(hls-|host-classes))/;
+  /^(packages\/web-host\/|packages\/core\/.*(jellyfin|negotiat|gateway|player|playback|redact|safe-reason|transport|host-class|session|lan-http)|packages\/core\/tests\/fixtures\/(hls-|host-classes)|src\/lib\/jellyfin\/|src\/lib\/player\/|src\/lib\/redact|src\/lib\/safe-reason|src\/lib\/transport-error|src\/lib\/lan-http|src\/domain\/(playback|host-class)|modules\/|apps\/tv\/android\/|docs\/security\.md|tests\/fixtures\/(hls-|host-classes))/;
 // Kotlin and native module work goes to native-engineer.
 const NATIVE_PATH = /^(modules\/|apps\/tv\/android\/)/;
 // PATHS-END
