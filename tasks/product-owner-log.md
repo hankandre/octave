@@ -1520,3 +1520,39 @@ Focus: the one frozen-test ruling of a product task (T4-05, staying signed in), 
 - [security, the transport-canary judge] No change now. `judgeWire` fails `restore=` and `after-logout=` when either holds a wrong value and passes a line that holds neither, because the frozen T3-05 lines (`scripts/tv-wire.test.ts:302, 335, 457`, read) hold neither. | reason: those T3-05 tests contradict neither T4-05's acceptance nor its spec, so the rule gives no ground to change them in this ruling. T4-05's token claims do not rest on the two words: item 6 is proven by `StoredCredentialCanaryTest` on the JVM, and on a device the judge still requires `canary=absent`, `selftest=ok` and the crossings floor, which cover the `restoreSessions` results the recorder sees. What the words add is that the scan saw a list holding the run's own session and that a logout removed it; the app writes both unconditionally (`transport-canary.ts:52`), so a line without them comes only from a build that dropped the call. That gap is a weaker regression guard, not a leak. | conditions: verify quotes the `transport-canary` line and it holds `restore=listed after-logout=absent`; `docs/security.md` and the pull request do not say the judge requires the words; the pull request lists the optional words among its gaps. | later: backlog line 423 ("Make transport-canary's judge require restore=listed and after-logout=absent ...") is already on the branch and goes to the next pass; the lean is T4-08, which touches the same line for `sessionEnded`.
 - [for the implementer] `docs/security.md`, the row "Save, forget and restore are serialized", says `StoreLockTest` covers two races and `StoreListingTest` the concurrent restores; `StoreLockTest` now passes all three, so the row names it for all three. No other implementation change is asked.
 - Checks on d8df4f2e: `pnpm tv:native:test`: "tv native: 1109 tests, 0 failed, 6 projects"; `pnpm check`: exit 0 (core "Tests  2933 passed (2933)"); `node scripts/check-red.mjs T4-05 --expect green`: `"red":[]`, `"green":[1,2,3,4,5,6,8,9]`, `"problems":[]`, item 7 a review gate.
+
+## 2026-11-26 (Product Owner pass, fourth, scoped: the UX review of every reachable screen)
+
+Focus: since the third pass T3-40 (the ring and the rail) is merged and T4-05's code (staying signed in) is on `main`; both moved the product forward and neither was hardening or process. This pass reads one report, `docs/research/ux-review-2026-11-26.md` (13 findings on the emulator), and two named backlog lines; it does not triage the older backlog. It appends nine backlog lines for the review, takes four of them into three new tasks, folds one finding into T3-41 by a scope edit, defers seven entries (five new, two named) and dismisses two findings. The calls are in `docs/specs/decisions-product-owner-2026-11-26d.md`, for the owner's veto. Checked in the code first: F1 to F5 (the decision file quotes where); F6 to F13 rest on the review's captures.
+
+Tasks, in the order they run:
+
+- Do | "Draw every artwork picture at the size of its frame …" (F1) | added T3-42, "Draw artwork at the size of its frame: rename the artwork view's width prop", first in the `native-session` lane, after T3-39 and depending on it | call 1 | why: every card, the backdrop and the player's loading screen show a doubled crop on a 1080p TV, and the owner is looking at it. Its own small task so nothing else holds it. It takes the serial slot before the player lane's T8-27 and T8-05. The surface change (a view prop renamed `drawnWidth`) is approved by call 1 and recorded as an amendment to decision 0005 in the task's pull request; the frozen tests that pin `width` are ruled in call 1 and changed by a Product Owner commit at milestone 0.
+- Do | "Open the rail on the current screen's entry …" (F2) | added T3-43, "Open the rail on the current screen's entry, from anywhere", first in the `ui` lane, depending on T3-40 | call 2 | why: `DESIGN.md` 7.1 already says it, and a rail that opens on Settings from Home costs presses on every visit.
+- Do | "Keep focus sensible around Home's hero …" (F3, F4) and "Stop a row's end fade covering its focused last card …" (F5) | added T5-09, "Keep focus where the viewer expects it on Home's hero and at a row's end", second in the `ui` lane (moved before T4-06), depending on T5-03 | calls 3 and 4 | why: Home is the screen the owner uses most. Apart from T3-43 so a hard rail fix does not hold the hero's. Both are on Opus: focus on the TV has cost a second round before.
+- Edit | F7, the dialog's focused button overlaps Cancel | T3-41 gains one acceptance item | scope edit | call 5 | why: T3-41 already redraws these buttons and captures this dialog; the rule is `DESIGN.md` 9.
+- Order kept after these: T4-06, T5-04, T5-08, T3-41 in `ui`; T8-27 then T8-05 in `player`. | why: T3-43 and T5-09 mend what is built and seen broken on every visit, so they go before T4-06, which adds a screen. T4-06 stays next after them because nothing in the app signs out yet (the T4-05 line a later pass places). T5-04 follows T3-42 in time, so its captures show artwork at its own size.
+
+Later, each with what brings it back:
+
+- "Check on the Shield whether very fast or held Right presses in a row ever leave no visible focus" (F6) | the owner sees it with the remote, or T3-10's scripted focus test fails on it.
+- "T4-01's spec weighs the server step's focus …" (F8) | T4-01's spec; the opening focus is pinned by the frozen smoke oracle.
+- "Measure the Home hero's overview contrast again once artwork is drawn at its own size …" (F10) | T3-42 merged and T5-04's captures of the loaded Home; a reading still under 4.5:1 becomes a task.
+- "Show the time left on a film's hero and page when it resumes …" (F11) | T7-01, which builds the same facts.
+- "Owner's call on Home's backdrop following the focused card …" (F9) | the owner's answer; the default keeps `DESIGN.md` 7.2.
+- "Product Owner: when a viewer leaves a repeat sign-in to an already saved account, decide whether to keep the earlier saved sign-in …" (T4-05) | decided, call 8: keep the earlier sign-in. Not built now: the path is rare until T4-06's Add account, the cost is one more sign-in and nothing leaks. T4-06's spec carries it with no new native method; if it needs one it returns for a decision.
+- "Stop the frozen T3-40 overflow test relying on a layout event bubbling …" (T3-40 change review) | call 8: no frozen-test change, since the test contradicts neither the acceptance nor the spec and passes. Back when the testing library is upgraded to the version that stops bubbling.
+
+Dismissed:
+
+- F12, placeholder screens clip a ring and are titled "Octave" | each is replaced by its own screen task; no backlog line.
+- F13, the open rail cuts the hero's text with a hard edge | `DESIGN.md` 6 puts the open rail over the content; asked of the owner below, default keep; no backlog line.
+
+For the owner's veto, the calls to judge: Up from any card lands on the hero's Resume, at the far left, not on the nearest button (call 3); the artwork prop's new name (call 1); the earlier sign-in is kept when a repeat sign-in is left (call 8).
+
+For the owner, on the Shield (none of these blocks a task):
+
+1. On Home, while a card is selected, the big title at the top stays one film and the background becomes the selected card's. Does that pairing bother you? Default: keep it.
+2. When you open the menu on the left, it cuts the title and text behind it with a hard edge. Is that fine? Default: keep it.
+3. When you press Right many times quickly, or hold it, in a row of cards, does the highlight ever disappear? Default: no change unless you see it.
+4. After the next fix, press Up from a card on the right of Continue watching: the highlight goes to Resume at the far left. Does that feel right, or should it go to the nearest button? Default: Resume.
