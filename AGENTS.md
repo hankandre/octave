@@ -100,6 +100,8 @@ Dependencies
 - Treat any guiding-document change as weighty: name what it cascades into before proposing it.
 - Add no log, status or per-task detail to a guiding document.
 - Document detailed behaviour under `docs/`, in a clear hierarchy, and link to it by path; put guidance on how to do a kind of work in a skill.
+- Keep a client's own design rules out of the shared guiding documents: put them in that client's supplemental guide, and apply them to that client only.
+- Record a design decision that deepens the design language in the supplemental guide, not in `DESIGN.md`.
 - Move or restructure existing guiding-document content only as the owner approves.
 
 ## Design
