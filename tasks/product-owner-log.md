@@ -1639,3 +1639,13 @@ The spec check's issues, all inside the acceptance:
 4. (Low, line number) Probed: `besideRail` is `FirstScreen.tsx:66` on the task branch. Nothing to do in code or tests; read the spec's `:72` as `:66`.
 
 For the owner's veto: Q2, Up and Down from the content no longer enter the rail.
+
+## 2026-11-26 (Product Owner pass, sixth, scoped: the session-ended sentence)
+
+Focus: since the fifth pass, T3-43 merged (product); none was hardening or process. This pass records one owner answer and edits one task; it takes, defers and dismisses no backlog entry. Made on Opus.
+
+- Edited T8-17, item 2 | approval: `docs/specs/decisions-owner-chat-2026-11-26-session-ended.md` | session-ended takes the new layout: the server's name leaves the sentence for the server line below | why: the owner answered the question of call 7 (`docs/specs/decisions-product-owner-2026-11-26f.md`): "the new layout."
+- Wording, Product Owner call for the owner's veto: "Your session has ended. Sign in again to keep watching." It is the owner's sentence with only "on {server}" removed; title and actions unchanged.
+- `DESIGN.md` 10 is not edited now: the frozen T8-25 test `packages/core/src/domain/playback-failure-copy.test.ts` compares its rows with the core copy verbatim and pins the old sentence at line 66, so T8-17 changes `DESIGN.md` 10 and the core copy together, and the Product Owner rules on that test at T8-17's milestone 0. No frozen file is changed by this pass.
+
+For the owner's veto: the new session-ended sentence.

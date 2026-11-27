@@ -42,6 +42,8 @@ On the full screen the server-error sentence is "The server had a problem starti
 
 "Your session on {server} has ended. Sign in again to keep watching." is the owner's own wording of 2026-11-23, pinned by a frozen T8-25 test. It keeps `{server}` against M4 until the owner says otherwise; it is asked of the owner below.
 
+**Answered 2026-11-26:** the owner chose the new layout (`docs/specs/decisions-owner-chat-2026-11-26-session-ended.md`). The sentence becomes "Your session has ended. Sign in again to keep watching.", with the server on the line below; the wording is the Product Owner's, for the owner's veto. T8-17 changes it.
+
 ## 8. Rail and Back on the new screens
 
 Where a rail exists (not-found, Home), Left from the first action opens it (M11), and Back does what the screen does today (brief section 6). The full-screen block is centred on the screen, not on the space beside the rail.
