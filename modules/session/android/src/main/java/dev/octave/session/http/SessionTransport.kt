@@ -97,8 +97,11 @@ internal class SessionTransport(
 
     // Under the lock: saves the record of a new sign-in. A newer record replaces the file older entries named, so they
     // stop naming it. A save that could not be made stores nothing and leaves an existing record untouched (Q9).
+    // When the save is refused and the account already has a record, the new session takes that record over (G-M2):
+    // the record still holds an earlier token of the same account, and ending this session must delete it.
     private fun keep(stored: StoredSession, account: SessionAccount, session: SessionId) {
-        val file = store?.save(stored) ?: return
+        val store = store ?: return
+        val file = store.save(stored) ?: store.fileFor(stored.serverId, stored.userId).takeIf { it.isFile } ?: return
         for ((id, entry) in SessionRegistry.withAccounts()) {
             val other = entry.account ?: continue
             if (id != session && other.record == file) other.record = null
@@ -162,58 +165,76 @@ internal class SessionTransport(
         return SessionRegistry.take(session)
     }
 
-    // Opens a session for each stored record no live entry names, then answers every live session with a record in
-    // this store, newest record first (docs/specs/T4-05.md, D4). It sends nothing: validation is the core's. A second
-    // call in the same process answers the same ids, because the registry outlives the module instance. It never
-    // fails: a store that cannot be read answers what it could.
+    // Opens sessions for the stored records no live entry names, newest record first, then answers the live sessions
+    // with a record in this store, newest record first (docs/specs/T4-05.md, D4). It sends nothing: validation is the
+    // core's. Only the newest record may be restored (Q5): the first record that is kept but cannot be opened (the
+    // Keystore or the file was unavailable, or a development build refused its address) stops the walk, and no session
+    // whose record is not newer than it is opened or listed, so a record that fails never lets an older account in. A
+    // record whose age cannot be read counts as the newest. A second call in the same process answers the same ids,
+    // because the registry outlives the module instance. It never fails: a store that cannot be read answers nothing.
     fun restore(): Map<String, Any?> {
         val store = store ?: return mapOf("sessions" to emptyList<Map<String, Any?>>())
         val sessions = synchronized(SessionStore.LOCK) {
             val named = SessionRegistry.withAccounts().mapNotNull { it.second.account?.record?.path }.toSet()
-            for (file in store.records()) {
+            var blockedAt: Long? = null
+            for (file in store.records().sortedWith(NEWEST_FIRST)) {
                 if (file.path in named) continue
-                try {
+                val reopened = try {
                     reopen(store, file)
                 } catch (_: Exception) {
-                    // Unavailable: the record is kept and nothing is opened for it.
+                    Reopened.KEPT
+                }
+                if (reopened == Reopened.KEPT) {
+                    blockedAt = ageOf(file)
+                    break
                 }
             }
-            listed(store)
+            listed(store, blockedAt)
         }
         return mapOf("sessions" to sessions)
     }
 
+    private enum class Reopened { OPENED, DELETED, KEPT }
+
     // Under the lock: a corrupt record is deleted; an unavailable one is kept; a record the development-build rule
     // refuses is kept and opens nothing; any other opens a session with the header Kotlin builds again.
-    private fun reopen(store: SessionStore, file: java.io.File) {
+    private fun reopen(store: SessionStore, file: java.io.File): Reopened {
         val stored = when (val read = store.read(file)) {
-            SessionStore.Read.Corrupt -> return SessionStore.forget(file)
-            SessionStore.Read.Unavailable -> return
+            SessionStore.Read.Corrupt -> return deleted(file)
+            SessionStore.Read.Unavailable -> return Reopened.KEPT
             is SessionStore.Read.Session -> read.session
         }
         val address = ServerAddress.parse(stored.server)
         try {
             servers.check(address)
         } catch (_: OctaveHttpException) {
-            return
+            return Reopened.KEPT
         }
         val header = try {
             MediaBrowserHeader.build(ClientIdentity.CLIENT, identity.device, stored.deviceId, identity.version, stored.token)
         } catch (_: IllegalArgumentException) {
-            return SessionStore.forget(file)
+            return deleted(file)
         }
-        val authorization = MediaBrowserAuthorization.parse(header) ?: return SessionStore.forget(file)
+        val authorization = MediaBrowserAuthorization.parse(header) ?: return deleted(file)
         val account = SessionAccount(stored.server, stored.deviceId, stored.userId, stored.serverId, stored.userName, file)
         SessionRegistry.open(stored.server, authorization, account)
+        return Reopened.OPENED
     }
 
-    // Under the lock: the live sessions whose record is in this store, newest record first. Every field is stripped of
-    // the session's token, as a sign-in result is.
-    private fun listed(store: SessionStore): List<Map<String, Any?>> {
+    private fun deleted(file: java.io.File): Reopened {
+        SessionStore.forget(file)
+        return Reopened.DELETED
+    }
+
+    // Under the lock: the live sessions whose record is in this store and, when a record was kept unopened, newer than
+    // it, newest record first. Every field is stripped of the session's token, as a sign-in result is.
+    private fun listed(store: SessionStore, blockedAt: Long?): List<Map<String, Any?>> {
         val held = SessionRegistry.withAccounts().mapNotNull { (id, entry) ->
             val account = entry.account ?: return@mapNotNull null
             val record = account.record?.takeIf { store.owns(it) } ?: return@mapNotNull null
-            Triple(id, entry, record.lastModified())
+            val age = ageOf(record)
+            if (blockedAt != null && age <= blockedAt) return@mapNotNull null
+            Triple(id, entry, age)
         }
         return held.sortedByDescending { it.third }.mapNotNull { (id, entry) ->
             val account = entry.account ?: return@mapNotNull null
@@ -359,6 +380,11 @@ internal class SessionTransport(
     }
 
     companion object {
+        // A record's age for ordering: its modified time, or the newest possible when that cannot be read.
+        private fun ageOf(file: java.io.File): Long = file.lastModified().takeIf { it > 0L } ?: Long.MAX_VALUE
+
+        private val NEWEST_FIRST: Comparator<java.io.File> = compareByDescending<java.io.File> { ageOf(it) }.thenBy { it.name }
+
         private val JSON = "application/json".toMediaType()
         private val LITERALS = setOf("true", "false", "null")
         private val JSON_NUMBER = Regex("""-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?""")
