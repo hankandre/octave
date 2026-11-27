@@ -8,12 +8,16 @@ import { findLintGaps } from "./lint-boundaries.mjs";
 
 const WEB_SOURCES = ["apps/web/src", "packages/web-host/src"];
 
-// Test files are read too: every web rule applies to them.
+const DECLARATION = /\.d\.[cm]?ts$/;
+// The only app code that may live outside src/: the browser tests and the build configs, which never ship.
+const OUTSIDE_SRC_ALLOWED = /^apps\/web\/(src\/|e2e\/|[^/]+\.config\.[cm]?[jt]s$)/;
+
+// Test files are read too: every web rule applies to them. A declaration file holds no import the run must follow.
 function listWebSourceFiles(root) {
   return WEB_SOURCES.flatMap((source) =>
     readdirSync(resolve(root, source), { recursive: true }).map((entry) => `${source}/${String(entry).split("\\").join("/")}`),
   )
-    .filter((path) => /\.[cm]?[jt]sx?$/.test(path))
+    .filter((path) => /\.[cm]?[jt]sx?$/.test(path) && !DECLARATION.test(path))
     .sort();
 }
 
@@ -61,6 +65,12 @@ try {
 }
 const gaps = findLintGaps(result, sourceFiles);
 if (gaps.length > 0) fail(gaps.join("\n"));
+const outside = result.modules
+  .map((module) => module.source)
+  .filter((source) => source.startsWith("apps/web/") && !source.includes("node_modules/") && !OUTSIDE_SRC_ALLOWED.test(source));
+if (outside.length > 0) {
+  fail(outside.map((source) => `ERROR lint:boundaries: ${source} is outside apps/web/src. Move it under src/.`).join("\n"));
+}
 const { format } = await import("dependency-cruiser");
 const { output, exitCode } = await format(result, { outputType: "err-long" });
 process.stdout.write(output);
