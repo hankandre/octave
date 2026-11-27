@@ -2,6 +2,8 @@
 
 Status: a proposal for the Product Owner. The owner may veto from the mockups.
 
+**Superseded in part:** after the owner's feedback on mockup 16, `../full-screen-states/brief.md` sets how every loading and failure screen looks and words itself. It replaces the composition and wording in B34 and section 6, and the look of mockups 10, 15 and 17. Mockup 16 now shows the new pattern. The behaviour here is otherwise unchanged.
+
 **The viewer's goal:** get to my own Home, with my own progress and settings, in as few presses as possible. A household with one account must never notice that accounts exist.
 
 How to read this:
@@ -249,7 +251,7 @@ Presses from Home to another account, with two libraries: Left, Down four times,
 | `13-picker-from-rail.png` | The picker from the rail, focus on the active account |
 | `14-picker-back-opens-rail.png` | The first Back from there |
 | `15-switching.png` | While the other account loads (the same screen as 10, on purpose) |
-| `16-switch-failed.png` | Failed switch (recommended) |
+| `16-switch-failed.png` | Failed switch (recommended), drawn from `../full-screen-states/mockups.html?m=06-switch-failed` |
 | `17-alt-switch-failed-as-built.png` | Failed switch with today's screen |
 
 Sign-in is not redrawn because it does not change. See the captures under `docs/specs/captures/`: `T4-02/after-found-servers.png` (Add account's first step), `T4-05/after-revoked-password-prefilled.png` and `T4-05/after-revoked-unencrypted-dialog.png` (signed-out routes), and `T4-03/after-waiting-qr.png` (Quick Connect).
