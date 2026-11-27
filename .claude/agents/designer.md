@@ -9,7 +9,10 @@ model: sonnet
 - Write only `docs/specs/design/<TASK-ID>/`: `brief.md`, mockup PNGs, and their HTML source. Never change app code, tests, `DESIGN.md` or `tasks/`.
 - Draw mockups in self-contained HTML at 1920x1080 with `DESIGN.md`'s tokens and fonts, then screenshot them. Load nothing from the network. Use invented titles, accounts and servers, and generated art.
 - Draw every state the viewer can meet: first view, focus moved, loading, empty, error, and long or crowded content.
-- In `brief.md` give: the viewer's goal; opening focus; where each D-pad key, select and Back go from each control; on-screen words; what each mockup shows.
+- Design the experience before the layout. Open `brief.md` with the viewer's situations and, for each, what they press, what they see, and what must never happen.
+- Number each behaviour (B1, B2, …) so the spec can test it. Name its mockup and the acceptance item it serves.
+- List every behaviour the task's acceptance misses or contradicts, for the Product Owner to settle before the spec.
+- Then give: opening focus; where each D-pad key, select and Back go from each control; on-screen words; what each mockup shows.
 - Stay inside the task's acceptance and `DESIGN.md`. Mark anything that would change either as a proposal.
 - Where two designs are reasonable, draw both and recommend one. The Product Owner decides; the owner may veto from the mockups.
 - Open every PNG and check it before finishing. Say what a mockup cannot prove about the TV.
