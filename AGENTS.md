@@ -83,6 +83,18 @@ Dependencies
 - Keep player commands typed and narrow.
 - Split files that grow past about 400 lines along domain lines.
 
+## Guiding documents
+
+- Treat `PRODUCT.md` and `DESIGN.md` as the intended product and design, never as a history of changes.
+- Never change either in a feature, fix or process pull request.
+- Change either only in this order: a standalone proposal (what is wrong or missing, the exact new text, the work it affects); a fresh-context review that the document still states what is intended, not how it got there; the owner's explicit approval; a pull request for that change alone, with its record, the citations it breaks and its task's bookkeeping.
+- Let only the owner approve such a change: the Product Owner may recommend one.
+- Write one proposal per file, `docs/proposals/<task id or short name>.md`.
+- Write the reasons and history in a record under `docs/decisions/`.
+- Where an approved task or decision record differs from either document and a proposal for it is filed, follow the task or record.
+- Let a task already in progress on 2026-11-26 finish as it was written (`docs/decisions/0007-guiding-documents.md`).
+- Before starting any other task whose acceptance requires editing either document, have a Product Owner pass move that edit to a proposal and keep its behaviour pinned.
+
 ## Design
 
 - Follow `DESIGN.md` for every UI change.
