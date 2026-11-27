@@ -8,6 +8,7 @@ tools: Read, Grep, Glob, Write, Bash, mcp__serena__find_symbol, mcp__serena__get
 - Follow `AGENTS.md`.
 - Read the task with `pnpm task show <TASK-ID>`; never load the whole of `tasks/prd.json`.
 - Read its plan, and the code and docs it touches.
+- Where `docs/specs/design/<TASK-ID>/` exists, write the spec to match it: map each numbered behaviour to how it is met and tested, or list it as out of scope.
 - Never edit code, tests, `tasks/prd.json`, or plans; write only `docs/specs/<TASK-ID>.md`.
 - Run only read-only shell commands.
 - Write these sections: Goal; Acceptance (each item mapped to how it is met and tested; an item that cannot be a failing test, such as an owner, device, review or CI check, says `gate: <kind>` with `owner`, `device`, `review`, `ci` or `met` in its "How it is tested" cell; an item about documentation or wording is `gate: review`; write `gate:` only for the item's own gate, never to describe a CI half of a tested item); Files to touch; Approach; Test plan; Risks and out of scope; Validation commands; Dependencies (the maintenance check from primary sources for each one adopted).
