@@ -84,7 +84,7 @@ describe("T8-04: TalkBack on the scrubber", () => {
     ["decrement", -10],
   ])("the %s action seeks %d s", async (actionName, seconds) => {
     const rig = await renderAfterFirstFrame();
-    await pressRemoteKey("right");
+    await pressRemoteKey("up");
     await focusTracker().follow();
     const scrubber = screen.getByLabelText("Seek");
     expect(scrubber.props.accessibilityActions).toContainEqual({ name: actionName });

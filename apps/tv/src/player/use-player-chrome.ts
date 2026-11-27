@@ -26,9 +26,6 @@ export function runChromeCommand(viewing: Viewing, command: ChromeCommand): void
     case "resume":
       viewing.setPaused(false);
       break;
-    case "show-scrubber":
-    case "show-play":
-      break;
   }
 }
 
@@ -45,7 +42,7 @@ export type PlayerChromeState = {
   shown: boolean;
   /** Where focus goes when the chrome shows. */
   target: "scrubber" | "play";
-  /** A press of the focus holder or the scrubber. */
+  /** A press of the focus holder or the scrubber. Ignored while the key rules do not run. */
   press(type: "holderPress" | "scrubberPress"): void;
   focused(zone: ChromeZone): void;
 };
@@ -59,7 +56,6 @@ export function usePlayerChrome({ viewing, paused, hold, active }: Options): Pla
 
   const apply = useCallback(
     (input: { type: Exclude<ChromeInput["type"], "focus"> } | { type: "focus"; zone: ChromeZone }) => {
-      const wasShown = rules.current.shown;
       const result = chromeState(rules.current, {
         ...input,
         at: Date.now(),
@@ -68,7 +64,7 @@ export function usePlayerChrome({ viewing, paused, hold, active }: Options): Pla
       });
       rules.current = result.state;
       setState(result.state);
-      if (!wasShown && result.state.shown) setTarget(result.command === "show-scrubber" ? "scrubber" : "play");
+      if (result.focus !== undefined) setTarget(result.focus);
       if (result.command !== undefined) runChromeCommand(viewing, result.command);
     },
     [viewing],
@@ -99,7 +95,12 @@ export function usePlayerChrome({ viewing, paused, hold, active }: Options): Pla
     return () => clearTimeout(timer);
   }, [state.idleAt, apply]);
 
-  const press = useCallback((type: "holderPress" | "scrubberPress") => apply({ type }), [apply]);
+  const press = useCallback(
+    (type: "holderPress" | "scrubberPress") => {
+      if (active) apply({ type });
+    },
+    [active, apply],
+  );
   const focused = useCallback((zone: ChromeZone) => apply({ type: "focus", zone }), [apply]);
 
   return { shown: active && state.shown, target, press, focused };
