@@ -79,6 +79,43 @@ jobs:
       - run: pnpm test
       - run: pnpm typecheck
       - run: pnpm test:workflow
+      - run: pnpm web:lint
+      - run: pnpm web:typecheck
+      - run: pnpm web:unit
+
+  # The web form (T17-01): one static build, served at two prefixes under the plan's Content-Security-Policy,
+  # in Chromium and Firefox. Runs on every event. Not a required check yet.
+  web:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 11.3.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - id: playwright
+        run: node -p '"version=" + require("./apps/web/package.json").devDependencies["@playwright/test"]' >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      # Run on a cache hit too: it installs the browsers' system libraries.
+      - run: pnpm --filter @octave/web exec playwright install --with-deps chromium firefox
+      - run: pnpm web:test
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          if-no-files-found: warn
 
   # Server conversion tripwire: plays every synthetic sample through the core's
   # gateway against the pinned Jellyfin 10.11, Jellyfin 12.4 and Jellyscale
