@@ -1,0 +1,12 @@
+{
+  "task": "T3-43",
+  "files": [
+    "apps/tv/src/shell/rail-entry-focus.test.tsx"
+  ],
+  "items": [
+    { "item": 1, "run": ["pnpm", "--filter", "@octave/tv", "exec", "jest", "--ci", "src/shell/rail-entry-focus.test.tsx", "-t", "T3-43 item 1:"] },
+    { "item": 2, "gate": "met", "why": "Frozen T3-09 tests of items 2, 4, 5 and 8 (side-rail.test.tsx, app-shell.test.tsx, back.test.tsx, focus-place.test.tsx) pin Back opening the rail on the screen's entry and Right and select on the current entry returning to the control left; they pass on main and run in pnpm check" },
+    { "item": 3, "gate": "met", "why": "Frozen T3-09 tests of items 1 to 3 and T3-40's rail tests (side-rail-focus.test.tsx, rail-reveal.test.tsx) pin the order, the bar, the rings and the keys that open and close the rail; they pass on main and run in pnpm check" },
+    { "item": 4, "gate": "device", "why": "Jest has no focus engine; Left on the emulator is milestone 2's evidence" }
+  ]
+}
