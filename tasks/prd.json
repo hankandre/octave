@@ -2371,11 +2371,44 @@
             "With two or more signed-in accounts the app opens on Who's watching?, and choosing a tile opens that account's Home in one press",
             "An account is one user on one server, saved by server id; each account sees only its own server's libraries",
             "The rail's account entry opens the same screen; Add account starts sign-in without signing anyone out",
-            "Switching accounts drops the previous account's cached screens",
-            "A signed-out account's tile says so in words and opens sign-in for that user and server",
-            "Switching accounts calls hostPreferences().useAccount with the new account's preference source, so each account sees its own settings (T9-09, D9)"
+            "Switching accounts drops the previous account's cached screens, only once the new account has been checked; a failed or left switch keeps the previous account active and signed in, and a check the viewer has left never switches the account later",
+            "Who's watching? shows every signed-in account in wrapped, centred rows, ordered by user name then server address, each tile with the initial, the user's name (Account and the user icon when there is none) and the server's address, then Add account; focus opens on the active account's tile from the rail and on the first tile at launch; select on the active account's tile returns to its Home with no check",
+            "Switching accounts calls hostPreferences().useAccount with the new account's preference source, so each account sees its own settings (T9-09, D9)",
+            "A switch whose server cannot be checked shows Loading…, then the matching sign-in sentence with Try again focused and a quiet Who's watching?; Back there or on Loading…, and that button, return to Who's watching? with focus on the chosen tile",
+            "Two Quick Connect sign-ins as different users to one server from this TV leave both signed in, proven by the wire test against the pinned Jellyfin 10.11 and 12; what Jellyscale does is recorded in the PR, and a Jellyscale issue is filed and named if it signs the first one out",
+            "Signing in again as an account already saved on that server makes no second tile and leaves it signed in, also when the viewer left that sign-in before its answer arrived; the session it replaced is ended without deleting the new stored sign-in",
+            "Back from sign-in's first step, reached by Add account, returns to Who's watching? with focus on Add account",
+            "DESIGN.md 7.20, 7.21, sections 10 and 12, and PRODUCT.md's presses-to-resume measure (1 with one signed-in account, 2 with two or more) say what this task built, in the same PR"
           ],
           "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
+          "id": "T4-10",
+          "title": "Keep a list of saved accounts, signed-out ones included",
+          "domain": "Server Connection & Identity",
+          "lane": "native-session",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T4-06"
+          ],
+          "acceptance": [
+            "A decision record, accepted by the owner before any code, says where a non-secret list of saved accounts is kept (server name, server address, server id, user id, user name, signed in or out, last used), what may read it, and how restoreSessions changes; decision 0005 and docs/security.md match it in the same PR",
+            "A signed-out account's tile says so in words and opens sign-in for that user and server",
+            "A signed-out account keeps its tile in its place across launches; TalkBack reads its name, its server and Signed out",
+            "A finished sign-in as that user signs the same tile in again and opens its Home; a different user is saved as their own account and the signed-out tile stays signed out",
+            "Back from sign-in's first step, reached from a tile, returns to Who's watching? with focus on that tile",
+            "A switch that finds the sign-in ended by the server leaves that account's tile in place as Signed out",
+            "Each tile shows its server's name, and at launch focus opens on the account used last on this TV, or else the first signed-in tile",
+            "A stored record that cannot be opened at launch hides no other account's tile; choosing that account shows the failed-switch screen and deletes nothing",
+            "With one signed-in account and others signed out, launch opens its Home; with none signed in, launch opens sign-in"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
           "status": "todo",
           "owner": null,
           "passes": false,
@@ -3894,7 +3927,8 @@
           "human": false,
           "depends_on": [
             "T9-03",
-            "T4-06"
+            "T4-06",
+            "T4-10"
           ],
           "acceptance": [
             "Accounts lists every saved account as name and server, with Sign out and Remove for each, then Add account",
