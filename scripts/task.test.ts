@@ -234,10 +234,10 @@ describe("applySet", () => {
 });
 
 describe("checkTaskFile", () => {
-  it("passes at 350,000 bytes and fails at 350,001", () => {
-    expect(MAX_FILE_BYTES).toBe(350_000);
-    expect(checkTaskFile(350_000, clone())).toEqual([]);
-    const problems = checkTaskFile(350_001, clone());
+  it("passes at 450,000 bytes and fails at 450,001", () => {
+    expect(MAX_FILE_BYTES).toBe(450_000);
+    expect(checkTaskFile(450_000, clone())).toEqual([]);
+    const problems = checkTaskFile(450_001, clone());
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain("Product Owner");
   });

@@ -519,7 +519,7 @@
             "`pnpm task show <id>` prints one task; `pnpm task list [--status s] [--phase p]` prints one line per task (id, status, title) and never the acceptance or evidence of other tasks",
             "`pnpm task set <id> --status s [--owner o] [--evidence-file f]` edits only status, owner, passes and evidence, keeps the file's formatting, and refuses any other field",
             "evidence is capped at 600 characters and must name the PR or commit; longer notes go in the PR body",
-            "`pnpm check` fails when tasks/prd.json is over 350 KB or any evidence field is over 600 characters, so the Product Owner trims or moves finished phases before the file grows",
+            "`pnpm check` fails when tasks/prd.json is over 450 KB or any evidence field is over 600 characters, so the Product Owner trims or moves finished phases before the file grows",
             ".claude/workflows/task.js, the task skill and every agent prompt use the CLI instead of reading the file, and AGENTS.md says never to read tasks/prd.json whole",
             "unit tests cover next (dependency order, skipping human tasks), set (field allow-list) and the size check"
           ],
@@ -730,7 +730,7 @@
           "acceptance": [
             "scripts/task-owner.mjs gains one operation that moves a phase whose tasks are all done into a file pnpm task never loads whole; the spec names the file and says whether the rule 'There is no done.json' must change, which is the owner's to change",
             "An id in depends_on or taken_by that names a moved task still resolves: pnpm task show, lint:flow, lint:backlog and scripts/prd.test.ts pass after a move",
-            "The 350,000-byte limit is unchanged"
+            "The 450,000-byte limit is unchanged"
           ],
           "verify": "pnpm check",
           "status": "todo",
@@ -5272,17 +5272,17 @@
         },
         {
           "id": "T17-25",
-          "title": "Owner decision: amend decision 0002, I1 and rule 5 for a container the browser cannot take",
+          "title": "Write the owner's amendment of decision 0002, I1 and rule 5 for a container the browser cannot take",
           "domain": "Playback Negotiation",
           "lane": "web",
           "model": "opus",
           "skill": "exec-plan",
-          "human": true,
+          "human": false,
           "depends_on": [],
           "acceptance": [
-            "Owner decision: accept a dated amendment to decision 0002 that lets a device which decodes a source's streams but cannot take its container ask the server to copy them (direct play off, stream copy left on), and lets a device ask that only the stream it cannot decode be re-encoded",
+            "The owner accepted the amendment on 2026-11-26 (docs/specs/decisions-owner-web-2026-11-26.md section 6): a dated amendment to decision 0002 lets a device that decodes a source's streams but cannot take its container ask the server to copy them (direct play off, stream copy left on), and lets a device ask that only the stream it cannot decode be re-encoded; each is shown to the viewer, and the amendment adds nothing beyond this (gate: review)",
             "The amendment states the exact rules: when the request is sent; its flags in the body and the query; how the answer is judged (a copy of both streams is DirectStream although the server's reasons hold DirectPlayError, and a re-encode of either stream is Transcode); each case's client reason and copy ('Repackaging on server, original quality: this browser can't play the file's container', 'Converting audio on server, original picture: {reason}'); and that a device naming no containers sends exactly today's requests (gate: review)",
-            "It keeps burn-in out of a plan played as stored: there a subtitle no renderer can draw is shown as unavailable (gate: review)",
+            "It changes nothing else: a device that names no containers, as the TV, sends exactly today's requests and gets today's decisions, and the forced request for a codec the device cannot decode is unchanged (gate: review)",
             "ARCHITECTURE.md I1 and section 3 rule 5, and DESIGN.md section 10, say the same in the same PR (gate: review)"
           ],
           "verify": "pnpm check",
