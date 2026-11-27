@@ -52,17 +52,29 @@ function quietly(call: () => Promise<void> | void): Promise<void> {
 export function AppRoot({ signIn: SignIn, signedInParts, restore, account }: Props) {
   const [phase, setPhase] = useState<Phase>(restore === undefined ? { kind: "sign-in" } : { kind: "restoring" });
   const attempt = useRef(0);
+  // Counts the sessions entered, so a sign-out that ends after another session began changes nothing (S-L1).
+  const entered = useRef(0);
 
-  // Built as the account becomes active and kept in state: one engine and one viewing for each session.
+  // Built as the account becomes active and kept in state: one engine and one viewing for each session. The parts are
+  // built first, so a throw there activates nothing.
   const enter = useCallback(
     (signedIn: SignedIn) => {
+      const parts = signedInParts(signedIn);
+      entered.current += 1;
+      const session = entered.current;
       void quietly(() => account?.activate(signedIn.gateway));
-      const signOut = async () => {
-        await quietly(() => signedIn.gateway.logout());
-        await quietly(() => account?.deactivate());
-        setPhase({ kind: "sign-in" });
+      // Every call shares one run: the logout, then the account's settings leave, then sign-in's first step.
+      let running: Promise<void> | undefined;
+      const signOut = () => {
+        running ??= (async () => {
+          await quietly(() => signedIn.gateway.logout());
+          if (entered.current !== session) return;
+          await quietly(() => account?.deactivate());
+          if (entered.current === session) setPhase({ kind: "sign-in" });
+        })();
+        return running;
       };
-      setPhase({ kind: "signed-in", parts: { ...signedInParts(signedIn), signOut } });
+      setPhase({ kind: "signed-in", parts: { ...parts, signOut } });
     },
     [account, signedInParts],
   );
@@ -95,14 +107,16 @@ export function AppRoot({ signIn: SignIn, signedInParts, restore, account }: Pro
     if (!restoring || restore === undefined) return;
     attempt.current += 1;
     const current = attempt.current;
-    restore().then(
-      (outcome) => {
+    // A restore that throws, synchronously or not, and an outcome whose settling throws all open sign-in's first step,
+    // so "Loading…" is never left with nothing to end it (G-L4).
+    Promise.resolve()
+      .then(() => restore())
+      .then((outcome) => {
         if (attempt.current === current) settle(outcome);
-      },
-      () => {
+      })
+      .catch(() => {
         if (attempt.current === current) setPhase({ kind: "sign-in" });
-      },
-    );
+      });
   }, [restoring, restore, settle]);
 
   // Nothing on these two screens can be closed, so Back leaves the app (T4-02 C2, Q7).
