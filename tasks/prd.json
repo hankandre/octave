@@ -5245,10 +5245,10 @@
             "DESIGN.md section 10 gains plan 017's web wording rows and the notice 'This browser can't run Octave' (gate: review)"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "blocked",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Held by the owner, 2026-11-26: PRODUCT.md and DESIGN.md are guiding documents and do not change as part of a task. A change to either needs a process of its own, which is not yet defined. This task's acceptance edits one or both. Do not start it; a Product Owner pass changes the acceptance once the owner sets the process."
         },
         {
           "id": "T17-04",
@@ -5286,10 +5286,10 @@
             "ARCHITECTURE.md I1 and section 3 rule 5, and DESIGN.md section 10, say the same in the same PR (gate: review)"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "blocked",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "Held by the owner, 2026-11-26: PRODUCT.md and DESIGN.md are guiding documents and do not change as part of a task. A change to either needs a process of its own, which is not yet defined. This task's acceptance edits one or both. Do not start it; a Product Owner pass changes the acceptance once the owner sets the process."
         },
         {
           "id": "T17-05",

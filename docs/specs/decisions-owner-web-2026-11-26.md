@@ -45,3 +45,10 @@ Asked by the coordinator, with the Product Owner's recommendation: "Most films a
 - The owner chose: "Yes, amend the rule (Recommended)".
 
 **What it covers, and no more.** Decision 0002, invariant I1 and `ARCHITECTURE.md` §3 rule 5 are amended so that a device which decodes a source's streams but cannot take its container may ask the server to copy them into one it takes, and a device may ask that only the stream it cannot decode be re-encoded. Each is shown to the viewer. A device that names no containers, as the TV, sends exactly today's requests. T17-25 writes the amendment; T17-22 uses it and still waits for jellyscale-org/jellyscale#224; T17-05 keeps today's rule until T17-25 merges.
+
+## 7. PRODUCT.md and DESIGN.md change only through a process of their own
+
+**The owner's words:** "The product MD should not change, and neither should the design MD. These should be guiding documents like North Stars. They should not be documents of historical evolution. If we need to modify our product MD or design MD, that needs to go through a whole process."
+
+**What it means for the web work.** No web task edits either file. T17-03 and T17-25, whose acceptance does, are blocked until the owner sets the process and a Product Owner pass changes them.
+
