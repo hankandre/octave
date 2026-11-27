@@ -23,6 +23,12 @@ export function drawDistanceFor(variant: CardVariant): number {
 
 export const cardGap = space.space5;
 
+/**
+ * The list's end padding. With the last cell's own `cardGap`, the content ends `space.safeX` after the last card's box, so the
+ * focus scroll can leave that card as far from the screen's edge as every other (DESIGN.md §9).
+ */
+export const rowEndInset = space.safeX - cardGap;
+
 const GRID = space.space1;
 const roundUpToGrid = (value: number): number => Math.ceil(value / GRID) * GRID;
 

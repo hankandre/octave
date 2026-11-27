@@ -2,17 +2,20 @@
 // off (no recycled-cell blur), a draw distance of ROW_DRAW_DISTANCE, a focus guide that traps Right (and Left when no
 // rail is beside it), a scroll home when the first card takes focus, and a per-row scroll offset kept by the screen
 // in a RowMemory under a stable row id. Nothing overrides focus: the native engine moves one card per press.
+// The row's end fades out, and its length is also Android's focus margin, so it stays on except while the last card has focus
+// (T5-09): React Native draws it at full strength even at the end, where it would cover that card's ring and lift. The content
+// ends `space.safeX` after the last card, so at rest the fade lies over empty space there.
 //
 // testIDs, with r the row's testID: r, r-title, r-guide, r-list and r-card-<index>.
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
-import { memo, useCallback, useContext, useLayoutEffect, useRef } from "react";
+import { memo, useCallback, useContext, useLayoutEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TVFocusGuideView, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { px } from "../scale";
 import { textStyle } from "../text";
 import { colors, space } from "../tokens";
 import { LeftEdgeContext } from "./left-edge";
 import { MediaCard, type CardItem } from "./media-card";
-import { cardGap, cardTopInset, drawDistanceFor, rowInsetStart, rowListHeight, type CardVariant } from "./row-geometry";
+import { cardGap, cardTopInset, drawDistanceFor, rowEndInset, rowInsetStart, rowListHeight, type CardVariant } from "./row-geometry";
 import type { RowMemory } from "./row-memory";
 import type { RowRouter } from "./row-router";
 
@@ -65,6 +68,9 @@ const RowCell = memo(function RowCell({ rowId, index, item, variant, testID, onF
 
 const keyOf = (item: CardItem): string => item.id;
 
+const END_FADE = { start: 0, end: px(space.safeX) };
+const NO_FADE = { start: 0, end: 0 };
+
 export function MediaRow({ rowId, title, variant, items, memory, leftEdge: leftEdgeProp, onCardFocus, onCardBlur, onCardPress, router, testID }: MediaRowProps) {
   const inherited = useContext(LeftEdgeContext);
   const leftEdge = leftEdgeProp ?? inherited;
@@ -79,6 +85,10 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge: leftE
   const mounted = useRef(false);
   const handlers = useRef({ onCardFocus, onCardBlur, onCardPress });
   handlers.current = { onCardFocus, onCardBlur, onCardPress };
+  const lastIndex = useRef(items.length - 1);
+  lastIndex.current = items.length - 1;
+  // Which row's last card has focus. Held by row id, so a recycled row view never inherits another row's answer.
+  const [lastCardRowId, setLastCardRowId] = useState<string>();
 
   // A recycled row view is handed another row id: restore that row's offset before paint. A fresh mount restores too.
   useLayoutEffect(() => {
@@ -115,11 +125,15 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge: leftE
         listRef.current?.scrollToOffset({ offset: 0, animated: false });
         memory.set(id, 0);
       }
+      setLastCardRowId(index === lastIndex.current ? id : undefined);
       router?.focused(id, index);
     },
     [memory, router],
   );
-  const onBlurCard = useCallback((id: string, index: number) => handlers.current.onCardBlur?.(id, index), []);
+  const onBlurCard = useCallback((id: string, index: number) => {
+    if (index === lastIndex.current) setLastCardRowId(undefined);
+    handlers.current.onCardBlur?.(id, index);
+  }, []);
   const onPressCard = useCallback((id: string, index: number) => handlers.current.onCardPress?.(id, index), []);
 
   if (items.length === 0) return null;
@@ -139,8 +153,8 @@ export function MediaRow({ rowId, title, variant, items, memory, leftEdge: leftE
           maintainVisibleContentPosition={{ disabled: true }}
           drawDistance={drawDistanceFor(variant)}
           showsHorizontalScrollIndicator={false}
-          fadingEdgeLength={{ start: 0, end: px(space.safeX) }}
-          contentContainerStyle={{ paddingLeft: px(rowInsetStart) }}
+          fadingEdgeLength={lastCardRowId === rowId ? NO_FADE : END_FADE}
+          contentContainerStyle={{ paddingLeft: px(rowInsetStart), paddingRight: px(rowEndInset) }}
           style={{ height: px(rowListHeight(variant)) }}
           onScroll={onScroll}
           onLoad={onLoad}
