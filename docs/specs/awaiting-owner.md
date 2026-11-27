@@ -36,7 +36,7 @@ This is the one list of calls the owner can still veto, or has said they will ju
 - **The countdown follows the account, with auto-play** (`DESIGN.md` 7.18).
 - **A card's picture fading in over its preview.** The owner decided the preview on 2026-11-23 (`docs/specs/decisions-owner-inbox-2026-11-23b.md` §3); the fade was listed for the owner's veto.
 - **T8-04's player calls:** `docs/specs/T8-04.md`, "For the owner's veto".
-  - *Superseded once T8-27 merges:* "An invisible element holds focus … neither seeking nor pausing" and "The scrubber shows focus by its thicker track and thumb". `decisions-product-owner-2026-11-26c.md` §4 and §5 replace them.
+  - *Superseded once T8-27 merges:* "An invisible element holds focus … neither seeking nor pausing" and "The scrubber shows focus by its thicker track and thumb". `decisions-product-owner-2026-11-26c.md` §4 and §5 replace them (`docs/proposals/T8-27.md`).
 - **T4-02's calls C1 to C12:** `docs/specs/T4-02.md`; C10 also in the log, "2026-11-26, T4-02 ruling, Captures".
 - **T4-03's calls C1 to C8:** `docs/specs/T4-03.md`.
   - *Superseded:* C4 (opening focus on "Change server") and C7 (the password placeholder), both by T4-04 (C7 there, and the built password step).
@@ -54,6 +54,7 @@ This is the one list of calls the owner can still veto, or has said they will ju
   - calls that edit no task.
 - `decisions-product-owner-2026-11-26b.md`, calls 1 to 8 (calls 1 to 5 are the T3-40 calls `DESIGN.md` listed).
 - `decisions-product-owner-2026-11-26c.md`, calls 1 to 7.
+  - *T8-27 rests on:* call 4 (from the bare picture, select pauses and Left and Right seek 10 s; Skip, then Play now, stay ahead of the pause) and call 5 (the focused scrubber's thumb carries the focus ring). `DESIGN.md` 7.14 and section 9 still describe the old keys; `docs/proposals/T8-27.md` gives the new text.
 - `decisions-product-owner-2026-11-26d.md`, calls 1 to 8.
   - *Superseded:* call 8's repeat sign-in, corrected by `decisions-product-owner-2026-11-26e.md` §3, B25.
 - `decisions-product-owner-2026-11-26e.md`, sections 1 to 4: the split of T4-06, the conflicts, the behaviours, and the open choices O1 to O6.
