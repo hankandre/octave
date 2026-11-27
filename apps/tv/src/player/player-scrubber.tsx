@@ -1,13 +1,14 @@
 // The scrubber (DESIGN.md §7.14 item 2): elapsed time, the track with the buffered range and the played fill, and the
-// time remaining. Focus shows as a thicker track and a thumb, with no ring or lift (T8-04 D5). It reads the position
+// time remaining. Focus shows as a thicker track and a 24 px thumb with the two-tone focus ring; the scrubber is a row, so
+// nothing lifts (T8-27 D2). It reads the position
 // itself, so the engine's one-second events redraw nothing else. While a seek has not landed it shows its target.
 // TalkBack hears the times when it takes focus and when a seek lands, not every second.
 //
 // testIDs: player-scrubber (the zone), player-scrubber-track, player-scrubber-buffered, player-scrubber-fill,
-// player-scrubber-thumb.
+// player-scrubber-thumb, player-scrubber-thumb-focus-ring.
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View, type DimensionValue } from "react-native";
-import type { FocusNeighbours } from "../design/focus-frame";
+import { FocusRing, type FocusNeighbours } from "../design/focus-frame";
 import { px } from "../design/scale";
 import { textStyle } from "../design/text";
 import { artDefaults, colors, radii, sizes, space } from "../design/tokens";
@@ -83,7 +84,9 @@ export function PlayerScrubber({ viewing, viewRef, onStep, onFocus, onBlur, ...p
             <View testID="player-scrubber-fill" style={[styles.range, styles.fill, { width: shareOf(shownPosition, duration) }]} />
           </View>
           {focused && duration !== undefined ? (
-            <View testID="player-scrubber-thumb" style={[styles.thumb, { left: shareOf(shownPosition, duration) }]} />
+            <View testID="player-scrubber-thumb" style={[styles.thumb, { left: shareOf(shownPosition, duration) }]}>
+              <FocusRing radius="radiusPill" testID="player-scrubber-thumb-focus-ring" />
+            </View>
           ) : null}
         </View>
         {remaining === undefined ? null : <Text style={styles.time}>{remaining}</Text>}

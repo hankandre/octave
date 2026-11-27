@@ -35,7 +35,7 @@ const chromeDrawn = (): boolean => screen.queryByTestId("player-scrubber") !== n
 
 async function wakeOnScrubber(): Promise<PlayerRig> {
   const rig = await renderAfterFirstFrame();
-  await pressRemoteKey("right");
+  await pressRemoteKey("up");
   await focusTracker().follow();
   return rig;
 }
