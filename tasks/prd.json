@@ -2350,10 +2350,10 @@
             "The PR shows before and after captures at 1920x1080 of the hero reached from a card, and of each row's last card focused"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "commit 1648b5ee (also aa330cb8, bae62d47). check, check-red green 1,2,4, tv:e2e pass. Emulator before/after: docs/specs/captures/T5-09. DESIGN.md edits (item 5) HELD per owner; unapproved text in docs/specs/T5-09-design-proposal.md. OPEN: 3rd Left from a last card can skip scrolling (old: 2/6; now clips 8px, 4/23). Eight Lefts in one batch lose the 96px (new, 7/7; 16ms+ apart ok). Unproven: hero with no primary, Shield."
         },
         {
           "id": "T4-11",
