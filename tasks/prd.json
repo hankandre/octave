@@ -1475,10 +1475,10 @@
             "On the emulator, Down, Down, Left from a fresh launch lands on Home's entry, and Left from the Search screen's first control lands on Search's entry; the PR names the focused view after each"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "in_progress",
           "owner": null,
           "passes": false,
-          "evidence": ""
+          "evidence": "commit a0bfd1c2: rail-guide points at the current entry. check, check-red green, typecheck pass. emulator-5554 (Android 36 TV), release APK, throwaway key, Jellyscale fixture. origin/main code: Down,Down,Left=Settings; Search tile Left=Home. Fix: Home and Search; hero, rows, Settings, Accounts, item Left, rail moves, Right/select/Back return pass. Up from hero, Down from last row no longer enter rail. Unrun: TalkBack (not installed), debug build, library screen (T6-01), Shield, Jellyfin."
         },
         {
           "id": "T3-36",
