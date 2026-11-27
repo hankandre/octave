@@ -94,6 +94,13 @@ Dependencies
 - Where an approved task or decision record differs from either document and a proposal for it is filed, follow the task or record.
 - Let a task already in progress on 2026-11-26 finish as it was written (`docs/decisions/0007-guiding-documents.md`).
 - Before starting any other task whose acceptance requires editing either document, have a Product Owner pass move that edit to a proposal and keep its behaviour pinned.
+- Treat `DOMAINS.md`, `ARCHITECTURE.md` and `WORKFLOW.md` as guiding documents too.
+- Change no guiding document without coordinating with the owner first and getting the owner's explicit approval, even in a task already in progress.
+- Coordinate every `PRODUCT.md` change with the Product Owner agent as well.
+- Treat any guiding-document change as weighty: name what it cascades into before proposing it.
+- Add no log, status or per-task detail to a guiding document.
+- Document detailed behaviour under `docs/`, in a clear hierarchy, and link to it by path; put guidance on how to do a kind of work in a skill.
+- Move or restructure existing guiding-document content only as the owner approves.
 
 ## Design
 
