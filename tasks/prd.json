@@ -5179,10 +5179,10 @@
             "If raised: scripts/task.mjs, its boundary test in scripts/task.test.ts (in no frozen manifest), docs/specs/T1-13.md and docs/specs/decisions-prd-size-limit.md say 450,000 in the branch that adds phase T17, before it merges, and T1-21's item 3 follows by an edit with the owner's approval (gate: review)"
           ],
           "verify": "pnpm check",
-          "status": "todo",
+          "status": "done",
           "owner": null,
-          "passes": false,
-          "evidence": ""
+          "passes": true,
+          "evidence": "Owner chose \"Raise it to 450 KB (Recommended)\" on 2026-11-26 (docs/specs/decisions-owner-web-2026-11-26.md §5). Commit a0dae51b: MAX_FILE_BYTES 450_000 in scripts/task.mjs, boundary test scripts/task.test.ts (450,000 pass, 450,001 fail), docs/specs/T1-13.md, dated amendment to decisions-prd-size-limit.md, T1-13 item 5 and T1-21 item 3 edited with owner approval. pnpm check exit 0."
         },
         {
           "id": "T17-01",
