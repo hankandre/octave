@@ -3,6 +3,10 @@
 // Up and Down and never Right, so Left stays on the rail and Right leaves it. While the rail is open, every entry's
 // `nextFocusRight` is the tag of the content element that had focus before (`returnTag`), as the spike measured.
 //
+// While focus is outside the rail, `rail-guide` is pointed at the current screen's entry (T3-43), so Android's focus search
+// sees the whole rail as one full-height view that sends focus there, and no entry of its own: Left from any control in a
+// screen's first column lands on the current entry. With focus inside, the guide offers its entries as usual.
+//
 // The rail opens when any entry takes focus and closes when focus leaves every entry: a blur schedules a zero-delay check
 // that another entry's focus cancels. The icons come from a slot (`RailIconsProvider`), filled by shell/rail-icons.ts.
 //
@@ -21,6 +25,7 @@ import { px } from "../design/scale";
 import { textStyle } from "../design/text";
 import { colors, motion, radii, sizes, space } from "../design/tokens";
 import type { RailEntry, RailIconName, RailKey } from "./rail-entries";
+import { pointGuide } from "./focus-bridge";
 import { useRailReveal } from "./use-rail-reveal";
 
 export type RailIcons = Partial<Record<RailIconName, IconComponent>>;
@@ -116,8 +121,27 @@ export function SideRail({ entries, current, onSelect, returnTag, onOpenChange, 
   const [open, setOpen] = useState(false);
   const openRef = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef({ onOpenChange });
-  latest.current = { onOpenChange };
+  const latest = useRef({ onOpenChange, current });
+  latest.current = { onOpenChange, current };
+
+  const guide = useRef<unknown>(null);
+  const entryViews = useRef(new Map<RailKey, unknown>());
+  const pointAtCurrent = useCallback(() => {
+    const view = entryViews.current.get(latest.current.current);
+    pointGuide(guide.current, view === undefined ? [] : [view]);
+  }, []);
+  // Stable, so an entry's ref is not detached and attached again on every render.
+  const register = useCallback(
+    (key: RailKey, view: unknown) => {
+      registerEntry(key, view);
+      if (view === null || view === undefined) entryViews.current.delete(key);
+      else entryViews.current.set(key, view);
+      if (key === latest.current.current) pointAtCurrent();
+    },
+    [registerEntry, pointAtCurrent],
+  );
+  // On mount the entries register before the guide's own ref is set, so this also makes the first pointing.
+  useEffect(pointAtCurrent, [current, entries, pointAtCurrent]);
 
   const change = useCallback((next: boolean) => {
     if (openRef.current === next) return;
@@ -185,7 +209,7 @@ export function SideRail({ entries, current, onSelect, returnTag, onOpenChange, 
       onFocus={onFocus}
       onBlur={onBlur}
       onPress={onPress}
-      registerEntry={registerEntry}
+      registerEntry={register}
     />
   );
   const top = entries.filter((entry) => entry.key === "search");
@@ -199,7 +223,7 @@ export function SideRail({ entries, current, onSelect, returnTag, onOpenChange, 
       accessibilityLabel="Main"
       style={[styles.rail, { width: reduced ? target : width, backgroundColor: open ? colors.surface1 : undefined }]}
     >
-      <TVFocusGuideView testID="rail-guide" trapFocusLeft trapFocusUp trapFocusDown style={styles.guide}>
+      <TVFocusGuideView {...{ ref: guide }} testID="rail-guide" trapFocusLeft trapFocusUp trapFocusDown style={styles.guide}>
         <View style={styles.group}>{top.map(item)}</View>
         <ScrollView {...listProps} style={styles.scroll} contentContainerStyle={[styles.group, styles.list]} showsVerticalScrollIndicator={false}>
           {middle.map((entry) => (
