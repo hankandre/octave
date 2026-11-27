@@ -1,10 +1,8 @@
 # Product
 
-Status: **Draft for the owner's approval** (T1-05). Rewritten for Octave on TV on 2026-11-20 from the earlier product document (at the tag `desktop-tauri-final`), decisions 0003 and 0004, the owner's decisions of 2026-11-20, and the UX synthesis of the same day. Wording and direction are the owner's call; each choice made in this draft is listed in the clean-slate pull request.
-
 ## What Octave is
 
-Octave is a client for watching video from a Jellyfin or Jellyscale server, made for the TV first. It aims to give **the best possible watching experience**: it should feel like a streaming service such as Netflix, on your own library, **without having to finagle with the client** (the owner, 2026-11-12).
+Octave is a client for watching video from a Jellyfin or Jellyscale server, made for the TV first. It aims to give **the best possible watching experience**: it should feel like a streaming service such as Netflix, on your own library, **without having to finagle with the client**.
 
 Octave is for video only: movies and shows. It does not play music, audiobooks, or photos; better apps exist for those.
 
@@ -15,7 +13,7 @@ Four pillars carry that:
 3. **It just works.** Octave supports as much of the server's video features as each device allows, with the right defaults. Nobody should have to tune a client to make their library play correctly.
 4. **Honest about the file.** Octave plays your media **exactly as it is stored whenever the device can**. When the original can't be played (the device has no decoder for it, a slow or limited connection, a disc folder, an admin policy), the server repackages or converts it, and Octave always shows that it is doing so and why ([decision 0002](docs/decisions/0002-server-transcoding-fallback.md)).
 
-It is built for people who chose to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the device can play. The living room leads: Android TV first, Apple TV kept possible, then phones and tablets, then the desktop (owner decisions, 2026-11-20). The long-term aim is to replace the other Jellyfin video clients, including the cross-platform Flutter ones, on every screen it supports.
+It is built for people who chose to own their media and expect the client to respect that: full-quality video, untouched audio tracks, correct subtitles, and a server that stays idle while you watch anything the device can play. The living room leads: Android TV first, Apple TV kept possible, then phones and tablets, then the desktop. The long-term aim is to replace the other Jellyfin video clients, including the cross-platform Flutter ones, on every screen it supports.
 
 ## Principles
 
@@ -29,11 +27,11 @@ It is built for people who chose to own their media and expect the client to res
 
 ## Better than a streaming service
 
-Octave borrows the feel of a streaming service and leaves out what such a service does for its own benefit. A personal library has no reason to keep anyone watching, and nothing in it expires (owner, 2026-11-12).
+Octave borrows the feel of a streaming service and leaves out what such a service does for its own benefit. A personal library has no reason to keep anyone watching, and nothing in it expires.
 
 1. **Your next episode comes first.** The first thing on Home is what you were in the middle of, and one press plays it.
 2. **Home stays where you left it.** The rows and their order are the same on every visit. A row's contents change only when the library or your own history does.
-3. **You decide what Continue watching holds.** You can remove a title from it; its position is kept and its own page still offers Resume. A title you have not played for 90 days leaves the row by itself, and each account can change that window (30, 90, 180 or 365 days, or Never). A title that left is only hidden: nothing expires, its position is kept, and playing it again brings it back (owner, 2026-11-22, T5-01).
+3. **You decide what Continue watching holds.** You can remove a title from it; its position is kept and its own page still offers Resume. A title you have not played for 90 days leaves the row by itself, and each account can change that window (30, 90, 180 or 365 days, or Never). A title that left is only hidden: nothing expires, its position is kept, and playing it again brings it back.
 4. **The end of a film is the end.** In a series the next episode plays after a countdown you can see, hide, or turn off. Nothing unrelated starts by itself.
 5. **Your account is yours.** Remembering several accounts must not let one person open another's. What Octave learns about a viewer stays on that viewer's server, under their account.
 6. **Nothing from outside.** No ads, no promoted titles, and nothing that is not in the library.
@@ -52,8 +50,8 @@ Octave borrows the feel of a streaming service and leaves out what such a servic
 ## Not for
 
 - Server administration. Use the server's web dashboard.
-- Music, audiobooks, and photos. Octave is a video client (the owner, 2026-11-12).
-- Live TV and DVR. Out of scope (the owner, 2026-11-12).
+- Music, audiobooks, and photos. Octave is a video client.
+- Live TV and DVR. Out of scope.
 - Books.
 - Deleting media, or a requests UI.
 
@@ -144,15 +142,3 @@ These are the owner's decisions; each has a task.
 - **Recent searches on a shared TV (T12-05).** They save presses but show one viewer's searches to the next.
 - **One Home across servers.** Servers stay separate for now.
 - **Other TV platforms.** Samsung, LG, and Vidaa owners ask for clients (Fider #1615, 466 votes); no platform beyond Android TV, Fire TV, and Apple TV is planned.
-
-## Decided product questions
-
-The owner's decisions of 2026-11-22 from the decision inbox (`docs/specs/decisions-owner-inbox-2026-11-22.md`). The evidence for each option is in `DESIGN.md` section 12.
-
-- **Continue watching (T5-01).** Remove hides the title and keeps its progress; the other option was to reset the progress, which is the only way on a server without Jellyscale #233. Remove lives in a short menu on a held select; the other option was the title's page. A title leaves the row 90 days after it was last played, the row shows at most 20, newest first, and each account can change the window (30, 90, 180 or 365 days, or Never); the other option was to keep everything by default. A title that aged out is only hidden, and the device works the ageing out from the server's last-played date.
-- **Which settings follow the account (T9-01).** Subtitles, auto-play, the skip modes and the Continue watching window follow the account and are stored on the server's display preferences, so another device signed in to the account has them. The streaming limits, and later passthrough and refresh rate, stay on the device. The other option for storage was the device, keyed by account.
-- **Errors.** A screen shows only Octave's own fixed sentence for an error, never the reason text of the player, the system or the server.
-- **The menu on a Continue watching card (T5-05).** Holding select on a Continue watching card opens a menu that holds Remove from Continue watching, Mark as watched, Go to series (for episodes) and Details (`docs/specs/decisions-owner-chat-2026-11-22.md`, 4). A held select opened the details directly until now.
-- **The Settings sections (T9-08).** The sections are Playback, Home, Languages, Subtitles, Accounts, and About & diagnostics, in that order, with no Advanced section (the same file, 5; `DESIGN.md` 7.18).
-- **The application ID** is `cloud.jellyscale.octave` (T3-21).
-- **Discovery** lists a `.home.arpa` name as well as a `.local` name (T4-01).

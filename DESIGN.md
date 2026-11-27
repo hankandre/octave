@@ -1,9 +1,5 @@
 # Octave design system
 
-Status: **Draft for the owner's approval** (T1-08). The owner approved the earlier system on 2026-11-08 for the desktop app (kept in the tag `desktop-tauri-final`). This draft makes the 10-foot TV form the reference form, applies the owner's decisions of 2026-11-20 and the UX synthesis of the same day, and drops the desktop window. No screen task starts before the owner approves it. The owner's named calls are: the collapsed side rail's look and entries, how many posters show beside the rail, what Back does on Home, and the sign-in screen with its QR code. Every look or wording choice this draft made is listed in the clean-slate pull request.
-
-**Awaiting a TV design pass.** The token values in §8 are carried over from the desktop system's TV form and have not been checked on a TV. T3-06 turns them into TypeScript and checks them on the 1920×1080 canvas; the owner confirms them on the Shield.
-
 ## 1. The idea
 
 **House lights down.** Octave's screens behave like a cinema. While you choose, the lights are half up: quiet warm-black chrome, the artwork at full size, one clear action. When you press Play the lights go out and only the picture remains. Chrome comes back only when you reach for it, like an usher's torch.
@@ -94,7 +90,7 @@ Every item screen (Detail, Series, Player loading, Up Next) and the Home hero ta
 | `typeMeta` | 24 / 1.35 | 500 | Card subtitles, facts line, badges |
 | `typeMono` | 24 / 1.3, Mono | 500 | Timecodes, codes, technical values |
 
-Rules: **body text is 28 px and no text is under 24 px** (the sizes tvOS, Fire TV, and Xbox agree on; UX audit D13 B). Sentence case everywhere: no uppercase-tracked labels, no eyebrow or kicker labels. Titles truncate to one line in cards and two lines in headers, with the full title in the accessible label.
+Rules: **body text is 28 px and no text is under 24 px** (the sizes tvOS, Fire TV, and Xbox agree on). Sentence case everywhere: no uppercase-tracked labels, no eyebrow or kicker labels. Titles truncate to one line in cards and two lines in headers, with the full title in the accessible label.
 
 ## 5. Space, shape, depth, motion
 
@@ -161,7 +157,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 - The rail is hidden in the player and in sign-in.
 - Accessibility: the rail is a navigation region labelled "Main"; the current entry is marked selected.
 - Owner's call: the rail's look (icons only when collapsed, the bar, the open width) and its entries.
-- **Rail icons** (Tabler names; owner, 2026-11-24, `docs/specs/decisions-owner-chat-2026-11-24.md` §2): Search `search`, Home `home`, Movies `movie`, Shows `device-tv`, Collections `stack-2`, Settings `settings`, no account `user`.
+- **Rail icons** (Tabler names): Search `search`, Home `home`, Movies `movie`, Shows `device-tv`, Collections `stack-2`, Settings `settings`, no account `user`.
 
 ### 7.2 Ambient backdrop (`AmbientBackdrop`)
 
@@ -182,10 +178,10 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 ### 7.4 Home and its rows (`MediaRow`)
 
 - **Home, in this order on every visit and for every account:** the hero, **Continue watching**, then one **Recently added** row. There is no row of library tiles and no per-library Latest rows; libraries live in the rail. An empty row is hidden and the others keep their order. Later rows (My list, T12-02) take places their own tasks set.
-- **Continue watching** is one row: in-progress films and episodes together with each series' next episode, most recently played first, at most 20 cards (owner, 2026-11-22; T5-02 builds the row with 16, and T5-07 raises it to 20 and adds the window). Cards play in one press.
-- **The window** (owner, 2026-11-22). A title leaves Continue watching 90 days after it was last played. The account can change the window in Settings: 30, 90, 180 or 365 days, or Never. A title that aged out is only hidden: its progress is kept, its own page still offers Resume, and playing it again brings it back. The device works this out from `UserData.LastPlayedDate`; nothing is asked of the server.
-- **Remove** (owner, 2026-11-22). Holding select on a Continue watching card opens a short menu (`Menu`, 7.10) that holds Remove. Remove hides the title from the row and keeps its progress; its own page still offers Resume, and playing it again brings it back (T5-05, which waits for Jellyscale #233).
-- **The card's menu** (owner, 2026-11-22; `docs/specs/decisions-owner-chat-2026-11-22.md`, 4). The menu a held select opens on a Continue watching card holds, in the owner's order: "Remove from Continue watching", "Mark as watched", "Go to series" (on an episode's card only), and "Details". On these cards a held select no longer opens the details directly, as it did until now (decision D15 B); Details in the menu does. Other cards that play, and the hero, are unchanged (7.5, section 9). T5-05 builds the menu.
+- **Continue watching** is one row: in-progress films and episodes together with each series' next episode, most recently played first, at most 20 cards. Cards play in one press.
+- **The window.** A title leaves Continue watching 90 days after it was last played. The account can change the window in Settings: 30, 90, 180 or 365 days, or Never. A title that aged out is only hidden: its progress is kept, its own page still offers Resume, and playing it again brings it back. The device works this out from `UserData.LastPlayedDate`; nothing is asked of the server.
+- **Remove.** Holding select on a Continue watching card opens a short menu (`Menu`, 7.10) that holds Remove. Remove hides the title from the row and keeps its progress; its own page still offers Resume, and playing it again brings it back (T5-05, which waits for Jellyscale #233).
+- **The card's menu.** The menu a held select opens on a Continue watching card holds, in the owner's order: "Remove from Continue watching", "Mark as watched", "Go to series" (on an episode's card only), and "Details". On these cards a held select opens this menu, and Details in the menu opens the details. On other cards that play, and on the hero, a held select opens the details (7.5, section 9). T5-05 builds the menu.
 - **Recently added** is one row of movies and shows, newest first. A series with new episodes shows once, as the series, and opens the series page. The row ends with a "See all" tile that opens the newest additions as a grid.
 - A row is a title (`typeHeading`, sentence case) over a horizontal list of cards. Left and Right move within the row. Up and Down move to the adjacent row, to the card nearest by horizontal centre. The focused card keeps 96 px from the edge. Left from the first card opens the rail. Each row remembers its scroll position in app state, so a recycled row never inherits another row's place (decision 0004, condition 6).
 - States: skeleton (cards of the right variant), error (`InlineError` in place of cards), and hidden when empty.
@@ -200,7 +196,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 
 - Marks (top right, 24 px disc on a scrim): a check for played, a count for unplayed episodes. The played disc shows Tabler's check (T3-34). The progress bar sits at the bottom of the frame: a 4 px track at white .22 with an `artAccent` fill.
 - Focus: the frame lifts by `lift` with `shadowLift`, plus a 3 px `focus` ring at a 3 px offset with a 1 px black .6 outer line so the ring reads on bright posters. The title goes from `text2` to `text1`.
-- Loading: while the picture loads, the frame shows a blurred preview of it, decoded from the image's BlurHash, and the picture fades in over it on `durSlow` with `easeInOut` (reduced motion: 120 ms, opacity only). A card with no BlurHash shows `surface2` until the picture appears. (Owner, 2026-11-23.)
+- Loading: while the picture loads, the frame shows a blurred preview of it, decoded from the image's BlurHash, and the picture fades in over it on `durSlow` with `easeInOut` (reduced motion: 120 ms, opacity only). A card with no BlurHash shows `surface2` until the picture appears.
 - Missing image: `surface2` with the title in `typeLabel`, centred. Never a broken image.
 - Images are requested at the drawn size, through the authenticated native client, never wider than 400 px for a poster.
 - Accessibility: the label joins the title, subtitle, and progress ("Harbor Lights, S1 E2 The Keeper's Log, 38 minutes left").
@@ -221,7 +217,7 @@ Each component lists its anatomy, states, and accessibility notes. They are buil
 
 - Order: **Primary** (`Resume 41:00` with a small progress ring, or `Play`), then the version picker (only with two or more versions), then the audio picker (only with two or more audio tracks), then `Start over` (only when resuming), then `Watched` and `Favorite` icon toggles (each with its state in words in the label), then `More`.
 - The primary button takes focus when the screen opens.
-- **The audio pill never shortens its label** (owner decision, 2026-11-16): the bar wraps to a second row rather than cut a label.
+- **The audio pill never shortens its label**: the bar wraps to a second row rather than cut a label.
 - When the player cannot start, the primary stays enabled and an `InlineNotice` under the bar explains.
 
 ### 7.9 Media badges and file details (`MediaBadges`, `FileAndStreams`)
@@ -277,7 +273,7 @@ Panels (right-side sheets, a third of the canvas, the video keeps playing; Back 
 - **Settings**: the Settings screen's own sections in a compact list (§7.18). Every change applies at once and confirms in its row with "✓ Saved" for 2 s.
 - **Chapters**: one row per chapter with its name, start time, and a trickplay picture when the version has trickplay.
 
-**OSD**: a transient pill at top centre for 1.2 s, for actions taken by key ("Subtitles: English (SDH)", "+10 s") and four lines from no key: "Skipped intro" or "Skipped credits", the conversion line for five seconds when a converted session starts, the audio-pick line, and the progress notice, "Couldn't save your progress to {server}. Playback continues.", for five seconds (owner, 2026-11-24, `docs/specs/decisions-owner-chat-2026-11-24.md` §3).
+**OSD**: a transient pill at top centre for 1.2 s, for actions taken by key ("Subtitles: English (SDH)", "+10 s") and four lines from no key: "Skipped intro" or "Skipped credits", the conversion line for five seconds when a converted session starts, the audio-pick line, and the progress notice, "Couldn't save your progress to {server}. Playback continues.", for five seconds.
 
 **Status**: loading, buffering, and seeking show a centred 64 px disc with the loader (7.17; a ring until it is built) and one line of text ("Opening the original file…", "Buffering…"). "Buffering…" appears only after 500 ms. Before the first frame, the item's backdrop shows at 40% with the title and the status, plus Back.
 
@@ -311,21 +307,21 @@ Panels (right-side sheets, a third of the canvas, the video keeps playing; Back 
 
 - **EmptyState**: a centred column, a 72 px line icon in `text3`, a title (`typeHeading`), one sentence, and at most one action.
 - **Skeleton**: `surface2` blocks shaped like the content, shown only after 150 ms. No shimmer under reduced motion.
-- **Logo** (owner, 2026-11-22): the "D1 bars" mark. The direction is video first, not music.
-- **Loader, "Signal"** (owner, 2026-11-22; the motion as the owner updated it the same day, `docs/specs/decisions-owner-chat-2026-11-22.md`, 3): the D1 bars, where the brass bar is a beacon. Every pulse, about 1.5 s apart, sends a wave across the whole name "octave"; each letter lights as the wave reaches it, o first and e last, and then fades back. The next pulse repeats the sweep. When the film is ready the whole name lights and holds. Where space is tight the bars-only form is used: the pulse and the rings, with no name. It replaces the ring as Octave's loading indicator (section 5 and 7.14). With reduced motion the still mark is shown with "Loading…" (section 5), and the pulse stays within section 11, rule 5. The reference is the coordinator's logo page, round 7. The brass colour is `#E8C48A` and is a design token (owner, 2026-11-22; the same decision file, 3): `brass` in section 8. It is the value `artAccent` already falls back to in section 3. T3-35, which builds the loader, adds the token and the loader's timings to the code.
+- **Logo**: the "D1 bars" mark. The direction is video first, not music.
+- **Loader, "Signal"**: the D1 bars, where the brass bar is a beacon. Every pulse, about 1.5 s apart, sends a wave across the whole name "octave"; each letter lights as the wave reaches it, o first and e last, and then fades back. The next pulse repeats the sweep. When the film is ready the whole name lights and holds. Where space is tight the bars-only form is used: the pulse and the rings, with no name. It replaces the ring as Octave's loading indicator (section 5 and 7.14). With reduced motion the still mark is shown with "Loading…" (section 5), and the pulse stays within section 11, rule 5. The reference is the coordinator's logo page, round 7. The brass colour is `#E8C48A` and is a design token: `brass` in section 8. It is the value `artAccent` already falls back to in section 3. T3-35, which builds the loader, adds the token and the loader's timings to the code.
 
 ### 7.18 Settings
 
 A short surface: a list of sections on the left and the selected section's rows on the right. Up and Down move in the list, Right enters the rows, Left and Back return to the list.
 
 - **Playback**: streaming limits (local and remote, each "No limit" or a preset), Play next episode automatically, Countdown (5, 10, or 15 seconds), Intros and Credits (Show a Skip button, Skip automatically, Do nothing), and Audio passthrough (unavailable until it is built).
-- **Home**: the Continue watching window: 30, 90, 180 or 365 days, or Never; 90 days by default (owner, 2026-11-22).
+- **Home**: the Continue watching window: 30, 90, 180 or 365 days, or Never; 90 days by default.
 - **Languages**: the account's audio and subtitle languages, saved to the server account.
 - **Subtitles**: subtitle style (unavailable until it is built).
 - **Accounts**: every saved account as "name · server", with Switch, Sign out, and Remove, then "Add account".
 - **About & diagnostics**: versions, licences, and "Copy diagnostics" (redacted).
-- **What follows the account and what stays on the device** (owner, 2026-11-22). Per account: subtitles, auto-play, the skip modes, and the Continue watching window. Per device: the streaming limits, and later passthrough and refresh rate. Per-account settings are stored on the server's display preferences, so they follow the account to another device. The countdown is placed with auto-play by the Product Owner, not by the owner.
-- **The sections and their order** (owner, 2026-11-22; T9-08; `docs/specs/decisions-owner-chat-2026-11-22.md`, 5). The sections are the six above, in that order: Playback, Home, Languages, Subtitles, Accounts, About & diagnostics. There is no Advanced section.
+- **What follows the account and what stays on the device.** Per account: subtitles, auto-play, the skip modes, and the Continue watching window. Per device: the streaming limits, and later passthrough and refresh rate. Per-account settings are stored on the server's display preferences, so they follow the account to another device. The countdown follows the account, with auto-play.
+- **The sections and their order.** The sections are the six above, in that order: Playback, Home, Languages, Subtitles, Accounts, About & diagnostics. There is no Advanced section.
 - Rows for features not built yet show "Not available yet." and take no focus.
 - **Switch**: a pill track (64×36 px) with a round thumb and the words "On" or "Off" beside it, so the state is never colour alone.
 
@@ -360,7 +356,7 @@ Each step asks one question in `typeTitle`, with no eyebrow.
    - **With Quick Connect off or not built** the step is skipped and step 3 opens.
 3. **Who is signing in?** (the fallback) Top to bottom: the heading and the same origin chip, the Username field, the Password field, a "Show password" row, the status or failure line, "Sign in" (primary) and "Change server" (quiet, last).
    - **Fields.** Both use the system keyboard, neither scales on focus, and neither capitalises, corrects or is offered to Android autofill. The username is sent as typed.
-   - **Show password** is a labelled switch with "On" or "Off", off every time the step opens. While it is on, the keyboard treats the Password field as an ordinary field, so it may underline, suggest or learn what is typed, and offers its microphone (section 12, T4-04, C12).
+   - **Show password** is a labelled switch with "On" or "Off", off every time the step opens. While it is on, the keyboard treats the Password field as an ordinary field, so it may underline, suggest or learn what is typed, and offers its microphone (`docs/specs/T4-04.md`, C12).
    - **Focus** opens on Username.
    - **Keys.** Username's action key is "Next": it moves focus to Password, the keyboard closes and select opens it again. Password's action key is "Go" and signs in, as "Sign in" does. With an empty username nothing is sent and focus goes to Username. An empty password is sent, since an account may have none.
    - **While signing in** the status line says "Loading…", the fields stay enabled and a second press does nothing.
@@ -368,7 +364,7 @@ Each step asks one question in `typeTitle`, with no eyebrow.
    - **After a failure, an empty password is not sent** until the viewer changes Username or Password; any change of a field's text counts, even one that leaves the password empty. Until then "Sign in" and "Go" send nothing, the sentence stays and focus goes to Password. One exception: when the failed try was itself sent with an empty password, and the failure was neither a wrong name or password nor a refused account, it may be sent again as it is. A cancelled sign-in is not a failure. A password typed while a sign-in runs is cleared with the answer; after a failure it counts as one the step emptied, so it is held too.
    - **Back** returns to step 2, with a new code and focus on "Use a password", when "Use a password" opened this step; when the server left no other step, it returns to step 1. "Change server" always returns to step 1. Leaving during a sign-in drops its answer and ends a session that arrives late. The request itself is not stopped: the password still reaches the server, and a wrong one is still counted. (Pressed before the server has said it has no Quick Connect, "Use a password" takes two Backs to reach step 1.)
 
-**At launch, with a stored sign-in** (T4-05; the Product Owner's calls below). Octave opens Home with no sign-in screen once the server has answered as the one the sign-in was made on and has accepted the session. Until then the screen is "Loading…" alone on `surface0`, and no sign-in control is drawn.
+**At launch, with a stored sign-in** (T4-05). Octave opens Home with no sign-in screen once the server has answered as the one the sign-in was made on and has accepted the session. Until then the screen is "Loading…" alone on `surface0`, and no sign-in control is drawn.
 
 - **The server did not answer, or not as expected** (unreachable or out of time, a redirect, an unsupported version, another server, anything else): the step's own sentence for that failure (section 10), `text1`, no icon, read as the screen's heading, then "Try again" (primary, focused) and "Change server" (quiet, last). No new words. "Try again" checks again behind "Loading…". "Change server" opens step 1 and keeps the stored sign-in. Nothing is tried again by itself.
 - **The server ended the sign-in** (two refusals): sign-in opens on that server with no sentence saying why. Over HTTPS or loopback it opens on step 2; Back and "Change server" go to step 1. For a private-LAN `http://` server it opens on step 1 with the unencrypted-connection warning already open for that server, Cancel focused; "Connect without encryption" goes on to step 2, and Cancel or Back closes it and leaves step 1 with its usual opening focus.
@@ -378,7 +374,7 @@ Each step asks one question in `typeTitle`, with no eyebrow.
 
 The unencrypted-connection warning is a dialog over step 1. Under its title it shows the server's name and, on its own line, the server's address in `typeMono`. Its actions are "Connect without encryption" (secondary), then "Cancel", primary last (7.16). Cancel is primary and focused; Back cancels.
 
-The QR code's content, its size, and the sign-in screen's layout are the owner's call; the Product Owner decided them under the delegation (section 12, T4-03), for the owner's veto. What the QR code links to depends on the server: Jellyscale issue #118 tracks its approval link (T10-06).
+What the QR code links to depends on the server: Jellyscale issue #118 tracks its approval link (T10-06).
 
 ### 7.21 Accounts (`AccountPicker`)
 
@@ -391,13 +387,13 @@ Octave remembers any number of accounts. An account is one user on one server. O
 
 ## 8. Tokens
 
-Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here and the code differ. Values are px on the 1920×1080 canvas (§6) and await the TV design pass.
+Tokens are TypeScript constants (T3-06), not CSS. A test fails when a value here and the code differ. Values are px on the 1920×1080 canvas (§6).
 
 | Group | Tokens |
 |---|---|
 | Colour | `void` `#060708`, `surface0` `#0b0c0e`, `surface1` `#131417`, `surface2` `#1b1c20`, `surface3` `#25262b`, `line` `rgb(242 239 233 / .10)`, `lineStrong` `rgb(242 239 233 / .37)`, `text1` `#f2efe9`, `text2` `#a9a59d`, `text3` `#8a867f`, `onLight` `#0b0c0e`, `focus` `#fff4dc`, `focusEdge` `rgb(0 0 0 / .6)`, `danger` `#ff8a6b`, `notice` `#f0b65a`, `ok` `#8fd1a8`, `fillSecondary` `rgb(242 239 233 / .12)`, `fillIcon` `rgb(242 239 233 / .10)`, `track` `rgb(255 255 255 / .22)`, `trackBuffered` `rgb(255 255 255 / .40)`, `veil` `rgb(0 0 0 / .6)` |
 | Artwork defaults | `artAccent` `#e8c48a`, `artGlow` `rgb(232 196 138 / .22)`, `artShade` `#141210` |
-| Loader | `brass` `#e8c48a` (owner, 2026-11-22; the Signal loader's brass bar, 7.17; T3-35 adds it to the code, and until then the parity test does not read this row) |
+| Loader | `brass` `#e8c48a` (the Signal loader's brass bar, 7.17; T3-35 adds it to the code, and until then the parity test does not read this row) |
 | Type | §4: `typeHero` 72, `typeCode` 72 Mono, `typeTitle` 48, `typeDialogTitle` 36, `typeHeading` 33, `typeBodyLg` 31.5, `typeBody` 28, `typeLabel` 24, `typeMeta` 24, `typeMono` 24 Mono; `measure` 62 characters |
 | Space | `space1` 4, `space2` 8, `space3` 12, `space4` 16, `space5` 24, `space6` 32, `space7` 48, `space8` 64, `space9` 96; `safeX` 96, `safeY` 54 |
 | Sizes | `railCollapsedW` 96, `railOpenW` 400, `posterW` 248, `thumbW` 416, `rowGap` 48, `controlH` 72, `iconButton` 64, `hitMin` 64, `switchW` 64, `switchH` 36, `searchFieldH` 96, `textFieldH` 72, `personDisc` 200, `playerSheetW` 640 (a third of the canvas), `playerPlayDisc` 84, `playerStatusDisc` 64, `upNextW` 560, `scrubTrackH` 4, `scrubTrackHActive` 8, `scrubThumb` 24, `scrubGap` 2, `scrubPreviewW` 384, `scrimPlayerTopH` 360, `scrimPlayerBottomH` 440, `posterRequestMaxW` 400, `dialogMaxW` 840, `toastMaxW` 840, `emptyIcon` 72, `switchThumb` 28, `fieldBorderWidth` 2, `markDisc` 24, `cardProgressH` 4, `qrSize` 480 |
@@ -454,7 +450,7 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 - Controls name the action: "Resume", "Start over", "Play S1 · E3", "Mark as watched", "Hide".
 - Times are human: "38 min left", "Ends at 22:41", "Resume from 41:00". Episodes are "S1 · E2".
 - Errors name the problem and the way out: "Couldn't reach Hearth. Check that the server is on, then try again."
-- An error on screen is only Octave's own fixed sentence for its error code, from the table below. Reason text from the player, the system or the server is never shown (owner, 2026-11-22; T8-25).
+- An error on screen is only Octave's own fixed sentence for its error code, from the table below. Reason text from the player, the system or the server is never shown.
 - Honest playback words: "Original file", "Repackaging on server, original quality: {reason}", "Converting on server: {reason}" (PRODUCT.md). Never imply quality is kept when it isn't.
 - Technical terms (HEVC, TrueHD, Direct play) appear in badges, file details, and the info sheet, never in a primary sentence.
 
@@ -517,7 +513,7 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 | Settings, copy diagnostics | n/a | Diagnostics copied | Copy |
 | Settings, copy failed | n/a | Couldn't copy. Select the text below and copy it. | n/a |
 | Item gone | This item is no longer on the server | It may have been removed or renamed. | Go home |
-| Page not available (an unknown route; owner, 2026-11-23, `docs/specs/decisions-owner-inbox-2026-11-23b.md` §1) | This page isn't available | It may have moved, or this account can't see it. | Go home |
+| Page not available (an unknown route) | This page isn't available | It may have moved, or this account can't see it. | Go home |
 | Player loading | n/a | Opening the original file… | Back |
 | Player, this device can't play the original | n/a | Converting on server: this device can't play the original file. | n/a |
 | Player loading, converting | n/a | Converting on server: {reason}… | Back |
@@ -546,150 +542,4 @@ Octave talks like a knowledgeable friend running the projector: calm, brief, pla
 
 ## 12. Decisions
 
-### Carried from the desktop system (accepted 2026-11-08)
-
-1. **One-press resume.** Continue watching cards play on select; details open on a held select or Info.
-2. **Typeface.** Atkinson Hyperlegible Next and Mono.
-3. **Logo and Thumb images.** The Logo becomes the title in heroes and detail headers.
-4. **Skip on select.** While the chrome is hidden, select activates a visible Skip.
-5. **Ambient Home backdrop.** It follows the focused card after a 300 ms dwell.
-
-Also carried: TV body text 28 px and nothing under 24 px (D13 B), exit by the platform's rule (D14 B), a held select opens details (D15 B), press to step and hold to scrub (D16 B), Back restores the place (D1 B), "Buffering…" after 500 ms (D6 B), no `text3` over video (D8 B).
-
-### Owner decisions, 2026-11-20
-
-- The TV is the reference form.
-- Navigation is a collapsed side rail.
-- Home has one Recently added row of movies and shows, with episodes grouped by series.
-- Libraries open on the full grid, with a remembered sort that includes "Newest added", and a letter rail when sorted A to Z.
-- Sign-in is by QR code and Quick Connect, so single sign-on works.
-
-### Owner decisions, 2026-11-22
-
-The owner accepted these look values for now, to be judged again on the Shield at the token check:
-
-- Switch thumb 28 px. On is a `text1` track with an `onLight` thumb. Off is a `surface3` track with a `text2` thumb.
-- TextField border 2 px `lineStrong`.
-- A disabled label is `text3` on the normal fill.
-- A toast is at most 840 px wide.
-- A skeleton never shimmers.
-- Cards (T3-08): 24 px between cards (`space5`), 24 px from the art to the title, 16 px (`space4`) from a row's title to its cards, and the subtitle and the missing-image title in `text2`.
-- The right edge of a row has a 96 px fading edge, so Android keeps the focused card 96 px in; the same margin applies on the left, with no fade.
-- The played mark's disc shows Tabler's check (T3-34).
-- A focused card has the ring, the static lift and `shadowLift`, as §7.5 says; T3-12 and T3-18 measure the shadow's cost.
-
-### Owner decisions, 2026-11-22, from the decision inbox
-
-The owner's words are in `docs/specs/decisions-owner-inbox-2026-11-22.md`.
-
-- **Continue watching (T5-01).** Remove hides the title and keeps its progress. Remove lives in a short menu opened by holding select. A title leaves the row 90 days after it was last played; the row shows at most 20, newest first; the account can change the window (30, 90, 180 or 365 days, or Never). A title that aged out is only hidden, and the device works the ageing out from `UserData.LastPlayedDate` (7.4).
-- **Settings (T9-01).** Subtitles, auto-play, the skip modes and the Continue watching window follow the account and are stored on the server's display preferences. The streaming limits, and later passthrough and refresh rate, stay on the device (7.18).
-- **Icons.** The icon set is Tabler (MIT), loaded as a font with expo-font, with no native module. The stroke weight is light: Tabler's weight-300 font (`docs/specs/decisions-owner-chat-2026-11-22.md`, 2; T3-34).
-- **The brass colour.** `#E8C48A` is a design token, `brass` (section 8; the same file, 3; T3-35).
-- **The menu on a Continue watching card (T5-05).** A held select opens a menu that holds "Remove from Continue watching", "Mark as watched", "Go to series" (for episodes) and "Details" (7.4; the same file, 4).
-- **The Settings sections (T9-08).** The list of 7.18 in its order, and no Advanced section (the same file, 5).
-- **Logo and loader.** The logo is the D1 bars. The loader is "Signal": each pulse of the brass bar sends a wave across "octave" that lights each letter in turn, and the whole name holds lit when the film is ready; a bars-only form where space is tight. It replaces the ring (7.17). Video first, not music.
-- **Errors.** A screen shows only Octave's fixed sentence for an error code, never native reason text (section 10, T8-25).
-
-What the evidence says for each option, for the decisions that had options:
-
-| Decision | Chosen | Not chosen | What the evidence says |
-|---|---|---|---|
-| What Remove means | Hide the title, keep its progress | Reset its progress | Removal is the second most wanted feature on Jellyfin's tracker (1,740 votes, `docs/research/streaming-ux-gripes.md` 2.4). Resetting is the workaround that works today, "at the cost of the resume position" (`docs/research/discovery-api.md:75`). Hiding needs the server: Jellyscale #233 is open, and Jellyfin's "exclude from resume" proposal has no release (`streaming-ux-gripes.md:81`). |
-| Where Remove lives | A short menu on a held select | The title's page | No measurement compares the two. A menu on the card removes a title without leaving the row; Netflix brought removal to every device in 2022 (`streaming-ux-gripes.md:246`), and where its control sits is unverified here. It changes what a held select does on these cards; the owner has since said what the menu holds (7.4). |
-| Whether titles leave by themselves | After 90 days, changeable per account, Never included | Keep everything by default | That Netflix ranks the row by recency supports ageing titles out, and "no data says where the cut should be" (`streaming-ux-gripes.md:246`); the desktop rule of two weeks had no evidence (`PRODUCT.md` before this decision). 90 days is the owner's choice, not a measured value. |
-| Where per-account settings are stored | The server's display preferences | On the device, keyed by account | "Settings that follow the account" has 260 votes on Jellyfin's tracker, and both servers are said to implement the record (`docs/research/streaming-wishlist.md:250`); that the pinned Jellyscale keeps what Octave writes is unverified until the task that builds it checks. |
-
-### Owner decisions, 2026-11-23
-
-- **A card's artwork while it loads (T3-39).** The frame shows a blurred preview of the picture, decoded from the image's BlurHash, in place of a plain `surface2` stand-in (`docs/specs/decisions-owner-inbox-2026-11-23b.md` §3; 7.5). The picture fades in over the preview the way the ambient backdrop does (7.2): `durSlow` with `easeInOut`, 120 ms on opacity only under reduced motion. The fade reuses that approved behaviour and is listed for the owner's veto (an instant swap needs no native change); it also runs when a recycled card remounts with its picture already cached.
-
-### Product Owner decisions, 2026-11-26 (T8-04), for the owner's veto
-
-Made under the owner's delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1) and provisional; the reasons are in `docs/specs/T8-04.md`, "For the owner's veto".
-
-- The player's chrome is React Native over the native picture (7.14; decision 0003's amendment).
-- Back stops the player before it leaves; a failed stop keeps the screen with "Back to details" focused.
-- Select on the scrubber pauses and resumes. T8-05 keeps one condition: while a held scrub is pending, select commits it and does not toggle.
-- Pausing a hidden chrome with Play/Pause shows it with focus on Play or Pause.
-- An invisible element holds focus while only the picture shows.
-- The scrubber shows focus by its thicker track and thumb. Only working controls are drawn.
-- Icons: `arrow-left`, `player-play`, `player-pause`, `rewind-backward-10`, `rewind-forward-10`.
-- Wording: "S1 · E2 {title}"; "Loading…" before a plan and "Opening the original file…" after; for TalkBack, "Player controls", "Seek", "Rewind 10 seconds" and "Forward 10 seconds".
-- The picture's frame in its own shape is a later task, so a film that is not 16:9 may be drawn stretched until then.
-
-### Product Owner calls, 2026-11-26 (T4-02)
-
-These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The reasons are in `docs/specs/T4-02.md`.
-
-- **C1. Copy.** The sign-in rows of section 10 for a redirect, an unsupported version, text that is not an address, a found server that answered differently, and the unencrypted-connection dialog. The "not an address" sentence is new wording. The dialog does not say that Octave will remember the choice, because the choice is kept for one launch only.
-- **C2. Back on the first sign-in step.** While a server is being probed, Back cancels the probe and stays on the step. After "Enter address" reveals the field, Back does what it does on the rest of the step, and the field stays. With nothing to stop, Back leaves the app without a question.
-- **C3.** Remembered servers have no section title.
-- **C4.** The conflict line on a found server: "Another address on this network answered as this server."
-- **C5.** There is no Connect button: the keyboard's action key submits the address.
-- **C6.** "Loading…" is the status line while a probe runs.
-- **C7.** A typed address with no scheme gets `http://` for this device or a home-network host, and `https://` otherwise.
-- **C8.** A search of the network that fails shows nothing; the address field shows, as when no server is found.
-- **C9.** The origin chip is `typeMono` on `surface2` at `radiusPill`, holding the full normalised address.
-- **C10. Rows and fields do not lift.** A row or a field shows focus with the ring and, for a row, a `surface3` fill; it never scales. Art and compact controls keep the lift. A column of rows shares its heading's left edge, and no container clips a ring, a lift or a shadow (section 9, "What lifts" and "Room for focus"; `tasks/product-owner-log.md`, "2026-11-26, T4-02 ruling, Captures"). The first captures of the server step showed a lifted row cut off at both ends. This applies to every list the app draws later: pickers, menus, chapters and Settings.
-- **C11. The ring's offset on a bordered control.** The 3 px offset is measured from the control's outer edge, border included (7.19). The retaken capture showed the Server URL field's ring 1 px from the field, because the field's 2 px border used up 2 of the 3 px. This reads the existing rule; it adds no value.
-- **C12. A field's cursor.** The cursor is `text1`, not the platform's teal; selected text is marked with `fillSecondary` and a selection handle is `text1` (7.19). `focus` was not chosen: section 3.1 keeps it for the ring alone.
-
-### Product Owner calls, 2026-11-26 (T4-03)
-
-These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The reasons are in `docs/specs/T4-03.md`.
-
-- **C1.** The heading "Approve this sign-in on your phone" and the sentence beside the QR code, "Scan the code with your phone, or enter the code in Quick Connect.", are the "Sign-in, Quick Connect" row of section 10.
-- **C2.** The no-link sentence: "On your phone, open {address} and enter this code in Quick Connect." (new wording). To judge: on a loopback server, the only no-link case today, the address is the TV's own and a phone cannot open it.
-- **C3.** "This code has expired. Get a new code to try again." and "The server didn't accept this code. Get a new code to try again.", each with the button "Get a new code" (new wording); "Try again" for unreachable and other.
-- **C4.** Opening focus is on "Change server", the step's only control until T4-04's "Use a password", which then goes before it and takes the opening focus. To judge: a select pressed by habit on this step returns to step 1.
-- **C5.** The QR code may be 480 canvas px (`qrSize`) including a four-module quiet zone, not 360: `onLight` modules on a `text1` field, to the right of the code with its top level with the code's, error correction M. As drawn, modules are whole dp: on a 1080p TV a 33-module code has 10 px modules and is 410 px wide, about 6.3 mm a module on a 55-inch panel. Reasoned, not measured; the owner judges it from the sofa.
-- **C6.** The code is grouped three and three, and TalkBack reads it digit by digit.
-- **C7.** The password step's placeholder is "Who is signing in?", "Not available yet." and "Change server", with no "Quick Connect is off" sentence.
-- **C8.** A failure removes the code from the screen.
-
-### Product Owner calls, 2026-11-26 (T4-04)
-
-These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The reasons are in `docs/specs/T4-04.md`.
-
-- **C1. Layout.** The password step reads top to bottom: "Who is signing in?" and the origin chip; Username; Password; the Show password row; the status or failure line; Sign in (primary); Change server (quiet, last, as on the Quick Connect step).
-- **C2. Opening focus** is the Username field, not Sign in: over two empty fields, Sign in does nothing useful.
-- **C3. Keys.** Username's action key is "Next" and moves focus to Password; the keyboard closes and select opens it again, an extra press to judge on the TV. Password's action key is "Go" and signs in.
-- **C4. An empty username** sends nothing and focuses Username, with no sentence. An empty password is sent. The username is sent as typed. **Narrowed:** after a failed sign-in, an empty password is not sent until the viewer changes Username or Password (any edit counts, even one that leaves the password empty). Until then Sign in and "Go" send nothing, the failure sentence stays and focus goes to Password. When the failed try was itself sent with an empty password and the answer was not a 401 or a 403, it may be sent again with no edit. A cancelled sign-in is not a failure. To judge: after a wrong password, a press on Sign in does nothing until a field is edited, and says nothing new; a viewer whose account has no password, and who got a 401 or a 403, must change a field first. Restoring "an empty password is always sent" would cost this: on a Jellyfin account whose lockout limit is set, each such press is one of the tries before the account is disabled for everyone (a policy value of 0 means 3; a new account has no limit set, and what Jellyfin's setup wizard and dashboard send is unverified).
-- **C5. While signing in** the status line says "Loading…", a second press does nothing and the fields stay enabled.
-- **C6. Failures.** A 403 gets a new sentence: "This account can't sign in right now. Try again later. If it still doesn't work, ask the server's owner." After any failure the password is cleared, the username kept and focus goes to Password; a redirect focuses Change server. The sentence is `text1` with no icon, as on the Quick Connect step.
-- **C7. "Use a password"** on the Quick Connect step is secondary, between a failure's retry and Change server, and takes the opening focus. It is hidden after a redirect. After "Get a new code" or "Try again", focus goes to it.
-- **C8. Show password** is a row with the label "Show password" and a switch showing "On" or "Off", off every time the step opens.
-- **C9. Back to Quick Connect.** Back from a password step opened by "Use a password" returns to the Quick Connect step with a new code, focus on "Use a password".
-- **C10. Back during a sign-in** leaves the step, drops the answer and ends a session that arrives late. The request itself is not stopped: the password still reaches the server, and a wrong one is still counted.
-- **C11. No "Quick Connect is off" sentence.** The password step does not show it; its row in section 10 is marked not shown.
-- **C12. Autofill and a shown password.** Neither field is offered to Android autofill. While Show password is on, the field asks for a visible password, which react-native-tvos 0.88.1 does not pass to the keyboard, so the keyboard sees an ordinary field and may suggest or learn what is typed while the password is shown. Vetoing Show password removes that exposure; the fix that keeps it is a React Native patch (backlog).
-
-### Product Owner calls, 2026-11-26b (T3-40)
-
-These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The reasons are in `docs/specs/decisions-product-owner-2026-11-26b.md`, whose numbers these are.
-
-- **1. Ring corners.** A fault, not a look call: the ring keeps the same gap at a control's corners as along its sides (section 9, "Room for focus").
-- **2. A rail entry does not lift.** It shows the ring and a `surface3` fill. A veto restores the lift and needs a wider open rail.
-- **3. Nothing crops a rail entry's ring**, and it covers no neighbour, in the scrolling group and at the rail's edges (section 9, "Room for focus").
-- **4. The rail's padding is 16 px on all four sides**, in place of the 54 px title-safe inset above and below (section 6). To judge on the Shield: whether Search and the account sit too near the edge.
-- **5. The bar on the current entry stays.**
-
-### Product Owner calls, 2026-11-26 (T4-05)
-
-These are the Product Owner's calls under the delegation (`docs/specs/decisions-owner-chat-2026-11-25.md` §1), not the owner's words. Each is provisional: the owner can veto it. The ruling is in `tasks/product-owner-log.md`, "2026-11-26, T4-05 ruling, Spec and Check".
-
-- **Q4. No Home before the server answers.** Home opens from a stored sign-in only after the server answered, in this launch, as the one the sign-in was made on and accepted the session. A server that is off at launch costs one press on "Try again".
-- **Q6. Back after the server ended the sign-in.** Username filled, focus on Password, the empty password held until an edit, and no sentence saying why. The opening focus departs from T4-04 C2 on this route only.
-- **Q7. While checking.** "Loading…" alone; five seconds each for the server's answer and the session's; no second try by itself; Back leaves the app.
-- **Q10. No sign-out control yet.** A viewer whose stored sign-in works reaches sign-in only by clearing the app's data until T4-06 or T9-05.
-- **Q11. No warning at launch over plain HTTP at home.** A stored sign-in to a private-LAN `http://` server opens without the unencrypted-connection warning when the server answers as the same server; a new sign-in to it asks again.
-- **Q12. The couldn't-check screen.** The matching sign-in sentence, "Try again" (primary, focused) and "Change server" (quiet, last); no new words.
-- **Q13. The warning on the way back.** When the server ends a plain-HTTP sign-in at launch, step 1 opens with the warning open, Cancel focused.
-
-### Awaiting the owner
-
-- The rail's look and entries; how many posters show beside it; what Back does on Home; the sign-in screen with its QR code (T1-08).
-- The token values after the TV design pass (T3-06), and the lift and memory choice (decision 0004, choice 2).
-- What Menu or Info does on a Continue watching card now that a held select opens the card's menu: it opens details, as before, until the owner says otherwise (T5-05).
-- A profile PIN (T12-01); recent searches (T12-05).
+Decisions are recorded in `docs/decisions/` and `docs/specs/decisions-*.md`; calls still awaiting the owner's veto or judgement are listed in `docs/specs/awaiting-owner.md`.
