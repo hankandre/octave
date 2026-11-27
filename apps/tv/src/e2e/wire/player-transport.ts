@@ -1,4 +1,4 @@
-// Wire test player-transport (T8-04, D13): the real player screen over the native view, playing a 60 s episode from the
+// Wire test player-transport (T8-04, D13; its steps since T8-27 D5): the real player screen over the native view, playing a 60 s episode from the
 // pinned Jellyscale, driven by the remote's keys. The app only asks the runner for a key by name; the runner sends it
 // with adb, so it reaches the screen as a remote's key does. The host judges the playstate reports on the wire against
 // its own list of the keys it sent, and the window's keep-screen-on flag from its own reads. Words are fixed words and
@@ -25,6 +25,9 @@ const WAKE_PAST_SECONDS = 2;
 const NO_SEEK_SECONDS = 8;
 const SEEK_SECONDS = 10;
 const NEAR_SECONDS = 2;
+// A seek asked for while playing aims 10 s from where the picture was when the key arrived, which the last one-second
+// state event and the key's trip through adb leave up to about this far from the position read before the press.
+const PLAYING_NEAR_SECONDS = 3;
 // After the idle timer should have hidden the controls, and after a key that must not pause.
 const IDLE_PAST_MS = motion.chromeIdleMs + 1_000;
 const SETTLE_MS = 1_000;
@@ -39,6 +42,19 @@ const landedNear = (seconds: number) => (state: ViewingState) => {
   const landed = state.seekingTo === undefined && position !== undefined && Math.abs(position - seconds) <= NEAR_SECONDS;
   return landed ? true : undefined;
 };
+
+// A seek asked for while playing, aimed within PLAYING_NEAR_SECONDS of `seconds`, once it has landed. Playing alone never
+// sets a seek target, so a position that only moved on cannot pass.
+function playingSeekLanded(seconds: number) {
+  let asked: number | undefined;
+  return (state: ViewingState) => {
+    if (state.seekingTo !== undefined) {
+      asked = state.seekingTo;
+      return undefined;
+    }
+    return asked !== undefined && Math.abs(asked - seconds) <= PLAYING_NEAR_SECONDS ? true : undefined;
+  };
+}
 
 // While paused, sends Right and then Left and says whether the position held. On Play or Pause they only move focus to
 // Forward and back; on the scrubber each seeks, and the two cancel out, so every state in between is watched.
@@ -57,6 +73,14 @@ async function arrowsHoldStill({ press }: WireContext, viewing: Viewing): Promis
   return !moved;
 }
 
+// Presses an arrow with only the picture showing, while playing, and waits for its 10 s step to land.
+async function pictureSeek({ press }: WireContext, viewing: Viewing, key: "DPAD_LEFT" | "DPAD_RIGHT", step: string): Promise<void> {
+  const from = positionOf(viewing.state()) ?? Number.NaN;
+  const delta = key === "DPAD_LEFT" ? -SEEK_SECONDS : SEEK_SECONDS;
+  press(key);
+  await awaitState(viewing, STEP_MS, step, playingSeekLanded(from + delta));
+}
+
 async function drive(context: WireContext, viewing: Viewing, closed: Promise<void>, words: string[]): Promise<void> {
   const { press, readWindow } = context;
   await awaitState(viewing, FIRST_FRAME_MS, "first", (state) => (state.session.firstFrameReady ? true : undefined));
@@ -65,8 +89,8 @@ async function drive(context: WireContext, viewing: Viewing, closed: Promise<voi
     return position !== undefined && position > WAKE_PAST_SECONDS ? position : undefined;
   });
 
-  // 1 and 2. An arrow wakes the hidden controls, and the play-pause key pauses at once.
-  press("DPAD_RIGHT");
+  // 1 and 2. Up wakes the hidden controls on the scrubber without seeking, and the play-pause key pauses at once.
+  press("DPAD_UP");
   press("MEDIA_PLAY_PAUSE");
   await awaitState(viewing, STEP_MS, "pause", pausedIs(true));
   const pausedAt = positionOf(viewing.state()) ?? Number.NaN;
@@ -97,21 +121,37 @@ async function drive(context: WireContext, viewing: Viewing, closed: Promise<voi
   await awaitState(viewing, STEP_MS, "resume", pausedIs(false));
   words.push("resume=ok");
 
-  // 5. Once the controls hide, select shows them without pausing; the next one is Play or Pause's own.
+  // 5. Once the controls hide, select pauses and leaves focus on Play or Pause, whose own press resumes (T8-27).
   await wait(IDLE_PAST_MS);
   press("DPAD_CENTER");
-  await wait(SETTLE_MS);
-  words.push(`centre-wake=${viewing.state().session.snapshot?.paused === false ? "shown" : "toggled"}`);
+  await awaitState(viewing, STEP_MS, "picture-select", pausedIs(true));
+  words.push("picture-select=paused");
+  words.push(`picture-select=${(await arrowsHoldStill(context, viewing)) ? "play-pause" : "elsewhere"}`);
   press("DPAD_CENTER");
-  await awaitState(viewing, STEP_MS, "focused", pausedIs(true));
-  words.push("centre-wake=focused");
-  words.push(`centre-wake=${(await arrowsHoldStill(context, viewing)) ? "play-pause" : "elsewhere"}`);
+  await awaitState(viewing, STEP_MS, "picture-select-resume", pausedIs(false));
+  words.push("picture-select=resumed");
+
+  // 6. Once the controls hide, Left steps back 10 s and leaves focus on the scrubber, where Right steps on while paused.
+  await wait(IDLE_PAST_MS);
+  await pictureSeek(context, viewing, "DPAD_LEFT", "picture-left");
+  words.push("picture-left=back");
   press("MEDIA_PLAY_PAUSE");
-  await awaitState(viewing, STEP_MS, "resume-again", pausedIs(false));
+  await awaitState(viewing, STEP_MS, "picture-left-pause", pausedIs(true));
+  const leftAt = positionOf(viewing.state()) ?? Number.NaN;
+  press("DPAD_RIGHT");
+  await awaitState(viewing, STEP_MS, "picture-left-scrubber", landedNear(leftAt + SEEK_SECONDS));
+  words.push("picture-left=scrubber");
+  press("MEDIA_PLAY_PAUSE");
+  await awaitState(viewing, STEP_MS, "picture-left-resume", pausedIs(false));
   readWindow("playing");
   await wait(WINDOW_READ_MS);
 
-  // 6. Back: the screen stops the player, then closes.
+  // 7. Once the controls hide, Right steps on 10 s. The window read's wait is already most of the idle time.
+  await wait(Math.max(0, IDLE_PAST_MS - WINDOW_READ_MS));
+  await pictureSeek(context, viewing, "DPAD_RIGHT", "picture-right");
+  words.push("picture-right=forward");
+
+  // 8. Back: the screen stops the player, then closes.
   press("BACK");
   const left = await Promise.race([closed.then(() => true), wait(STEP_MS).then(() => false)]);
   if (!left) throw new Ended("back-timeout");

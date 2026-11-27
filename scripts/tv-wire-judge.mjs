@@ -20,9 +20,10 @@
 //   fail, the second start where the first stopped, and only original-file media requests.
 // - judgeTransportCapture(records, tokens, { keys, windows }): player-transport's playstate reports, its result words,
 //   the keys the runner sent and its reads of the window (T8-04, D13): an arrow that wakes the controls seeks nothing,
-//   two seeks forward and one back while paused, every pause and resume from the keys that make one, no movement from
-//   the arrows sent after a centre press, a stop by Back
-//   before the file's end, original-file media requests only, and the screen kept on only while playing.
+//   two seeks forward and one back while paused, every pause and resume from the keys that make one (a select from the
+//   picture pausing once, T8-27), no movement from the arrows sent after a centre press, the hidden Left stepping back
+//   10 s with focus on the scrubber, a stop by Back before the file's end, original-file media requests only, and the
+//   screen kept on only while playing. The hidden Right's step is the app's own reading (picture-right=forward).
 // - judgeQuickConnectCapture(records, words): sign-in-quick-connect's requests and result words (T4-03, D12): the
 //   probe, the availability check, one Initiate, polls that send only the secret, one sign-in, then Home read with a
 //   token and no further poll, with the secret and the issued token both learned by the recorder.
@@ -329,19 +330,23 @@ export function judgeViewingCapture(records, said) {
   return [...errors.map((text) => `ERROR wire viewing: ${text}`), ...judgePlayerCapture(records)];
 }
 
-// player-transport's keys, in order (T8-04, D13). The runner sends them and keeps this account; the app cannot write it.
+// player-transport's keys, in order (T8-04 D13, T8-27 D5). The runner sends them and keeps this account; the app cannot
+// write it.
 const TRANSPORT_KEYS = [
-  ...["DPAD_RIGHT", "MEDIA_PLAY_PAUSE"],
+  ...["DPAD_UP", "MEDIA_PLAY_PAUSE"],
   ...["DPAD_RIGHT", "DPAD_RIGHT", "DPAD_LEFT"],
   ...["DPAD_DOWN", "DPAD_CENTER", "DPAD_CENTER", "DPAD_RIGHT", "DPAD_LEFT", "MEDIA_PLAY_PAUSE"],
-  ...["DPAD_CENTER", "DPAD_CENTER", "DPAD_RIGHT", "DPAD_LEFT", "MEDIA_PLAY_PAUSE"],
+  ...["DPAD_CENTER", "DPAD_RIGHT", "DPAD_LEFT", "DPAD_CENTER"],
+  ...["DPAD_LEFT", "MEDIA_PLAY_PAUSE", "DPAD_RIGHT", "MEDIA_PLAY_PAUSE"],
+  "DPAD_RIGHT",
   "BACK",
 ];
-// A word may be said twice (centre, centre-wake), so the result line's tokens are held, not one value per name.
+// A word may be said twice (centre, picture-select), so the result line's tokens are held, not one value per name.
 const TRANSPORT_WORDS = [
   ...["outcome=ok", "wake=no-seek", "pause=ok", "seek=+20", "back=-10"],
   ...["centre=resumed", "centre=paused", "down=play-pause", "resume=ok"],
-  ...["centre-wake=shown", "centre-wake=focused", "centre-wake=play-pause", "stop=back"],
+  ...["picture-select=paused", "picture-select=play-pause", "picture-select=resumed"],
+  ...["picture-left=back", "picture-left=scrubber", "picture-right=forward", "stop=back"],
 ];
 // An arrow that seeked lands at 10 s or later, whatever it seeked from.
 const WAKE_UNDER_SECONDS = 10;
@@ -350,8 +355,12 @@ const STOP_UNDER_SECONDS = 50;
 const SEEK_NEAR_SECONDS = 2;
 // Where the first paused run's positions are, from its first: the pause, two seeks forward and one back.
 const SEEK_OFFSETS = [0, 10, 20, 10];
-// Seven keys that pause or resume make three pauses and three resumes only if each of them did what it should.
-const PAUSED_RUNS = 3;
+// Eight presses that pause or resume make four pauses and four resumes only if each of them toggled once: a select from
+// the picture that toggled nothing, or twice, breaks the count.
+const PAUSED_RUNS = 4;
+// The fourth paused run starts after the hidden Left, so at least this far below the third run's position. The run
+// leaves about 4 s more (the idle wait plays about 4 s, the Left takes 10): a failure here reads first as a slow run.
+const LEFT_BELOW_SECONDS = 2;
 
 // The progress posts' reports as runs of consecutive paused posts.
 function pausedRuns(reports) {
@@ -398,7 +407,7 @@ function seekErrors(run) {
 }
 
 // The second and third paused runs: Right and Left from Play or Pause move only focus, where on the scrubber they would
-// move the position.
+// move the position. For the third, that says the select from the picture left focus on Play or Pause.
 function stillErrors(runs) {
   return [
     ["second", runs[1]],
@@ -411,6 +420,23 @@ function stillErrors(runs) {
   });
 }
 
+// The fourth paused run: Q, then Q + 10 from Right on the scrubber that the hidden Left left focused, with Q below the
+// third run. Playback only moves forward, so a position below the third run's comes only from a backward seek between
+// them, and the only key there is the hidden DPAD_LEFT.
+function pictureLeftErrors(runs) {
+  const [third, fourth] = [runs[2], runs[3]];
+  if (third === undefined || fourth === undefined) return [];
+  const positions = distinctPositions(fourth);
+  const errors = [];
+  const stepped = positions.length === 2 && Math.abs(positions[1] - positions[0] - 10) <= SEEK_NEAR_SECONDS;
+  if (!stepped) errors.push(`the fourth paused run moved through ${positions.join(", ")} s, expected Q then Q + 10, so the hidden Left did not leave focus on the scrubber`);
+  const thirdAt = distinctPositions(third)[0];
+  if (!(positions[0] <= thirdAt - LEFT_BELOW_SECONDS)) {
+    errors.push(`the fourth paused run starts at ${positions[0]} s, not ${LEFT_BELOW_SECONDS} s below the third's ${thirdAt} s, so the hidden Left did not seek back (or the run was slow)`);
+  }
+  return errors;
+}
+
 function transportReportErrors(reports) {
   const calls = reports.map(call);
   const inShape = calls[0] === PLAYING_CALL && calls.at(-1) === STOPPED_CALL && calls.slice(1, -1).every((sent) => sent === PROGRESS_CALL);
@@ -420,7 +446,7 @@ function transportReportErrors(reports) {
   const runs = pausedRuns(progress.map((record) => record.report));
   const errors = wakeErrors(progress);
   if (runs.length > 0) errors.push(...seekErrors(runs[0]));
-  errors.push(...stillErrors(runs));
+  errors.push(...stillErrors(runs), ...pictureLeftErrors(runs));
   if (runs.length !== PAUSED_RUNS) errors.push(`the progress posts hold ${runs.length} paused run(s), expected ${PAUSED_RUNS}`);
   if (progress.at(-1)?.report?.paused !== false) errors.push("the last progress post before the stop was not playing");
   if (stop?.failed !== false) errors.push("the stop did not say it had not failed");
