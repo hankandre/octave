@@ -1458,6 +1458,29 @@
           "evidence": "PR #361 (merged 2026-11-26). pnpm check pass; check-red green 1-5; 6 met, 7-8 review. Emulator captures in docs/specs/captures/T3-40. Review approved; lows fixed or logged. ux-review not run on this change: merged on the owner's word, a review of all screens follows. Untested: real TV, later scroll re-check on Android."
         },
         {
+          "id": "T3-43",
+          "title": "Open the rail on the current screen's entry, from anywhere",
+          "domain": "App Shell & Presentation",
+          "lane": "ui",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T3-40"
+          ],
+          "acceptance": [
+            "Left from any first-column control of a screen with the rail opens the rail with focus on the current screen's entry: the hero's first button, the first card of each of Home's rows, and the first control of every other root screen (DESIGN.md 7.1; docs/specs/decisions-product-owner-2026-11-26d.md, 2)",
+            "Back on a root screen still opens the rail on that screen's entry, and Right, or select on the current entry, returns focus to the control that had it",
+            "The entries' order, the bar on the current entry, the rings and the keys that open and close the rail are otherwise unchanged",
+            "On the emulator, Down, Down, Left from a fresh launch lands on Home's entry, and Left from the Search screen's first control lands on Search's entry; the PR names the focused view after each"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T3-36",
           "title": "Keep the activity and its focus when an input device connects",
           "domain": "Distribution",
@@ -1562,6 +1585,31 @@
           "owner": "native-engineer",
           "passes": true,
           "evidence": "Implemented through commit 862f5ac9; verify rerun recorded in commit fffd89d1. pnpm check exit 0 (Vitest 3681, Jest 272, scripts 2698 pass); pnpm tv:native:test 1016 passed, 0 failed. T3-30 watch-controls flake passed alone on origin/main 4ca11908 and branch, logged to backlog. Own emulator t339_tv (API 36): tv:e2e pass, tv:wire --task T3-11 5 pairs pass, canary=absent. Item 7: 3 cold runs per build, median janky 20.21%/p90 31 ms (3e692771) vs 4.41%/28 ms (head). Untested: Shield, other Android versions, tvOS, real-library hashes on device."
+        },
+        {
+          "id": "T3-42",
+          "title": "Draw artwork at the size of its frame: rename the artwork view's width prop",
+          "domain": "Catalog",
+          "lane": "native-session",
+          "model": "opus",
+          "skill": "native-player",
+          "human": false,
+          "depends_on": [
+            "T3-39"
+          ],
+          "acceptance": [
+            "On a 1080p TV every artwork picture view is the size of its frame: a thumb's is 416x234 px, a poster's 248x372 and Home's backdrop no wider than its frame, so a card, the backdrop and the player's loading screen show the whole picture and not a doubled crop",
+            "The artwork view's width prop is named drawnWidth, with the same value and meaning: the drawn width in whole canvas px, which sizes the image request (docs/specs/decisions-product-owner-2026-11-26d.md, 1)",
+            "No prop React passes to the artwork view is a name React Native's layout reads, such as width or height, and a test fails on one",
+            "The view's surface is otherwise unchanged: six props, one event and no function; the image request and its 400 px cap are unchanged, and the wire tests artwork-header-and-cache and artwork-canary pass (gate: ci)",
+            "The allowlist, the TypeScript types, docs/security.md and a dated amendment to decision 0005 name the prop in the same PR, and the PR has a Changed native surface section (gate: review)",
+            "The PR shows before and after captures at 1920x1080 of Home with a card focused, and the emulator's view bounds of one thumb, one poster and the backdrop"
+          ],
+          "verify": "pnpm check && pnpm tv:native:test",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
         },
         {
           "id": "T3-28",
@@ -2283,6 +2331,31 @@
           "evidence": ""
         },
         {
+          "id": "T5-09",
+          "title": "Keep focus where the viewer expects it on Home's hero and at a row's end",
+          "domain": "App Shell & Presentation",
+          "lane": "ui",
+          "model": "opus",
+          "skill": "change-review",
+          "human": false,
+          "depends_on": [
+            "T5-03"
+          ],
+          "acceptance": [
+            "Right on the hero's last button does nothing: focus stays on it and nothing scrolls",
+            "Up from any card of Home's first row lands on the hero's primary action, or on More info when the hero has no primary, and Home scrolls to its top so the hero's title, facts and overview are in view (docs/specs/decisions-product-owner-2026-11-26d.md, 3)",
+            "Down from the hero, and Up and Down between rows, land as today on the card nearest by horizontal centre, and every row keeps its remembered place",
+            "A focused card at the end of a row, with its ring and its caption, is not under the row's fading edge and sits at least 96 px from the screen's right edge; a row with nothing more to its right shows no fade (DESIGN.md 9; docs/specs/decisions-product-owner-2026-11-26d.md, 4)",
+            "DESIGN.md sections 7.3, 7.4 and 12 say the same in the same PR (gate: review)",
+            "The PR shows before and after captures at 1920x1080 of the hero reached from a card, and of each row's last card focused"
+          ],
+          "verify": "pnpm check",
+          "status": "todo",
+          "owner": null,
+          "passes": false,
+          "evidence": ""
+        },
+        {
           "id": "T4-06",
           "title": "Remember accounts and ask Who's watching? only when there are two",
           "domain": "Server Connection & Identity",
@@ -2522,6 +2595,7 @@
             "A focused primary, secondary or danger button takes the text1 fill with an onLight label, with the ring and the lift it has today; a quiet button is unchanged",
             "A disabled button never takes the light fill, and every label keeps a contrast of 4.5:1 on its fill",
             "While a dialog is open no control behind it shows a focus ring; when the dialog closes, focus and its ring return to the control that had them (docs/specs/decisions-product-owner-2026-11-26c.md, 3)",
+            "In a dialog, a focused button's ring and lift cover no part of the button beside it (DESIGN.md 9, Room for focus; docs/specs/decisions-product-owner-2026-11-26d.md, 5)",
             "DESIGN.md sections 3.1, 7.19 and 12 say the same in the same PR (gate: review)",
             "The PR shows before and after captures at 1920x1080 of the password step with a field focused, of the unencrypted-connection dialog, and of a primary beside a secondary with each focused in turn"
           ],
