@@ -6,7 +6,7 @@ A viewer opens Jellyscale in a browser and watches, from the server's own web cl
 
 Evidence for every claim below: `docs/research/web-client.md`.
 
-**Status, 2026-11-26.** A Product Owner pass ruled on this plan (`tasks/product-owner-log.md`, "2026-11-26, plan 017 pass"); every ruling is provisional, for the owner's veto. Milestone 0 may run. The web UI is plain React DOM (owner, 2026-11-26; `docs/research/web-ui-paths.md`). Whether Jellyscale lifts D-027 for the web client is with its product owner (jellyscale-org/jellyscale#289): the owner favours the lift and asked for it to be evaluated there. Milestones 1 to 9 wait for the owner on decision 0006.
+**Status, 2026-11-26.** Approved for implementation by the owner (`docs/specs/decisions-owner-web-2026-11-26.md`). The work is phase T17 in `tasks/prd.json`, in its own parallel lane `web`, added by the Product Owner pass "2026-11-26 (Product Owner pass, scoped: the web client)"; every ruling there is provisional, for the owner's veto. Milestone 0 is done in Chrome and Firefox; Safari, iPhone, iPad and a hardware-decoding Chrome are the owner's run (T17-04). The web UI is plain React DOM (owner, 2026-11-26; `docs/research/web-ui-paths.md`). Work that holds or persists a browser token waits for the owner to accept decision 0006 (T17-02); everything else may run now. Whether Jellyscale serves and tests the client is with its product owner (jellyscale-org/jellyscale#289), and no T17 task requires it.
 
 - [ ] A viewer signs in at the origin Jellyscale served the client from, by OIDC over HTTPS or by a password, and reaches Home. Plain Jellyfin serving Octave's web form is unverified and is not a v1 gate; the core still speaks to both servers.
 - [ ] Every request carries `Authorization`, and no request carries a token in its URL: the wire test records zero `ApiKey`/`api_key` requests, zero `Cookie`/`Set-Cookie`, the identity provider's navigation as the only redirect, and zero requests initiated by a media element.
@@ -107,7 +107,7 @@ The playlist vectors already exist (`packages/core/tests/fixtures/hls-playlists.
 
 ## Milestones
 
-0. **Falsifiers, before any task is written, in this order.** (b) first: append an fMP4 HLS stream from Jellyscale to MSE through hls.js with a header-injecting loader, at 4K remux bitrate, in Chromium, Firefox and Safari, and on an iPhone through `ManagedMediaSource`; record the quota behaviour and the highest bitrate each plays without a stall. It runs first because it says whether a film plays at all, and its figure is the bitrate ceiling milestone 1 needs; no ceiling is written down before it is measured. (c) second and last, one day at most: measure whether a service worker can serve a same-origin `<video src>` with the header in Chromium, Firefox (bug 1923096) and Safari, with a security note. (There is no (a): it exported the TV tree for web, and the web UI is plain React DOM.) Validation: both results are pasted here. Model: opus. **Gates:** if (b) fails in a v1 browser, that browser leaves v1 or the plan stops; (c) changes nothing in v1, whatever it finds: v1 needs one engine that works in every v1 browser, and "no service worker" is part of decision 0006's promise. A success in (c) becomes a backlog line for an "original file on the web" path after v1, and the owner decides it, because it amends 0006.
+0. **Falsifiers (b) playback and (c) service worker; done in Chrome and Firefox, the rest is T17-04.** (b) first: append an fMP4 HLS stream from Jellyscale to MSE through hls.js with a header-injecting loader, at 4K remux bitrate, in Chromium, Firefox and Safari, and on an iPhone through `ManagedMediaSource`; record the quota behaviour and the highest bitrate each plays without a stall. It runs first because it says whether a film plays at all, and its figure is the bitrate ceiling milestone 1 needs; no ceiling is written down before it is measured. (c) second and last, one day at most: measure whether a service worker can serve a same-origin `<video src>` with the header in Chromium, Firefox (bug 1923096) and Safari, with a security note. (The letters are kept from the research pages; a UI falsifier (a) was withdrawn when the owner chose plain React DOM.) Validation: both results are pasted here. Model: opus. **Gates:** if (b) fails in a v1 browser, that browser leaves v1 or the plan stops; (c) changes nothing in v1, whatever it finds: v1 needs one engine that works in every v1 browser, and "no service worker" is part of decision 0006's promise. A success in (c) becomes a backlog line for an "original file on the web" path after v1, and the owner decides it, because it amends 0006.
 1. **Negotiation learns the two dimensions it lacks.** A per-device **bitrate ceiling** in the capability report, acted on by the source decision; containers judged for the container-only remux case; and rule 5 turning off copy only for the stream that cannot play. The ceiling is a device capability, read by the source decision and never written into the DeviceProfile; it has its own reason and copy, apart from the viewer's streaming limit. Jellyscale must honour and echo the copy flags — it reads none today — and must give a reason whenever it reduces the channel count. Both are Jellyscale issues Octave files; the wire test waits for them (`AGENTS.md`, "Pass a playback task only when its wire test passes against Jellyscale"). Whether Octave's profile should also carry `MaxAudioChannels` is this milestone's spec to settle against `ARCHITECTURE.md` §3; the downmix reaches the TV's HLS sessions today (backlog). Validation: core tests; the tripwire count of copies against re-encodes improves; a Jellyscale wire test asks for copy and gets fMP4 HLS. Model: opus.
 2. **Decision 0006 and the product text.** The token in page memory or one `localStorage` record; `BroadcastChannel` sign-out; the shared-computer mode; XSS as the boundary; the CSP; no service worker; what is never persisted; the test for each. The record must make the promises listed under "What decision 0006 must promise", and the owner accepts it, as the owner accepted 0005. `PRODUCT.md` gains the web form, its single-origin rule and its media limits; `DESIGN.md` gains the web form's pointer, layout and type rules; `docs/security.md` gains the web section; I7's image wording is amended for pictures by id. Validation: `gate: review`. Model: fable for the decision, opus for the text. Design with the `frontend-design` skill, backed by `impeccable`; `DESIGN.md` stays the contract.
 3. **The web host and the token's owner (`packages/web-host`).** A host owning the token in a `#private` map, exposing the existing `Transport` plus `mediaFetch(session, path, range, signal)` with `credentials: "omit"`, `redirect: "manual"`, `referrerPolicy: "no-referrer"`, same origin only. Session record, install id, device preferences, WebCrypto. Password sign-in. `authorizationHeader()` removed. Validation: Node tests for the host and the storage allowlist; a Chromium run that signs in and renders Home against the fixtures image. Model: opus.
@@ -118,7 +118,22 @@ The playlist vectors already exist (`packages/core/tests/fixtures/hls-playlists.
 8. **Serving, packaging and cutover.** A static handler in Jellyscale: history-API fallback from memory with `no-cache` and an ETag, hashed assets `immutable`, precompressed `.br`/`.gz`, `version.json` `no-store`, the CSP and security headers, and the three seams (`normalize`'s lowercase exclusion, `crossOrigin`, `logRequests`). One build with relative asset URLs serves any prefix. Octave's part ends at a build that serves from any prefix and passes Octave's own tests at `/octave/`. The static handler, the headers and Jellyscale's `test/e2e` driving Octave wait for #289. What sits at `/web/` is not decided. Octave's recommendation: jellyfin-web stays at `/web/` for as long as Jellyfin Desktop, Jellyfin for webOS and the TV's QR link load it, and Octave lives at `/octave/` with the root redirect a setting. Validation: Octave's wire and browser tests green against the pinned Jellyscale at `/octave/` and at one other prefix. Model: opus.
 9. **Hardening.** iPhone and iPad figures, low-memory sessions, Safari's buffer eviction, the service-worker finding if milestone 0 (c) pursued it, accessibility, and performance budgets measured. Validation: budgets recorded with their runs; a security review. Model: opus.
 
-Each milestone's work gets its own spec in `docs/specs/<TASK-ID>.md` before implementation. The T17 tasks do not exist in `tasks/prd.json` yet: a Product Owner pass adds them, and this plan does not.
+Each task gets its own spec in `docs/specs/<TASK-ID>.md` before implementation. The milestones map to T17's tasks (`pnpm task list --phase T17`):
+
+| Milestone | Tasks | Waits for |
+|---|---|---|
+| 0 | T17-04 (owner, `human`) | the owner's devices |
+| 1 | T17-05 containers, T17-15 the ceiling, T17-22 the server copy | T17-22: the Jellyscale issue for the five flags; the downmix reason stays on the backlog with its Jellyscale issue |
+| 2 | T17-02 decision 0006 (owner, `human`), T17-03 `PRODUCT.md` and `DESIGN.md` | T17-02: the owner |
+| 3 | T17-11 the host and password sign-in, T17-13 staying signed in | decision 0006 |
+| 4 | T17-06 the validator, T17-08 WebM as stored, T17-09 hls.js, T17-16 the measured ceiling | nothing before 0006 except T17-16, which follows first playback |
+| 5 | T17-18 text subtitles, T17-19 ASS and image subtitles | first playback |
+| 6 | T17-10 Home, T17-12 the player and first playback, T17-14 the notice, T17-17 the info sheet, T17-20 library and search, T17-21 a title's page | T17-12: decision 0006 through T17-11 |
+| 7 | T17-23 single sign-on | the Jellyscale issue for the OIDC handoff |
+| 8 | T17-01 one build at any prefix, T17-07 the web wire test at `/octave/` and a second prefix | Jellyscale's serving and e2e: #289, which no task requires |
+| 9 | not yet a task: a later pass adds the hardening task once T17-12 merges (backlog) | first playback |
+
+**The first playback needs no Jellyscale change.** The pinned Jellyscale reads none of the five PlaybackInfo flags, so it cannot be asked to copy an MKV, and Octave's profile may carry no container condition. T17-12 therefore plays a WebM film as stored (an opt-in sample in T17-07) and a film over the viewer's own streaming limit as a conversion, which the pinned Jellyscale already makes (`packages/core/tests/fixtures/jellyscale/README.md`, the forced-limit run). An MKV in the browser is refused with its reason until T17-22.
 
 ## What decision 0006 must promise
 
@@ -161,7 +176,13 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 
 ## Progress
 
-- [ ] 0
+- [x] (2026-11-26) Milestone 0 (b) in Chrome and Firefox, and (c) in Chrome and Firefox: the results are under "Validation evidence".
+- [x] (2026-11-26) The owner approved the plan for implementation and chose plain React DOM.
+- [x] (2026-11-26) Phase T17 and its 23 tasks added, with the lane `web` (Product Owner pass, scoped: the web client).
+- [ ] Milestone 0 on Safari, iPhone, iPad and a hardware-decoding Chrome or Edge (T17-04, the owner).
+- [ ] Decision 0006 accepted by the owner (T17-02).
+- [ ] First playback in a browser against the pinned Jellyscale (T17-12).
+- [ ] The rest of T17.
 
 ## Decision log
 
@@ -178,6 +199,8 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - 2026-11-26, owner: favours changing Jellyscale's D-027 so that Jellyscale ships Octave's web client, and wants Jellyscale's product owner to evaluate it from a GitHub issue (jellyscale-org/jellyscale#289). What `/web/` serves, the OIDC route shape and delivery variants are not asked there.
 - 2026-11-26, owner: **the web UI is plain React DOM** in `apps/web` on `packages/core`, with CSS Modules and CSS custom properties generated from the shared token values. This replaces the first entry above (one tree through React Native Web). Reason (`docs/research/web-ui-paths.md`): React Strict DOM has had one release in 12 months and its source shows no TV focus or list support, and today's TV tree would crash on web through React Native Web. The cost: web screens are built apart from TV screens and kept in step through the core, the token values and `DESIGN.md`. No spike runs. Web takes the token values, not the TV's 1920×1080 sizes.
 - 2026-11-26, owner: all web design work uses Anthropic's `frontend-design` skill, with `impeccable` as its backup. Whoever designs, specs or reviews a web screen loads them, subagents included. Where a skill and `DESIGN.md` disagree, `DESIGN.md` holds until it is changed. `AGENTS.md` on `main` now requires the same for every UI change (commits `7c85892c`, `48bcad0a`); its Android TV guidance step is the TV's.
+- 2026-11-26, owner: approved the plan for implementation under `WORKFLOW.md` (`docs/specs/decisions-owner-web-2026-11-26.md`). That replaces the Product Owner's holds "no T17 tasks yet" and "the web form takes no lane from T4 to T11".
+- 2026-11-26, Product Owner pass (scoped: the web client; provisional, for the owner's veto): a parallel lane `web` for every T17 task, so web work never stops a TV lane; 23 tasks mapped above; "milestones 1 to 9 wait for decision 0006" narrowed to "nothing that holds or persists a browser token merges before it"; the first playback goes through a WebM and the viewer's streaming limit, so it waits for no Jellyscale issue; the service-worker result is one backlog line, by the gate.
 
 ## Surprises & discoveries
 
@@ -194,7 +217,8 @@ A browser-shaped source for `MaxAudioChannels` and the bitrate ceiling is Octave
 - Jellyscale reads none of the five PlaybackInfo flags, though Jellyfin 12.4 defines them all.
 - Jellyscale's D-027 and its `PRODUCT.md:83` say no Jellyscale work goes in for Octave, so the static handler and the e2e move are not parity asks; they need Jellyscale's owner.
 - The TV's Quick Connect QR code links to `/web/#/quickconnect`, so `/web/` is part of Octave's own sign-in.
-- T16-01's acceptance rules react-native-web out as a desktop route, on its author's statement. Its premises have moved (`docs/research/web-ui-paths.md`): another maintainer published react-native-web 0.21.3 and 0.21.4, and React Strict DOM's latest release is 0.0.55 of 2026-01-09. The plan no longer depends on either; T16-01 is unchanged.
+- T16-01's dependency premises have moved since it was written (`docs/research/web-ui-paths.md`). The web form uses neither library it weighs, and T16-01 is unchanged.
+- The pinned Jellyscale converts for a streaming limit but cannot be asked to copy (it reads no PlaybackInfo flag), so the first web playback is a WebM played as stored and a conversion by the viewer's limit.
 - The DeviceId needs SHA-256 and plain HTTP has no `crypto.subtle`.
 
 ## Validation evidence
