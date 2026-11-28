@@ -1,33 +1,5 @@
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "chore(deps)"
-    ignore:
-      # dependency-cruiser and @typescript-eslint/parser need TypeScript below 7; a 7.x alias would break both lints.
-      - dependency-name: "typescript-6"
-        update-types: ["version-update:semver-major"]
-      # apps/tv's packages (docs/specs/T3-01.md, Dependencies): they move only with an Expo SDK upgrade. They stay
-      # ignored until ruleset 26769544 lists the tv check; which may then move on their own is a backlog line (T3-02).
-      - dependency-name: "expo"
-      - dependency-name: "expo-*"
-      - dependency-name: "babel-preset-expo"
-      - dependency-name: "react"
-      - dependency-name: "react-native"
-      - dependency-name: "react-native-*"
-      - dependency-name: "@react-native-tvos/*"
-      - dependency-name: "@react-navigation/*"
-      - dependency-name: "@shopify/flash-list"
-      - dependency-name: "@babel/core"
-      - dependency-name: "@types/react"
-    groups:
-      npm-minor-patch:
-        update-types: [minor, patch]
-
   - package-ecosystem: github-actions
     directory: /
     schedule:
