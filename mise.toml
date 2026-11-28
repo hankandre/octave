@@ -1,7 +1,0 @@
-# Use the repo's .node-version (also read by actions/setup-node in CI).
-[settings]
-idiomatic_version_file_enable_tools = ["node"]
-
-# Gradle builds apps/tv with the JDK the TV spikes used (CI sets up the same with actions/setup-java).
-[tools]
-java = "temurin-17"

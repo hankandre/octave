@@ -1,5 +1,0 @@
-{"type":"assistant","message":{"id":"msg_011ChJbFXDf7KbAyHxrCJLhR","model":"claude-haiku-5-5","usage":{"input_tokens":2,"cache_creation_input_tokens":35083,"cache_read_input_tokens":0,"output_tokens":173}}}
-{"type":"assistant","message":{"id":"msg_011ChJbFuZ5Zz648BQEzwVnB","model":"claude-haiku-5-5","usage":{"input_tokens":2,"cache_creation_input_tokens":1794,"cache_read_input_tokens":35083,"output_tokens":316}}}
-{"type":"assistant","message":{"id":"msg_011ChJbFuZ5Zz648BQEzwVnB","model":"claude-haiku-5-5","usage":{"input_tokens":2,"cache_creation_input_tokens":1794,"cache_read_input_tokens":35083,"output_tokens":316}}}
-{"type":"user","cwd":"/home/canary-user/secret","message":{"role":"user","content":"CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret"}}
-{"type":"assistant","cwd":"/home/canary-user/secret","message":{"id":"msg_canary","role":"assistant","content":[{"type":"text","text":"CANARY-PROMPT-T1-20 CANARY-TOKEN-0123456789abcdef http://192.0.2.44:8096/Items?api_key=CANARY-TOKEN-0123456789abcdef /home/canary-user/secret"}]}}
