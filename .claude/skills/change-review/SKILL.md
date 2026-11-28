@@ -1,6 +1,6 @@
 ---
 name: change-review
-description: Review an Octave diff in a fresh context against its task, invariants, and domain rules. Use for every change before the owner gate; never on a change you implemented.
+description: Review an Octave diff in a fresh context against its spec, plan and rules. Use for every change before the owner gate; never on a change you implemented.
 ---
 
 # Change review
@@ -9,23 +9,18 @@ description: Review an Octave diff in a fresh context against its task, invarian
 
 - Run in a fresh context.
 - Never review a change you implemented.
-- Run one round only; small findings are fixed in the same pull request, and what is left goes to `tasks/backlog.jsonl` (`WORKFLOW.md` §2c).
-- Use `guardian` (Opus) when the diff touches playback negotiation, the gateway, the player, a native method, the native HTTP client, tokens, redaction, Kotlin, or `docs/security.md`.
+- Run one review round; small findings are fixed in the same pull request.
+- Use `guardian` (Opus) when the diff touches tokens, credentials, the network client, sign-in, links, redaction or `SECURITY.md`.
 - Use `reviewer` (Sonnet) otherwise.
-- Read the task (`pnpm task show <id>`, never the whole of `tasks/prd.json`) and the plan first.
+- Read the spec, the plan or issue first.
 - Get the diff with `git diff <base>...HEAD`.
-- List affected symbols and callers with codebase-memory `detect_changes`.
 
 ## Review
 
 - Walk every item in `references/checklist.md`.
-- Walk `references/design-checklist.md` when the diff touches screens, shared controls, or design tokens.
 - Look for correctness bugs and missed edge cases.
-- Look for invariant and dependency-rule violations.
 - Look for stubs, skipped tests, weakened assertions, and justified workarounds.
-- Look for tokens or authenticated URLs in logs, errors, props, events, or diagnostics.
-- Check that tests cover the changed behavior, and that a playback task has its Jellyscale wire test.
-- Check that each frozen test (listed in `docs/specs/<TASK-ID>.tests.json`) really tests its acceptance item, that no frozen test changed without a `Frozen-Test-Change` trailer, and that each gated item matches a `gate: <kind>` row in the spec.
+- Check that tests cover the changed behaviour.
 
 ## Report
 
