@@ -2,7 +2,7 @@
 
 Octave is the client for [jellyscale](https://github.com/jellyscale-org/jellyscale), being rebuilt as native apps: Android TV, Android phones, the web, and iPhone and iPad, with Android TV first to reach viewers and Apple TV later.
 
-There is no app on `main` yet. The previous client is kept, unmaintained, at the tag `react-native-final`, and an earlier desktop app at `desktop-tauri-final`.
+There is no app on `main` yet. The previous client is kept, unmaintained, at the tag `react-native-final`, and an earlier desktop app at `desktop-tauri-final`. Reusable native code, test vectors and fixtures are recoverable from `react-native-final`; new apps copy only what they reuse.
 
 ## Read next
 

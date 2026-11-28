@@ -4,7 +4,7 @@ A starter. It states only what the owner has already decided; the rest comes thr
 
 ## What Octave is
 
-Octave is the client for jellyscale: a private collection of films and shows, shared with a household, friends and family, or a community.
+Octave is the client for jellyscale, which describes itself as a private collection of films and shows, shared with a household, friends and family, or a community (jellyscale's own wording, not an Octave decision).
 
 - **Video only.** Films and shows; no music or photos.
 - **Top-tier, not passable.** The goal is a top-tier client, not a passable one.
