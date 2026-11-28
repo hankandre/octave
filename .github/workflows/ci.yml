@@ -33,9 +33,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: No signing keys or env files are committed
+      # Checks file names only; it does not scan contents.
+      - name: File-name check for keys and local env files
         run: |
-          found=$(git ls-files | grep -E '(^|/)\.env$|\.(jks|keystore|p12|pk8)$|(^|/)signing[^/]*\.properties$' || true)
+          found=$(git ls-files | grep -E '(^|/)\.env(\.[^/]+)?$|(^|/)\.jellyscale\.env$|\.(jks|keystore|p12|pk8|pem)$|(^|/)(signing[^/]*|[^/]*throwaway[^/]*|local)\.properties$' | grep -vE '(^|/)\.env\.example$' || true)
           if [ -n "$found" ]; then
             echo "Remove these files from the repository:"
             echo "$found"
@@ -46,11 +47,12 @@ jobs:
           status=0
           while IFS= read -r file; do
             dir=$(dirname "$file")
-            for target in $(grep -oE '\]\([^)#[:space:]]+' "$file" | sed 's/^](//' | grep -vE '^[a-z]+:'); do
+            while IFS= read -r target; do
+              [ -z "$target" ] && continue
               if [ ! -e "$dir/$target" ]; then
                 echo "$file: broken link to $target"
                 status=1
               fi
-            done
+            done < <(grep -oE '\]\([^)#]+' "$file" | sed 's/^](//' | grep -vE '^[a-z]+:' || true)
           done < <(git ls-files '*.md')
           exit $status

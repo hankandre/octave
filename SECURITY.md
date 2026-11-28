@@ -9,7 +9,8 @@ Never include real access tokens, passwords, or authenticated URLs in a report. 
 ## In scope
 
 - Leaks of access tokens, passwords, or authenticated URLs, in a URL, log, event, or diagnostic
-- Any request that carries a credential to an origin other than the signed-in server
+- Any request that carries a credential to an origin other than the signed-in server, or follows a redirect with it
+- A credential stored outside the platform's protected store, or readable by page scripts in a browser
 - Weaknesses in server address, link, or credential validation
 - Supply-chain issues in released builds
 

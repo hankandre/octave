@@ -41,6 +41,11 @@ Octave is the client for jellyscale, rebuilt as native apps. These are the rules
 - Never commit a server address, a credential or the owner's name.
 - Never log or show tokens, passwords or authenticated URLs.
 - Never put a token in a URL.
+- Send every server request through the app's one authenticated client; never open a network path around it.
+- Send the credential only to the signed-in server's origin. Follow no redirect with it, and treat a 3xx answer and a status of 0 as errors.
+- Keep the credential only in the platform's protected store (in a browser, where page scripts cannot read it); persist it no other way.
+- Sign in from a development build only to a development server.
+- Read the dogfood server's address from `OCTAVE_DOGFOOD_SERVER`.
 - Before adopting a dependency, verify from primary sources that it is actively maintained, and record the check.
 
 ## Design
