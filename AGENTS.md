@@ -80,6 +80,7 @@ Octave is the client for jellyscale, rebuilt as native apps. These are the rules
 ## Models
 
 - Run the Product Owner on Opus 5.5 with high reasoning. Treat its decisions as provisional: the owner can veto any of them.
+- Use the strongest models, ideally Opus 5.5, for sign-in, playback and the video player. Cheaper models can handle other work, with review.
 - Use Fable only when the owner asks for it. Do not re-check Fable's sourced claims; verify only what it marks unverified.
 - Use cheap or free OpenCode Zen models for grunt work and simple implementation, never for security code.
 - Have Sonnet 5.5 fix what those models fail.
