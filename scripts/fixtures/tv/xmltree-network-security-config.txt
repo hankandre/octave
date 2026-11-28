@@ -1,3 +1,0 @@
-E: network-security-config (line=3)
-    E: base-config (line=4)
-      A: cleartextTrafficPermitted=true

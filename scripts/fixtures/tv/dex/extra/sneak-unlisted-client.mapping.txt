@@ -1,4 +1,0 @@
-# T3-19 test fixture (frozen), hand-written mapping section(s) appended to release-mapping.txt for sneak-unlisted-client.dump.txt. The tests strip these leading # lines.
-com.example.Sneak -> com.example.Sneak:
-# {"id":"sourceFile","fileName":"Sneak.kt"}
-    1:3:java.lang.Object open(java.lang.Object):5:5 -> a

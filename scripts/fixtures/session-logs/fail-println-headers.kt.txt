@@ -1,7 +1,0 @@
-package dev.octave.session.http
-
-internal object Sample {
-    fun sent(headers: okhttp3.Headers) {
-        println(headers)
-    }
-}

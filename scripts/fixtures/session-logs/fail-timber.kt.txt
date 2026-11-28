@@ -1,9 +1,0 @@
-package dev.octave.session.http
-
-import timber.log.Timber
-
-internal object Sample {
-    fun sent(url: okhttp3.HttpUrl) {
-        Timber.i(url.toString())
-    }
-}

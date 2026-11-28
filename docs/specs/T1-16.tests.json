@@ -1,8 +1,0 @@
-{"task":"T1-16","files":[".claude/workflows/task-rulings.test.mjs"],"items":[
-    {"item":1,"run":["node","--test","--test-name-pattern","^T1-16 item 1:",".claude/workflows/task-rulings.test.mjs"]},
-    {"item":2,"run":["node","--test","--test-name-pattern","^T1-16 item 2:",".claude/workflows/task-rulings.test.mjs"]},
-    {"item":3,"run":["node","--test","--test-name-pattern","^T1-16 item 3:",".claude/workflows/task-rulings.test.mjs"]},
-    {"item":4,"run":["node","--test","--test-name-pattern","^T1-16 item 4:",".claude/workflows/task-rulings.test.mjs"]},
-    {"item":5,"run":["node","--test","--test-name-pattern","^T1-16 item 5:",".claude/workflows/task-rulings.test.mjs"]},
-    {"item":6,"run":["node","--test","--test-name-pattern","^T1-16 item 6:",".claude/workflows/task-rulings.test.mjs"]}
-  ]}

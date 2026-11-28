@@ -1,4 +1,0 @@
-V3.0 Signer: certificate DN: CN=Octave Throwaway, O=Octave CI
-V3.0 Signer: certificate SHA-256 digest: 72bc6f6a4ace5d716353cc069e972402aa463208260d55651b2c4282c88b0dae
-V3.0 Signer: certificate SHA-1 digest: 592eeebb6a3805a4dd1eef9308ae71e8dd41aed6
-V3.0 Signer: certificate MD5 digest: 15d3882ee76cd16d05e63d0e10d50385

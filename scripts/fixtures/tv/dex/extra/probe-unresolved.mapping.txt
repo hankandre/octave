@@ -1,3 +1,0 @@
-# T3-19 test fixture (frozen), hand-written mapping section(s) appended to release-mapping.txt for probe-unresolved.dump.txt: the renamed class pq9 has a class line naming dev.octave.tv.Probe and no member line. The tests strip these leading # lines.
-dev.octave.tv.Probe -> pq9:
-# {"id":"sourceFile","fileName":"Probe.kt"}

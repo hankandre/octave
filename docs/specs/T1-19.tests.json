@@ -1,8 +1,0 @@
-{"task":"T1-19","files":["scripts/prd.test.ts","scripts/task-lanes.test.ts","scripts/task-owner.test.ts",".claude/workflows/task-lanes.test.mjs"],"items":[
-    {"item":1,"run":["pnpm","exec","vitest","run","scripts/prd.test.ts","scripts/task-lanes.test.ts","-t","T1-19 item 1:"]},
-    {"item":2,"run":["node","--test","--test-name-pattern","^T1-19 item 2:",".claude/workflows/task-lanes.test.mjs"]},
-    {"item":3,"run":["node","--test","--test-name-pattern","^T1-19 item 3:",".claude/workflows/task-lanes.test.mjs"]},
-    {"item":4,"run":["node","--test","--test-name-pattern","^T1-19 item 4:",".claude/workflows/task-lanes.test.mjs"]},
-    {"item":5,"run":["node","--test","--test-name-pattern","^T1-19 item 5:",".claude/workflows/task-lanes.test.mjs"]},
-    {"item":6,"run":["node","--test","--test-name-pattern","^T1-19 item 6:",".claude/workflows/task-lanes.test.mjs"]}
-  ]}

@@ -1,9 +1,0 @@
-{
-  "request": {
-    "method": "POST",
-    "path": "/QuickConnect/Initiate",
-    "queryNames": []
-  },
-  "status": 401,
-  "body": "Quick connect is disabled"
-}

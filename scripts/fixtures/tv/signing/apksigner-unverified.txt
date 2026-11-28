@@ -1,5 +1,0 @@
-Exception in thread "main" com.android.apksig.apk.ApkFormatException: Malformed APK: not a ZIP archive
-	at com.android.apksig.ApkVerifier.verify(ApkVerifier.java:193)
-	at com.android.apksig.ApkVerifier.verify(ApkVerifier.java:166)
-	at com.android.apksigner.ApkSignerTool.verify(ApkSignerTool.java:678)
-	at com.android.apksigner.ApkSignerTool.main(ApkSignerTool.java:97)
